@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorador de Cursos de Biología | Chile 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Dark Theme with Violet and Cyan -->
+    <!-- Application Structure Plan: The application is designed as an interactive dashboard and catalog. This structure was chosen over a linear report format to empower users to actively explore and find relevant information quickly. The flow is: 1) High-level summary via stat cards. 2) Interactive filtering by key criteria (area, type, cost). 3) A dynamic catalog of course cards that updates in real-time. 4) Visual analysis through charts. This task-oriented design directly serves the user's primary goal: finding specific educational opportunities efficiently. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Key metrics (total courses, free courses, diploma count). Goal: Inform. Viz: Stat Cards (HTML/Tailwind). Interaction: None. Justification: Provides an immediate, high-level overview of the landscape.
+        - Report Info: Full course list. Goal: Organize/Compare. Viz: Filterable Card Grid (HTML/JS). Interaction: Multi-faceted filtering. Justification: Allows users to drill down to their specific needs, making the data actionable.
+        - Report Info: Number of courses per area. Goal: Compare. Viz: Bar Chart (Chart.js/Canvas). Interaction: Tooltips on hover. Justification: Visually highlights which disciplines have the most offerings.
+        - Report Info: Course types by organizer. Goal: Analyze Relationship. Viz: Stacked Bar Chart (Chart.js/Canvas). Interaction: Tooltips on hover. Justification: Directly visualizes the report's key finding about the different roles of universities (diplomas) and scientific societies (workshops).
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            color: #e5e7eb;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 450px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .modal-backdrop {
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            transition: transform 0.3s ease;
+        }
+    </style>
+</head>
+<body class="antialiased bg-gray-950">
+
+    <header class="bg-gray-900 shadow-md sticky top-0 z-20">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold text-indigo-400">Formación en Ciencias Biológicas | Chile 2025</h1>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+        
+        <section id="introduction" class="mb-12 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4 text-white">Explora la Oferta Académica</h2>
+            <p class="text-lg text-gray-300 max-w-3xl mx-auto">
+                Esta herramienta interactiva resume la oferta de cursos, diplomados y talleres en ciencias biológicas para 2025. Utiliza los filtros para encontrar la formación que se ajuste a tus necesidades y explora los gráficos para entender las tendencias del panorama educativo.
+            </p>
+        </section>
+
+        <section id="stats" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div class="bg-gray-900 p-6 rounded-xl shadow-lg border border-gray-800 text-center">
+                <h3 class="text-4xl font-bold text-indigo-400" id="total-courses-stat">0</h3>
+                <p class="text-gray-400 mt-2">Cursos y Actividades</p>
+            </div>
+            <div class="bg-gray-900 p-6 rounded-xl shadow-lg border border-gray-800 text-center">
+                <h3 class="text-4xl font-bold text-indigo-400" id="diplomas-stat">0</h3>
+                <p class="text-gray-400 mt-2">Diplomados</p>
+            </div>
+            <div class="bg-gray-900 p-6 rounded-xl shadow-lg border border-gray-800 text-center">
+                <h3 class="text-4xl font-bold text-indigo-400" id="free-courses-stat">0</h3>
+                <p class="text-gray-400 mt-2">Opciones Gratuitas</p>
+            </div>
+            <div class="bg-gray-900 p-6 rounded-xl shadow-lg border border-gray-800 text-center">
+                <h3 class="text-4xl font-bold text-indigo-400" id="areas-stat">0</h3>
+                <p class="text-gray-400 mt-2">Áreas Temáticas</p>
+            </div>
+        </section>
+
+        <section id="filters" class="bg-gray-900 p-6 rounded-xl shadow-md mb-8 border border-gray-800">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                <div>
+                    <label for="area-filter" class="block text-sm font-medium text-gray-300 mb-1">Área Temática</label>
+                    <select id="area-filter" class="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="all">Todas</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="type-filter" class="block text-sm font-medium text-gray-300 mb-1">Tipo de Formación</label>
+                    <select id="type-filter" class="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="all">Todos</option>
+                        <option value="Curso">Curso/Taller</option>
+                        <option value="Diplomado">Diplomado</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="organizer-filter" class="block text-sm font-medium text-gray-300 mb-1">Organizador</label>
+                    <select id="organizer-filter" class="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="all">Todos</option>
+                        <option value="Universidad">Universidad</option>
+                        <option value="Sociedad Científica">Sociedad Científica</option>
+                    </select>
+                </div>
+                 <div>
+                    <label for="cost-filter" class="block text-sm font-medium text-gray-300 mb-1">Costo</label>
+                    <select id="cost-filter" class="w-full p-2 border border-gray-700 bg-gray-800 text-gray-200 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="all">Todos</option>
+                        <option value="Gratuito">Gratuito</option>
+                        <option value="De Pago">De Pago</option>
+                    </select>
+                </div>
+                <button id="reset-filters" class="w-full bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">Limpiar Filtros</button>
+            </div>
+        </section>
+
+        <section id="course-catalog">
+            <div id="courses-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+            <div id="no-results" class="text-center py-12 text-gray-500 hidden">
+                <p class="text-xl">No se encontraron cursos que coincidan con tu búsqueda.</p>
+                <p>Intenta ajustar los filtros.</p>
+            </div>
+        </section>
+        
+        <hr class="my-16 border-gray-700">
+
+        <section id="visualizations" class="space-y-16">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-white mb-2">Análisis Visual de la Oferta</h2>
+                <p class="text-lg text-gray-300 max-w-3xl mx-auto">
+                    Estos gráficos resumen la distribución de los cursos y diplomados, revelando las áreas con mayor oferta y el rol de cada tipo de institución.
+                </p>
+            </div>
+            <div class="bg-gray-900 p-6 rounded-xl shadow-md border border-gray-800">
+                <h3 class="text-xl font-semibold text-center mb-4 text-gray-200">Oferta de Cursos por Área Temática</h3>
+                <div class="chart-container">
+                    <canvas id="coursesByAreaChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-gray-900 p-6 rounded-xl shadow-md border border-gray-800">
+                <h3 class="text-xl font-semibold text-center mb-4 text-gray-200">Tipo de Formación por Organizador</h3>
+                <div class="chart-container">
+                    <canvas id="typeByOrganizerChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-900 text-white mt-16">
+        <div class="container mx-auto px-4 py-6 text-center">
+            <p>Aplicación generada a partir del "Catálogo y Análisis de la Formación Continua en Ciencias Biológicas en Chile, 2025".</p>
+            <p class="text-sm text-gray-500 mt-2">Diseño Interactivo para la Exploración de Datos Académicos.</p>
+        </div>
+    </footer>
+
+    <div id="course-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden modal-backdrop opacity-0">
+        <div class="bg-gray-900 rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-content transform scale-95">
+            <div class="sticky top-0 bg-gray-900 p-5 border-b border-gray-800 flex justify-between items-center">
+                <h2 id="modal-title" class="text-2xl font-bold text-white"></h2>
+                <button id="close-modal" class="text-gray-400 hover:text-white text-3xl">&times;</button>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <h4 class="font-semibold text-gray-500 text-sm mb-1">Organización</h4>
+                        <p id="modal-organization" class="text-lg text-gray-200"></p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-500 text-sm mb-1">Área Temática</h4>
+                        <p id="modal-area" class="text-lg text-gray-200"></p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-500 text-sm mb-1">Fechas / Duración</h4>
+                        <p id="modal-dates" class="text-lg text-gray-200"></p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-500 text-sm mb-1">Costo</h4>
+                        <p id="modal-cost" class="text-lg text-gray-200"></p>
+                    </div>
+                </div>
+                <h4 class="font-semibold text-gray-500 text-sm mb-2">Descripción</h4>
+                <p id="modal-description" class="text-gray-400 leading-relaxed"></p>
+                <div class="mt-8 text-center">
+                    <a id="modal-link" href="#" target="_blank" rel="noopener noreferrer" class="inline-block bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700 transition-colors duration-300">
+                        Visitar Sitio del Curso
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const coursesData = [
+                {
+                    area: 'Bioinformática',
+                    name: 'Introducción a Single-Cell RNA Seq',
+                    organization: 'Sociedad Chilena de Bioinformática (SCBIOINFO)',
+                    organizerType: 'Sociedad Científica',
+                    type: 'Curso',
+                    cost: 'Sin datos',
+                    isFree: false,
+                    dates: '24-25 de julio de 2025',
+                    description: 'Curso enfocado en los fundamentos de la secuenciación de ARN de una sola célula, una técnica emergente de gran relevancia en la biología moderna.',
+                    link: '#'
+                },
+                {
+                    area: 'Bioinformática',
+                    name: 'The Cancer Genome Atlas',
+                    organization: 'Sociedad Chilena de Bioinformática (SCBIOINFO)',
+                    organizerType: 'Sociedad Científica',
+                    type: 'Curso',
+                    cost: 'Sin datos',
+                    isFree: false,
+                    dates: '30 de mayo de 2025',
+                    description: 'Taller online que cubre el proceso completo del análisis bioinformático, desde la descarga de datos de RNA-Seq hasta la identificación de biomarcadores asociados a la supervivencia en genómica del cáncer.',
+                    link: '#'
+                },
+                {
+                    area: 'Bioinformática',
+                    name: 'Análisis y Gestión de Datos Biológicos',
+                    organization: 'Pontificia Universidad Católica de Valparaíso (PUCV)',
+                    organizerType: 'Universidad',
+                    type: 'Curso',
+                    cost: '$280.000',
+                    isFree: false,
+                    dates: '1-24 de abril de 2025 (22 horas)',
+                    description: 'Curso online para profesionales y estudiantes de áreas como Bioquímica, Biología y Ciencias afines, enfocado en la gestión y análisis de datos biológicos.',
+                    link: '#'
+                },
+                {
+                    area: 'Bioestadística',
+                    name: 'Diplomado en Bioestadística',
+                    organization: 'Pontificia Universidad Católica de Chile',
+                    organizerType: 'Universidad',
+                    type: 'Diplomado',
+                    cost: 'Sin datos',
+                    isFree: false,
+                    dates: 'Duración: 216 horas',
+                    description: 'Programa e-learning asincrónico dirigido a profesionales de la salud, enfocado en capacitar para realizar proyectos de investigación con autonomía en la recolección, análisis e interpretación de datos.',
+                    link: '#'
+                },
+                {
+                    area: 'Bioestadística',
+                    name: 'Diplomado en Bioestadística y Métodos de Investigación',
+                    organization: 'Universidad Andrés Bello (UNAB)',
+                    organizerType: 'Universidad',
+                    type: 'Diplomado',
+                    cost: 'Matrícula: $130.000, Arancel: $1.810.000',
+                    isFree: false,
+                    dates: 'Inicio: 17 de julio de 2025 (216 horas)',
+                    description: 'Programa en modalidad online en tiempo real (Live) para adquirir competencias en el abordaje científico de problemáticas de investigación, con un fuerte componente práctico en software estadístico.',
+                    link: '#'
+                },
+                {
+                    area: 'Bioestadística',
+                    name: 'Diplomado en Bioestadística e Inteligencia Artificial',
+                    organization: 'Universidad de los Andes (UAndes)',
+                    organizerType: 'Universidad',
+                    type: 'Diplomado',
+                    cost: 'Matrícula: 6 UF, Arancel: 72 UF',
+                    isFree: false,
+                    dates: 'Inicio: 17 de abril de 2025 (6 meses)',
+                    description: 'Programa semipresencial que integra conceptos y herramientas de inteligencia artificial en el análisis de datos de salud para prácticas basadas en evidencia.',
+                    link: '#'
+                },
+                {
+                    area: 'Biología Celular y Molecular',
+                    name: 'Curso Biología Celular y Molecular',
+                    organization: 'Universidad Diego Portales (UDP)',
+                    organizerType: 'Universidad',
+                    type: 'Curso',
+                    cost: 'Sin datos',
+                    isFree: false,
+                    dates: 'Julio de 2025',
+                    description: 'Actividad teórico-práctica para la adquisición de conocimientos sobre los procesos bioquímicos y moleculares en la comunicación celular, el metabolismo y la regulación génica.',
+                    link: '#'
+                },
+                {
+                    area: 'Biología Celular y Molecular',
+                    name: 'Curso Biología Molecular de Tripanosomátidos',
+                    organization: 'Universidad de Chile / UNU-Biolac / ICGEB',
+                    organizerType: 'Universidad',
+                    type: 'Curso',
+                    cost: 'Gratuito',
+                    isFree: true,
+                    dates: 'Postulación hasta 25 de mayo de 2025',
+                    description: 'Curso gratuito y altamente especializado para estudiantes de doctorado y posdoctorado, con apoyo de viaje limitado proporcionado por organizaciones internacionales.',
+                    link: '#'
+                },
+                {
+                    area: 'Microscopía',
+                    name: 'Taller sobre Tumores de Glándulas Salivales',
+                    organization: 'Sociedad Chilena de Citopatología (SOCHICIT)',
+                    organizerType: 'Sociedad Científica',
+                    type: 'Curso',
+                    cost: 'Sin datos',
+                    isFree: false,
+                    dates: '26 de julio de 2025',
+                    description: 'Taller multidisciplinario centrado en el diagnóstico y tratamiento de tumores de glándulas salivales, destacando el rol central de la citología y la microscopía.',
+                    link: '#'
+                },
+                {
+                    area: 'Biofísica',
+                    name: 'Structural Biology at the Foot of the Andes',
+                    organization: 'Sociedad de Bioquímica y Biología Molecular de Chile (SBBMCh)',
+                    organizerType: 'Sociedad Científica',
+                    type: 'Curso',
+                    cost: 'Sin datos',
+                    isFree: false,
+                    dates: '30 de julio de 2025',
+                    description: 'Curso enfocado en la biología estructural. No se proporciona más información detallada.',
+                    link: '#'
+                }
+            ];
+
+            const coursesGrid = document.getElementById('courses-grid');
+            const noResultsDiv = document.getElementById('no-results');
+            const areaFilter = document.getElementById('area-filter');
+            const typeFilter = document.getElementById('type-filter');
+            const organizerFilter = document.getElementById('organizer-filter');
+            const costFilter = document.getElementById('cost-filter');
+            const resetFiltersBtn = document.getElementById('reset-filters');
+            
+            const modal = document.getElementById('course-modal');
+            const closeModalBtn = document.getElementById('close-modal');
+
+            function populateFilters() {
+                const areas = [...new Set(coursesData.map(course => course.area))];
+                areas.sort().forEach(area => {
+                    const option = document.createElement('option');
+                    option.value = area;
+                    option.textContent = area;
+                    areaFilter.appendChild(option);
+                });
+            }
+
+            function renderCourses(filteredCourses) {
+                coursesGrid.innerHTML = '';
+                if (filteredCourses.length === 0) {
+                    noResultsDiv.classList.remove('hidden');
+                } else {
+                    noResultsDiv.classList.add('hidden');
+                }
+
+                filteredCourses.forEach(course => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-gray-900 rounded-xl shadow-md border border-gray-800 overflow-hidden flex flex-col hover:shadow-lg transition-shadow duration-300';
+                    card.innerHTML = `
+                        <div class="p-6 flex-grow">
+                            <p class="text-sm font-semibold text-cyan-400 mb-1">${course.area}</p>
+                            <h3 class="text-xl font-bold text-white mb-2 h-14">${course.name}</h3>
+                            <p class="text-gray-400 text-sm mb-4">${course.organization}</p>
+                        </div>
+                        <div class="p-6 bg-gray-950 border-t border-gray-800 flex justify-between items-center">
+                            <span class="text-sm font-medium ${course.isFree ? 'text-green-400 bg-green-900' : 'text-indigo-400 bg-indigo-900'} py-1 px-3 rounded-full">${course.cost}</span>
+                            <button class="view-details-btn text-indigo-400 font-semibold hover:text-cyan-400 transition">Ver Detalles →</button>
+                        </div>
+                    `;
+                    card.querySelector('.view-details-btn').addEventListener('click', () => openModal(course));
+                    coursesGrid.appendChild(card);
+                });
+            }
+
+            function filterCourses() {
+                const selectedArea = areaFilter.value;
+                const selectedType = typeFilter.value;
+                const selectedOrganizer = organizerFilter.value;
+                const selectedCost = costFilter.value;
+
+                const filtered = coursesData.filter(course => {
+                    const areaMatch = selectedArea === 'all' || course.area === selectedArea;
+                    const typeMatch = selectedType === 'all' || course.type === selectedType;
+                    const organizerMatch = selectedOrganizer === 'all' || course.organizerType === selectedOrganizer;
+                    const costMatch = selectedCost === 'all' || (selectedCost === 'Gratuito' && course.isFree) || (selectedCost === 'De Pago' && !course.isFree);
+                    return areaMatch && typeMatch && organizerMatch && costMatch;
+                });
+                renderCourses(filtered);
+            }
+            
+            function openModal(course) {
+                document.getElementById('modal-title').textContent = course.name;
+                document.getElementById('modal-organization').textContent = course.organization;
+                document.getElementById('modal-area').textContent = course.area;
+                document.getElementById('modal-dates').textContent = course.dates;
+                document.getElementById('modal-cost').textContent = course.cost;
+                document.getElementById('modal-description').textContent = course.description;
+                document.getElementById('modal-link').href = course.link;
+                
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modal.querySelector('.modal-content').classList.remove('scale-95');
+                }, 10);
+            }
+
+            function closeModal() {
+                modal.classList.add('opacity-0');
+                modal.querySelector('.modal-content').classList.add('scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+            
+            function updateStats() {
+                document.getElementById('total-courses-stat').textContent = coursesData.length;
+                document.getElementById('diplomas-stat').textContent = coursesData.filter(c => c.type === 'Diplomado').length;
+                document.getElementById('free-courses-stat').textContent = coursesData.filter(c => c.isFree).length;
+                document.getElementById('areas-stat').textContent = [...new Set(coursesData.map(c => c.area))].length;
+            }
+
+            function createCharts() {
+                const ctxArea = document.getElementById('coursesByAreaChart').getContext('2d');
+                const areaCounts = coursesData.reduce((acc, course) => {
+                    acc[course.area] = (acc[course.area] || 0) + 1;
+                    return acc;
+                }, {});
+                
+                new Chart(ctxArea, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(areaCounts),
+                        datasets: [{
+                            label: 'Nº de Cursos',
+                            data: Object.values(areaCounts),
+                            backgroundColor: 'rgba(129, 140, 248, 0.6)',
+                            borderColor: 'rgba(129, 140, 248, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+
+                const ctxOrganizer = document.getElementById('typeByOrganizerChart').getContext('2d');
+                const organizerData = coursesData.reduce((acc, course) => {
+                    const type = course.organizerType;
+                    const courseType = course.type;
+                    if (!acc[type]) {
+                        acc[type] = { Diplomado: 0, Curso: 0 };
+                    }
+                    acc[type][courseType]++;
+                    return acc;
+                }, {});
+
+                new Chart(ctxOrganizer, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(organizerData),
+                        datasets: [
+                            {
+                                label: 'Curso/Taller',
+                                data: Object.values(organizerData).map(d => d.Curso),
+                                backgroundColor: 'rgba(34, 211, 238, 0.6)',
+                            },
+                            {
+                                label: 'Diplomado',
+                                data: Object.values(organizerData).map(d => d.Diplomado),
+                                backgroundColor: 'rgba(129, 140, 248, 0.8)',
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } }
+                    }
+                });
+            }
+            
+            areaFilter.addEventListener('change', filterCourses);
+            typeFilter.addEventListener('change', filterCourses);
+            organizerFilter.addEventListener('change', filterCourses);
+            costFilter.addEventListener('change', filterCourses);
+            
+            resetFiltersBtn.addEventListener('click', () => {
+                areaFilter.value = 'all';
+                typeFilter.value = 'all';
+                organizerFilter.value = 'all';
+                costFilter.value = 'all';
+                filterCourses();
+            });
+
+            closeModalBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+
+            populateFilters();
+            renderCourses(coursesData);
+            updateStats();
+            createCharts();
+        });
+    </script>
+</body>
+</html>
