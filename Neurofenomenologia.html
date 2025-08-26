@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neurofenomenología | O.C.V.M.</title>
+    <!-- Tailwind CSS CDN para un estilo moderno y responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fuente Inter, coherente con el estilo de O.C.V.M. -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Three.js para el fondo animado -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        /* Variables y estilos raíz del tema O.C.V.M. */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+        
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        /* Estilo glassmorphism para los contenedores */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.menu-open {
+            overflow: hidden;
+        }
+        
+        /* Estilos de navegación */
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 0.5rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover, nav .nav-container > li:hover > a { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+        
+        /* Estilos de la sección principal (hero) */
+        .hero {
+            min-height: 80vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            padding-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2.5rem, 8vw, 5.5rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p.subtitle { font-size: clamp(1.2rem, 3vw, 1.8rem); color: var(--secondary-glow); text-shadow: 0 0 8px var(--secondary-glow); margin-top: 0.5rem; }
+        .hero p.description { font-size: clamp(1rem, 2.5vw, 1.2rem); max-width: 900px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .main-container { 
+            width: 100%;
+            max-width: none;
+            margin: 0 auto; 
+            padding: 1rem 2.5vw;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content {
+            pointer-events: auto;
+        }
+
+        main p, .footer p, main li, main blockquote {
+            user-select: text;
+            cursor: default;
+            text-align: justify;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        /* Estilos para las secciones de contenido */
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        .section h2, .section .interactive-element, .section .card, .section p, .section ul {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible .interactive-element, .section.is-visible .card, .section.is-visible p, .section.is-visible ul {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Retraso de animación para elementos dentro de las secciones */
+        .section.is-visible h2 { transition-delay: 0ms; }
+        .section.is-visible .card { transition-delay: 200ms; }
+        .section.is-visible p { transition-delay: 400ms; }
+        .section.is-visible .interactive-element { transition-delay: 400ms; }
+
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        h3 { font-size: clamp(1.4rem, 4vw, 1.9rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
+        h4 { font-size: clamp(1.2rem, 3vw, 1.5rem); color: var(--secondary-glow); margin-bottom: 1rem; margin-top: 2rem; }
+        
+        /* Estilos específicos de contenido */
+        .card {
+            background-color: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .quote-block {
+            border-left: 3px solid var(--primary-glow);
+            padding-left: 1.5rem;
+            margin: 1.5rem 0;
+            font-style: italic;
+            color: #c7d2fe;
+        }
+        
+        /* Estilos del footer */
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        /* Estilos para el acordeón interactivo */
+        .interactive-element {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            border: 1px solid transparent;
+            margin-bottom: 1rem;
+        }
+        .interactive-element:hover {
+            border-color: var(--primary-glow);
+            box-shadow: 0 0 10px rgba(129, 140, 248, 0.3);
+        }
+        .interactive-element h4 {
+            color: var(--primary-text);
+            font-size: clamp(1.1rem, 2vw, 1.3rem);
+            margin: 0;
+        }
+        .interactive-element .plus-icon {
+            color: var(--secondary-glow);
+            transition: transform 0.3s ease;
+        }
+        .interactive-element.open .plus-icon {
+            transform: rotate(45deg);
+        }
+        .details-content {
+            display: none;
+            padding-top: 1rem;
+        }
+        .details-content.visible {
+            display: block;
+            animation: fadeInContent 0.6s ease forwards;
+        }
+        @keyframes fadeInContent {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive Mobile Menu */
+        @media (min-width: 1025px) {
+            .menu-toggle { display: none; }
+            .nav-container { display: flex; }
+        }
+
+        @media (max-width: 1024px) {
+            .nav-content { justify-content: space-between; }
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+            body.menu-open .nav-container {
+                transform: translateY(0);
+            }
+
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1rem; width: 100%; font-size: 1.5em;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>O.C.V.M.</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#inicio">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                    Inicio</a></li>
+                <li><a href="#abstract">Resumen</a></li>
+                <li><a href="#problema-dificil">El Problema Difícil</a></li>
+                <li><a href="#enfoque">El Enfoque</a></li>
+                <li><a href="#metodo">El Método</a></li>
+                <li><a href="#circulacion">La Circulación</a></li>
+                <li><a href="#conclusion">Conclusión</a></li>
+                <li><a href="#referencias">Referencias</a></li>
+                <li><a href="#contacto">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
+                    Contacto</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Neurofenomenología</h1>
+                <p class="subtitle">Un Remedio Metodológico para el Problema Difícil de la Conciencia</p>
+                <p class="description">
+                    Basado en el artículo de Francisco J. Varela, Journal of Consciousness Studies, 1996.
+                </p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                
+                <!-- Sección de Resumen -->
+                <section id="abstract" class="section glassmorphism" data-animate>
+                    <h2>Resumen del Artículo</h2>
+                    <div class="card p-8 leading-relaxed text-lg">
+                        <p class="mb-4">
+                            En este influyente artículo de 1996, Francisco J. Varela, un biólogo y neurocientífico, aborda el "problema difícil" de la conciencia, un término acuñado por David Chalmers para referirse a la dificultad de explicar cómo la experiencia subjetiva (los "qualia") surge de los procesos físicos del cerebro.
+                        </p>
+                        <p>
+                            Varela argumenta que no hay una "solución teórica" o un "ingrediente extra" que pueda cerrar esta brecha. En cambio, propone un nuevo enfoque metodológico: la <strong>neurofenomenología</strong>. Este método busca crear una "circulación" de mutuas restricciones entre dos dominios de fenómenos: la experiencia subjetiva en primera persona y los datos científicos objetivos en tercera persona (como la actividad cerebral).
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Sección El Problema Difícil -->
+                <section id="problema-dificil" class="section glassmorphism" data-animate>
+                    <h2>Paso 1: Entendiendo el Problema Difícil</h2>
+                    <div class="card p-8 leading-relaxed text-lg">
+                        <h3 class="text-2xl font-semibold mb-4" style="color: var(--primary-glow);">¿Qué es el "Problema Difícil"?</h3>
+                        <p class="mb-6">
+                            El "problema difícil de la conciencia" de Chalmers es el desafío de explicar por qué y cómo algunos procesos cerebrales están acompañados de experiencia subjetiva. ¿Por qué el procesamiento de la luz en la retina resulta en la experiencia de ver el color rojo, en lugar de ser solo una computación de información?
+                        </p>
+                        <div class="card p-6 rounded-lg border border-gray-200">
+                            <h4 class="text-xl font-bold mb-2" style="color: var(--secondary-glow);">Problemas "Fáciles" vs. "Difícil"</h4>
+                            <ul class="list-disc list-inside space-y-2 text-sm">
+                                <li>
+                                    <strong>Fáciles:</strong> Preguntas sobre los mecanismos de la conciencia, como la integración de la información, el acceso a los estados mentales, y la atención. Varela las llama "fáciles" porque pueden ser abordadas con los métodos tradicionales de las ciencias cognitivas y la neurociencia.
+                                </li>
+                                <li>
+                                    <strong>Difícil:</strong> La pregunta central de la experiencia subjetiva, o "qualia". Varela afirma que las herramientas actuales de la ciencia no pueden abordar esto porque se basan en una visión de tercera persona.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sección El Enfoque de Varela -->
+                <section id="enfoque" class="section glassmorphism" data-animate>
+                    <h2>Paso 2: La Propuesta de Varela</h2>
+                    <div class="card p-8 leading-relaxed text-lg">
+                        <h3 class="text-2xl font-semibold mb-4" style="color: var(--primary-glow);">El Camino Radical: Neurofenomenología</h3>
+                        <p class="mb-6">
+                            Varela argumenta que las soluciones actuales son inadecuadas. Los reduccionistas (como Crick) intentan eliminar la experiencia, y los funcionalistas (como Dennett) la asimilan a la función cognitiva, dejando la experiencia subjetiva de lado.
+                        </p>
+                        <p class="mb-6">
+                            La neurofenomenología es una "reconciliación" que une dos tradiciones:
+                        </p>
+                        <ul class="list-disc list-inside space-y-2 text-lg">
+                            <li>
+                                <strong>Neurociencia y Ciencias Cognitivas:</strong> El estudio objetivo del cerebro y la cognición.
+                            </li>
+                            <li>
+                                <strong>Fenomenología:</strong> El estudio riguroso de la experiencia en primera persona, tal como la vivimos.
+                            </li>
+                        </ul>
+                        <div class="mt-8 p-6 glassmorphism border-l-4 border-yellow-500 rounded-lg">
+                            <p class="font-bold">El Gesto Clave:</p>
+                            <p>La idea central es que la experiencia en primera persona no es un "ingrediente extra" a la naturaleza, sino un campo de fenómenos irreducible que requiere un método propio y riguroso. Este método se basa en la fenomenología, una tradición filosófica que busca volver a la "experiencia vivida" misma, sin presuposiciones.</p>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Sección El Método con Acordeón -->
+                <section id="metodo" class="section glassmorphism" data-animate>
+                    <h2>Paso 3: El Método Fenomenológico</h2>
+                    <div class="card p-8 leading-relaxed text-lg">
+                        <h3 class="text-2xl font-semibold mb-4" style="color: var(--primary-glow);">Los 4 Momentos de la Reducción Fenomenológica (PhR)</h3>
+                        <p class="mb-6">
+                            Varela detalla cuatro pasos o "momentos" que constituyen el corazón de la práctica fenomenológica para explorar la conciencia de forma disciplinada. Haz clic en cada uno para saber más:
+                        </p>
+                        
+                        <!-- Interactive Elements (Acordeón) -->
+                        <div class="space-y-4">
+                            <div class="interactive-element p-4 border rounded-lg" onclick="toggleDetails('attitude')">
+                                <h4 class="text-xl font-semibold flex items-center justify-between">
+                                    (1) Actitud: La Reducción o "Bracketing"
+                                    <span class="plus-icon text-2xl">+</span>
+                                </h4>
+                                <div id="attitude-details" class="details-content text-base text-gray-400">
+                                    Suspender o "poner entre paréntesis" nuestras creencias habituales sobre lo que estamos experimentando. Es un gesto activo de duda que nos permite examinar la experiencia misma sin prejuicios.
+                                </div>
+                            </div>
+                            
+                            <div class="interactive-element p-4 border rounded-lg" onclick="toggleDetails('intuition')">
+                                <h4 class="text-xl font-semibold flex items-center justify-between">
+                                    (2) Intimidad: La Intuición
+                                    <span class="plus-icon text-2xl">+</span>
+                                </h4>
+                                <div id="intuition-details" class="details-content text-base text-gray-400">
+                                    Como resultado de la reducción, se obtiene una "intimidad" con el fenómeno. Esto no es una inspiración mágica, sino una capacidad humana básica para obtener evidencia convincente a través de la exploración y la variación imaginaria.
+                                </div>
+                            </div>
+                            
+                            <div class="interactive-element p-4 border rounded-lg" onclick="toggleDetails('description')">
+                                <h4 class="text-xl font-semibold flex items-center justify-between">
+                                    (3) Descripción: Los Invariantes
+                                    <span class="plus-icon text-2xl">+</span>
+                                </h4>
+                                <div id="description-details" class="details-content text-base text-gray-400">
+                                    La experiencia intuitiva debe ser traducida a un lenguaje comunicable. Estas descripciones se convierten en "invariantes" que pueden ser compartidas y validadas por una comunidad de investigadores.
+                                </div>
+                            </div>
+
+                            <div class="interactive-element p-4 border rounded-lg" onclick="toggleDetails('training')">
+                                <h4 class="text-xl font-semibold flex items-center justify-between">
+                                    (4) Entrenamiento: La Estabilidad
+                                    <span class="plus-icon text-2xl">+</span>
+                                </h4>
+                                <div id="training-details" class="details-content text-base text-gray-400">
+                                    Al igual que cualquier disciplina, la fenomenología requiere entrenamiento sostenido para estabilizar la capacidad de la reducción, la intuición y la descripción. Es un "saber hacer" práctico, no solo una teoría.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 p-6 glassmorphism border-l-4 border-red-500 rounded-lg">
+                            <h4 class="font-bold text-lg" style="color: var(--secondary-glow);">Evitando Trampas Comunes:</h4>
+                            <p class="mt-2 text-sm">Varela destaca que la fenomenología no es simplemente "introspección" ni una "cuestión subjetiva". Se diferencia de la introspección porque busca suspender los juicios preexistentes. Tampoco es meramente subjetiva, ya que busca una validación intersubjetiva.</p>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Sección La Circulación -->
+                <section id="circulacion" class="section glassmorphism" data-animate>
+                    <h2>Paso 4: La Circulación de Mutuas Restricciones</h2>
+                    <div class="card p-8 leading-relaxed text-lg">
+                        <h3 class="text-2xl font-semibold mb-4" style="color: var(--primary-glow);">La Hipótesis de Trabajo de la Neurofenomenología</h3>
+                        <p class="mb-6">
+                            El corazón de la propuesta de Varela es que los datos de la neurociencia (tercera persona) y los informes de la fenomenología (primera persona) deben <strong>restringirse mutuamente</strong>.
+                        </p>
+                        <div class="card p-6 rounded-lg border border-blue-200">
+                            <p class="font-bold">Hipótesis:</p>
+                            <p class="italic mt-2">"Las descripciones fenomenológicas de la estructura de la experiencia y sus contrapartes en las ciencias cognitivas se relacionan entre sí a través de restricciones recíprocas."</p>
+                        </div>
+                        <p class="mt-6">
+                            Esto significa que un modelo neurocientífico de la conciencia debe ser validado no solo por datos objetivos, sino también por su capacidad para iluminar y dar sentido a los informes de la experiencia en primera persona. De manera recíproca, las descripciones fenomenológicas pueden guiar la investigación científica, sugiriendo qué correlatos buscar en el cerebro.
+                        </p>
+                        <p class="mt-4">
+                            <strong>Ejemplo del artículo:</strong> La experiencia del "presente momentáneo" (el 'specious present') en fenomenología tiene una duración de varios segundos y no es un punto en el tiempo. Varela sugiere que esto podría correlacionarse con el "ensamblaje celular resonante" de las neuronas, un fenómeno cerebral que también opera en una escala de tiempo de milisegundos a segundos.
+                        </p>
+                    </div>
+                </section>
+                
+                <!-- Sección de Conclusión -->
+                <section id="conclusion" class="section glassmorphism" data-animate>
+                    <h2>Paso 5: La Conclusión de Varela</h2>
+                    <div class="card p-8 leading-relaxed text-lg">
+                        <p class="mb-6">
+                            Varela concluye que la neurofenomenología no es una solución teórica, sino un cambio de paradigma que requiere un <strong>trabajo duro</strong> y un <strong>cambio de actitud</strong>.
+                        </p>
+                        <ul class="list-disc list-inside space-y-2 text-lg">
+                            <li>
+                                <strong>Trabajo Duro:</strong> Requiere que los investigadores se entrenen en el método fenomenológico. No es algo que se pueda hacer casualmente.
+                            </li>
+                            <li>
+                                <strong>Cambio de Actitud:</strong> La comunidad científica debe aceptar que los informes en primera persona son una fuente de datos legítima y crucial, y que la ciencia puede expandirse para incluir esta dimensión.
+                            </li>
+                        </ul>
+                        <p class="mt-6 text-xl font-bold text-center" style="color: var(--primary-glow);">
+                            El "problema difícil" no es un callejón sin salida, sino una "bomba de tiempo" que nos obliga a repensar la ciencia misma de la mente.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Sección de Referencias -->
+                <section id="referencias" class="section glassmorphism" data-animate>
+                    <h2>Referencias</h2>
+                    <div class="card p-8 leading-relaxed text-sm">
+                        <ul class="list-disc list-inside space-y-4">
+                            <li>
+                                Abrams, D. (1996), <em>The Spell of the Sensous: Perception and Language in a More Than Human World</em> (New York: Pantheon).
+                            </li>
+                            <li>
+                                Baars, B. (1988), <em>A Cognitive Theory of Consciousness</em> (Cambridge: Cambridge University Press).
+                            </li>
+                            <li>
+                                R. Bernet, (1994), <em>La Vie du Sujet</em> (Paris: Presses Universitaire de France).
+                            </li>
+                            <li>
+                                Calvin W. (1990), <em>Cerebral Symphony: Seashore Reflections on the Structure of Consciousness</em> (New York: Bantam Books).
+                            </li>
+                            <li>
+                                Chalmers, D.J. (1995), 'Facing up to the problem of consicousness', <em>Journal of Consciousness Studies</em>, 2 (3), pp. 200-19.
+                            </li>
+                            <li>
+                                Chalmers, D.J. (1996), <em>The Conscious Mind: In Search of a Fundamental Theory</em> (New York: Oxford University Press).
+                            </li>
+                            <li>
+                                Churchland, P.S. and Sejnowski, T. (1992), <em>The Computational Brain</em> (Cambridge, MA: MIT Press).
+                            </li>
+                            <li>
+                                Crick, F. (1994), <em>The Astonishing Hypothesis</em> (New York: Scribners).
+                            </li>
+                            <li>
+                                Damasio, A. (1994), <em>Descartes' Error: Emotion, Reason and the Human Brain</em> (New York: Grosset/Putnam).
+                            </li>
+                            <li>
+                                Davidson, R. and Sutton, S. (1994), 'Affective neuroscience: the emergence of a discipline, <em>Curr. Opinion Neurobiol.</em>, 5, pp. 217-24.
+                            </li>
+                            <li>
+                                de Waal, F. (1996), <em>Good Natured: The Origins of Right and Wrong in Humans and Other Animals</em> (Cambridge: Harvard University Press).
+                            </li>
+                            <li>
+                                Dennett, D. (1991), <em>Consciousness Exaplained</em> (Boston: Little Brown).
+                            </li>
+                            <li>
+                                Dennett, D. and M.Kinsbourne (1992), 'Time and the observer: the where and when of time in the brain', <em>Behavioral and Brain Sciences</em>, 15, pp. 183-247.
+                            </li>
+                            <li>
+                                Depraz, N. (1996), <em>Incarnation et Transcendence</em> (Paris: J.Vrin).
+                            </li>
+                            <li>
+                                Depraz, N., Varela, F. and Veermersch, P. (1996), <em>Exploring Experience with a Method</em> (forthcoming).
+                            </li>
+                            <li>
+                                Dreyfus, H. (ed. 1982), <em>Husserl: Intentionality and Cognitive Science</em> (Cambridge, MA: MIT Press).
+                            </li>
+                            <li>
+                                Dreyfus, H. (1993), 'Review of "The Embodied Mind"', <em>Mind</em>, 102, pp. 542-6.
+                            </li>
+                            <li>
+                                Edelman, G. (1989), <em>The Remembered Present: A Biological Theory of Consciousness</em> (New York: Basic Books).
+                            </li>
+                            <li>
+                                Flanagan. O (1992), <em>Consciousness Reconsidered</em> (Cambridge, MA: MIT Press).
+                            </li>
+                            <li>
+                                Globus, G. (1995), <em>The Post-Modern Brain</em> (New York: Benjamin).
+                            </li>
+                            <li>
+                                Howe, R.B. (1991), 'Introspection: A reassesment', <em>New Ideas in Psychology</em>, 9, pp. 24-44.
+                            </li>
+                            <li>
+                                Husserl, H. (1962), <em>The Idea of Phenomenology</em> (The Hague: M. Nijhoff).
+                            </li>
+                            <li>
+                                Husserl, E. (1966), <em>Zur Phänomenologie des Inneren Zeitbewusstseins</em> (1893-1917), ed. R. Bohm (The Hague: M.Nijhoff). Partial English translation: <em>The Phenomenology of Internal Time Consciousness</em> (Bloomington: Indiana University Press, 1996).
+                            </li>
+                            <li>
+                                Hut, P. and Shepard, R. (1996), 'Turning the hard problem upside down and sideways', <em>Journal of Consciousness Studies</em>, 3 (4), pp. 313-29.
+                            </li>
+                            <li>
+                                Ihde, D. (1977), <em>Experimental Phenomenology</em> (New York: Open Court).
+                            </li>
+                            <li>
+                                Jackendoff, R. (1987), <em>Consciousness and the Computational Mind</em> (Cambridge, MA: MIT Press).
+                            </li>
+                            <li>
+                                James, W. (1912/1995), <em>The Principles of Psychology</em> (Cambridge: Harvard University Press).
+                            </li>
+                            <li>
+                                Jeannerod, M. (1994), 'The representing brain: neural correlates of motor intention and imagery', <em>Behavioral and Brain Sciences</em>, 17, pp. 187-245.
+                            </li>
+                            <li>
+                                Johnson, M. (1987), <em>The Body in the Mind: The Bodily Basis of Imagination, Reason and Feeling</em> (Chicago: Chicago University Press).
+                            </li>
+                            <li>
+                                Klein, P. and and Wescott, M.R. (1994), 'The changing character of phenomenological psychology', <em>Canadian Psychology</em>, 35, pp. 133-57.
+                            </li>
+                            <li>
+                                Koch, C. (1996), 'Review of "The Conscious Mind"', <em>Nature</em>, 381, p. 123.
+                            </li>
+                            <li>
+                                Langsdorf, L. (1985), 'Review of Dreyfus (1982)', <em>Husserl Studies</em>, 3, pp. 303-11.
+                            </li>
+                            <li>
+                                Leder, D. (1991), <em>The Dissapereance of the Body</em> (Chicago: Chicago University Press).
+                            </li>
+                            <li>
+                                Libet, B. (1985), 'Unconscious cerebral initiative and the role of conscious will in voluntary action', <em>Behavioral and Brain Sciences</em>, 8, pp. 529-66.
+                            </li>
+                            <li>
+                                Leopold, D. and Logothetis, N. (1996), 'Activity changes in early visual cortex reflect monkeys' percepts during binocular rivalry', <em>Nature</em>, 379, pp. 549-53.
+                            </li>
+                            <li>
+                                Lyons, W. (1986), <em>The Disappearance of Instrospection</em> (Cambridge, MA: MIT Press).
+                            </li>
+                            <li>
+                                Lyotard, J-F. (1954), <em>La Phénoménologie</em> (Paris: Presses Univ. de France).
+                            </li>
+                            <li>
+                                McGinn, C. (1991), <em>The Problem of Consciousness</em> (Oxford: Blackwell).
+                            </li>
+                            <li>
+                                McInerney, P. (1991), <em>Time and Experience</em> (Philadelphia: Temple University Press).
+                            </li>
+                            <li>
+                                McIntyre, R. (1986), 'Husserl and the representational theory of mind', <em>Topoi</em>, 5, pp. 101-13.
+                            </li>
+                            <li>
+                                Mangan, B. (1993), 'Taking phenomenology seriously: the "fringe" and its implications for cognitive research', <em>Consciousness and Cognition</em>, 2, pp. 89-108.
+                            </li>
+                            <li>
+                                Mazoyer, B. Ronald and Fox (ed. 1995), International Congress on the Functional Mapping of the Human Brain, <em>Human Brain Mapp. Suppl.</em> 1.
+                            </li>
+                            <li>
+                                Merleau-Ponty, M. (1945), <em>La Phénoménologie de la Perception</em> (Paris: Gallimard).
+                            </li>
+                            <li>
+                                Nagel, T. (1986), <em>The View from Nowhere</em> (New York: Oxford University Press).
+                            </li>
+                            <li>
+                                Pessoa, L., Thompson, E and Noë, A. (1996), 'Finding out about filling in', <em>Behavioral and Brain Sciences</em> (in press).
+                            </li>
+                            <li>
+                                Petitot, J. (ed. 1995), 'Sciences cognitives et phénoménologie', <em>Archives de Philosophie</em>, 58 (4), pp. 529-631.
+                            </li>
+                            <li>
+                                Petitot, J., Roy, J.M., Pachoud, B. and Varela, F. (ed. 1996), <em>Naturalizing Phenomenology: Contemporary Issues in Phenomenology and Cognitive Science</em> (Stanford: Stanford University Press) in press.
+                            </li>
+                            <li>
+                                Picton, T. and Stuss, D (1994), 'Neurobiology of conscious experience', <em>Current Biology</em>, 4, pp. 256-65.
+                            </li>
+                            <li>
+                                Posner, M.I. (1994), 'Attention: the mechanisms of consciousness', <em>Proc. Natl. Acad. Science (USA)</em>, 91, pp. 7398-403.
+                            </li>
+                            <li>
+                                Posner, M & Raichle, M (1992), <em>Images of the Mind</em> (New York: Scientific American Library).
+                            </li>
+                            <li>
+                                Roy, J.M. (1995), 'Le "Dreyfus bridge": Husserlianism and Fodorism', <em>Archives de Philosophie</em>, 58, pp. 533-49.
+                            </li>
+                            <li>
+                                Searle, J. (1992), <em>The Rediscovery of the Mind</em> (Cambridge, MA: The MIT Press).
+                            </li>
+                            <li>
+                                Smith, B.C. (1996), 'Who's on third? Subjectivity at the physical basis of consicousness', <em>Consciousness Research Abstracts</em>, p. 53.
+                            </li>
+                            <li>
+                                Singer, W. (1993), 'Synchronization of cortical activity and its putative role in information processing and learning', <em>Ann. Rev. Physiol.</em>, 55, pp. 349-74.
+                            </li>
+                            <li>
+                                Spiegelberg, F. (1962), <em>The Phenomenological Movement</em>, 2 vols. 2ed. (The Hague: Martinus Nihjoff).
+                            </li>
+                            <li>
+                                Thompson, E. and F. Varela (1996), <em>Why the Mind is not in the Head</em> (Cambridge: Harvard University Press, forthcoming).
+                            </li>
+                            <li>
+                                Varela, F. (1979), <em>Principles of Biological Autonomy</em> (New York: North-Holland).
+                            </li>
+                            <li>
+                                Varela, F. (1995), 'Resonant cell assemblies: A new approach to cognitive functioning and neuronal synchrony', <em>Biol. Res.</em>, 28, pp. 81-95.
+                            </li>
+                            <li>
+                                Varela, F. (1996), "The specious present: A neurophenomenology of nowness', in Petitot et al. (1996).
+                            </li>
+                            <li>
+                                Varela, F. J., Thompson, E. and Rosch, E. (1991), <em>The Embodied Mind: Cognitive Science and Human Experience</em> (Cambridge, MA: The MIT Press).
+                            </li>
+                            <li>
+                                Velmans, M. (1996), <em>The Science of Consciousness</em> (London: Routledge).
+                            </li>
+                            <li>
+                                Vermersch, P. (1994), <em>L'Entretien d'Explicitation</em> (Paris: ESF Editeurs).
+                            </li>
+                        </ul>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+        <footer class="footer" id="contacto">
+            <h2>Contacto</h2>
+            <p>Este espacio es una cartografía personal y una invitación al diálogo.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+        </footer>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+            } else {
+                console.error("Three.js not loaded");
+            }
+            setupNavigation();
+            setupScrollAnimations();
+        });
+
+        let scene, camera, renderer, points, lines;
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+                renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("bg-canvas"), alpha: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                const pointCount = 200;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 400;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 400;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 400;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.5, transparent: true, opacity: 0.8 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+                regenerateLines();
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                renderer.domElement.addEventListener('click', onCanvasClick, false);
+                animate();
+            } catch (error) {
+                console.error('Error initializing Three.js:', error);
+            }
+        }
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points && lines) {
+                points.rotation.y += 0.0005;
+                lines.rotation.y += 0.0005;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+        function onCanvasClick(event) {
+            const mouse = new THREE.Vector2();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            const vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
+            vector.unproject(camera);
+            const dir = vector.sub(camera.position).normalize();
+            const distance = -camera.position.z / dir.z;
+            const pos = camera.position.clone().add(dir.multiplyScalar(distance));
+            addPoint(pos);
+        }
+        function addPoint(position) {
+            const oldPositions = points.geometry.attributes.position.array;
+            const newPointCount = oldPositions.length / 3 + 1;
+            const newPositions = new Float32Array(newPointCount * 3);
+            newPositions.set(oldPositions);
+            newPositions[oldPositions.length] = position.x;
+            newPositions[oldPositions.length + 1] = position.y;
+            newPositions[oldPositions.length + 2] = position.z;
+            points.geometry.setAttribute('position', new THREE.BufferAttribute(newPositions, 3));
+            points.geometry.attributes.position.needsUpdate = true;
+            regenerateLines();
+        }
+        function regenerateLines() {
+            if (lines) scene.remove(lines);
+            const pointPositions = points.geometry.attributes.position.array;
+            const pointCount = pointPositions.length / 3;
+            const linePositions = [];
+            for (let i = 0; i < pointCount; i++) {
+                for (let j = i + 1; j < pointCount; j++) {
+                    const dx = pointPositions[i * 3] - pointPositions[j * 3];
+                    const dy = pointPositions[i * 3 + 1] - pointPositions[j * 3 + 1];
+                    const dz = pointPositions[i * 3 + 2] - pointPositions[j * 3 + 2];
+                    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    if (dist < 50) {
+                        linePositions.push(pointPositions[i * 3], pointPositions[i * 3 + 1], pointPositions[i * 3 + 2]);
+                        linePositions.push(pointPositions[j * 3], pointPositions[j * 3 + 1], pointPositions[j * 3 + 2]);
+                    }
+                }
+            }
+            const lineGeo = new THREE.BufferGeometry();
+            lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+            const lineMaterial = new THREE.LineBasicMaterial({ color: 0x22d3ee, opacity: 0.3, transparent: true });
+            lines = new THREE.LineSegments(lineGeo, lineMaterial);
+            scene.add(lines);
+        }
+
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.body.classList.toggle('menu-open');
+            });
+            navMenu.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && window.innerWidth <= 1024) {
+                   document.body.classList.remove('menu-open');
+                }
+            });
+        }
+
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        const elementsToAnimate = entry.target.querySelectorAll('h2, .interactive-element, .card, p, ul');
+                        elementsToAnimate.forEach((el, index) => {
+                           el.style.transitionDelay = `${index * 150}ms`;
+                        });
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+
+        // Función para el acordeón interactivo
+        function toggleDetails(id) {
+            const parentElement = document.getElementById(id).parentElement;
+            const detailsElement = parentElement.querySelector('.details-content');
+            const icon = parentElement.querySelector('.plus-icon');
+            
+            const isVisible = detailsElement.classList.contains('visible');
+            
+            if (isVisible) {
+                detailsElement.classList.remove('visible');
+                parentElement.classList.remove('open');
+                icon.textContent = '+';
+            } else {
+                detailsElement.classList.add('visible');
+                parentElement.classList.add('open');
+                icon.textContent = '-';
+            }
+        }
+    </script>
+</body>
+</html>
