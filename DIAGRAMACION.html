@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorador de Herramientas de Diagramación | O.C.V.M.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        /* --- VARIABLES Y ESTILOS BASE O.C.V.M. --- */
+        :root {
+            --primary: #52528c; /* Darker Purple */
+            --primary-dark: #3b3b6f; /* Even darker for hover */
+            --secondary: #a3e635; /* Bright Lime Green */
+            --primary-text: #e2e8f0; /* Light Slate */
+            --primary-glow: #6366f1; /* Lighter Purple */
+            --secondary-glow: #a3e635; /* Lime Green */
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #0d0d1a;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.menu-open { overflow: hidden; }
+
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .hero {
+            min-height: 80vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            padding-top: calc(var(--nav-height) + 1.5rem);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2.5rem, 8vw, 5.5rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(99, 102, 241, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p.subtitle { font-size: clamp(1.2rem, 3vw, 1.8rem); color: var(--secondary-glow); text-shadow: 0 0 8px var(--secondary-glow); margin-top: 0.5rem; }
+        .hero p.description { font-size: clamp(1rem, 2.5vw, 1.2rem); max-width: 900px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .main-container {
+            width: 100%;
+            max-width: none;
+            margin: 0 auto;
+            padding: 1rem 2.5vw;
+            pointer-events: none;
+        }
+
+        main, .footer, .section, .hero-content {
+            pointer-events: auto;
+        }
+
+        main p, .footer p, main li, main blockquote {
+            user-select: text;
+            cursor: default;
+            text-align: justify;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(99, 102, 241, 0.2); }
+
+        .section h2, .section .tab-nav, .section .tab-content-container, .section .accordion-container {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible .tab-nav, .section.is-visible .tab-content-container, .section.is-visible .accordion-container {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        h3 { font-size: clamp(1.4rem, 4vw, 1.9rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
+        h4 { font-size: clamp(1.2rem, 3vw, 1.5rem); color: var(--secondary-glow); margin-bottom: 1rem; margin-top: 2rem; }
+
+        /* --- ESTILOS PARA TABS Y CONTENIDO --- */
+        .tab-nav {
+            display: flex;
+            flex-wrap: wrap;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+            margin-bottom: 2rem;
+            justify-content: center;
+        }
+        .tab-button {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: var(--primary-text);
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-bottom: -1px;
+        }
+        .tab-button:hover {
+            color: #fff;
+            background-color: rgba(99, 102, 241, 0.1);
+        }
+        .tab-button.active {
+            color: var(--primary-glow);
+            border-bottom-color: var(--primary-glow);
+            text-shadow: 0 0 8px var(--primary-glow);
+            font-weight: 600;
+        }
+        .tab-content {
+            display: none;
+            animation: fadeInContent 0.6s ease forwards;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .tab-content-container {
+            transition: all 0.6s ease;
+        }
+        @keyframes fadeInContent {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- ESTILOS PARA CARDS Y ACORDEÓN --- */
+        .tool-card {
+            background-color: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 8px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            will-change: transform;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .tool-card:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(99, 102, 241, 0.2); }
+
+        .section.is-visible .tool-card {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .card-link {
+            color: var(--primary-glow);
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+        }
+        .card-link:hover {
+            color: var(--secondary-glow);
+            text-shadow: 0 0 8px var(--secondary-glow);
+        }
+
+        .accordion-header {
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .accordion-header:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+            padding: 0 1.5rem;
+        }
+        .accordion-content p {
+            padding-top: 1rem;
+        }
+
+        /* --- ESTILOS PARA GRÁFICOS --- */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        .chart-container canvas {
+            background: rgba(17, 24, 39, 0.6);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        /* --- MEDIA QUERIES --- */
+        @media (min-width: 1025px) {
+            .menu-toggle { display: none; }
+            .nav-container { display: flex; }
+        }
+        @media (max-width: 1024px) {
+            .nav-content { justify-content: space-between; }
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+            body.menu-open .nav-container { transform: translateY(0); }
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1rem; width: 100%; font-size: 1.5em;}
+
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text);
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo para animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+    <!-- Barra de navegación principal -->
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#">
+                    <img src="https://placehold.co/40x40/52528c/e2e8f0?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>O.C.V.M.</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Contenido principal de la página -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Explorador de Herramientas de Diagramación</h1>
+                <p class="subtitle">La Guía Definitiva para la Decisión "Construir vs. Comprar"</p>
+                <p class="description">
+                    Navega a través de las opciones líderes en el mercado, desde plataformas listas para usar (SaaS) hasta potentes bibliotecas de JavaScript, y descubre análisis estratégicos para tomar la mejor decisión para tu proyecto.
+                </p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                <section id="main-tabs" class="section glassmorphism" data-animate>
+                    <div class="tab-nav">
+                        <button class="tab-button active" onclick="changeTab(event, 'tab-saas')">Herramientas SaaS</button>
+                        <button class="tab-button" onclick="changeTab(event, 'tab-libs')">Bibliotecas JS</button>
+                        <button class="tab-button" onclick="changeTab(event, 'tab-analysis')">Análisis y Tendencias</button>
+                    </div>
+
+                    <div class="tab-content-container">
+                        <!-- PESTAÑA 1: HERRAMIENTAS SAAS -->
+                        <div id="tab-saas" class="tab-content">
+                            <div class="text-center mb-10">
+                                <h2>Herramientas Online (SaaS)</h2>
+                                <p class="text-gray-400 max-w-2xl mx-auto">Soluciones completas y listas para usar, ideales para equipos que buscan agilidad, colaboración en tiempo real y soporte profesional.</p>
+                            </div>
+
+                            <div class="tab-nav mb-8" id="saas-filters">
+                                <button data-filter="all" class="tab-button active">Todas</button>
+                                <button data-filter="colaboracion" class="tab-button">Colaboración Visual</button>
+                                <button data-filter="empresa" class="tab-button">Empresarial y Técnico</button>
+                                <button data-filter="diseno" class="tab-button">Diseño Visual</button>
+                                <button data-filter="gratis" class="tab-button">Gratis / Freemium</button>
+                            </div>
+
+                            <div id="saas-tools-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+                            </div>
+
+                            <div class="glassmorphism p-6 rounded-2xl">
+                                <h3 class="text-center mb-4 text-white">Comparativa de Precios Iniciales (Planes de Pago)</h3>
+                                <div class="chart-container">
+                                    <canvas id="saasPriceChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PESTAÑA 2: BIBLIOTECAS JS -->
+                        <div id="tab-libs" class="tab-content">
+                            <div class="text-center mb-10">
+                                <h2>Bibliotecas de JavaScript</h2>
+                                <p class="text-gray-400 max-w-2xl mx-auto">Componentes para desarrolladores que necesitan construir funcionalidades de diagramación personalizadas e integrarlas en aplicaciones web.</p>
+                            </div>
+
+                            <div class="tab-nav mb-8" id="libs-filters">
+                                <button data-filter="all" class="tab-button active">Todas</button>
+                                <button data-filter="interactiva" class="tab-button">Interactiva</button>
+                                <button data-filter="datos" class="tab-button">Visualización de Datos</button>
+                                <button data-filter="codigo" class="tab-button">Diagrams-as-Code</button>
+                                <button data-filter="comercial" class="tab-button">Comercial</button>
+                                <button data-filter="opensource" class="tab-button">Open Source</button>
+                            </div>
+
+                            <div id="libs-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+                            </div>
+
+                            <div class="glassmorphism p-6 rounded-2xl">
+                                <h3 class="text-center mb-4 text-white">Distribución de Licencias</h3>
+                                <div class="chart-container h-80 max-h-[40vh]">
+                                    <canvas id="libsLicenseChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PESTAÑA 3: ANÁLISIS Y TENDENCIAS -->
+                        <div id="tab-analysis" class="tab-content">
+                            <div class="text-center mb-10">
+                                <h2>Análisis Estratégico y Tendencias del Mercado</h2>
+                                <p class="text-gray-400 max-w-2xl mx-auto">Factores clave que están definiendo el futuro de la comunicación visual en los negocios.</p>
+                            </div>
+                            <div id="accordion-container" class="max-w-4xl mx-auto space-y-4">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <footer class="footer" id="contacto">
+            <h2>Contacto</h2>
+            <p>Este explorador es una cartografía de las tecnologías y tendencias actuales.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Datos del contenido
+            const saasTools = [
+                { name: 'Lucidchart', category: ['empresa', 'gratis'], price: 7.95, description: 'Un estándar de la industria, plataforma inteligente y versátil para diagramación y visualización de datos.', features: 'Vinculación de datos, integraciones profundas, IA.', link: 'https://www.lucidchart.com/pages/es' },
+                { name: 'Miro', category: ['colaboracion', 'gratis'], price: 8.00, description: 'Plataforma de pizarra visual y colaboración infinita para equipos y talleres remotos.', features: 'Lienzo infinito, Miro AI, herramientas de taller.', link: 'https://miro.com/es/' },
+                { name: 'draw.io', category: ['empresa', 'gratis'], price: 0, description: 'Herramienta de código abierto y completamente gratuita, potente alternativa a aplicaciones de pago.', features: 'Integración con Google Drive/OneDrive, sin registro, funciona offline.', link: 'https://www.diagrams.net/' },
+                { name: 'Creately', category: ['empresa', 'gratis'], price: 4.00, description: 'Herramienta de diagramación impulsada por IA con funciones inteligentes de automatización y bases de datos visuales.', features: 'Asistente de IA, sincronización bidireccional de datos.', link: 'https://www.creately.com/' },
+                { name: 'Microsoft Visio', category: ['empresa'], price: 5.00, description: 'Editor de gráficos vectoriales con integración profunda en el ecosistema de Microsoft 365.', features: 'Integración profunda con Teams, Excel y Power Automate.', link: 'https://www.microsoft.com/es-es/microsoft-365/visio/flowchart-software' },
+                { name: 'Whimsical', category: ['colaboracion', 'gratis'], price: 10.00, description: 'Espacio de trabajo integrado para diagramas, documentos y proyectos, diseñado para la velocidad y simplicidad.', features: 'Interfaz intuitiva, IA, unifica documentos y pizarras.', link: 'https://whimsical.com/' },
+                { name: 'Canva', category: ['diseno', 'gratis'], price: 12.99, description: 'Creador de diagramas con enfoque en el diseño y la estética, para presentaciones y contenido visual.', features: 'Amplia biblioteca de plantillas, facilidad de uso, diseño gráfico.', link: 'https://www.canva.com/es_419/crear/diagrama-de-flujo/' },
+                { name: 'Mural', category: ['colaboracion', 'gratis'], price: 9.99, description: 'Espacio de trabajo digital para la colaboración visual, ideal para equipos que buscan alinear ideas y planificar proyectos.', features: 'Pizarra interactiva, plantillas específicas para talleres, IA.', link: 'https://www.mural.co/' },
+                { name: 'SmartDraw', category: ['empresa'], price: 9.95, description: 'Herramienta de diagramación poderosa con automatización y una amplia biblioteca de plantillas.', features: 'Funciones de diseño automatizadas, más de 70 tipos de diagramas.', link: 'https://www.smartdraw.com/' },
+                { name: 'FigJam', category: ['colaboracion', 'gratis'], price: 3.00, description: 'La herramienta de pizarra de Figma, diseñada para la colaboración y la ideación.', features: 'Integración con el ecosistema de Figma, herramientas de diseño.', link: 'https://www.figma.com/figjam/' }
+            ];
+
+            const jsLibs = [
+                { name: 'GoJS', category: ['interactiva', 'comercial'], description: 'Framework profesional y de alta gama para construir diagramas interactivos en la web.', license: 'Comercial', features: 'Diseños automáticos, enlace de datos bidireccional, sin cuotas de tiempo de ejecución ni regalías.', link: 'https://gojs.net/latest/' },
+                { name: 'JointJS / JointJS+', category: ['interactiva', 'opensource', 'comercial'], description: 'Biblioteca de diagramación de código abierto (JointJS) con una extensión comercial potente (JointJS+).', license: 'Dual', features: 'Gráficos vectoriales, más de 40 características de UI, soporte dedicado.', link: 'https://www.jointjs.com/' },
+                { name: 'mxGraph', category: ['interactiva', 'opensource'], description: 'Biblioteca veterana de código abierto, es el motor de draw.io.', license: 'Open Source', features: 'Rendering en SVG y HTML, no requiere plugins, compatible con cualquier framework.', link: 'https://github.com/jgraph/mxgraph' },
+                { name: 'yFiles', category: ['interactiva', 'comercial'], description: 'Biblioteca de software de gráficos profesional, con licencias perpetuas y algoritmos de diseño automático.', license: 'Comercial', features: 'Licencia perpetua, sin dependencias, algoritmos de diseño automático.', link: 'https://www.yworks.com/' },
+                { name: 'Mermaid.js', category: ['codigo', 'opensource'], description: 'Genera diagramas y gráficos a partir de definiciones de texto simple tipo Markdown.', license: 'Open Source', features: 'Basada en texto, sintaxis simple, amplio ecosistema de integraciones.', link: 'https://mermaid.js.org/' },
+                { name: 'PlantUML', category: ['codigo', 'opensource'], description: 'Genera una amplia variedad de diagramas UML y no-UML a partir de descripciones de texto plano.', license: 'Open Source', features: 'Soporte para diagramas formales, integrable en flujos de trabajo.', link: 'https://plantuml.com/' },
+                { name: 'D2', category: ['codigo', 'opensource'], description: 'Lenguaje de diagramación de nueva generación basado en texto.', license: 'Open Source', features: 'Sintaxis simple, modo "sketch", animaciones.', link: 'https://d2lang.com/' },
+                { name: 'D3.js', category: ['datos', 'opensource'], description: 'Potente biblioteca para crear visualizaciones de datos personalizadas y complejas.', license: 'Open Source', features: 'Alto rendimiento, control total sobre el resultado, curva de aprendizaje alta.', link: 'https://d3js.org/' },
+                { name: 'Chart.js', category: ['datos', 'opensource'], description: 'Biblioteca ligera y flexible para añadir gráficos y diagramas atractivos de forma rápida.', license: 'Open Source', features: 'Fácil de usar, documentación sólida, 8 tipos de gráficos.', link: 'https://www.chartjs.org/' },
+                { name: 'Svelvet', category: ['interactiva', 'opensource'], description: 'Biblioteca de componentes de Svelte para crear interfaces de usuario interactivas basadas en nodos.', license: 'Open Source', features: 'Ligera, personalizable, para el ecosistema Svelte.', link: 'https://svelvet.mintlify.app/' }
+            ];
+            
+            const analysisContent = [
+                { title: 'Resumen Ejecutivo', content: 'Este informe presenta un análisis comparativo y exhaustivo del ecosistema de la diagramación digital, segmentando el mercado en dos grandes vertientes: las herramientas de software como servicio (SaaS) destinadas a usuarios finales y equipos de negocio, y las bibliotecas de JavaScript, componentes técnicos para desarrolladores que buscan construir soluciones personalizadas. El objetivo es proporcionar una base sólida para la toma de decisiones estratégicas, evaluando las ventajas y desventajas de adquirir una solución "llave en mano" frente a la opción de desarrollar una a medida.' },
+                { title: 'El Papel de la Inteligencia Artificial', content: 'La IA está pasando de ser un asistente a un motor de automatización. Herramientas como Creately y Miro ya utilizan IA para organizar diagramas, generar ideas y automatizar tareas. El futuro de la diagramación reside en eliminar el trabajo manual, permitiendo a los usuarios centrarse en la lógica y la estrategia en lugar de en el diseño.' },
+                { title: 'Coste Total de Propiedad (TCO): Licenciamiento vs. Desarrollo', content: 'La decisión de "construir vs. comprar" es un cálculo del TCO. Las herramientas SaaS tienen un coste de suscripción recurrente por usuario, pero construir una solución a medida implica costes de licencia de bibliotecas (ej. GoJS), salarios de desarrolladores, mantenimiento a largo plazo y tiempo de aprendizaje. Para muchas empresas, el coste y la complejidad de construir superan el de una suscripción.' },
+                { title: 'El Valor de la Integración con el Ecosistema', content: 'La ventaja competitiva de una herramienta moderna es su capacidad de integrarse en los flujos de trabajo existentes. La funcionalidad es irrelevante si no se conecta con las plataformas de gestión de proyectos (Jira), comunicación (Slack, Teams) y documentación (Confluence, Google Drive). Lucidchart y Visio destacan por sus profundas integraciones en ecosistemas corporativos.' },
+                { title: 'Diagramación como Código (Diagrams-as-Code)', content: 'Esta es una tendencia clave para los desarrolladores. Permite crear diagramas a partir de texto plano (ej. Mermaid.js, D2), lo que facilita el control de versiones con Git y la integración en flujos de trabajo de CI/CD. Resuelve el problema de versionar archivos visuales, alineándose con las prácticas de ingeniería de software modernas.' },
+                { title: 'Guía de Decisión Rápida: ¿SaaS o Biblioteca?', content: 'Opte por una solución SaaS si necesita una solución lista para usar de manera inmediata, si la colaboración en tiempo real y la funcionalidad de pizarra digital son cruciales, si el equipo no es técnico o si valora el soporte profesional. Opte por una biblioteca de JavaScript si su objetivo es integrar la funcionalidad de diagramación directamente en su producto, si necesita un control total sobre la lógica, o si el coste recurrente por usuario es una barrera para la escalabilidad.' }
+            ];
+
+            // Elementos DOM
+            const saasGrid = document.getElementById('saas-tools-grid');
+            const libsGrid = document.getElementById('libs-grid');
+            const accordionContainer = document.getElementById('accordion-container');
+            const tabButtons = document.querySelectorAll('.tab-nav button');
+            const tabContents = document.getElementsByClassName('tab-content');
+
+
+            // Funciones para renderizar el contenido
+            function createToolCard(tool) {
+                return `
+                    <div class="tool-card glassmorphism flex flex-col" data-category="${tool.category.join(' ')}">
+                        <h3 class="text-xl font-bold text-white mb-2">${tool.name}</h3>
+                        <p class="text-gray-400 text-sm mb-4 flex-grow">${tool.description}</p>
+                        <p class="text-sm mb-4"><strong class="font-semibold text-gray-200">Características:</strong> ${tool.features}</p>
+                        <div class="mt-auto pt-4 border-t border-gray-700">
+                             <a href="${tool.link}" target="_blank" rel="noopener noreferrer" class="card-link">Visitar Sitio
+                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+                             </a>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function createLibCard(lib) {
+                const licenseColor = lib.license.toLowerCase().includes('comercial') ? 'bg-purple-900 text-purple-300' : 'bg-green-900 text-green-300';
+                return `
+                    <div class="tool-card glassmorphism flex flex-col" data-category="${lib.category.join(' ')}">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-xl font-bold text-white">${lib.name}</h3>
+                            <span class="text-xs font-semibold px-2 py-1 rounded-full ${licenseColor}">${lib.license}</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4 flex-grow">${lib.description}</p>
+                        <p class="text-sm mb-4"><strong class="font-semibold text-gray-200">Características:</strong> ${lib.features}</p>
+                        <div class="mt-auto pt-4 border-t border-gray-700">
+                           <a href="${lib.link}" target="_blank" rel="noopener noreferrer" class="card-link">Ver Documentación
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+                           </a>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function createAccordionItem(item, index) {
+                return `
+                    <div class="glassmorphism rounded-xl shadow-sm">
+                        <div class="accordion-header p-5 flex justify-between items-center">
+                            <h4 class="text-lg font-semibold text-white">${item.title}</h4>
+                            <span class="transform transition-transform duration-300">
+                                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </span>
+                        </div>
+                        <div class="accordion-content">
+                            <p class="p-5 pt-0 text-gray-400">${item.content}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Generar y renderizar contenido
+            saasTools.forEach(tool => saasGrid.innerHTML += createToolCard(tool));
+            jsLibs.forEach(lib => libsGrid.innerHTML += createLibCard(lib));
+            analysisContent.forEach((item, index) => accordionContainer.innerHTML += createAccordionItem(item, index));
+
+            // Lógica de navegación principal por pestañas
+            function changeTab(event, tabID) {
+                for (let i = 0; i < tabContents.length; i++) {
+                    tabContents[i].classList.remove('active');
+                }
+                for (let i = 0; i < tabButtons.length; i++) {
+                    tabButtons[i].classList.remove('active');
+                }
+                document.getElementById(tabID).classList.add('active');
+                event.currentTarget.classList.add('active');
+            }
+
+            // Lógica de filtrado de tarjetas
+            function setupFilters(filterContainerId, gridId) {
+                const filterContainer = document.getElementById(filterContainerId);
+                const grid = document.getElementById(gridId);
+                const cards = grid.children;
+
+                filterContainer.addEventListener('click', e => {
+                    if (e.target.tagName === 'BUTTON') {
+                        const filter = e.target.dataset.filter;
+
+                        filterContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                        e.target.classList.add('active');
+
+                        for (let card of cards) {
+                            if (filter === 'all' || card.dataset.category.includes(filter)) {
+                                card.classList.remove('hidden');
+                            } else {
+                                card.classList.add('hidden');
+                            }
+                        }
+                    }
+                });
+            }
+
+            setupFilters('saas-filters', 'saas-tools-grid');
+            setupFilters('libs-filters', 'libs-grid');
+
+            // Lógica del acordeón
+            document.querySelectorAll('.accordion-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const content = header.nextElementSibling;
+                    const icon = header.querySelector('span');
+
+                    const isActive = content.style.maxHeight;
+
+                    // Cerrar todos los acordeones si ya estaban abiertos
+                    document.querySelectorAll('.accordion-content').forEach(c => c.style.maxHeight = null);
+                    document.querySelectorAll('.accordion-header span').forEach(i => i.style.transform = 'rotate(0deg)');
+
+                    if (!isActive) {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                        icon.style.transform = 'rotate(180deg)';
+                    }
+                });
+            });
+
+            // Lógica de los gráficos
+            const paidSaasTools = saasTools.filter(t => t.price > 0).sort((a, b) => a.price - b.price);
+            const saasPriceCtx = document.getElementById('saasPriceChart').getContext('2d');
+            new Chart(saasPriceCtx, {
+                type: 'bar',
+                data: {
+                    labels: paidSaasTools.map(t => t.name),
+                    datasets: [{
+                        label: 'Precio inicial por mes (USD)',
+                        data: paidSaasTools.map(t => t.price),
+                        backgroundColor: '#6366f1', // Nuevo color para las barras
+                        borderColor: '#6366f1',
+                        borderWidth: 1,
+                        borderRadius: 5,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                            titleColor: 'white',
+                            bodyColor: 'var(--primary-text)',
+                            callbacks: {
+                                label: function(context) {
+                                    return ` $${context.raw.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255,255,255,0.3)' }, // Color de cuadrícula más claro
+                            ticks: { color: 'white' }, // Color de texto de los ticks más claro
+                            title: { display: true, text: 'Precio (USD)', color: 'var(--primary-glow)' }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.3)' }, // Color de cuadrícula más claro
+                            ticks: { color: 'white' } // Color de texto de los ticks más claro
+                        }
+                    }
+                }
+            });
+
+            const licenseCounts = jsLibs.reduce((acc, lib) => {
+                if (lib.license.toLowerCase().includes('comercial')) acc.comercial++;
+                if (lib.license.toLowerCase().includes('open source')) acc.opensource++;
+                return acc;
+            }, { comercial: 0, opensource: 0 });
+
+            const libsLicenseCtx = document.getElementById('libsLicenseChart').getContext('2d');
+            new Chart(libsLicenseCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Open Source', 'Comercial'],
+                    datasets: [{
+                        data: [licenseCounts.opensource, licenseCounts.comercial],
+                        backgroundColor: ['#a3e635', '#6366f1'], // Nuevos colores para el gráfico de dona
+                        borderColor: ['#a3e635', '#6366f1'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: 'white' // Color de texto de la leyenda más claro
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                            titleColor: 'white',
+                            bodyColor: 'var(--primary-text)'
+                        },
+                        title: { display: false }
+                    }
+                }
+            });
+
+            let scene, camera, renderer, points, lines;
+            function initThreeJS() {
+                try {
+                    const canvas = document.getElementById("bg-canvas");
+                    if (!canvas) {
+                        console.error("Canvas element not found!");
+                        return;
+                    }
+                    scene = new THREE.Scene();
+                    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                    camera.position.z = 50;
+                    renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    const pointCount = 200;
+                    const positions = new Float32Array(pointCount * 3);
+                    const pointGeo = new THREE.BufferGeometry();
+                    for (let i = 0; i < pointCount; i++) {
+                        positions[i * 3] = (Math.random() - 0.5) * 400;
+                        positions[i * 3 + 1] = (Math.random() - 0.5) * 400;
+                        positions[i * 3 + 2] = (Math.random() - 0.5) * 400;
+                    }
+                    pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                    const pointMaterial = new THREE.PointsMaterial({ color: 0x6366f1, size: 1.5, transparent: true, opacity: 0.8 });
+                    points = new THREE.Points(pointGeo, pointMaterial);
+                    scene.add(points);
+                    regenerateLines();
+                    window.addEventListener("resize", onWindowResize, false);
+                    document.addEventListener('mousemove', onMouseMove, false);
+                    renderer.domElement.addEventListener('click', onCanvasClick, false);
+                    animate();
+                } catch (error) {
+                    console.error('Error al inicializar Three.js:', error);
+                }
+            }
+
+            function onWindowResize() {
+                if(camera && renderer) {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                }
+            }
+
+            let mouseX = 0, mouseY = 0;
+            function onMouseMove(event) {
+                mouseX = (event.clientX - window.innerWidth / 2) / 100;
+                mouseY = (event.clientY - window.innerHeight / 2) / 100;
+            }
+
+            function animate() {
+                requestAnimationFrame(animate);
+                if(scene && camera && renderer && points && lines) {
+                    points.rotation.y += 0.0005;
+                    lines.rotation.y += 0.0005;
+                    camera.position.x += (mouseX - camera.position.x) * 0.05;
+                    camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                    camera.lookAt(scene.position);
+                    renderer.render(scene, camera);
+                }
+            }
+
+            function onCanvasClick(event) {
+                const mouse = new THREE.Vector2();
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                const vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
+                vector.unproject(camera);
+                const dir = vector.sub(camera.position).normalize();
+                const distance = -camera.position.z / dir.z;
+                const pos = camera.position.clone().add(dir.multiplyScalar(distance));
+                addPoint(pos);
+            }
+
+            function addPoint(position) {
+                const oldPositions = points.geometry.attributes.position.array;
+                const newPointCount = oldPositions.length / 3 + 1;
+                const newPositions = new Float32Array(newPointCount * 3);
+                newPositions.set(oldPositions);
+                newPositions[oldPositions.length] = position.x;
+                newPositions[oldPositions.length + 1] = position.y;
+                newPositions[oldPositions.length + 2] = position.z;
+                points.geometry.setAttribute('position', new THREE.BufferAttribute(newPositions, 3));
+                points.geometry.attributes.position.needsUpdate = true;
+                regenerateLines();
+            }
+
+            function regenerateLines() {
+                if (lines) scene.remove(lines);
+                const pointPositions = points.geometry.attributes.position.array;
+                const pointCount = pointPositions.length / 3;
+                const linePositions = [];
+                for (let i = 0; i < pointCount; i++) {
+                    for (let j = i + 1; j < pointCount; j++) {
+                        const dx = pointPositions[i * 3] - pointPositions[j * 3];
+                        const dy = pointPositions[i * 3 + 1] - pointPositions[j * 3 + 1];
+                        const dz = pointPositions[i * 3 + 2] - pointPositions[j * 3 + 2];
+                        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                        if (dist < 50) {
+                            linePositions.push(pointPositions[i * 3], pointPositions[i * 3 + 1], pointPositions[i * 3 + 2]);
+                            linePositions.push(pointPositions[j * 3], pointPositions[j * 3 + 1], pointPositions[j * 3 + 2]);
+                        }
+                    }
+                }
+                const lineGeo = new THREE.BufferGeometry();
+                lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+                const lineMaterial = new THREE.LineBasicMaterial({ color: 0xa3e635, opacity: 0.3, transparent: true });
+                lines = new THREE.LineSegments(lineGeo, lineMaterial);
+                scene.add(lines);
+            }
+
+            function setupScrollAnimations() {
+                const animatedSections = document.querySelectorAll('[data-animate]');
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('is-visible');
+                            const elementsToAnimate = entry.target.querySelectorAll('h2, .tab-nav, .tab-content-container, .tool-card, .accordion-header');
+                            elementsToAnimate.forEach((el, index) => {
+                                el.style.transitionDelay = `${index * 150}ms`;
+                            });
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.1 });
+                animatedSections.forEach(section => observer.observe(section));
+            }
+
+            // Exponemos la función globalmente para los botones
+            window.changeTab = changeTab;
+
+            // Inicialización al cargar el documento
+            window.onload = function() {
+                initThreeJS();
+                setupScrollAnimations();
+                // Asegurar que la primera pestaña y su botón estén activos al cargar
+                document.getElementById('tab-saas').classList.add('active');
+                document.querySelector('.tab-nav button[onclick*="tab-saas"]').classList.add('active');
+            };
+        });
+    </script>
+</body>
+</html>
