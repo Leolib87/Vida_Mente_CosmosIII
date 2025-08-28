@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognición 4E y la Brecha Intención-Acción | O.C.V.M.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;    /* Rosa para nombres de personas */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+            text-align: justify; /* Justificado para todo el texto */
+        }
+
+        p {
+            text-align: justify;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.menu-open {
+            overflow: hidden;
+        }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+
+        .hero {
+            min-height: 60vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 7vw, 4.5rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .main-container { 
+            width: 100%;
+            max-width: 1400px; /* Aumentado para usar más espacio horizontal */
+            margin: 0 auto; 
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content {
+            pointer-events: auto;
+        }
+
+        main p, .footer p {
+            user-select: text;
+            cursor: default;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        .section h2, .section h3, .section p, .mermaid {
+             opacity: 0;
+             transform: translateY(20px);
+             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .mermaid {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
+        
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .concept2 { color: var(--concept-color-2); font-weight: 500; }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        .mermaid {
+            margin: 2rem auto;
+            display: block;
+            width: 100%;
+            max-width: 1200px; /* Aumentado para agrandar los diagramas */
+        }
+        
+        @media (max-width: 768px) {
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+            body.menu-open .nav-container {
+                transform: translateY(0);
+            }
+
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>O.C.V.M.</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#inicio">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                    Inicio</a></li>
+                <li><a href="#resumen">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                    Paper</a></li>
+                <li><a href="#referencias">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                    Referencias</a></li>
+                <li><a href="#contacto">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
+                    Contacto</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Cognición 4E y la Brecha Intención-Acción</h1>
+                <p>Recursos Conceptuales para el Cambio de Comportamiento. Un análisis por <span class="person">Mark M. James</span> & <span class="person">Tom Froese</span>.</p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                
+                <section id="resumen" class="glassmorphism section" data-animate>
+                    <h2>Resumen del Paper</h2>
+                    <p>La desconexión entre <span class="concept1">intenciones y acciones</span> sigue siendo un desafío central para comprender el comportamiento humano y facilitar un cambio significativo. Si bien la ciencia cognitiva corporeizada enfatiza la interacción agente-entorno, sus contribuciones a este problema han sido limitadas hasta ahora. En este paper, argumentamos que los enfoques corporeizados ofrecen valiosos recursos conceptuales para abordar el cambio de comportamiento intencional, particularmente cuando los <span class="concept1">hábitos</span>, las <span class="concept1">identidades</span> y las <span class="concept1">narrativas</span> se entienden como formas organizacionales dinámicas y a <span class="concept2">multiescala</span>, y el cambio mismo como un proceso de realineación multiescala. Basándonos en el marco 4E, donde el comportamiento y la cognición se entienden como <span class="concept1">corporeizados</span>, <span class="concept1">enactivos</span>, <span class="concept1">integrados</span> y <span class="concept1">extendidos</span>, exploramos cómo cada dimensión profundiza nuestra comprensión de la brecha intención-acción e informa las intervenciones para el cambio de comportamiento. Al hacerlo, buscamos ampliar los fundamentos conceptuales de los modelos de intervención actuales y sentar las bases para enfoques más integradores y multiescala para el cambio de comportamiento.</p>
+                    <p class="mt-4 text-sm italic">Este es un borrador del artículo. Ha sido revisado por pares, pero no ha pasado por la edición final y la composición tipográfica del editor.</p>
+                </section>
+
+                <section id="intro" class="glassmorphism section" data-animate>
+                    <h2>Introducción: La Mente como un Artista</h2>
+                    <p>El gran pintor irlandés <span class="person">Francis Bacon</span> se describió a sí mismo, "no tanto como un pintor sino como un medio para el accidente y el azar". En la conversación de la que deriva esta cita, <span class="person">Bacon</span> también habla de la "completa interconexión de imagen y pintura" en la que estaba "aprovechando lo que sucede cuando salpicas los trozos". <span class="person">Bacon</span> hablaba de "recibir" sus imágenes, pero le eran "entregadas" para que las pintara como parte del proceso, no antes de él. Quizás, entonces, una lectura sobria de la autointerpretación de <span class="person">Bacon</span> tiene algo que ver con su sentido de la naturaleza participativa y dinámica de la pintura. La idea de que la realización de una intención artística es tanto un proceso de descubrimiento y redirección como de mera implementación.</p>
+                    <p>Cualquiera que se esfuerce por abordar la brecha entre sus intenciones sobre cómo le gustaría ser en el mundo y sus acciones que promulgan esas formas de ser, se encuentra en una situación no muy diferente a la del artista en su trabajo. Tendemos, en otras palabras, a pasar por alto el hecho de que hacer cambios que alineen más nuestras acciones con nuestras intenciones es en sí mismo una forma de <span class="concept1">intencionalidad hábil</span>.</p>
+                </section>
+
+                <section class="glassmorphism section" data-animate>
+                    <h2>1. Atendiendo las brechas en la brecha</h2>
+                    <p>El deseo de moldear nuestros hábitos de acuerdo con las intenciones personales tiene profundas raíces en las tradiciones filosóficas. Sin embargo, nuestra autoimagen modernista, que a menudo nos presenta como agentes racionales, asume que las intenciones deberían traducirse sin problemas en acciones. Cuando no lo hacen, somos rápidos para interpretar el fracaso como un defecto personal, lo que da lugar a la <span class="concept1">brecha intención-acción</span>.</p>
+                    
+                    <h3>1.1 Enfoques Nomotéticos</h3>
+                    <p>Muchos modelos existentes adoptan un enfoque ampliamente <span class="concept2">nomotético</span> para el cambio de comportamiento, uno que enfatiza la generalización y busca identificar leyes universales o regularidades estadísticas en las poblaciones. Esto se basa en la suposición de <span class="concept2">ergodicidad</span>: que las tendencias a nivel de población reflejan la dinámica de cualquier individuo a lo largo del tiempo. Sin embargo, esto está en desacuerdo con la naturaleza no ergódica del comportamiento humano.</p>
+                    <p>En contraste, un enfoque <span class="concept2">idiográfico</span> se esfuerza por comprender las características únicas y complejas de los casos individuales en sus contextos específicos, permitiendo la personalización de las intervenciones y respetando la autonomía del usuario.</p>
+
+                    <h3>1.2 Limitaciones de los Modelos Lineales</h3>
+                    <p>Una limitación significativa de muchos marcos de cambio de comportamiento existentes radica en su dependencia de <span class="concept2">modelos lineales</span>. Un modelo lineal asume una relación de causa y efecto directa, lo cual es insuficiente para la complejidad del comportamiento humano. El comportamiento humano no es el resultado de entradas simples, sino que emerge de una interacción continua y recursiva entre el individuo y su entorno.</p>
+                    <div class="mermaid-container">
+                        <div class="mermaid">
+                            graph TD
+                            A[Modelos Lineales] --> B{Asume}
+                            B --> C[Relación Causa-Efecto Lineal]
+                            B --> D[Entradas Simples]
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style C fill:#34d399,stroke:#333,stroke-width:2px;
+                            style D fill:#34d399,stroke:#333,stroke-width:2px;
+                        </div>
+                    </div>
+
+                    <h3>1.3 Limitaciones del Cambio a Mono-escala</h3>
+                    <p>Muchos marcos convencionales no tienen en cuenta la naturaleza <span class="concept2">multiescala</span> del comportamiento humano. Ignoran los bucles de retroalimentación bidireccionales a través de los cuales los comportamientos moldean y son moldeados por sistemas más amplios. El comportamiento no ocurre de forma aislada, sino que está incrustado en niveles anidados: biológicos, psicológicos y sociales. Nuestras acciones son mediadores de múltiples escalas, amplificando o amortiguando procesos en sistemas más amplios.</p>
+                    <div class="mermaid-container">
+                        <div class="mermaid">
+                            graph LR
+                            A[Comportamiento Individual] <-->|Bucle de retroalimentación bidireccional| B[Contexto Social]
+                            B <-->|Dinámica recíproca| C[Entorno Material y Tecnológico]
+                            A -- Moldea y es Moldeado por --> C
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style B fill:#34d399,stroke:#333,stroke-width:2px;
+                            style C fill:#34d399,stroke:#333,stroke-width:2px;
+                        </div>
+                    </div>
+                </section>
+
+                <section id="habitos-identidades" class="glassmorphism section" data-animate>
+                    <h2>2. Hábitos, Identidades y Narrativas: El Enfoque Organicista</h2>
+                    <p>En contraste con los modelos asociacionistas, nos basamos en una visión <span class="concept1">organicista</span> alternativa de los <span class="concept1">hábitos</span>. El enfoque organicista ve los hábitos como la base para la improvisación hábil dentro de tipos recurrentes de situaciones. Esta visión se remonta a la concepción de <span class="person">Aristóteles</span> de <span class="concept2">hexis</span> en la Ética a Nicómaco, donde los hábitos son estructuras disposicionales formadas a través de la repetición. Desde esta perspectiva, los hábitos que se vuelven rígidamente automáticos se entienden mejor como desordenados.</p>
+                    <p>Los hábitos son entidades auto-organizadas que exhiben una <span class="concept2">autoproducción circular</span>. La acción de promulgar un hábito refuerza las interdependencias neuronales, corporales y ambientales que lo sostienen, creando un bucle cerrado similar a los procesos autopoéticos vistos en los sistemas vivos. Los hábitos no son herramientas funcionales, sino que actúan como marcos de sentido, proporcionando un fondo a través del cual se genera significado y se organizan las acciones.</p>
+                    <p>Estos hábitos se organizan en redes y se expanden en <span class="concept1">identidades</span> más amplias que se manifiestan en escalas de tiempo más largas o contextos más generalizados. A su vez, estas dinámicas se entrelazan con nuestras capacidades lingüísticas para formar <span class="concept1">narrativas</span>, las historias que nos contamos a nosotros mismos. Al igual que los hábitos, las narrativas son autoproductoras y moldean cómo recordamos nuestras experiencias, reforzando así las narrativas mismas.</p>
+                </section>
+
+                <section id="4e-cambio" class="glassmorphism section" data-animate>
+                    <h2>3. Las 4E y el Cambio: Un Marco Integral</h2>
+                    <p>La ciencia cognitiva 4E —<span class="concept1">corporeizada</span>, <span class="concept1">enactiva</span>, <span class="concept1">integrada</span> y <span class="concept1">extendida</span>— ofrece un marco sólido para entender el cambio de comportamiento. A continuación, exploraremos cómo cada una de estas "E" profundiza nuestra comprensión de la brecha intención-acción y las estrategias para abordarla.</p>
+
+                    <div class="mermaid-container">
+                        <div class="mermaid">
+                            graph LR
+                            subgraph "4E Cognition"
+                                A[Embodied] --> B[Enacted]
+                                B --> C[Embedded]
+                                C --> D[Extended]
+                                A -.-> C
+                                B -.-> D
+                                C -.-> A
+                                D -.-> B
+                            end
+                            style A fill:#f472b6,stroke:#333,stroke-width:2px;
+                            style B fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style C fill:#34d399,stroke:#333,stroke-width:2px;
+                            style D fill:#818cf8,stroke:#333,stroke-width:2px;
+                        </div>
+                    </div>
+
+                    <h3 id="embodied">3.1 Corporeizada (Embodied)</h3>
+                    <p>La cognición y el comportamiento se entienden como inherentemente <span class="concept1">corporeizados</span>. El cuerpo actúa como una <span class="concept2">tabla de resonancia</span>, donde los eventos e influencias se propagan a través de sus sistemas, afectando tanto las posibilidades de comportamiento como la capacidad de cambio.</p>
+                    <p><strong>Implicaciones para el Cambio:</strong></p>
+                    <p>• El cuerpo como tabla de resonancia: El comportamiento no es una función aislada, sino que está íntimamente ligada a nuestros estados de ánimo, emociones, lenguaje, fisiología y ecologías bacterianas. La modulación de los procesos corporales puede tener efectos de "desborde" en nuestra capacidad para dar forma a nuestros hábitos.
+                    
+                    </p>
+                    <p>• Choques generativos: Las perturbaciones pueden desestabilizar patrones arraigados y crear oportunidades para que surjan nuevos comportamientos. Estos pueden ser externos, como participar en un nuevo deporte, o endógenos, como suspiros o bostezos.</p>
+                    <p>• Demandas regulatorias desalineadas: Nuestros subsistemas biológicos, psicológicos y sociales no siempre están alineados. El cambio de hábitos a menudo implica negociar estas demandas competitivas, buscando la emergencia de nuevos patrones que las armonicen.</p>
+
+                    <h3 id="enacted">3.2 Enactiva (Enacted)</h3>
+                    <p>La mente es <span class="concept1">enactiva</span>, lo que significa que el significado emerge a través de la interacción activa entre el cuerpo y el entorno. No percibimos un mundo preestablecido, sino que participamos en la creación del mundo que experimentamos. La frase <span class="concept2">"trazar un camino al andar"</span> ilustra cómo el sujeto corporeizado está activamente comprometido en un proceso de devenir.</p>
+                    <p><strong>Implicaciones para el Cambio:</strong></p>
+                    <p>• El significado importa: Los hábitos no son reacciones automáticas, sino disposiciones hacia ciertos tipos de relaciones significativas con el mundo. En lugar de preguntar cómo anular un hábito, debemos preguntar qué significado tiene y qué estructura de significado más grande está sirviendo. Cambiar un hábito a menudo implica cambiar su significado.</p>
+                    <p>• Reconceptualización de las señales y recompensas: El enfoque enactivo destaca que las señales y las recompensas solo funcionan si nos importan; su relevancia está moldeada por nuestra intencionalidad corporeizada. El objetivo no es solo dirigir a un agente, sino crear <span class="concept2">andamios (scaffolds)</span> que apoyen la autonomía del agente.</p>
+                    <p>• Oportunidades de cambio ubicuas: El cambio no se limita a grandes eventos. Está presente en todas nuestras memorias, acciones, percepciones y emociones. Cada actividad de creación de sentido deja rastros que dan forma a futuras posibilidades. Esto nos permite vernos como cultivadores de cooperación.</p>
+                
+                    <h3 id="embedded">3.3 Integrada (Embedded)</h3>
+                    <p>La cognición <span class="concept1">integrada</span> postula que la cognición es fundamentalmente moldeada por el entorno en el que ocurre. Las ideas de <span class="concept2">affordances</span> (oportunidades para la acción), <span class="concept2">andamios (scaffolds)</span> (estructuras de apoyo del entorno) y <span class="concept2">agarre óptimo (optimal grip)</span> (la tendencia a buscar una consonancia situacional) son centrales en esta comprensión.</p>
+                    <p><strong>Implicaciones para el Cambio:</strong></p>
+                    <p>• Los andamios como cimientos del cambio: Los hábitos no son solo patrones internos; dependen de andamios externos. El cambio de hábitos eficaz implica configurar estos andamios intencionalmente. Con el tiempo, los andamios externos pueden internalizarse como procesos corporales, haciendo que los comportamientos sean más flexibles y portátiles.</p>
+                    <p>• Los andamios no son muletas: Reconocer el papel de los andamios puede reducir la vergüenza asociada con depender de "muletas". La dependencia de andamios es un signo de inteligencia adaptativa, no de debilidad. Nos anima a colaborar con nuestro entorno en lugar de esforzarnos de forma aislada.</p>
+                    <p>• Círculos de cuidado en expansión: Al vernos a nosotros mismos como integrados en paisajes de affordances, podemos extender nuestro cuidado más allá de nuestras acciones para incluir el entorno que las posibilita. Esto fomenta una conciencia relacional. Las tecnologías, como la IA, pueden ser vistas como andamios dinámicos en lugar de fuerzas fatales.</p>
+
+                    <h3 id="extended">3.4 Extendida (Extended)</h3>
+                    <p>La <span class="concept1">Hipótesis de la Mente Extendida</span> postula que los procesos cognitivos se extienden al mundo exterior. La "tercera ola" de esta hipótesis argumenta que nuestras mentes y yoes se co-constituyen a través de nuestro compromiso continuo con un mundo estructurado por prácticas culturales y tecnologías. El estudio de <span class="person">Francis Bacon</span>, con sus herramientas, lienzos y desorden, es un ejemplo de cómo el entorno es un componente activo y funcional de la cognición y la identidad creativa.</p>
+                    <p><strong>Implicaciones para el Cambio:</strong></p>
+                    <p>• Carga intencional (Intention loading): Podemos configurar estratégicamente nuestros entornos con andamios que "cargan" nuestras intenciones. Esto puede ser tan simple como comprar un cuaderno caro para dibujar o dedicar un espacio específico a una práctica. La carga intencional ayuda a alinear el cuerpo y la mente con los resultados deseados.</p>
+                    <p>• La brecha intención-intención: La brecha intención-acción a menudo coexiste con una <span class="concept2">brecha intención-intención</span>, que es la desalineación entre nuestras intenciones reflexivas y las intenciones "cargadas" en nuestro entorno. El diseño de entornos para el cambio es una forma de <span class="concept2">stigmergy</span> o <span class="concept2">wayshaping</span>, donde coordinamos con una versión futura de nosotros mismos a través de rastros ambientales.</p>
+                    <div class="mermaid-container">
+                        <div class="mermaid">
+                            graph TD
+                            A[Intención Reflexiva Interna] --> B[Conflicto entre Intenciones]
+                            C[Intenciones Cargadas en el Entorno] --> B
+                            B --> D[Brecha Intención-Intención]
+                            D --> E[Inacción o Lucha por el Cambio]
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style B fill:#f472b6,stroke:#333,stroke-width:2px;
+                            style C fill:#34d399,stroke:#333,stroke-width:2px;
+                            style D fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style E fill:#f472b6,stroke:#333,stroke-width:2px;
+                        </div>
+                    </div>
+                    <p>• Intenciones compartidas: Si nuestras intenciones existen en el mundo, no son enteramente nuestras. Moldean las affordances de los demás y contribuyen a un entorno colectivo. Esto resalta la naturaleza inherentemente relacional de las intenciones, lo que implica que el diseño para el cambio personal tiene una responsabilidad ética de considerar su impacto más amplio.</p>
+                </section>
+
+                <section id="conclusion" class="glassmorphism section" data-animate>
+                    <h2>Conclusión</h2>
+                    <p>El cambio de comportamiento, tal como se enmarca tradicionalmente, a menudo trata la <span class="concept1">brecha intención-acción</span> como un fracaso de una mente racional. A lo largo de este paper, hemos argumentado que el marco de la ciencia cognitiva <span class="concept1">4E</span> ofrece un diagnóstico más convincente: el problema no es una brecha a ser salvada, sino una desalineación dentro de un sistema complejo, auto-organizado de cerebro-cuerpo-entorno. Nuestro trabajo ha ofrecido varios recursos conceptuales para este fin. La dimensión <span class="concept1">corporeizada</span> subraya el entrelazamiento del comportamiento con los ritmos y necesidades del cuerpo. La perspectiva <span class="concept1">enactiva</span> revela la intención como un proceso emergente y negociado. La <span class="concept1">integración</span> destaca el papel de los andamios ambientales para hacer probables los comportamientos. Finalmente, la <span class="concept1">mente extendida</span> muestra cómo nuestras herramientas y entornos no son solo de apoyo, sino componentes activos y constitutivos de nuestras intenciones e identidades a lo largo del tiempo.</p>
+                    <p>En última instancia, esta perspectiva reformula la experiencia personal del cambio. La meta no es controlar el yo, sino colaborar con él. El objetivo final no es solo un solo cambio, sino nuestra capacidad misma para forjar los sistemas de apoyo que permitan un cambio futuro, un proceso que denominamos <span class="concept2">wayshaping</span>. El cultivo de esta <span class="concept2">meta-habilidad recursiva</span> es la práctica de evolucionar nuestra propia evolvibilidad.</p>
+                </section>
+
+                <section id="referencias" class="glassmorphism section" data-animate>
+                    <h2>Referencias</h2>
+                    <ul class="list-disc list-inside">
+                        <li><span class="person">Ajzen, I.</span> (1991). The theory of planned behavior. Organizational Behavior and Human Decision Processes, 50(2): 179-211.</li>
+                        <li><span class="person">Aunger, R., & Curtis, V.</span> (2016). Behavior centred design: Towards an applied science of behavior change. Health Psychology Review, 10(4): 425-446.</li>
+                        <li><span class="person">Barandiaran, X. E.</span> (2017). Autonomy and enactivism: Towards a theory of sensorimotor autonomous agency. Topoi, 36(3), 409-430.</li>
+                        <li><span class="person">Barandiaran, X. E., & Di Paolo, E. A.</span> (2014). A genealogical map of the concept of habit. Frontiers in Human Neuroscience, 8, 522.</li>
+                        <li><span class="person">Bickhard, M. H.</span> (1992). Scaffolding and self-scaffolding: Central aspects of development. In L. T. Winegar (Ed.), Children's development within social context (Vol. 1, pp. 33-52). Hillside, NJ: Lawrence Erlbaum Associates, Inc.</li>
+                        <li><span class="person">Bruineberg, J., & Rietveld, E.</span> (2014). Self-organization, free energy minimization, and optimal grip on a field of affordances. Frontiers in Human Neuroscience, 8, 599.</li>
+                        <li><span class="person">Butler, A., & Gallagher, S.</span> (2018). Two steps of embodiment: The living body and the lived body. In F. de Vignemont & A. J. T. Alsmith (Eds.), Body schema and body image: New issues in philosophy and cognitive science (pp. 41-58). Oxford, UK: Oxford University Press.</li>
+                        <li><span class="person">Clark, A., & Chalmers, D.</span> (1998). The extended mind. Analysis, 58(1): 7–19.</li>
+                        <li><span class="person">Di Paolo, E., Buhrmann, T., & Barandiaran, X.</span> (2017). Sensorimotor life: An enactive proposal. Oxford, UK: Oxford University Press.</li>
+                        <li><span class="person">Fuchs, T.</span> (2021). In defence of the human being: Foundational questions of an embodied anthropology. Oxford, UK: Oxford University Press.</li>
+                        <li><span class="person">Gallagher, S.</span> (2021). The 4Es and the 4As (affect, agency, affordance, autonomy) in the meshed architecture of social cognition. In the Handbook of Embodied Psychology (pp. 357-379). Cham, Switzerland: Springer International Publishing.</li>
+                        <li><span class="person">Gibson, J. J.</span> (1979). The ecological approach to visual perception. Boston, MA: Houghton Mifflin.</li>
+                        <li><span class="person">Heino, M. T. J., Knittle, K., Noone, C., Hasselman, F., & Hankonen, N.</span> (2021). Studying behavior change mechanisms under complexity. Behavioral Sciences, 11(5): 77.</li>
+                        <li><span class="person">James, M. M., Jamaluddin, M., Froese, T., Belhadi, A., Panagiotou, A., & Snowden, D.</span> (2025). Wayshaping: A Multiscale Framework for Behavior Change [Preprint]. PsyArXiv.</li>
+                        <li><span class="person">Kirchhoff, M. D., & Kiverstein, J.</span> (2019). Extended consciousness and predictive processing: A third wave view. New York, NY: Routledge.</li>
+                        <li><span class="person">Levin, M.</span> (2022). Technological approach to mind everywhere: An experimentally-grounded framework for understanding diverse bodies and minds. Frontiers in Systems Neuroscience, 16, 768201.</li>
+                        <li><span class="person">Menary, R.</span> (2010). The extended mind. Cambridge, MA: MIT Press.</li>
+                        <li><span class="person">Merleau-Ponty, M.</span> (1962). Phenomenology of perception (C. Smith, Trans.). London, England: Routledge & Kegan Paul.</li>
+                        <li><span class="person">Rietveld, E., & Kiverstein, J.</span> (2014). A rich landscape of affordances. Ecological Psychology, 26(4): 325-352.</li>
+                        <li><span class="person">Sheeran, P., & Webb, T. L.</span> (2016). The intention-behavior gap. Social and Personality Psychology Compass, 10(9): 503-518.</li>
+                        <li><span class="person">Stapleton, M.</span> (2022). Enacting environments: From umwelts to institutions. In K. L. Lai (Ed.), Knowers and knowledge in East-West philosophy: Epistemology extended (pp. 159-189). Cham, Switzerland: Springer International Publishing.</li>
+                        <li><span class="person">Sylvester, D.</span> (1980). Interviews with Francis Bacon, 1962-1979 (2nd ed.). London, England: Thames & Hudson.</li>
+                        <li><span class="person">Thaler, R. H., & Sunstein, C. R.</span> (2021). Nudge: The final edition. New Haven, CT: Yale University Press.</li>
+                        <li><span class="person">Varela, F. J., Rosch, E., & Thompson, E.</span> (1992). The embodied mind: Cognitive science and human experience. Cambridge, MA: MIT Press.</li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+        <footer class="footer" id="contacto">
+            <h2>Contacto</h2>
+            <p>Este espacio es una cartografía personal y una invitación al diálogo.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+        </footer>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicialización de Three.js Background
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+            } else {
+                console.error("Three.js not loaded");
+            }
+
+            setupNavigation();
+            setupScrollAnimations();
+            
+            // Renderizado de diagramas Mermaid
+            mermaid.initialize({ startOnLoad: true });
+        });
+
+        // --- THREE.JS BACKGROUND ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById("bg-canvas"),
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 250;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error initializing Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points) {
+                points.rotation.y += 0.0003;
+                points.rotation.x += 0.0002;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- NAVIGATION SCRIPTS ---
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.body.classList.toggle('menu-open');
+            });
+
+            navMenu.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                   document.body.classList.remove('menu-open');
+                }
+            });
+        }
+
+        // --- SCROLL ANIMATION ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        
+                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid');
+                        elementsToAnimate.forEach((el, index) => {
+                           el.style.transitionDelay = `${index * 100}ms`;
+                        });
+
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+    </script>
+</body>
+</html>
