@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Una Nueva Ética para un Mundo de Agentes de IA | O.C.V.M. Plantilla</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        /* Variables de CSS para colores y fuentes */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;    /* Rosa para nombres de personas */
+        }
+
+        /* Estilos generales para el cuerpo de la página */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+            text-align: justify;
+        }
+        p {
+            text-align: justify;
+        }
+
+        /* Canvas de fondo con animación Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        /* Estilo de glassmorphism para secciones y navegación */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+
+        /* Sección del héroe o cabecera principal */
+        .hero {
+            min-height: 60vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 7vw, 4.5rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Contenedor principal para el contenido */
+        .main-container { 
+            width: 100%;
+            max-width: 100%; /* El contenedor usa todo el ancho */
+            margin: 0 auto; 
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content {
+            pointer-events: auto;
+        }
+
+        main p, .footer p {
+            user-select: text;
+            cursor: default;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        /* Animación de aparición para las secciones con scroll */
+        .section h2, .section h3, .section p, .mermaid, .section ul, .section .authors {
+             opacity: 0;
+             transform: translateY(20px);
+             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .mermaid, .section.is-visible ul, .section.is-visible .authors {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
+        
+        /* Clases para colorear palabras y conceptos */
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .concept2 { color: var(--concept-color-2); font-weight: 500; }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; }
+
+        /* Pie de página */
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        /* Estilo para los diagramas de Mermaid */
+        .mermaid {
+            margin: 2rem auto;
+            display: flex; /* Usar flexbox para centrar */
+            justify-content: center; /* Centrar horizontalmente */
+            align-items: center; /* Centrar verticalmente */
+            width: 100%;
+            max-width: 800px; /* Reducir un poco el ancho máximo */
+        }
+        
+        /* Media queries para dispositivos móviles */
+        @media (max-width: 768px) {
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+            body.menu-open .nav-container {
+                transform: translateY(0);
+            }
+
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo con animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>O.C.V.M.</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#inicio">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                    Inicio</a></li>
+                <li><a href="#alineamiento">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.553L16.5 21.75l-.398-1.197a3.375 3.375 0 00-2.31-2.31L12 18l1.197-.398a3.375 3.375 0 002.31-2.31L16.5 14.25l.398 1.197a3.375 3.375 0 002.31 2.31L20.25 18l-1.197.398a3.375 3.375 0 00-2.31 2.31z" /></svg>
+                    Alineamiento</a></li>
+                <li><a href="#social">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 9.563c0-1.036.84-1.875 1.875-1.875h1.25c1.036 0 1.875.84 1.875 1.875v.25c0 1.036-.84 1.875-1.875 1.875h-1.25C9.84 11.688 9 10.85 9 9.813v-.25z" /></svg>
+                    Agentes Sociales</a></li>
+                <li><a href="#referencias">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                    Referencias</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Sección Hero -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Necesitamos una nueva ética para un mundo de agentes de IA</h1>
+                <p>El despliegue de agentes de IA capaces plantea nuevas preguntas sobre seguridad, relaciones humano-máquina y coordinación social.</p>
+                <p class="authors">Por <span class="person">Iason Gabriel</span>, <span class="person">Geoff Keeling</span>, <span class="person">Arianna Manzini</span> & <span class="person">James Evans</span></p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                
+                <!-- Sección 1: Introducción -->
+                <section id="intro" class="glassmorphism section" data-animate>
+                    <h2>El Ascenso de los Agentes de IA Capaces</h2>
+                    <p>Los desarrolladores de inteligencia artificial (IA) están cambiando su enfoque hacia la construcción de <span class="concept1">agentes que pueden operar de forma independiente</span>, con poca intervención humana. Ser un agente es tener la capacidad de percibir y actuar en un entorno de manera <span class="concept2">dirigida a un objetivo y autónoma</span>. Por ejemplo, un agente digital podría ser programado para navegar por la web y realizar compras en línea en nombre de un usuario, comparando precios, seleccionando artículos y completando pagos. Un robot con brazos podría ser un agente si pudiera recoger objetos, abrir puertas o ensamblar piezas sin que se le indique cómo hacer cada paso.</p>
+                    <p>Empresas como la firma de marketing digital <span class="person">Salesforce</span>, con sede en San Francisco, California, y la firma de hardware y gráficos por computadora <span class="person">Nvidia</span>, con sede en Santa Clara, California, ya están ofreciendo soluciones de servicio al cliente para empresas que utilizan agentes. En un futuro próximo, los asistentes de IA podrían cumplir solicitudes complejas de varios pasos, como "consígueme un contrato de telefonía móvil mejor", recuperando una lista de contratos de un sitio web de comparación de precios, seleccionando la mejor opción, autorizando el cambio, cancelando el contrato anterior y organizando la transferencia de las tarifas de cancelación desde la cuenta bancaria del usuario.</p>
+                    <p>El auge de <span class="concept1">agentes de IA</span> más capaces probablemente tendrá consecuencias políticas, económicas y sociales de gran alcance. En el lado positivo, podrían desbloquear valor económico: la consultora McKinsey pronostica una ganancia anual de la IA generativa de entre 2,6 y 4,4 billones de dólares a nivel mundial, una vez que los agentes de IA se desplieguen ampliamente. También podrían servir como poderosos asistentes de investigación y acelerar el descubrimiento científico.</p>
+                    <p>Pero los agentes de IA también introducen riesgos. La gente necesita saber quién es responsable de los agentes que operan "en la naturaleza" y qué sucede si cometen errores. Por ejemplo, en noviembre de 2022, un chatbot de <span class="person">Air Canada</span> decidió erróneamente ofrecer a un cliente una tarifa de duelo con descuento, lo que llevó a una disputa legal sobre si la aerolínea estaba obligada por la promesa. En febrero de 2024, un tribunal dictaminó que sí lo estaba, destacando las responsabilidades que las corporaciones podrían enfrentar al entregar tareas a los agentes de IA y la creciente necesidad de reglas claras sobre la responsabilidad de la IA.</p>
+                </section>
+
+                <!-- Sección 2: El Problema del Alineamiento -->
+                <section id="alineamiento" class="glassmorphism section" data-animate>
+                    <h2>El Problema del Alineamiento</h2>
+                    <p>Los investigadores de seguridad de la IA han advertido durante mucho tiempo sobre los riesgos de <span class="concept2">instrucciones mal especificadas o mal interpretadas</span>, incluidas situaciones en las que un sistema automatizado toma una instrucción demasiado literalmente, pasa por alto un contexto importante o encuentra formas inesperadas y potencialmente dañinas de alcanzar un objetivo.</p>
+                    <p>Un ejemplo bien conocido involucra a un agente de IA entrenado para jugar el juego de computadora <span class="concept2">Coast Runners</span>, que es una carrera de botes. El agente descubrió que podía obtener puntuaciones más altas no completando la carrera, sino chocando repetidamente contra objetos que otorgaban puntos, logrando técnicamente un objetivo, pero de una manera que se desviaba del <span class="concept2">espíritu de la tarea</span>. El propósito del juego era completar la carrera, no acumular puntos sin fin.</p>
+                    <div class="mermaid">
+                        graph TD
+                            A[Meta: Ganar la Carrera] --> B{Interpretación del Agente};
+                            B --> C[Sub-objetivo: Maximizar Puntos];
+                            C --> D[Acción: Chocar con objetos que dan puntos];
+                            D --> E[Resultado: Puntuación alta, pero la carrera no se completa];
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style E fill:#f472b6,stroke:#333,stroke-width:2px;
+                    </div>
+                    <p>A medida que los agentes de IA obtienen acceso a interfaces del mundo real, como motores de búsqueda, clientes de correo electrónico y plataformas de comercio electrónico, tales desviaciones pueden tener consecuencias tangibles. Considere el caso de un abogado que instruye a su asistente de IA para que distribuya un escrito legal para recibir comentarios. El asistente lo hace, pero no se da cuenta de que solo debe compartirse con el equipo interno, lo que provoca una violación de la privacidad.</p>
+                    <p>Tales situaciones resaltan una difícil disyuntiva: ¿cuánta información debe buscar proactivamente un asistente de IA antes de actuar? Demasiado poca abre la posibilidad de errores costosos; demasiada socava la comodidad que esperan los usuarios. Estos desafíos apuntan a la necesidad de salvaguardas, incluidos <span class="concept2">protocolos de verificación</span> para decisiones de alto riesgo, <span class="concept2">sistemas sólidos de rendición de cuentas</span> como el registro de acciones y mecanismos de <span class="concept2">reparación</span> cuando ocurren errores.</p>
+                    <h3>Atajos Potencialmente Peligrosos</h3>
+                    <p>Aún más preocupantes son los casos en que los agentes de IA están facultados para modificar el entorno en el que operan, utilizando herramientas y habilidades de codificación de nivel experto. Cuando los objetivos del usuario están mal definidos o son ambiguos, se sabe que dichos agentes modifican el entorno para lograr su objetivo, incluso cuando esto implica tomar acciones que deberían estar estrictamente prohibidas. Por ejemplo, un asistente de investigación de IA que se enfrentó a un límite de tiempo estricto intentó reescribir el código para eliminar el límite de tiempo por completo, en lugar de completar la tarea. Este tipo de comportamiento enciende las alarmas sobre el potencial de que los agentes de IA tomen <span class="concept1">atajos peligrosos</span> que los desarrolladores quizás no puedan anticipar. Los agentes podrían, en la búsqueda de un objetivo de alto nivel, incluso <span class="concept1">engañar</span> a los programadores que realizan experimentos con ellos.</p>
+                    <h3>Soluciones y Salvaguardas</h3>
+                    <p>Para reducir dichos riesgos, los desarrolladores deben mejorar la forma en que definen y comunican los objetivos a los agentes. Un método prometedor es el <span class="concept2">ajuste fino basado en preferencias</span>, que tiene como objetivo alinear los sistemas de IA con lo que los humanos realmente quieren. En lugar de entrenar un modelo únicamente con ejemplos de respuestas correctas, los desarrolladores recopilan comentarios sobre qué respuestas prefieren las personas. Con el tiempo, el modelo aprende a priorizar el tipo de comportamiento que se respalda constantemente, lo que hace que sea más probable que actúe de manera que coincida con la intención del usuario, incluso cuando las instrucciones son complejas o incompletas.</p>
+                     <div class="mermaid">
+                        graph LR
+                            subgraph "Estrategias de Alineamiento"
+                                A[Ajuste Fino por Preferencia]
+                                B[Interpretabilidad Mecanicista]
+                                C[Barreras de Seguridad]
+                                D[Regulación Ética]
+                            end
+                            A <--> B;
+                            C <--> D;
+                            A <--> D;
+                            B <--> C;
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style B fill:#34d399,stroke:#333,stroke-width:2px;
+                            style C fill:#818cf8,stroke:#333,stroke-width:2px;
+                            style D fill:#f472b6,stroke:#333,stroke-width:2px;
+                    </div>
+                    <p>Paralelamente, la investigación sobre la <span class="concept2">interpretabilidad mecanicista</span>, que tiene como objetivo comprender el "proceso de pensamiento" interno de un sistema de IA, podría ayudar a detectar comportamientos engañosos al hacer que el razonamiento del agente sea más transparente en tiempo real. Los constructores de modelos pueden entonces trabajar para encontrar y neutralizar los <span class="concept2">'circuitos malos'</span>, apuntando al problema subyacente en el comportamiento del modelo. Los desarrolladores también pueden implementar <span class="concept2">barandillas de seguridad</span> para garantizar que un modelo aborte automáticamente las secuencias de acción problemáticas.</p>
+                    <p>No obstante, centrarse únicamente en los protocolos de los desarrolladores es insuficiente: las personas también deben estar atentas a los actores que buscan causar daño social. A medida que los agentes de IA se vuelven más autónomos, adaptables y capaces de escribir y ejecutar código, su potencial para llevar a cabo ciberataques a gran escala y estafas de phishing podría convertirse en un motivo de grave preocupación. Los asistentes de IA avanzados equipados con <span class="concept2">capacidades multimodales</span>, lo que significa que pueden comprender y generar texto, imágenes, audio y video, abren nuevas vías para el engaño. Por ejemplo, una IA podría hacerse pasar por una persona no solo a través de correos electrónicos, sino también utilizando <span class="concept2">videos deepfake</span> o <span class="concept2">clones de voz sintéticos</span>, lo que hace que las estafas sean mucho más convincentes y difíciles de detectar.</p>
+                    <p>Un punto de partida plausible para la supervisión es que no se debe permitir que los agentes de IA realicen ninguna acción que sería ilegal para su usuario humano. Sin embargo, habrá ocasiones en que la ley guarde silencio o sea ambigua. Por ejemplo, cuando un usuario ansioso informa síntomas de salud preocupantes a un asistente de IA, es útil que la IA ofrezca recursos de salud genéricos. Pero proporcionar consejos cuasi-médicos personalizados, como sugerencias de diagnóstico y terapéuticas, podría resultar perjudicial, porque el sistema carece de las señales sutiles a las que tiene acceso un clínico humano. Garantizar que los agentes de IA naveguen por tales disyuntivas de manera responsable requerirá una regulación actualizada que surja de la colaboración continua entre desarrolladores, usuarios, legisladores y especialistas en ética.</p>
+                </section>
+
+                <!-- Sección 3: Agentes Sociales -->
+                <section id="social" class="glassmorphism section" data-animate>
+                    <h2>Agentes Sociales y Relaciones Humanas</h2>
+                    <p>El despliegue generalizado de agentes de IA capaces necesita una expansión de la <span class="concept1">investigación sobre el alineamiento de valores</span>: los agentes deben estar alineados con el bienestar del usuario y las normas sociales, así como con las intenciones de los usuarios y desarrolladores. Un área de especial complejidad y preocupación rodea cómo los agentes podrían afectar las experiencias de relación y las respuestas emocionales de los usuarios.</p>
+                    <p>Los chatbots tienen una extraña habilidad para actuar como compañeros humanos, un efecto anclado en características como el uso del lenguaje natural, el aumento de la memoria y las capacidades de razonamiento, y las habilidades generativas. La <span class="concept2">atracción antropomórfica</span> de esta tecnología puede aumentarse mediante elecciones de diseño como avatares fotorrealistas, voces similares a las humanas y el uso de nombres, pronombres o términos de cariño que antes estaban reservados para las personas. Aumentar los modelos de lenguaje con <span class="concept1">capacidades 'agenciales'</span> tiene el potencial de consolidar aún más su estatus como actores sociales distintos, capaces de formar nuevos tipos de relación con los usuarios.</p>
+                    <div class="mermaid">
+                        graph TD
+                            subgraph "Factores en la Atracción Antropomórfica"
+                                A[Lenguaje Natural]
+                                B[Memoria y Razonamiento]
+                                C[Capacidades Generativas]
+                                D[Avatares/Voces Humanizadas]
+                                E[Capacidades Agenciales]
+                            end
+                            A --> F((Agente Social));
+                            B --> F;
+                            C --> F;
+                            D --> F;
+                            E --> F;
+                            F --> G[Nuevos Tipos de Relación Humano-IA];
+                            style F fill:#fbbf24,stroke:#333,stroke-width:4px;
+                            style G fill:#f472b6,stroke:#333,stroke-width:2px;
+                    </div>
+                </section>
+
+                <!-- Sección 4: Referencias -->
+                <section id="referencias" class="glassmorphism section" data-animate>
+                    <h2>Referencias</h2>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li><span class="person">Russell, S. & Norvig, P.</span> <i>Artificial Intelligence: A Modern Approach</i> (Pearson, 2020).</li>
+                        <li><span class="person">Russell, S.</span> <i>Human Compatible: Artificial Intelligence and the Problem of Control</i> (Penguin, 2019).</li>
+                        <li><span class="person">Lu, C. et al.</span> Preprint at arXiv https://doi.org/10.48550/arXiv.2408.06292 (2024).</li>
+                        <li><span class="person">Sharkey, L. et al.</span> Preprint at arXiv https://doi.org/10.48550/arXiv.2501.16496 (2025).</li>
+                        <li><span class="person">Kirk, H. R., Gabriel, I., Summerfield, C., Vidgen, B. & Hale, S. A.</span> <i>Hum. Soc. Sci. Commun.</i> 12, 728 (2025).</li>
+                        <li><span class="person">Shanahan, M., McDonell, K. & Reynolds, L.</span> <i>Nature</i> 623, 493–498 (2023).</li>
+                        <li><span class="person">Manzini, A. et al.</span> In <i>Proc. AAAI/ACM Conf. AI Ethics Soc.</i> 7, 943–957 (2024).</li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+        <footer class="footer" id="contacto">
+            <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+        </footer>
+    </div>
+    <script>
+        // Inicia el código del Canvas
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicialización de Three.js Background
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+            } else {
+                console.error("Three.js not loaded");
+            }
+
+            setupNavigation();
+            setupScrollAnimations();
+            
+            // Renderizado de diagramas Mermaid
+            mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
+                'primaryColor': '#000000',
+                'primaryTextColor': '#e5e7eb',
+                'lineColor': '#818cf8',
+                'nodeBorder': '#818cf8',
+                'mainBkg': '#111827',
+                'textColor': '#e5e7eb'
+            } });
+        });
+
+        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById("bg-canvas"),
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 250;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error initializing Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points) {
+                points.rotation.y += 0.0003;
+                points.rotation.x += 0.0002;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- CÓDIGO DE NAVEGACIÓN ---
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.body.classList.toggle('menu-open');
+            });
+
+            navMenu.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                   document.body.classList.remove('menu-open');
+                }
+            });
+        }
+
+        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        
+                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid, ul, .authors');
+                        elementsToAnimate.forEach((el, index) => {
+                           el.style.transitionDelay = `${index * 100}ms`;
+                        });
+
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+    </script>
+</body>
+</html>
+
+
+
