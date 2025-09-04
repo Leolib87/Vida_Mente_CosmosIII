@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experiencia Vivida y Corporal | O.C.V.M. Plantilla</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        /* Variables de CSS para colores y fuentes */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;    /* Rosa para nombres de personas */
+        }
+
+        /* Estilos generales para el cuerpo de la página */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+            text-align: justify;
+        }
+        p {
+            text-align: justify;
+        }
+
+        /* Canvas de fondo con animación Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        /* Estilo de glassmorphism para secciones y navegación */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+
+        /* Sección del héroe o cabecera principal */
+        .hero {
+            min-height: 60vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 6vw, 4rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Contenedor principal para el contenido */
+        .main-container { 
+            width: 100%;
+            max-width: 100%; /* El contenedor usa todo el ancho */
+            margin: 0 auto; 
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content {
+            pointer-events: auto;
+        }
+
+        main p, .footer p {
+            user-select: text;
+            cursor: default;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        /* Animación de aparición para las secciones con scroll */
+        .section h2, .section h3, .section p, .mermaid, .section ul, .section .authors {
+             opacity: 0;
+             transform: translateY(20px);
+             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .mermaid, .section.is-visible ul, .section.is-visible .authors {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
+        
+        /* Clases para colorear palabras y conceptos */
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .concept2 { color: var(--concept-color-2); font-weight: 500; }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; }
+
+        /* Pie de página */
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        /* Estilo para los diagramas de Mermaid */
+        .mermaid {
+            margin: 2rem auto;
+            display: flex; /* Usar flexbox para centrar */
+            justify-content: center; /* Centrar horizontalmente */
+            align-items: center; /* Centrar verticalmente */
+            width: 100%;
+            max-width: 900px; 
+        }
+        
+        /* Media queries para dispositivos móviles */
+        @media (max-width: 768px) {
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+            body.menu-open .nav-container {
+                transform: translateY(0);
+            }
+
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo con animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>O.C.V.M.</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#inicio">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                    Inicio</a></li>
+                <li><a href="#seccion1">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                    El Debate</a></li>
+                <li><a href="#seccion2">
+                     <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12A2.25 2.25 0 0020.25 14.25V3M3.75 20.25h16.5M3.75 12h16.5m-16.5 4.5h16.5m-16.5-8.25h16.5" /></svg>
+                    La Propuesta Ecológica</a></li>
+                <li><a href="#referencias">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                    Referencias</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Sección Hero -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Experiencia Vivida y la Naturalización de la Experiencia Corporal</h1>
+                <p>Una Propuesta Ecológica para Entender la Cognición Corporeizada</p>
+                <p class="authors">Basado en el trabajo de <span class="person">Heras-Escribano, M.</span>, <span class="person">López-Silva, P.</span>, & <span class="person">Lobo, L.</span> (2025)</p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                
+                <!-- Sección 1 -->
+                <section id="seccion1" class="glassmorphism section" data-animate>
+                    <h2>El Debate Postcognitivista sobre la Experiencia Corporal</h2>
+                    <p>En las últimas décadas, ha surgido una corriente en las ciencias cognitivas conocida como <span class="concept1">postcognitivismo</span> o ciencia cognitiva corporeizada radical. Este enfoque rechaza la idea tradicional de que la cognición es un mero procesamiento computacional de representaciones internas en el cerebro. En su lugar, propone que la cognición es una actividad <span class="concept2">corporeizada y situada</span>, un conjunto de habilidades que emergen de la interacción dinámica entre un organismo y su entorno. En esta visión, la noción fundamental no es la representación mental, sino la <span class="concept1">experiencia corporal</span>.</p>
+                    <p>Dentro del postcognitivismo, dos grandes marcos teóricos han intentado dar cuenta de esta experiencia: el <span class="concept1">enactivismo</span> y la <span class="concept1">psicología ecológica</span>. El enactivismo, con fuertes raíces en la fenomenología, argumenta que la <span class="concept2">experiencia vivida (Erlebnis)</span>, un concepto del filósofo <span class="person">Edmund Husserl</span>, es clave. Este concepto se refiere al flujo de la conciencia en primera persona, tal como se nos da directamente. Los enactivistas sugieren que la psicología ecológica, al centrarse en tareas dirigidas a un objetivo, carece de los recursos para explicar esta dimensión más fundamental y subjetiva de la experiencia.</p>
+                    
+                    <div class="mermaid">
+                        graph TD
+                            subgraph "Ciencias Cognitivas"
+                                A["Cognitivismo Tradicional<br>(Mente = Cómputo cerebral)"]
+                                B["Postcognitivismo<br>(Mente = Acción corporeizada)"]
+                            end
+                            B --> C{Enactivismo};
+                            B --> D{Psicología Ecológica};
+                            E["Fenomenología de Husserl<br><i>(Experiencia Vivida)</i>"] -.-> C;
+                            E -.-> |¿Y aquí?| D;
+                            
+                            style A fill:#6366f1,stroke:#fff,stroke-width:2px
+                            style B fill:#818cf8,stroke:#fff,stroke-width:2px
+                            style C fill:#34d399,stroke:#333,stroke-width:2px
+                            style D fill:#fbbf24,stroke:#333,stroke-width:2px
+                            style E fill:#f472b6,stroke:#333,stroke-width:2px
+                    </div>
+
+                    <h3>La Crítica a la Psicología Ecológica</h3>
+                    <p>La crítica principal es que la psicología ecológica, iniciada por <span class="person">J. J. Gibson</span>, trata el cuerpo como un objeto (<span class="concept2">Körper</span> en alemán) en lugar de un sujeto vivido (<span class="concept2">Leib</span>). Al analizar cómo los organismos detectan información para guiar sus acciones (por ejemplo, al subir escaleras o esquivar obstáculos), se argumenta que se deja de lado la <span class="concept1">sensación cinestésica y propioceptiva</span> del movimiento. Se postula que esta "vivacidad cinética primordial" es una capa de experiencia más básica, un "yo puedo moverme" implícito, que da sentido a cualquier acción dirigida a un objetivo. Sin este fundamento, la ciencia ecológica ofrecería una visión fragmentada y puramente funcional del ser.</p>
+                </section>
+
+                <!-- Sección 2 -->
+                <section id="seccion2" class="glassmorphism section" data-animate>
+                    <h2>Hacia una Naturalización Ecológica de la Experiencia Vivida</h2>
+                    <p>Contrario a la crítica anterior, este análisis defiende que la <span class="concept1">psicología ecológica</span> no solo es compatible con los aspectos clave de la experiencia vivida, sino que ofrece un marco científico para su <span class="concept1">naturalización</span>. Es decir, permite explicarla en términos naturales, basados en la evidencia y sin recurrir a una fenomenología trascendental. La clave está en una comprensión más profunda de los conceptos de <span class="person">Gibson</span>.</p>
+                    <p>Para <span class="person">Gibson</span>, la percepción no es un proceso pasivo, sino una actividad de <span class="concept2">"mantenerse en contacto con el mundo"</span>. Él reformuló los sentidos como <span class="concept1">sistemas perceptuales</span> activos que involucran todo el organismo: posturas, orientaciones y movimientos. No se trata solo de los cinco sentidos tradicionales, sino de un sistema global que integra la acción y la percepción.</p>
+                    
+                    <div class="mermaid">
+                        graph LR
+                            subgraph "Sistema Organismo-Entorno (Gibson)"
+                                A(Organismo Activo) <--> B(Entorno con Información);
+                                B --"Especifica"--> C(Affordances<br><i>Oportunidades para la acción</i>);
+                                A --"Detecta información<br><i>(Flujo Óptico, etc.)</i>"--> C;
+                                C --"Guía la"--> D{Acción-Percepción};
+                                D --"Genera"--> A;
+                                E((Experiencia<br>Egocepción y Exterocepción))
+                                D --> E
+                            end
+                            subgraph "Dimensiones de la Experiencia Ecológica"
+                                F["<b>Egocepción:</b> Percepción de uno mismo<br>(Cinestesia, Propiocepción)"]
+                                G["<b>Exterocepción:</b> Percepción del entorno"]
+                            end
+                            E --> F & G
+                            style A fill:#f472b6,stroke:#fff
+                            style B fill:#34d399,stroke:#fff
+                            style C fill:#fbbf24,stroke:#333
+                            style D fill:#818cf8,stroke:#fff
+                            style E fill:#fff,stroke:#818cf8,stroke-width:4px
+                    </div>
+
+                    <h3>Cinestesia y Propiocepción en el Corazón del Enfoque Ecológico</h3>
+                    <p>Lejos de ignorar el movimiento sentido, <span class="person">Gibson</span> afirmó que la visión es fundamentalmente <span class="concept1">cinestésica</span>. El flujo óptico generado por nuestro movimiento no se percibe como un movimiento del mundo, sino que <span class="concept2">se experimenta como egolocomoción</span>. La visión, por tanto, no es solo exteroceptiva (información sobre el exterior), sino que intrínsecamente obtiene información sobre el propio cuerpo. Él lo resumió de forma contundente: <span class="concept1">"uno percibe el entorno y co-percibe a uno mismo"</span>. Esta co-percepción es la base de la conciencia de estar "aquí" mientras se explora "allá afuera".</p>
+                    <p>Esta perspectiva incluye la <span class="concept2">conciencia del propio cuerpo</span> y el <span class="concept2">sentido de control</span>. El control no es un programa motor enviado desde el cerebro, sino que emerge de la interacción con el entorno. Al percibir las <span class="concept1">affordances</span> (las oportunidades de acción que el entorno ofrece, como la "escalabilidad" de un escalón o la "pasabilidad" de una puerta), percibimos directamente <span class="concept2">cómo movernos y qué hacer</span>. Este es el "yo puedo" husserliano, pero explicado en un marco científico y empíricamente comprobable a través de métricas relativas al cuerpo del agente.</p>
+                </section>
+                
+                <!-- Sección 3: Conclusión -->
+                <section id="conclusion" class="glassmorphism section" data-animate>
+                    <h2>Conclusión: La Promesa de una Ciencia Ecológica</h2>
+                    <p>La psicología ecológica ofrece una alternativa poderosa para superar la dicotomía entre una ciencia objetiva en tercera persona y una descripción subjetiva en primera persona. Al tratar el cuerpo como un <span class="concept1">Leib naturalizado</span>, demuestra que aspectos como la <span class="concept2">conciencia</span>, la <span class="concept2">cinestesia</span> y el <span class="concept2">sentido de agencia</span> no son misterios filosóficos, sino fenómenos discernibles y estudiables que emergen de la relación fundamental entre un ser vivo y su mundo.</p>
+                    <p>El enfoque no reduce la experiencia a mecanismos cerebrales, sino que la sitúa en la acción corporeizada. Al final, la psicología ecológica no solo es compatible con la idea de experiencia vivida, sino que proporciona las herramientas conceptuales y experimentales para construir una ciencia de la experiencia, cumpliendo la promesa de un <span class="concept1">postcognitivismo</span> verdaderamente integrado y naturalista.</p>
+                </section>
+
+                <!-- Sección 4: Referencias -->
+                <section id="referencias" class="glassmorphism section" data-animate>
+                    <h2>Referencias Clave</h2>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li><span class="person">Heras-Escribano, M., López-Silva, P., & Lobo, L.</span> (2025). Lived experience and the naturalization of bodily experience: An ecological proposal. <i>Theory & Psychology, 35</i>(4), 508-528.</li>
+                        <li><span class="person">Gibson, J. J.</span> (1979/2015). <i>The ecological approach to visual perception.</i> Psychology Press.</li>
+                        <li><span class="person">Husserl, E.</span> (1989). <i>Ideas pertaining to a pure phenomenology and to a phenomenological philosophy.</i> Kluwer Academic Publishers.</li>
+                        <li><span class="person">Popova, Y. B., & Rączaszek-Leonardi, J.</span> (2020). Enactivism and ecological psychology: The role of bodily experience in agency. <i>Frontiers Media.</i></li>
+                        <li><span class="person">Varela, F. J., Thompson, E., & Rosch, E.</span> (1991). <i>The embodied mind.</i> The MIT Press.</li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+        <footer class="footer" id="contacto">
+            <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+        </footer>
+    </div>
+    <script>
+        // Inicia el código del Canvas
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicialización de Three.js Background
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+            } else {
+                console.error("Three.js not loaded");
+            }
+
+            setupNavigation();
+            setupScrollAnimations();
+            
+            // Renderizado de diagramas Mermaid
+            mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
+                'primaryColor': '#111827',
+                'primaryTextColor': '#e5e7eb',
+                'lineColor': '#818cf8',
+                'nodeBorder': '#818cf8',
+                'mainBkg': 'transparent',
+                'textColor': '#e5e7eb',
+                'fontFamily': 'Inter, sans-serif'
+            } });
+        });
+
+        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById("bg-canvas"),
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 250;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error initializing Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points) {
+                points.rotation.y += 0.0003;
+                points.rotation.x += 0.0002;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- CÓDIGO DE NAVEGACIÓN ---
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.body.classList.toggle('menu-open');
+            });
+
+            navMenu.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                   document.body.classList.remove('menu-open');
+                }
+            });
+        }
+
+        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        
+                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid, ul, .authors');
+                        elementsToAnimate.forEach((el, index) => {
+                           el.style.transitionDelay = `${index * 100}ms`;
+                        });
+
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+    </script>
+</body>
+</html>
