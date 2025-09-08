@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Despues de muerto | O.C.V.M. Plantilla</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        /* Variables de CSS para colores y fuentes */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;   /* Rosa para nombres de personas/entidades abstractas */
+        }
+
+        /* Estilos generales para el cuerpo de la página */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+            text-align: justify;
+        }
+        p {
+            text-align: justify;
+        }
+
+        /* Canvas de fondo con animación Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        /* Estilo de glassmorphism para secciones y navegación */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+
+        /* Sección del héroe o cabecera principal */
+        .hero {
+            min-height: 60vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 7vw, 4.5rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Contenedor principal para el contenido */
+        .main-container { 
+            width: 100%;
+            max-width: 100%; /* El contenedor usa todo el ancho */
+            margin: 0 auto; 
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content {
+            pointer-events: auto;
+        }
+
+        main p, .footer p {
+            user-select: text;
+            cursor: default;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        /* Animación de aparición para las secciones con scroll */
+        .section h2, .section h3, .section p, .mermaid, .section ul, .section .authors, .lyrics-container {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .mermaid, .section.is-visible ul, .section.is-visible .authors, .section.is-visible .lyrics-container {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
+        
+        /* Clases para colorear palabras y conceptos */
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .concept2 { color: var(--concept-color-2); font-weight: 500; }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; }
+
+        /* Estilos para la sección de letras */
+        .lyrics-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .lyrics-column {
+            font-size: 1.1em;
+            line-height: 2;
+        }
+         .lyrics-column h3 {
+            margin-top: 0;
+         }
+        
+        @media (max-width: 768px) {
+            .lyrics-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Pie de página */
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        /* Estilo para los diagramas de Mermaid */
+        .mermaid {
+            margin: 2rem auto;
+            display: flex; /* Usar flexbox para centrar */
+            justify-content: center; /* Centrar horizontalmente */
+            align-items: center; /* Centrar verticalmente */
+            width: 100%;
+            max-width: 900px; 
+        }
+        
+        /* Media queries para dispositivos móviles */
+        @media (max-width: 768px) {
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+            body.menu-open .nav-container {
+                transform: translateY(0);
+            }
+
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo con animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>O.C.V.M.</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#inicio">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                    Inicio</a></li>
+                <li><a href="#letra">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                    Letra</a></li>
+                <li><a href="#analisis">
+                     <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12A2.25 2.25 0 0020.25 14.25V3M3.75 20.25h16.5M3.75 12h16.5m-16.5 4.5h16.5m-16.5-8.25h16.5" /></svg>
+                    Análisis</a></li>
+                <li><a href="#diagramas">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                    Diagramas</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Sección Hero -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Despues de Muerto</h1>
+                <p>Un análisis sobre la travesía desde la desolación personal hacia una conciencia colectiva y universal.</p>
+                <p class="authors">Análisis por <span class="person">O.C.V.M.</span></p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                
+                <!-- Sección 1: Letra y Traducción -->
+                <section id="letra" class="glassmorphism section" data-animate>
+                    <h2>Letra y Traducción</h2>
+                    <div class="lyrics-container">
+                        <div class="lyrics-column">
+                            <h3>Original (Español)</h3>
+                            <p>
+                                Sientes que <span class="concept1">perdiste la razón</span><br>
+                                El calor del sol<br>
+                                Perdiste el temblor<br>
+                                <span class="concept2">Llanto helado</span> promesa al corazón, corazón<br>
+                                <br>
+                                Sientes que <span class="concept1">no existe explicación</span><br>
+                                Que no hay nación<br>
+                                No entiendo por qué estoy<br>
+                                <span class="concept2">Canto sagrado</span> arráncame el <span class="person">dolor</span>, el <span class="person">dolor</span><br>
+                                <br>
+                                En la <span class="concept1">vida que soñó despierto</span><br>
+                                Lo mejor <span class="concept2">después de muerto</span>, lo mejor<br>
+                                <br>
+                                Sientes que la <span class="concept1">vida ya pasó</span><br>
+                                El <span class="person">amor</span> partió<br>
+                                La <span class="person">rabia</span> envejeció<br>
+                                <span class="concept2">Manto estrellado</span>, alumbra la <span class="person">pasión</span>, la <span class="person">pasión</span><br>
+                                <br>
+                                Sueltas las <span class="concept1">promesas del soñar</span><br>
+                                Es la <span class="person">humanidad</span>,<br>
+                                Mirando hacia el mar<br>
+                                Tierra entera mirando el <span class="concept2">despertar</span>, <span class="concept2">despertar</span><br>
+                                <br>
+                                En la <span class="concept1">vida que soñó despierto</span><br>
+                                Lo mejor <span class="concept2">después de muerto</span>, lo mejor<br>
+                            </p>
+                        </div>
+                        <div class="lyrics-column">
+                            <h3>Traducción (Inglés)</h3>
+                             <p>
+                                You feel you've <span class="concept1">lost your mind</span><br>
+                                The heat of the sun<br>
+                                You lost the trembling<br>
+                                <span class="concept2">Icy cry</span>, a promise to the heart, the heart<br>
+                                <br>
+                                You feel there's <span class="concept1">no explanation</span><br>
+                                That there's no nation<br>
+                                I don't understand why I am here<br>
+                                <span class="concept2">Sacred song</span>, tear this <span class="person">pain</span> from me, the <span class="person">pain</span><br>
+                                <br>
+                                In the <span class="concept1">life he dreamt while awake</span><br>
+                                The best comes <span class="concept2">after death</span>, the best<br>
+                                <br>
+                                You feel that <span class="concept1">life has already passed</span><br>
+                                <span class="person">Love</span> has departed<br>
+                                The <span class="person">rage</span> has grown old<br>
+                                <span class="concept2">Starry cloak</span>, illuminate the <span class="person">passion</span>, the <span class="person">passion</span><br>
+                                <br>
+                                You let go of the <span class="concept1">promises of dreaming</span><br>
+                                It is <span class="person">humanity</span>,<br>
+                                Looking towards the sea<br>
+                                The entire Earth watching the <span class="concept2">awakening</span>, <span class="concept2">awakening</span><br>
+                                <br>
+                                In the <span class="concept1">life he dreamt while awake</span><br>
+                                The best comes <span class="concept2">after death</span>, the best<br>
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sección 2: Análisis Detallado -->
+                <section id="analisis" class="glassmorphism section" data-animate>
+                    <h2>Análisis Detallado</h2>
+                    <p>La letra nos sumerge en un profundo viaje existencial que transita desde la desolación y la pérdida de sentido hasta un renacimiento colectivo. Es una narrativa sobre la condición humana, marcada por el dolor, la desilusión y, finalmente, la esperanza en una conciencia más amplia.</p>
+                    
+                    <h3>El Abismo de la Desesperanza</h3>
+                    <p>Las primeras estrofas describen un estado de entumecimiento y <span class="concept1">confusión existencial</span>. Frases como <span class="concept1">"perdiste la razón"</span> y "perdiste el temblor" sugieren una desconexión total con el ser y las emociones vitales. El "llanto helado" es una metáfora poderosa para un dolor tan profundo que ya no quema; se ha vuelto parte de un paisaje interno desolado. La búsqueda de alivio es un clamor desesperado, pidiendo a un <span class="concept2">"canto sagrado"</span> que extirpe un <span class="person">dolor</span> que se ha vuelto insoportable.</p>
+
+                    <h3>La Trascendencia como Escape</h3>
+                    <p>El estribillo, <span class="concept1">"En la vida que soñó despierto, lo mejor después de muerto"</span>, revela una profunda desilusión con la realidad tangible. La vida se percibe como un sueño fallido, una promesa incumplida. La idea de que "lo mejor" yace más allá de la muerte puede interpretarse de dos maneras: como un anhelo de liberación final del sufrimiento o como una crítica a una existencia que no logra satisfacer las aspiraciones más profundas del alma. Es la máxima expresión del <span class="concept2">anhelo de trascendencia</span> frente a un mundo que ha perdido su encanto.</p>
+
+                    <h3>La Transición hacia lo Colectivo</h3>
+                    <p>Un giro crucial ocurre en la segunda mitad. El <span class="person">dolor</span> personal, la pérdida del <span class="person">amor</span> y la <span class="person">rabia</span> que "envejeció" dan paso a una perspectiva más amplia. El <span class="concept2">"manto estrellado"</span> invoca al cosmos, a la naturaleza, pidiendo que reavive la <span class="person">pasión</span>. Es aquí donde el "yo" comienza a disolverse. Se sueltan las <span class="concept1">"promesas del soñar"</span>, aceptando la realidad, pero no con resignación, sino con una nueva visión. La cámara se aleja para mostrar a la <span class="person">"humanidad"</span> entera, unida en un acto contemplativo ("mirando hacia el mar"), esperando un <span class="concept2">"despertar"</span> colectivo. El sufrimiento individual se transforma en una experiencia compartida, el preludio de un renacimiento global.</p>
+                </section>
+                
+                <!-- Sección 3: Diagramas -->
+                <section id="diagramas" class="glassmorphism section" data-animate>
+                    <h2>Visualización de Conceptos</h2>
+
+                    <h3>El Viaje Emocional del Individuo</h3>
+                    <p>Este diagrama ilustra la progresión del estado anímico y mental descrito en la primera parte de la letra, desde la alienación hasta la búsqueda de un significado más allá de la vida terrenal.</p>
+                    <div class="mermaid">
+                        graph TD
+                            classDef concept1 fill:#fbbf24,stroke:#000,stroke-width:2px,color:#000;
+                            classDef concept2 fill:#34d399,stroke:#000,stroke-width:2px,color:#000;
+                            classDef person fill:#f472b6,stroke:#000,stroke-width:2px,color:#000;
+
+                            A["Pérdida de Razón y Sentidos"] --> B{"Vacío Existencial"};
+                            B --> C["Sin explicación, sin nación"];
+                            C --> D{"Búsqueda de Alivio"};
+                            D --> E["Canto Sagrado para el Dolor"];
+                            E --> F["Anhelo de Trascendencia"];
+                            
+                            class A,F concept1;
+                            class B,D person;
+                            class E concept2;
+                    </div>
+
+                    <h3>La Evolución de la Perspectiva</h3>
+                    <p>El segundo diagrama muestra el cambio de enfoque, desde una introspección dolorosa y personal hacia una conciencia universal y colectiva, culminando en la esperanza de un renacer compartido.</p>
+                    <div class="mermaid">
+                        graph LR
+                            classDef concept2 fill:#34d399,stroke:#000,stroke-width:2px,color:#000;
+                            classDef person fill:#f472b6,stroke:#000,stroke-width:2px,color:#000;
+                            classDef cosmic fill:#818cf8,stroke:#000,stroke-width:2px,color:#000;
+
+                            subgraph Enfoque Individual
+                                direction TB
+                                A(Dolor Personal)
+                                B(Amor Perdido)
+                                C(Rabia Envejecida)
+                            end
+                            
+                            D["Conexión Universal<br>(Manto Estrellado)"]
+
+                            subgraph Conciencia Colectiva
+                                direction TB
+                                E["Humanidad Unida"]
+                                F["Despertar Colectivo"]
+                            end
+                            
+                            A & B & C --> D;
+                            D --> E --> F;
+                            
+                            class A,B,C person;
+                            class D cosmic;
+                            class E person;
+                            class F concept2;
+                    </div>
+
+                    <h3>Síntesis del Viaje: Del "Yo" al "Nosotros"</h3>
+                    <p>Finalmente, este diagrama de flujo resume la transformación completa, mostrando el paso de un estado de aislamiento y sufrimiento a uno de conexión, esperanza y renacimiento colectivo.</p>
+                     <div class="mermaid">
+                        graph TD
+                            classDef state1 fill:#f472b6,stroke:#000,stroke-width:2px,color:#000;
+                            classDef transition fill:#fbbf24,stroke:#000,stroke-width:2px,color:#000;
+                            classDef state2 fill:#818cf8,stroke:#000,stroke-width:2px,color:#000;
+                            classDef final fill:#34d399,stroke:#000,stroke-width:4px,color:#000;
+                        
+                            subgraph "Estado Inicial: El 'Yo'"
+                                A["Confusión y Dolor"]
+                                B["Desconexión Sensorial"]
+                                C["Aislamiento Existencial"]
+                            end
+                    
+                            D{"Punto de Inflexión<br><i>Aceptación y Trascendencia</i>"};
+                    
+                            subgraph "Estado Final: El 'Nosotros'"
+                                E["Conexión con el Cosmos"]
+                                F["Observación Colectiva (Humanidad)"]
+                                G["Renacer de la Pasión"]
+                            end
+                            
+                            H["Despertar"];
+                    
+                            A & B & C --> D;
+                            D --> E & F & G;
+                            E & F & G --> H;
+                    
+                            class A,B,C state1;
+                            class D transition;
+                            class E,F,G state2;
+                            class H final;
+                    </div>
+                </section>
+
+            </main>
+        </div>
+        <footer class="footer" id="contacto">
+            <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+        </footer>
+    </div>
+    <script>
+        // Inicia el código del Canvas
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicialización de Three.js Background
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+            } else {
+                console.error("Three.js not loaded");
+            }
+
+            setupNavigation();
+            setupScrollAnimations();
+            
+            // Renderizado de diagramas Mermaid
+            mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
+                'primaryColor': '#111827',
+                'primaryTextColor': '#e5e7eb',
+                'lineColor': '#818cf8',
+                'nodeBorder': '#818cf8',
+                'mainBkg': '#111827',
+                'textColor': '#e5e7eb'
+            } });
+        });
+
+        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById("bg-canvas"),
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 250;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error initializing Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points) {
+                points.rotation.y += 0.0003;
+                points.rotation.x += 0.0002;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- CÓDIGO DE NAVEGACIÓN ---
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.body.classList.toggle('menu-open');
+            });
+
+            navMenu.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                   document.body.classList.remove('menu-open');
+                }
+            });
+        }
+
+        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        
+                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid, ul, .authors, .lyrics-container');
+                        elementsToAnimate.forEach((el, index) => {
+                           el.style.transitionDelay = `${index * 100}ms`;
+                        });
+
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+    </script>
+</body>
+</html>
+
