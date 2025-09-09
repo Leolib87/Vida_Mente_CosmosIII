@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎸 Canciones & Mapas Conceptuales 🗺️ | O.C.V.M.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        /* Variables de CSS para colores y fuentes de la plantilla O.C.V.M. */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;    /* Rosa para nombres de personas */
+        
+            /* Variables de color para los "callouts" y diagramas Mermaid, adaptadas al estilo O.C.V.M. */
+            --callout-tip-border: #2ecc71; --callout-tip-bg: rgba(46, 204, 113, 0.1);
+            --callout-quote-border: #9b59b6; --callout-quote-bg: rgba(155, 89, 182, 0.1);
+            --callout-info-border: #3498db; --callout-info-bg: rgba(52, 152, 219, 0.1);
+            --callout-warning-border: #f1c40f; --callout-warning-bg: rgba(241, 196, 15, 0.1);
+            --callout-danger-border: #e74c3c; --callout-danger-bg: rgba(231, 76, 60, 0.1);
+            --callout-success-border: #1abc9c; --callout-success-bg: rgba(26, 188, 156, 0.1);
+            --callout-note-border: #8e44ad; --callout-note-bg: rgba(142, 68, 173, 0.1);
+            --callout-abstract-border: #7f8c8d; --callout-abstract-bg: rgba(127, 140, 141, 0.1);
+            --callout-failure-border: #c0392b; --callout-failure-bg: rgba(192, 57, 43, 0.1);
+            --callout-question-border: #f39c12; --callout-question-bg: rgba(243, 156, 18, 0.1);
+            --callout-galaxy-border: #5dade2; --callout-galaxy-bg: rgba(93, 173, 226, 0.1);
+            --callout-balance-border: #bdc3c7; --callout-balance-bg: rgba(189, 195, 199, 0.1);
+            --callout-time-border: #95a5a6; --callout-time-bg: rgba(149, 165, 166, 0.1);
+            --callout-compass-border: #27ae60; --callout-compass-bg: rgba(39, 174, 96, 0.1);
+            --callout-paw-border: #d35400; --callout-paw-bg: rgba(211, 84, 0, 0.1);
+            --callout-music-border: #2980b9; --callout-music-bg: rgba(41, 128, 185, 0.1);
+            --callout-vision-border: #8e44ad; --callout-vision-bg: rgba(142, 68, 173, 0.1);
+
+            --text-base: #e5e7eb;
+            --text-medium: #d1d5db;
+            --text-dim: #9ca3af;
+            --border-medium: #374151;
+            --border-light: #4b5563;
+        }
+
+        /* Estilos generales para el cuerpo de la página */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+            text-align: justify;
+        }
+        p {
+            text-align: justify;
+        }
+
+        /* Canvas de fondo con animación Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        /* Estilo de glassmorphism para secciones y navegación */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: none; /* Para que el fondo sea clicable */
+        }
+        nav > * {
+            pointer-events: auto; /* Elementos del nav son clicables */
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+
+        /* Sección del héroe o cabecera principal */
+        .hero {
+            min-height: 60vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 7vw, 4.5rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Contenedor principal para el contenido */
+        .main-container { 
+            width: 100%;
+            max-width: 100%; /* El contenedor usa todo el ancho */
+            margin: 0 auto; 
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content {
+            pointer-events: auto;
+        }
+
+        main p, .footer p {
+            user-select: text;
+            cursor: default;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        /* Animación de aparición para las secciones con scroll */
+        .section h2, .section h3, .section p, .mermaid, .section ul, .section .authors {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .mermaid, .section.is-visible ul, .section.is-visible .authors {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary-text);
+            border-bottom: 1px solid var(--primary-glow);
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 0 8px var(--secondary-glow);
+            font-weight: 700;
+        }
+        h2 { font-size: clamp(1.5rem, 5vw, 2.2rem); }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); border-bottom: none; margin: 2.5rem 0 1.5rem 0; }
+        
+        /* Clases para colorear palabras y conceptos */
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .concept2 { color: var(--concept-color-2); font-weight: 500; }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; }
+
+        /* Estilos de la tabla de índice */
+        .table-responsive-wrapper {
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-medium);
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        table {
+            width: 100%; border-collapse: separate; border-spacing: 0;
+        }
+        th, td {
+            border-bottom: 1px solid var(--border-medium);
+            border-right: 1px solid var(--border-medium);
+            padding: 12px 15px; text-align: left; vertical-align: middle;
+            white-space: nowrap;
+        }
+        th:last-child, td:last-child { border-right: none; }
+        tbody tr:last-child td { border-bottom: none; }
+        th { background-color: rgba(17, 24, 39, 0.5); font-weight: 600; color: var(--text-base); }
+        tbody tr:nth-child(even) { background-color: rgba(17, 24, 39, 0.2); }
+        tbody tr:nth-child(odd) { background-color: rgba(17, 24, 39, 0.1); }
+        tbody tr:hover { background-color: rgba(17, 24, 39, 0.4); }
+
+        /* Estilos para "callouts" */
+        .callout {
+            padding: 1.2rem 1.5rem; margin: 1.5rem 0;
+            border-left-width: 5px; border-left-style: solid;
+            border-radius: 0 6px 6px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .callout-tip { border-color: var(--callout-tip-border); background-color: var(--callout-tip-bg); }
+        .callout-quote { border-color: var(--callout-quote-border); background-color: var(--callout-quote-bg); }
+        .callout-info { border-color: var(--callout-info-border); background-color: var(--callout-info-bg); }
+        .callout-warning { border-color: var(--callout-warning-border); background-color: var(--callout-warning-bg); }
+        .callout-danger { border-color: var(--callout-danger-border); background-color: var(--callout-danger-bg); }
+        .callout-success { border-color: var(--callout-success-border); background-color: var(--callout-success-bg); }
+        .callout-note { border-color: var(--callout-note-border); background-color: var(--callout-note-bg); }
+        .callout-abstract { border-color: var(--callout-abstract-border); background-color: var(--callout-abstract-bg); }
+        .callout-failure { border-color: var(--callout-failure-border); background-color: var(--callout-failure-bg); }
+        .callout-question { border-color: var(--callout-question-border); background-color: var(--callout-question-bg); }
+        .callout-galaxy { border-color: var(--callout-galaxy-border); background-color: var(--callout-galaxy-bg); }
+        .callout-balance { border-color: var(--callout-balance-border); background-color: var(--callout-balance-bg); }
+        .callout-time { border-color: var(--callout-time-border); background-color: var(--callout-time-bg); }
+        .callout-compass { border-color: var(--callout-compass-border); background-color: var(--callout-compass-bg); }
+        .callout-paw { border-color: var(--callout-paw-border); background-color: var(--callout-paw-bg); }
+        .callout-music { border-color: var(--callout-music-border); background-color: var(--callout-music-bg); }
+        .callout-vision { border-color: var(--callout-vision-border); background-color: var(--callout-vision-bg); }
+        
+        .lyrics p { margin-bottom: 0.6em; color: var(--text-medium); }
+
+        pre, code { font-family: 'Fira Code', 'Consolas', monospace; }
+        pre:not(.mermaid) {
+            background-color: #050505;
+            padding: 1.2em; border-radius: 6px; overflow-x: auto;
+            color: #c5c8c6; border: 1px solid var(--border-medium);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+            white-space: pre;
+        }
+        code {
+            background-color: #222; padding: 0.2em 0.4em;
+            border-radius: 3px; font-size: 0.9em;
+            color: var(--text-medium);
+            white-space: nowrap;
+        }
+
+        /* Estilo para los diagramas de Mermaid */
+        .mermaid {
+            margin: 2rem auto;
+            display: flex; /* Usar flexbox para centrar */
+            justify-content: center; /* Centrar horizontalmente */
+            align-items: center; /* Centrar verticalmente */
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .mermaid-container {
+            background: rgba(17, 24, 39, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 2rem auto;
+            overflow: auto;
+        }
+        
+        .mermaid .node rect, .mermaid .node circle, .mermaid .node polygon, .mermaid .node ellipse { fill: #2a2a2a !important; stroke: #818cf8 !important; stroke-width: 1.5px !important; }
+        .mermaid .node text { fill: var(--primary-text) !important; stroke: none !important; font-family: var(--font-main) !important; font-size: 14px !important; }
+        .mermaid .edgeLabel text { fill: var(--primary-text) !important; font-family: var(--font-main) !important; font-size: 12px !important; }
+        .mermaid .edgeLabel rect { fill: #111827 !important; opacity: 0.8; }
+        .mermaid path, .mermaid line { stroke: #818cf8 !important; stroke-width: 1.5px !important; }
+        .mermaid .marker { fill: #818cf8 !important; stroke: #818cf8 !important; }
+
+        /* Clases personalizadas Mermaid (Consistentes con callouts) */
+        .mermaid .goal rect, .mermaid .goal circle, .mermaid .goal polygon, .mermaid .goal ellipse { fill: var(--callout-tip-bg) !important; stroke: var(--callout-tip-border) !important; }
+        .mermaid .uncertainty rect, .mermaid .uncertainty circle, .mermaid .uncertainty polygon, .mermaid .uncertainty ellipse { fill: var(--callout-quote-bg) !important; stroke: var(--callout-quote-border) !important; }
+        .mermaid .revelation rect, .mermaid .revelation circle, .mermaid .revelation polygon, .mermaid .revelation ellipse { fill: var(--callout-vision-bg) !important; stroke: var(--callout-vision-border) !important; }
+        .mermaid .totemSymbol rect, .mermaid .totemSymbol circle, .mermaid .totemSymbol polygon, .mermaid .totemSymbol ellipse { fill: var(--callout-warning-bg) !important; stroke: #f3b44e !important; }
+        .mermaid .omen rect, .mermaid .omen circle, .mermaid .omen polygon, .mermaid .omen ellipse { fill: var(--callout-danger-bg) !important; stroke: var(--callout-danger-border) !important; }
+        .mermaid .advice rect, .mermaid .advice circle, .mermaid .advice polygon, .mermaid .advice ellipse { fill: var(--callout-tip-bg) !important; stroke: var(--callout-tip-border) !important; }
+        .mermaid .time rect, .mermaid .time circle, .mermaid .time polygon, .mermaid .time ellipse { fill: var(--callout-warning-bg) !important; stroke: var(--callout-warning-border) !important; }
+        .mermaid .main rect, .mermaid .main circle, .mermaid .main polygon, .mermaid .main ellipse { fill: #333 !important; stroke: var(--primary) !important; }
+        .mermaid .concept rect, .mermaid .concept circle, .mermaid .concept polygon, .mermaid .concept ellipse { fill: var(--callout-music-bg) !important; stroke: var(--callout-music-border) !important; }
+        .mermaid .result rect, .mermaid .result circle, .mermaid .result polygon, .mermaid .result ellipse { fill: var(--callout-success-bg) !important; stroke: var(--callout-success-border) !important; }
+        .mermaid .giver rect, .mermaid .giver circle, .mermaid .giver polygon, .mermaid .giver ellipse { fill: var(--callout-tip-bg) !important; stroke: var(--callout-tip-border) !important; }
+        .mermaid .receiver rect, .mermaid .receiver circle, .mermaid .receiver polygon, .mermaid .receiver ellipse { fill: var(--callout-info-bg) !important; stroke: var(--callout-info-border) !important; }
+        .mermaid .flaw rect, .mermaid .flaw circle, .mermaid .flaw polygon, .mermaid .flaw ellipse { fill: var(--callout-danger-bg) !important; stroke: var(--callout-danger-border) !important; }
+        .mermaid .action rect, .mermaid .action circle, .mermaid .action polygon, .mermaid .action ellipse { fill: var(--callout-failure-bg) !important; stroke: var(--callout-failure-border) !important; }
+        .mermaid .words rect, .mermaid .words circle, .mermaid .words polygon, .mermaid .words ellipse { fill: var(--callout-warning-bg) !important; stroke: var(--callout-warning-border) !important; }
+        .mermaid .lack rect, .mermaid .lack circle, .mermaid .lack polygon, .mermaid .lack ellipse { fill: var(--callout-quote-bg) !important; stroke: var(--callout-quote-border) !important; }
+        .mermaid .mainSymbol rect, .mermaid .mainSymbol circle, .mermaid .mainSymbol polygon, .mermaid .mainSymbol ellipse { fill: var(--callout-quote-bg) !important; stroke: var(--callout-quote-border) !important; }
+        .mermaid .confession rect, .mermaid .confession circle, .mermaid .confession polygon, .mermaid .confession ellipse { fill: var(--callout-info-bg) !important; stroke: var(--callout-info-border) !important; }
+        .mermaid .naturalFall rect, .mermaid .naturalFall circle, .mermaid .naturalFall polygon, .mermaid .naturalFall ellipse { fill: var(--callout-warning-bg) !important; stroke: var(--callout-warning-border) !important; }
+        .mermaid .destructiveFall rect, .mermaid .destructiveFall circle, .mermaid .destructiveFall polygon, .mermaid .destructiveFall ellipse { fill: var(--callout-danger-bg) !important; stroke: var(--callout-danger-border) !important; }
+        .mermaid .origin rect, .mermaid .origin circle, .mermaid .origin polygon, .mermaid .origin ellipse { fill: var(--callout-quote-bg) !important; stroke: var(--callout-quote-border) !important; }
+        .mermaid .pos1 rect, .mermaid .pos1 circle, .mermaid .pos1 polygon, .mermaid .pos1 ellipse { fill: var(--callout-info-bg) !important; stroke: var(--callout-info-border) !important; }
+        .mermaid .pos2 rect, .mermaid .pos2 circle, .mermaid .pos2 polygon, .mermaid .pos2 ellipse { fill: var(--callout-danger-bg) !important; stroke: var(--callout-danger-border) !important; }
+        .mermaid .barrier rect, .mermaid .barrier circle, .mermaid .barrier polygon, .mermaid .barrier ellipse { fill: var(--callout-abstract-bg) !important; stroke: var(--callout-abstract-border) !important; }
+        .mermaid .type rect, .mermaid .type circle, .mermaid .type polygon, .mermaid .type ellipse { fill: var(--callout-music-bg) !important; stroke: var(--callout-music-border) !important; }
+        .mermaid .seeker rect, .mermaid .seeker circle, .mermaid .seeker polygon, .mermaid .seeker ellipse { fill: var(--callout-danger-bg) !important; stroke: var(--callout-danger-border) !important; }
+        .mermaid .target rect, .mermaid .target circle, .mermaid .target polygon, .mermaid .target ellipse { fill: var(--callout-info-bg) !important; stroke: var(--callout-info-border) !important; }
+        
+        /* Pie de página */
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        /* Media queries para dispositivos móviles */
+        @media (max-width: 768px) {
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+            body.menu-open .nav-container {
+                transform: translateY(0);
+            }
+
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo con animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>O.C.V.M.</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#inicio">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                    Inicio</a></li>
+                <li><a href="#cancion1">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                    Canciones</a></li>
+                <li><a href="#indice">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12A2.25 2.25 0 0020.25 14.25V3M3.75 20.25h16.5M3.75 12h16.5m-16.5 4.5h16.5m-16.5-8.25h16.5" /></svg>
+                    Índice</a></li>
+                <li><a href="#referencias">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                    Conclusión</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Sección Hero (Adaptada del contenido) -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>🎸 Canciones & Mapas Conceptuales 🗺️</h1>
+                <p>Una colección de 17 canciones, cada una acompañada de un mapa conceptual que explora sus temas y simbolismos.  </p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                <section id="introduccion" class="glassmorphism section" data-animate>
+                    <h2>Introducción</h2>
+                    <div class="callout callout-tip">
+                        <p><strong>Navegación visual:</strong> Este documento contiene transcripciones de 17 canciones, cada una acompañada de un mapa conceptual o diagrama (generado con Mermaid.js) que visualiza sus principales elementos temáticos y simbólicos en modo oscuro y diseño responsivo.</p>
+                    </div>
+                </section>
+                
+                <section id="indice" class="glassmorphism section" data-animate>
+                    <h2>📋 Índice de Canciones y Mapas</h2>
+                    <div class="table-responsive-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th scope="col">№</th>
+                                    <th scope="col">Título</th>
+                                    <th scope="col">Símbolo</th>
+                                    <th scope="col">Tema Principal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>1</td><td><a href="#cancion1">Aquello que llaman amor</a></td><td>💗</td><td>Búsqueda</td></tr>
+                                <tr><td>2</td><td><a href="#cancion2">Acero Chino</a></td><td>🔥</td><td>Materialismo</td></tr>
+                                <tr><td>3</td><td><a href="#cancion3">Presagio</a></td><td>🔮</td><td>Premonición</td></tr>
+                                <tr><td>4</td><td><a href="#cancion4">10 Minutos</a></td><td>⏱️</td><td>Transformación</td></tr>
+                                <tr><td>5</td><td><a href="#cancion5">Valor</a></td><td>🦁</td><td>Coraje</td></tr>
+                                <tr><td>6</td><td><a href="#cancion6">Cielo</a></td><td>☁️</td><td>Aspiración</td></tr>
+                                <tr><td>7</td><td><a href="#cancion7">Para Siempre Joven</a></td><td>👶</td><td>Juventud</td></tr>
+                                <tr><td>8</td><td><a href="#cancion8">Palabras miles</a></td><td>📚</td><td>Comunicación</td></tr>
+                                <tr><td>9</td><td><a href="#cancion9">Escaleras</a></td><td>🪜</td><td>Conexión</td></tr>
+                                <tr><td>10</td><td><a href="#cancion10">Las hojas caen...</a></td><td>🍂</td><td>Caída</td></tr>
+                                <tr><td>11</td><td><a href="#cancion11">Tótem</a></td><td>🗿</td><td>Ancestralidad</td></tr>
+                                <tr><td>12</td><td><a href="#cancion12">Planetas vecinos</a></td><td>🪐</td><td>Distancia</td></tr>
+                                <tr><td>13</td><td><a href="#cancion13">La vida que merezco</a></td><td>⚖️</td><td>Aceptación</td></tr>
+                                <tr><td>14</td><td><a href="#cancion14">1000 años</a></td><td>🕰️</td><td>Trascendencia</td></tr>
+                                <tr><td>15</td><td><a href="#cancion15">Buscaré</a></td><td>🔍</td><td>Exploración</td></tr>
+                                <tr><td>16</td><td><a href="#cancion16">Animal</a></td><td>🦁</td><td>Naturaleza</td></tr>
+                                <tr><td>17</td><td><a href="#cancion17">Well is small</a></td><td>🌊</td><td>Sonoridad</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <hr>
+                <article id="cancion1">
+                    <section class="glassmorphism section" data-animate>
+                        <h2>1 • Aquello que llaman amor 💗</h2>
+                        <figure>
+                            <img src="https://placehold.co/800x400/818cf8/000000?text=Corazón+buscando+en+un+mapa+del+mundo" alt="Corazón buscando en un mapa del mundo">
+                        </figure>
+                        <blockquote>
+                            <em>"Irás hasta la cima, a la misma cornisa del volcán..."</em>
+                        </blockquote>
+                        <div class="mermaid-container">
+                            <pre class="mermaid">
+graph TD
+    id1_A["Búsqueda del Amor"] --> id1_B["Lugares físicos"];
+    id1_A --> id1_C["Estados emocionales"];
+    subgraph id1_B ["Lugares físicos"]
+        id1_D["Cima del volcán"];
+        id1_E["África"];
+        id1_F["América"];
+        id1_G["Orilla del mar"];
+    end
+    subgraph id1_C ["Estados emocionales"]
+        id1_H["Soledad"];
+        id1_I["Frustración"];
+        id1_J["Esperanza"];
+    end
+    id1_H --> id1_K["Aquello que llaman cariño"];
+    id1_J --> id1_L["Aquello que llaman amor"];
+    id1_I --> id1_M["¿Dónde está?"];
+                            </pre>
+                        </div>
+                        <div class="lyrics">
+                           <p>Irás hasta la cima, a la misma cornisa del volcán.<br>
+                           Irás por la avenida trepando con piedras cortantes.<br>
+                           Irás a una cita extraña, por el día y por la noche una persona más.<br>
+                           Y quieres encontrar aquello que llaman amor.<br>
+                           Aquello que llaman amor.</p>
+                           <p>Buscan en la oscuridad y en la blanca sabana del África.<br>
+                           Buscan en América y en el alto nido de las águilas.<br>
+                           Buscan desde la raíz hasta las copas de los árboles, enterrados en el más tópico.<br>
+                           Buscan hasta la orilla hasta encontrar con las manos otros peces<br>
+                           y hasta las conchas en el mar.<br>
+                           Y todos quieren encontrar aquello que llaman amor.</p>
+                           <p>Irás hasta la orilla hasta encontrar con los dedos otros peces,<br>
+                           kilómetros y millas para nada.<br>
+                           Estrella por un día y por la noche una persona más.<br>
+                           Y quieres encontrar aquello que llaman amor.</p>
+                           <p>¡Hey! Tonto de mí, cuando lloras solamente,<br>
+                           lo comentas suavemente con la soledad.<br>
+                           Cuando vas para adelante pero el mundo lentamente tira para atrás.<br>
+                           Encontrarás aquello que llaman cariño.</p>
+                           <p>Todos quieren encontrar aquello que llaman amor.<br>
+                           Aquello que llaman amor.<br>
+                           ¿Dónde está? ¿Dónde está?<br>
+                           Aquello que llaman amor.</p>
+                        </div>
+                        <div class="callout callout-quote">
+                            <p><strong>Reflexión:</strong> La búsqueda del amor lleva a las personas a los rincones más extremos del mundo y de sí mismos, una odisea física y emocional.</p>
+                        </div>
+                    </section>
+                </article>
+
+                <hr>
+                <article id="cancion2">
+                    <section class="glassmorphism section" data-animate>
+                        <h2>2 • Acero Chino 🔥</h2>
+                        <figure>
+                            <img src="https://placehold.co/800x400/818cf8/000000?text=Forja+industrial+con+cadenas+rotas+simbolizando+liberación" alt="Forja industrial con cadenas rotas simbolizando liberación">
+                        </figure>
+                        <blockquote>
+                            <em>"Voz de hierro y de carbón, hueso de la construcción..."</em>
+                        </blockquote>
+                        <div class="mermaid-container">
+                            <pre class="mermaid">
+%% Acero Chino - Graph TD (v3.14)
+graph TD
+    id2_A("Acero Chino") --> id2_B("Conceptos Clave");
+    id2_A --> id2_C("Acciones / Consecuencias");
+
+    subgraph id2_B ["Conceptos Clave"]
+        id2_B1("Materialismo");
+        id2_B1 --> id2_B1a["Precio vs. Valor"];
+        id2_B1 --> id2_B1b["Riqueza vs. Pobreza"];
+        id2_B2("Elementos Industriales");
+        id2_B2 --> id2_B2a["Hierro, Carbón, Metal, Hornos"];
+        id2_B3("Falsedad / Opresión");
+        id2_B3 --> id2_B3a["Cadena, Portón"];
+        id2_B3 --> id2_B3b["'Amor de acero chino'"];
+    end
+
+    subgraph id2_C ["Acciones / Consecuencias"]
+        id2_C1("Imposición Externa");
+        id2_C1 --> id2_C1a["'Tienes que parar'"];
+        id2_C1 --> id2_C1b["'Tienes que encontrar<br>manera miserable'"];
+        id2_C1 --> id2_C1c["'Comprarme tu amor<br>para salvarte'"];
+        id2_C2("Resistencia Interna");
+        id2_C2 --> id2_C2a["'Dándole duro al metal'"];
+        id2_C2 --> id2_C2b["Rechazo al materialismo"];
+        id2_C3("Resultado");
+        id2_C3 --> id2_C3a["Hornos se apagan"];
+    end
+                            </pre>
+                        </div>
+                        <div class="lyrics">
+                           <p>Voz de hierro y de carbón,<br>
+                           hueso de la construcción,<br>
+                           volarán mis pies sin tu armazón.<br>
+                           Pon las puertas a girar,<br>
+                           pon los dedos a vibrar,<br>
+                           confunde precio con valor.</p>
+                           <p>Y ahora dices que tengo que parar,<br>
+                           que eran perdidas las horas dándole duro al metal<br>
+                           y me dejas botado sin vergüenza frente a mi destino.</p>
+                           <p>Y ahora dices que tengo que encontrar<br>
+                           una manera miserable de llegar al final,<br>
+                           que si me quiero salvar<br>
+                           debo comprarme tu amor de acero chino.<br>
+                           Hornos que se apagan con tu amor de acero chino.</p>
+                           <p>Suena padre estructural,<br>
+                           guerras con tu material.<br>
+                           Sueña hija con esta canción.<br>
+                           La riqueza casará al pobre<br>
+                           y solo quedará de acero chino<br>
+                           la cadena y el portón.</p>
+                           <p>Y ahora dices que tengo que parar,<br>
+                           que eran perdidas las horas dándole duro al metal<br>
+                           y me dejas botado sin pistola frente a mi destino.<br>
+                           Y ahora dices que tengo que encontrar<br>
+                           una manera miserable de llegar al final,<br>
+                           si me quiero salvar debo comprarme tu amor de acero chino.</p>
+                           <p>Hornos que se apagan con tu amor de acero chino.<br>
+                           Hornos que se apagan con tu amor de acero chino, acero chino.</p>
+                        </div>
+                        <div class="callout callout-info">
+                            <p><strong>Metáfora:</strong> El "acero chino" representa lo barato, lo inauténtico, lo superficialmente atractivo pero carente de valor real. Es una crítica al materialismo y a las relaciones basadas en apariencias o transacciones en lugar de sentimientos genuinos.</p>
+                        </div>
+                    </section>
+                </article>
+
+                <hr>
+                <article id="cancion3">
+                    <section class="glassmorphism section" data-animate>
+                        <h2>3 • Presagio 🔮</h2>
+                        <figure>
+                            <img src="https://placehold.co/800x400/818cf8/000000?text=Bola+de+cristal+oscura" alt="Bola de cristal oscura reflejando una visión ominosa y borrosa">
+                        </figure>
+                        <blockquote>
+                            <em>"¡Presagio! En el 86 vi algo caer del cielo claro..."</em>
+                        </blockquote>
+                        <div class="mermaid-container">
+                            <pre class="mermaid">
+%% Diagrama de Presagio (Graph TD - v3.14)
+graph TD
+    id3_A("PRESAGIO"):::omen --> id3_B["Evento Pasado ('86)"];
+    id3_A --> id3_C{"Sentimiento Persistente<br>'Duerme en mi corazón'"};
+    id3_A --> id3_D["Visión Futura Ominosa"]:::omen;
+    id3_A --> id3_E["Símbolos / Manifestaciones"];
+    id3_A --> id3_F["Ciclo Temporal y Errores"];
+
+    subgraph id3_E ["Símbolos / Manifestaciones"]
+        id3_E1["Bola de Cristal"] --> id3_E2["Visión Violenta<br>'Tripas en el aire,<br>correrá la sangre'"];
+        id3_E2 --> id3_E3["Acción: 'No quiero mirar'"];
+        id3_E4["Razón Amordazada"] --> id3_E5["Vuela sobre Caballo<br>(Pérdida de control)"];
+        id3_E6["Individualidad<br>'Bicho raro'"] <--> id3_E7["Conformidad Social<br>'Falsa perfección'"];
+        id3_E6 --> id3_E8["Consejo: 'Es lo más sano'"]:::advice;
+    end
+
+    subgraph id3_F ["Ciclo Temporal y Errores"]
+        id3_F1["Errores Pasado Lejano<br>(20 años atrás)"] --> id3_F2["Consecuencia Pasada<br>'Ese error venía por mí'"];
+        id3_F3["Errores Presente"] --> id3_F4["Impacto Futuro<br>'Cómo cambiará mañana'"];
+        id3_F4 --> id3_F5["Expectativa<br>'Esperaré hasta<br>pasado mañana'"];
+    end
+
+    classDef omen fill:#e74c3c,stroke:#e74c3c,stroke-width:1.5px;
+    classDef advice fill:#2ecc71,stroke:#2ecc71,stroke-width:1.5px;
+                            </pre>
+                        </div>
+                        <div class="lyrics">
+                           <p>¡Presagio! En el 86 vi algo caer del cielo claro.<br>
+                           ¡Presagio! Duerme en la noche de mi corazón por muchos años.<br>
+                           ¡Extraño! ¡Extraño! ¡Presagio!<br>
+                           Amordazada vuela la razón sobre un caballo.<br>
+                           ¡Presagio! En la más polvorienta ciudad la asesinamos.<br>
+                           ¡Extraño! ¡Extraño! ¡Presagio!</p>
+                           <p>Bola de cristal, tripas en el aire,<br>
+                           no quiero mirar.<br>
+                           Bola de cristal, correrá la sangre,<br>
+                           no quiero mirar, no quiero mirar.</p>
+                           <p>¡Presagio! Ayer pensé en los errores, mucho más atrás<br>
+                           veinte años agarrado en la cortina del baño<br>
+                           ese error venía por mí. ¡Presagio!</p>
+                           <p>Ahora pienso en los errores que cometo ahora,<br>
+                           cómo cambiará lo que me pasará mañana<br>
+                           y si mañana no pasa nada esperaré hasta pasado mañana.<br>
+                           ¡Extraño! ¡Extraño! ¡Presagio!</p>
+                           <p>Que no te importe si es que has de ser el bicho raro,<br>
+                           entre tanta falsa perfección es lo más sano.<br>
+                           ¡Extraño! ¡Extraño! ¡Presagio!</p>
+                           <p>Bola de cristal, tripas en el aire, no quiero mirar.<br>
+                           Bola de cristal correrá la sangre,<br>
+                           no quiero mirar prefiero no mirar.<br>
+                           Pres-Pres-¡Presagio!</p>
+                        </div>
+                        <div class="callout callout-warning">
+                            <p><strong>Premonición:</strong> La canción evoca la sensación inquietante de una premonición, un evento pasado que proyecta una sombra sobre el futuro. Explora la ansiedad ante lo inevitable y la tensión entre aceptar la individualidad ("bicho raro") y la presión social ("falsa perfección").</p>
+                        </div>
+                    </section>
+                </article>
+
+                <hr>
+                <article id="cancion4">
+                    <section class="glassmorphism section" data-animate>
+                        <h2>4 • 10 Minutos ⏱️</h2>
+                        <figure>
+                            <img src="https://placehold.co/800x400/818cf8/000000?text=Cronómetro+con+flechas+indicando+cambio" alt="Cronómetro marcando 10 minutos con flechas indicando cambio rápido">
+                        </figure>
+                        <blockquote>
+                            <em>"No soy sicólogo pero lo has pasado mal..."</em>
+                        </blockquote>
+                        <div class="mermaid-container">
+                            <pre class="mermaid">
+%% Diagrama de 10 Minutos (Graph TD - v3.14)
+graph TD
+    id4_A["Estado Inicial<br>(Malestar, Tristeza Detectada)"] --> id4_B{"Petición: Dame<br>10 Minutos"}:::time;
+    id4_B --> id4_C["Promesa: Cambiaré tu día"];
+    id4_C --> id4_D["Estado Transformado<br>(Alegría, Cambio)"];
+
+    subgraph id4_ROL_YO [Agentes de Cambio / Rol del 'Yo']
+        id4_E["Situación: Sol de luto"];
+        id4_E --> id4_F["Rol 'Yo': Seré Alegría"];
+        id4_E --> id4_G["Rol 'Yo': Llamaré a la Lluvia"];
+        id4_F --> id4_D;
+        id4_G --> id4_D;
+    end
+
+    subgraph id4_METAFORAS [Metáforas de Incomprensión Externa]
+        id4_H["Árbol tropical"];
+        id4_J["Barco alta mar"];
+        id4_K["Noche ciudad"];
+        id4_H -.-> id4_I("¿Qué saben de<br>Tormentas?");
+        id4_J -.-> id4_I;
+        id4_K -.-> id4_L("¿Qué saben de<br>Tu Vida / Nada?");
+    end
+
+    subgraph id4_IDENTIDAD [Identidad Paradójica del 'Yo']
+        id4_M{"No soy perro"};
+        id4_M --> id4_N["Pero ladro<br>(Actúo cuando es necesario)"];
+        id4_O{"No seré pájaro"};
+        id4_O --> id4_P["Pero sé volar<br>(Tengo capacidades ocultas)"];
+    end
+
+    subgraph id4_CICLO_VIDA [Naturaleza Cíclica de la Vida]
+        id4_Q{Vida};
+        id4_Q --> id4_R["Tira al suelo / Levanta"];
+        id4_Q --> id4_S["Prende fuego / Apaga"];
+        id4_Q --> id4_T["Característica: Simple y Fugaz"];
+    end
+
+    id4_A --> id4_ROL_YO;
+    id4_ROL_YO --> id4_METAFORAS;
+    id4_METAFORAS --> id4_IDENTIDAD;
+    id4_IDENTIDAD --> id4_CICLO_VIDA;
+
+    classDef time fill:#f1c40f,stroke:#f1c40f,stroke-width:1.5px;
+                            </pre>
+                        </div>
+                        <div class="lyrics">
+                           <p>No soy sicólogo pero lo has pasado mal,<br>
+                           no soy adivino pero vino un temporal.<br>
+                           Solo dame diez minutos y tu día cambiaré,<br>
+                           cuando el sol esté de luto alegría yo seré.</p>
+                           <p>Aunque seas buena actriz no puedes ocultar.<br>
+                           Tienes larga la nariz pero mientes mal.<br>
+                           Solo dame diez minutos y tu día cambiaré,<br>
+                           cuando el sol esté de luto a la lluvia llamaré.</p>
+                           <p>Árbol tropical, barco en alta mar.<br>
+                           ¿Qué saben de tormentas ellas?<br>
+                           Noche en la ciudad, ¿la fiesta dónde está?<br>
+                           ¿Qué saben de tu vida? Nada.</p>
+                           <p>Yo no soy un perro pero ladro cuando hay que ladrar.<br>
+                           Y no seré pájaro pero sé cómo volar.<br>
+                           Solo dame diez minutos y tu día cambiaré,<br>
+                           cuando el sol esté de luto alegría yo seré.</p>
+                           <p>Árbol tropical, barco en alta mar.<br>
+                           ¿Qué saben de tormentas ellos?<br>
+                           Noche en la ciudad, ¿la fiesta dónde está?<br>
+                           ¿Qué saben de ti?</p>
+                           <p>Árbol tropical, barco en alta mar.<br>
+                           ¿Qué saben de tormentas ellos?<br>
+                           Noche en la ciudad, ¿y el mundo dónde está?<br>
+                           ¿Qué saben de tu vida?</p>
+                           <p>Te tira al suelo y te vuelve a parar.<br>
+                           Te prende fuego y te vuelve a apagar,<br>
+                           mil veces simple y por siempre fugaz.</p>
+                        </div>
+                        <div class="callout callout-tip">
+                            <p><strong>Transformación Rápida:</strong> La canción ofrece una promesa audaz: cambiar el estado emocional de alguien en solo diez minutos, actuando como un catalizador de alegría o cambio, a pesar de no tener credenciales formales (psicólogo, adivino).</p>
+                        </div>
+                    </section>
+                </article>
+
+                <hr>
+                <article id="cancion5">
+                    <section class="glassmorphism section" data-animate>
+                        <h2>5 • Valor 🦁</h2>
+                        <figure>
+                            <img src="https://placehold.co/800x400/818cf8/000000?text=León+estilizado+rugiendo" alt="León estilizado rugiendo, simbolizando coraje y fuerza interior">
+                        </figure>
+                        <blockquote>
+                            <em>"Un minuto de silencio para pedir tres deseos..."</em>
+                        </blockquote>
+                        <div class="mermaid-container">
+                            <pre class="mermaid">
+%% Valor - Graph TD (v3.14)
+graph TD
+    id5_A("VALOR"):::main --> id5_B("Petición / Deseos");
+    id5_A --> id5_C("Contexto / Situación");
+    id5_A --> id5_D("Actitud / Respuesta -> VALOR");
+    id5_A --> id5_E("Dicotomías / Ciclos Naturales");
+    id5_A --> id5_F("Mensaje Central");
+
+    subgraph id5_B ["Petición / Deseos"]
+        id5_B1["Minuto de silencio"];
+        id5_B2["Tres deseos"];
+        id5_B2 --> id5_B2a["1. Que te quedaras"];
+        id5_B2 --> id5_B2b["2. Que no te fueras"];
+        id5_B2 --> id5_B2c["3. Tercer deseo secreto"];
+    end
+
+    subgraph id5_C ["Contexto / Situación"]
+        id5_C1["Año nuevo no te puso tan feliz"];
+        id5_C2["Fuegos artificiales (Contraste)"];
+        id5_C3["Mundo demente"];
+    end
+
+    subgraph id5_D ["Actitud / Respuesta -> VALOR"]
+        id5_D1["Seguir caminando mejor"];
+        id5_D2["Vestiré ropa de explorador"];
+        id5_D3["Ya no espero respuesta"];
+        id5_D4["Ni rescate salvador"];
+        id5_D5["Rechazo a moral hipócrita ('Pégales...')"];
+        id5_D6["No esperar 'experimentos' ni 'esqueletos'"];
+    end
+
+    subgraph id5_E ["Dicotomías / Ciclos Naturales"]
+        id5_E1["Lluvia y Sol"];
+        id5_E2["Día y Noche"];
+        id5_E3["Cambiar alas por pies (Adaptación)"];
+        id5_E4["Y pies por alas otra vez (Resiliencia)"];
+    end
+
+    subgraph id5_F ["Mensaje Central"]
+        id5_F1["Enfrentar adversidad con coraje"];
+        id5_F2["Autosuficiencia emocional"];
+        id5_F3["Adaptación continua"];
+    end
+
+    classDef main fill:#d35400, color:#f0f0f0, stroke:#d35400, stroke-width:1.5px;
+                            </pre>
+                        </div>
+                        <div class="lyrics">
+                           <p>Un minuto de silencio para pedir tres deseos.<br>
+                           Este año, el año nuevo no te puso tan feliz.<br>
+                           Le pedí que te quedaras, le pedí que no te fueras.<br>
+                           El tercer deseo en alta voz no lo puedo decir, ¿o puedo?<br>
+                           <em>Sigo caminando mejor.</em></p>
+                           <p>Bajo el rojo parpadeo de fuegos artificiales,<br>
+                           hubo un tiempo de sonrisas y champaña, pero fue.<br>
+                           ¿De qué vale lamentarse?<br>
+                           ¿Y hacia dónde escapar en un mundo demente?<br>
+                           <em>Sigo caminando, mejor.</em></p>
+                           <p>Si el planeta es una selva,<br>
+                           vestiré la ropa del explorador, amor.<br>
+                           Ya no espero una respuesta<br>
+                           ni que me rescate un nuevo corazón salvador.</p>
+                           <p>¡VALOR!</p>
+                           <p>Después de la lluvia sale el sol y al final de cada día<br>
+                           hay una noche escondida sé que tú lo entenderías bien.<br>
+                           ¡Valor! Que dure cien años no hay un mal.<br>
+                           Cambiaremos las alas por pies<br>
+                           y los pies por alas otra vez.</p>
+                           <p>¡VALOR!</p>
+                           <p>Pégales mientras en el suelo están,<br>
+                           tú qué sabes de moral.<br>
+                           Díctales tu cátedra en la catedral.<br>
+                           Pégales mientras en el suelo están,<br>
+                           tú que sabes de moral<br>
+                           díctales tu cátedra en la catedral.</p>
+                           <p><em>Sigo caminando, mejor.</em></p>
+                           <p>Si el domingo queda corto<br>
+                           siempre encuentro algún amigo salvador, amor.<br>
+                           Ya no quiero experimentos,<br>
+                           ni esqueletos en el refrigerador.<br>
+                           Por favor, ¡valor!</p>
+                           <p>Después de la lluvia sale el sol,<br>
+                           y al final de cada día hay una noche escondida,<br>
+                           sé que tú lo entenderías bien.<br>
+                           ¡Valor! Que dure cien años no hay un mal.<br>
+                           Cambiaremos las alas por pies<br>
+                           y los pies por alas otra vez.</p>
+                        </div>
+                        <div class="callout callout-success">
+                            <p><strong>Coraje y Resiliencia:</strong> "Valor" es un llamado a la fortaleza interior frente a la decepción y un "mundo demente". Aboga por la autosuficiencia ("no espero rescate"), la adaptación ("cambiar alas por pies y viceversa") y seguir adelante ("sigo caminando") a pesar de las dificultades.</p>
+                        </div>
+                    </section>
+                </article>
+
+                <hr>
+                <article id="cancion6">
+                    <section class="glassmorphism section" data-animate>
+                        <h2>6 • Cielo ☁️</h2>
+                        <figure>
+                            <img src="https://placehold.co/800x400/818cf8/000000?text=Escalera+ascendiendo+a+un+cielo+nublado" alt="Escalera surrealista ascendiendo hacia un cielo nublado y distante">
+                        </figure>
+                        <blockquote>
+                            <em>"Cielo, ¿qué te pasa? que te alejas y no bajas hasta mí..."</em>
+                        </blockquote>
+                        <div class="mermaid-container">
+                            <pre class="mermaid">
+%% Cielo - Graph TD (v3.14 - Corregido Final)
+graph TD
+    id6_F[YO]:::seeker ---|"Interpela / Desea"| id6_A[CIELO]:::target;
+
+    subgraph id6_ACCIONES_CIELO [Acciones / Críticas al Cielo]
+        id6_A --> id6_B["Se aleja"];
+        id6_A --> id6_C["No baja hasta mí"];
+        id6_A --> id6_D["'Se cree azul'<br>(Solo es celeste)"];
+        id6_A --> id6_E["'Se cree dueño del sol'<br>(Solo da lluvia)"];
+    end
+
+    subgraph id6_ACCIONES_YO [Acciones / Promesas del Yo]
+        id6_F --> id6_G["'Dejar mis penas aquí'<br>(Si tú me esperas)"];
+        id6_F --> id6_H["'Iré hasta el final...'"];
+        id6_H --> id6_I["'... de la escalera'<br>(Ansia verdadera)"];
+        id6_H --> id6_J["'... del hoyo negro'"];
+        id6_J --> id6_K["'Encontrarte de nuevo'"];
+    end
+
+    classDef target fill:#1a3148,stroke:#3498db,stroke-width:1.5px;
+    classDef seeker fill:#482520,stroke:#e74c3c,stroke-width:1.5px;
+                            </pre>
+                        </div>
+                        <div class="lyrics">
+                           <p>Cielo, ¿qué te pasa? que te alejas y no bajas hasta mí.<br>
+                           Cielo, nunca es tarde para darme solo un día sin sufrir.<br>
+                           Te crees tan azul y solo eres celeste, cielo. Tranquilo.<br>
+                           Cielo, si tú me esperas yo te prometo dejar mis penas por aquí.<br>
+                           Te crees dueño del sol y solo me das lluvia, cielo. No te quiebres.</p>
+                           <p>Cielo, por ti iré hasta el final de la escalera ansia verdadera tengo.<br>
+                           Cielo, por ti iré hasta el final del hoyo negro hasta encontrarte de nuevo.<br>
+                           Cielo por ti, hasta encontrarte de nuevo.<br>
+                           Cielo, ¿qué te pasa? que te alejas y no bajas hasta mí.<br>
+                           Cielo, nunca es tarde para darme solo un día sin sufrir.<br>
+                           Te crees tan azul y solo eres celeste, cielo. Tranquilo.</p>
+                           <p>Cielo, por ti iré hasta el final de la escalera ansia verdadera tengo.<br>
+                           Cielo, por ti iré hasta el final del hoyo negro.<br>
+                           Hasta encontrarte de nuevo. Hasta encontrarte de nuevo.</p>
+                        </div>
+                        <div class="callout callout-note">
+                            <p><strong>Anhelo Inalcanzable:</strong> El "Cielo" actúa como una metáfora de un objetivo, persona o estado deseado que parece distante, esquivo y quizás falsamente idealizado ("solo eres celeste", "solo me das lluvia"). A pesar de esto, persiste la determinación de alcanzarlo, incluso a través de medios extremos ("escalera", "hoyo negro").</p>
+                        </div>
+                    </section>
+                </article>
+
+                <hr>
+                <article id="cancion7">
+                    <section class="glassmorphism section" data-animate>
+                        <h2>7 • Para Siempre Joven 👶</h2>
+                        <figure>
+                            <img src="https://placehold.co/800x400/818cf8/000000?text=Reloj+y+símbolo+del+infinito" alt="Símbolo abstracto del infinito entrelazado con un reloj, representando juventud eterna">
+                        </figure>
+                        <blockquote>
+                            <em>"Nunca, nunca pero nunca me expliqué adonde fui a parar con mi colchón..."</em>
+                        </blockquote>
+                        <div class="mermaid-container">
+                            <pre class="mermaid">
+%% Para Siempre Joven - Graph TD (v3.14)
+graph TD
+    id7_Z(PARA SIEMPRE JOVEN):::concept --> id7_PARTIDA["Punto de Partida<br>(Desorientación)"];
+    id7_Z --> id7_POCION["El Ideal / La Poción"];
+    id7_Z --> id7_APARIENCIA["Realidad vs Apariencia"];
+    id7_Z --> id7_DEVENIR["Transformaciones"];
+    id7_Z --> id7_OFRENDA["Ofrenda / Instrucción Final"];
+
+    subgraph id7_PARTIDA ["Punto de Partida (Desorientación)"]
+        id7_A["Despertar en alta mar<br>(Dormí en orilla con colchón)"];
+        id7_B["Correo perdido<br>(Palomas lo llevan a Perú)"];
+    end
+
+    subgraph id7_POCION ["El Ideal / La Poción"]
+        id7_C{"Condición: Soledad<br>de sol a sol"};
+        id7_C --> id7_D["Tomar la Poción"];
+        id7_D --> id7_E["Resultado: Corazón Joven<br>(Para Siempre)"]:::result;
+    end
+
+    subgraph id7_APARIENCIA ["Realidad vs Apariencia"]
+        id7_F["Bigote falso (despegándose)"];
+        id7_G["Sonrisa por afuera"];
+        id7_H["Procesión por adentro"];
+        id7_I["Estafador (¿Quién es?)"];
+    end
+
+    subgraph id7_DEVENIR ["Transformaciones / Devenir"]
+        id7_J["Polilla en un farol"];
+        id7_K["Polvo en un baúl"];
+    end
+
+    subgraph id7_OFRENDA ["Ofrenda / Instrucción Final"]
+        id7_L["Tengo esta risa -> Te la doy"];
+        id7_M["Esta corporación<br>(¿Vida? ¿Sistema?)"];
+        id7_M --> id7_N["Mastícala"];
+        id7_N --> id7_O["Trágala"];
+        id7_O --> id7_P["Vomítala"];
+        id7_P --> id7_Q["Riégala<br>(en campo agrícola)"];
+    end
+
+    classDef concept fill:#8e44ad,stroke:#8e44ad,stroke-width:1.5px;
+    classDef result fill:#1abc9c,stroke:#1abc9c,stroke-width:1.5px;
+                            </pre>
+                        </div>
+                        <div class="lyrics">
+                           <p>Nunca, nunca pero nunca me expliqué adonde fui a parar con mi colchón,<br>
+                           me dormí en la orilla y desperté flotando en alta mar.<br>
+                           Mis postales el buzón las escupió<br>
+                           y la correspondencia quedó ahí,<br>
+                           las palomas mensajeras las llevaron al Perú.<br>
+                           Y cuando no haya nada sola de sol a sol,<br>
+                           tomaría la poción, uuu.<br>
+                           Y para siempre joven será tu corazón,<br>
+                           para siempre joven.</p>
+                           <p>El sudor está empezando a despegar<br>
+                           ese bigote falso que adquirí,<br>
+                           la sonrisa por afuera y por adentro la procesión.<br>
+                           Y hasta ser una polilla en un farol,<br>
+                           hasta que sea polvo en un baúl,<br>
+                           hasta que nos demos cuenta quién es el estafador.<br>
+                           Y cuando no haya nadie sola de sol a sol,<br>
+                           tomarías la poción, uuu.<br>
+                           Y para siempre joven será tu corazón,<br>
+                           para siempre joven.</p>
+                           <p>Tengo esta risa y te la doy<br>
+                           y esta corporación mastícala,<br>
+                           trágatela y vomítala,<br>
+                           en un campo agrícola y riégala.<br>
+                           Para siempre joven.<br>
+                           Para siempre joven.<br>
+                           Para siempre joven.</p>
+                        </div>
+                        <div class="callout callout-abstract">
+                            <p><strong>Juventud Eterna y Transformación:</strong> La canción explora el deseo de juventud eterna ("poción") en un contexto de desorientación y falsedad ("bigote falso", "estafador"). Sugiere que esta juventud no es estática, sino un proceso de transformación constante ("polilla", "polvo") y culmina en un acto de compartir y reciclar la propia esencia ("risa", "corporación").</p>
+                        </div>
+                    </section>
+                </article>
+
+                <hr>
+                <article id="cancion8">
+                    <section class="glassmorphism section" data-animate>
+                        <h2>8 • Palabras miles 📚</h2>
+                        <figure>
+                            <img src="https://placehold.co/800x400/818cf8/000000?text=Libro+abierto+mostrando+un+corazón+roto" alt="Libro abierto mostrando un corazón roto dibujado en sus páginas">
+                        </figure>
+                        <blockquote>
+                            <em>"Te enseñé cada página de mí, fui lector del diario de tu vivir..."</em>
+                        </blockquote>
+                        <div class="mermaid-container">
+                            <pre class="mermaid">
+%% Palabras Miles - Graph TD (v3.14)
+graph TD
+    id8_A("Palabras Miles") --> id8_INTIMIDAD["Intimidad y Conocimiento Mutuo"];
+    id8_INTIMIDAD --> id8_FALLA["La Falla: Incapacidad de Amar"];
+    id8_FALLA --> id8_CONSECUENCIA["Consecuencia Inevitable"];
+    id8_CONSECUENCIA --> id8_LENGUAJE["La Paradoja del Lenguaje"];
+
+    subgraph id8_INTIMIDAD ["Intimidad y Conocimiento Mutuo"]
+        id8_A1["Yo: Enseñé cada página de mí"]:::giver;
+        id8_A2["Tú: Fui lector del diario de tu vivir"]:::receiver;
+        id8_A3["Yo: Visité cada esquina de ti"]:::giver;
+        id8_A4["Yo: Te mostré la torre con su prisión"]:::giver;
+    end
+
+    subgraph id8_FALLA ["La Falla: Incapacidad de Amar"]
+        id8_B1["Resultado: Soy un analfabeto para amar"]:::flaw;
+        id8_B2["Metáfora: Guión a doble mano<br>(Confusión / Contradicción)"];
+    end
+
+    subgraph id8_CONSECUENCIA ["Consecuencia Inevitable"]
+        id8_C1["Acto: Te rompí el corazón"]:::action;
+        id8_C1 --> id8_C1a["Causa 1: Por ser como soy<br>(Naturaleza inherente)"];
+        id8_C1 --> id8_C1b["Causa 2: Porque nada jamás te hará cambiar<br>(Tu naturaleza)"];
+        id8_C2["Matiz: 'No quiere decir que no lo siento'<br>(Remordimiento)"];
+        id8_C3["Patrón: 'El fin de nuestro cuento es siempre igual'<br>(Repetición)"];
+    end
+
+    subgraph id8_LENGUAJE ["La Paradoja del Lenguaje"]
+        id8_D1["Tengo: Palabras más, palabras miles"]:::words;
+        id8_D2["Resultado: Cero para describir<br>lo que me diste"]:::lack;
+    end
+
+    classDef giver fill:#2ecc71,stroke:#2ecc71,stroke-width:1.5px;
+    classDef receiver fill:#3498db,stroke:#3498db,stroke-width:1.5px;
+    classDef flaw fill:#e74c3c,stroke:#e74c3c,stroke-width:1.5px;
+    classDef action fill:#c0392b,stroke:#c0392b,stroke-width:1.5px;
+    classDef words fill:#f1c40f,stroke:#f1c40f,stroke-width:1.5px;
+    classDef lack fill:#9b59b6,stroke:#9b59b6,stroke-width:1.5px;
+                            </pre>
+                        </div>
+                        <div class="lyrics">
+                           <p>Te enseñé cada página de mí,<br>
+                           fui lector del diario de tu vivir.<br>
+                           Sol a sol a doble mano el guión<br>
+                           para amar soy un analfabeto.</p>
+                           <p>Y te rompí el corazón solamente por ser como soy.<br>
+                           Te rompí el corazón porque nada jamás te hará cambiar.<br>
+                           Si te rompí el corazón eso no quiere decir que no lo siento,<br>
+                           pero el fin de nuestro cuento es siempre igual.</p>
+                           <p>Visité cada esquina de ti,<br>
+                           te mostré la torre con su prisión.<br>
+                           Dos a dos a doble mano el guión<br>
+                           para amar soy un analfabeto.</p>
+                           <p>Y te rompí el corazón solamente por ser como soy.<br>
+                           Te rompí el corazón porque nada jamás te hará cambiar.<br>
+                           Si te rompí el corazón eso no quiere decir que no lo siento,<br>
+                           pero el fin de nuestro cuento es siempre igual.</p>
+                           <p>Palabras más, palabras miles<br>
+                           y cero para describir lo que me diste.<br>
+                           Y te rompí el corazón.<br>
+                           Te rompí el corazón.</p>
+                        </div>
+                        <div class="callout callout-failure">
+                            <p><strong>Incomunicación y Destino:</strong> A pesar de una profunda intimidad y conocimiento mutuo ("enseñé cada página", "fui lector"), persiste una incapacidad fundamental para amar ("analfabeto para amar"). Esto lleva a un ciclo doloroso y repetitivo ("el fin del cuento siempre igual"), resaltando la paradoja de tener "miles de palabras" pero ninguna adecuada para expresar la gratitud o evitar el daño.</p>
+                        </div>
+                    </section>
+                </article>
+
+                <hr>
+                <article id="cancion9">
+                    <section class="glassmorphism section" data-animate>
+                        <h2>9 • Escaleras 🪜</h2>
+                        <figure>
+                            <img src="https://placehold.co/800x400/818cf8/000000?text=Escaleras+imposibles+tipo+M.C.+Escher" alt="Ilustración de escaleras imposibles tipo M.C. Escher, sin principio ni fin claro">
+                        </figure>
+                        <blockquote>
+                            <em>"Escaleras en el centro de una habitación sin suelo ni techo..."</em>
+                        </blockquote>
+                        <div class="mermaid-container">
+                            <pre class="mermaid">
+%% Escaleras - Graph TD (v3.14)
+graph TD
+    id9_A("Escaleras"):::mainSymbol --> id9_SIMBOLO["El Símbolo: Características"];
+    id9_A --> id9_ANHELO["El Anhelo y la Espera"];
+    id9_A --> id9_METAFORAS["Metáforas Asociadas"];
+
+    subgraph id9_SIMBOLO ["El Símbolo: Características"]
+        id9_B["Ubicación: Centro habitación"];
+        id9_C["Contexto: Sin suelo ni techo"];
+        id9_D["Forma: Diagonales, Irreales"];
+        id9_E["Destino: A ninguna parte"];
+        id9_F["Efecto: Mayor a cada paso que doy"];
+    end
+
+    subgraph id9_ANHELO ["El Anhelo y la Espera"]
+        id9_G["Pregunta: ¿Cuánto tengo que esperar?"];
+        id9_G --> id9_H["Para Verte"];
+        id9_G --> id9_I["Para Abrazarnos"];
+    end
+
+    subgraph id9_METAFORAS ["Metáforas Asociadas"]
+        id9_J["Escalera a tus ojos<br>(Desde sueño roto)"];
+        id9_K["Geometría imposible<br>(Al final de tu ausencia)"];
+        id9_L["Hombre viejo agarra pasamanos"];
+        id9_M["Yo: Presagio de hoja al viento"];
+        id9_N["Tú: Arpegio de mi pensamiento"];
+        id9_O["Escalera en el espejo<br>(Viaje eterno por un beso)"];
+    end
+
+    classDef mainSymbol fill:#9b59b6,stroke:#9b59b6,stroke-width:1.5px;
+                            </pre>
+                        </div>
+                        <div class="lyrics">
+                           <p>Escaleras en el centro de una habitación sin suelo ni techo.<br>
+                           Diagonales, irreales, escaleras a ninguna parte.<br>
+                           ¿Y dime cuánto tengo que esperar para verte una vez más?<br>
+                           Si aparece una mayor a cada paso que doy.</p>
+                           <p>La escalera a tus ojos la camino desde un sueño roto.<br>
+                           Geometría imposible al final de tu ausencia.<br>
+                           ¿Y dime cuánto tengo que esperar para volvernos a abrazar?<br>
+                           Si aparece una mayor a cada paso que doy.</p>
+                           <p>Escalera, hombre viejo agarra el pasamanos con los dedos.<br>
+                           Soy el presagio de una hoja al viento<br>
+                           y tú eres el arpegio de mi pensamiento.<br>
+                           Escaleras.</p>
+                           <p>¿Y dime cuánto tengo que esperar para volvernos a abrazar?<br>
+                           Si aparece una mayor a cada paso que doy.<br>
+                           Escalera en el espejo y para siempre viajo por un beso.<br>
+                           Escaleras.</p>
+                        </div>
+                        <div class="callout callout-question">
+                            <p><strong>Paradoja del Esfuerzo Inútil:</strong> Las escaleras representan un camino hacia un reencuentro deseado ("verte", "abrazarnos") que, paradójicamente, se vuelve más difícil e inalcanzable con cada intento ("mayor a cada paso"). Simbolizan la frustración de perseguir algo que se aleja constantemente, un viaje infinito ("escalera en espejo") a través de una "geometría imposible".</p>
+                        </div>
+                    </section>
+                </article>
+
+                <hr>
+                <article id="cancion10">
+                    <section class="glassmorphism section" data-animate>
+                        <h2>10 • Las hojas caen 🍂</h2>
+                        <figure>
+                            <img src="https://placehold.co/800x400/818cf8/000000?text=Hojas+de+otoño+y+bombas+cayendo" alt="Hojas de otoño cayendo pacíficamente mezcladas con bombas cayendo destructivamente">
+                        </figure>
+                        <blockquote>
+                            <em>"Toma mi mano y llévala hacia el Ecuador, no seas mala, tómala, tómala..."</em>
+                        </blockquote>
+                        <div class="mermaid-container">
+                            <pre class="mermaid">
+%% Las hojas caen - Graph TD (v3.14)
+graph TD
+    id10_A("Las hojas caen") --> id10_PETICION["Petición / Conexión Inicial"];
+    id10_A --> id10_CONFESIONES["Auto-identificaciones / Confesiones"];
+    id10_A --> id10_CAIDA["La Caída Final"];
+
+    subgraph id10_PETICION ["Petición / Conexión Inicial"]
+        id10_A1["Toma mi mano"];
+        id10_A1 --> id10_A2["Llévala al Ecuador<br>(Búsqueda de calor/escape?)"];
+        id10_A3["Iguales en escándalo<br>(Complicidad?)"];
+        id10_A4["Dime lo que callas<br>(Búsqueda de verdad)"];
+        id10_A1 --> id10_A3;
+        id10_A1 --> id10_A4;
+    end
+
+    subgraph id10_CONFESIONES ["Auto-identificaciones / Confesiones"]
+        id10_B1("A veces yo también soy..."):::confession;
+        id10_B1 --> id10_B2["Náufrago buscando barco<br>(Perdido, esperando rescate)"];
+        id10_B1 --> id10_B3["Envuelto en plástico<br>(Falsa pureza / Aislamiento?)"];
+        id10_B1 --> id10_B4["El más limpio del zoológico<br>(Ironía / Juicio?)"];
+        id10_B1 --> id10_B5["Juventud pidiendo sangre<br>(Violencia / Intensidad?)"];
+        id10_B1 --> id10_B6["Cuidado al opinar<br>(Autocensura / Miedo)"];
+        id10_B6 --> id10_B7["'No quiero lamer bolas'<br>(Rechazo a la sumisión)"];
+    end
+
+    subgraph id10_CAIDA ["La Caída Final: Natural vs. Destructiva"]
+        id10_C1["Las hojas caen"]:::naturalFall;
+        id10_C2["Las bombas caen"]:::destructiveFall;
+        id10_C1 -.-> id10_C3{Paralelismo Trágico};
+        id10_C2 -.-> id10_C3;
+    end
+
+    classDef confession fill:#3498db,stroke:#3498db,stroke-width:1.5px;
+    classDef naturalFall fill:#f1c40f,stroke:#f1c40f,stroke-width:1.5px;
+    classDef destructiveFall fill:#e74c3c,stroke:#e74c3c,stroke-width:1.5px;
+                            </pre>
+                        </div>
+                        <div class="lyrics">
+                           <p>Toma mi mano y llévala hacia el Ecuador,<br>
+                           no seas mala, tómala, tómala, ¡heu!<br>
+                           Ala con ala iguales en escándalo<br>
+                           eso que tú callas, dímelo, ¡hey!</p>
+                           <p>A veces yo también soy ese náufrago<br>
+                           que por las tardes busca un barco en el crepúsculo, ¡hey!<br>
+                           A veces yo también me envuelvo en plástico<br>
+                           y me creo el más limpio de todo el zoológico, ¡heu!</p>
+                           <p>A veces yo también soy esa juventud<br>
+                           pidiendo sangre en las pantallas con la multitud, ¡heu!<br>
+                           A veces yo también me cuido de opinar<br>
+                           y ya no quiero lamer bolas por no quedar mal.</p>
+                           <p>Las hojas caen, caen, caen, caen.<br>
+                           Las bombas caen y caen y caen, caen, caen, caen, ¡yeah!</p>
+                        </div>
+                        <div class="callout callout-danger">
+                            <p><strong>Caída Inevitable:</strong> La canción entrelaza una petición íntima de conexión y honestidad con una serie de auto-identificaciones crudas y contradictorias. Culmina con el paralelismo impactante entre la caída natural e inevitable de las hojas y la caída destructiva y provocada de las bombas, sugiriendo un destino sombrío o una crítica a la condición humana.</p>
+                        </div>
+                    </section>
+                </article>
+
+                <hr>
+                <article id="cancion11">
+                    <section class="glassmorphism section" data-animate>
+                        <h2>11 • Tótem 🗿</h2>
+                        <figure>
+                            <img src="https://placehold.co/800x400/818cf8/000000?text=Tótem+antiguo+iluminado+por+la+luz+de+la+luna" alt="Tótem antiguo y misterioso iluminado por la luz de la luna en un paisaje nocturno">
+                        </figure>
+                        <blockquote>
+                            <em>"Caí de la cama al barro era noche fría y mojaba el fango..."</em>
+                        </blockquote>
+                        <div class="mermaid-container">
+                            <pre class="mermaid">
+%% Diagrama de Tótem (Graph TD - v3.14 - Corregido Final)
+graph TD
+    id11_A("Tótem") --> id11_INICIO["Inicio: Caída y Búsqueda"];
+    id11_INICIO --> id11_VISION["La Visión Central: El Tótem"];
+    id11_VISION --> id11_RITUAL["El Ritual de Conexión"];
+    id11_RITUAL --> id11_VIAJE["Viaje Onírico Posterior"];
+
+    subgraph id11_INICIO ["Inicio: Caída y Búsqueda Ancestral"]
+        id11_A1[Caída: Cama -> Barro<br>(Noche fría, Fango)];
+        id11_A1 --> id11_B1[Encuentro: Cojo Manco];
+        id11_B1 -- Ofrece --> id11_C1[Tabaco];
+        id11_B1 -- Pregunta --> id11_D1{"¿Qué buscas?"};
+        id11_D1 -- Respuesta --> id11_E1["Mis ancestros"]:::goal;
+        id11_E1 --> id11_F1{"Dilema Ancestral:<br>¿Culpar o Agradecer?"};
+        id11_F1 --> id11_G1["Incertidumbre:<br>'No lo sé muy bien'"]:::uncertainty;
+    end
+
+    subgraph id11_VISION ["La Visión Central: El Tótem"]
+        id11_H1(TÓTEM):::totemSymbol;
+        id11_H1 --> id11_I1["Estructura Jerárquica:<br>Uno sobre otro"];
+        id11_I1 --> id11_J1["Componentes Animales:<br>Caballo con Águila"];
+        id11_H1 --> id11_K1["Contexto Atmosférico:<br>Cielo Rojo"];
+        id11_H1 --> id11_L1["Aspecto Físico:<br>Fálicos de madera"];
+        id11_H1 --> id11_M1["Interacción Pasiva:<br>'No me dejan de mirar'"];
+        id11_H1 --> id11_N1{Deseo Activo de Dominio};
+        id11_N1 --> id11_O1["Subirme"];
+        id11_N1 --> id11_P1["Montarlos"];
+        id11_N1 --> id11_Q1["Domesticarlos"];
+    end
+
+    subgraph id11_RITUAL ["El Ritual de Conexión"]
+        id11_R1[Acción Física: Caer de Rodillas];
+        id11_R1 --> id11_S1[Acto Mental: Contemplar];
+        id11_R1 --> id11_T1[Acto Emocional: Abrazar];
+        id11_T1 --> id11_U1["Realización: 'Lo vi frente a mí'"];
+        id11_U1 --> id11_V1["Efecto Transformador:<br>'Y mis ojos abrió'"]:::revelation;
+    end
+
+    subgraph id11_VIAJE ["Viaje Onírico Posterior (¿Consecuencia?)"]
+        id11_W1["Barco Imposible Zarpó"];
+        id11_W1 --> id11_X1["Encuentro: Remero Hostil"];
+        id11_X1 --> id11_Y1["Escena Surrealista:<br>Pulpos trepaban,<br>Remero pateaba"];
+        id11_X1 -- Interroga --> id11_Z1{"'¿Qué transas?<br>¿Por qué molestas?'"};
+        id11_Z1 -- Respuesta --> id11_AA1["Búsqueda Específica:<br>'Pariente Familia Piedra<br>(Nos, Chile)'"];
+        id11_AA1 --> id11_AB1["Respuesta Cínica Remero:<br>'Aquí está lleno de tipos como tú'"];
+        id11_AB1 --> id11_AC1["Afirmación Remero:<br>'Crucé a todos por el río<br>hacia la luz'"];
+        id11_AC1 --> id11_AD1["Debate Final:<br>¿Infierno? ¿Respeto?"];
+    end
+
+    classDef goal fill:#2ecc71,stroke:#2ecc71,stroke-width:1.5px;
+    classDef uncertainty fill:#9b59b6,stroke:#9b59b6,stroke-width:1.5px;
+    classDef revelation fill:#8e44ad,stroke:#8e44ad,stroke-width:1.5px;
+    classDef totemSymbol fill:#f1c40f,stroke:#f1c40f,stroke-width:1.5px;
+                            </pre>
+                        </div>
+                        <div class="lyrics">
+                           <p>Caí de la cama al barro era noche fría y mojaba el fango.<br>
+                           Un cojo manco ofreció tabaco le dije qué andaba buscando.<br>
+                           "¿Qué cosa?" —me preguntó—, "Mis ancestros", contesté —"<br>
+                           ¿Quieres culparlos o agradecerles?" —"No lo sé muy bien".</p>
+                           <p>Están el uno sobre el otro cada cual un animal juntos bajo un cielo rojo caballo con águila.<br>
+                           Son como fálicos de madera y no me dejan de mirar,<br>
+                           quiero subirme,<br>
+                           quiero montarlos y poderlos domesticar.</p>
+                           <p>Caí de rodillas y lo contemplé.<br>
+                           Caí de rodillas y lo abracé, lo abracé.<br>
+                           Y lo vi frente a mí, el Tótem.<br>
+                           Y mis ojos abrió en la noche, en la noche.<br>
+                           El barco zarpó y no podía zarpar,<br>
+                           el tipo que remaba tenía mala cara buscando comida los pulpos trepaban,<br>
+                           el remero los pateaba.<br>
+                           Me preguntó "¿qué transas, por qué molestas?" —"busco un pariente", contesté "de la familia Piedra de Nos, Chile".<br>
+                           Me dijo "aquí está lleno de tipos como tú",<br>
+                           manejo el bus y crucé a todos por el río hacia la luz" — "amigo no te creo en el infierno todos ellos dices tú?" — "no todos, y no soy tu amigo, llevo años en esto, ténme un poco de respeto!".</p>
+                           <p>Caí de rodillas y lo contemplé. Caí de rodillas y lo abracé, lo abracé. Y lo vi frente a mí, el Tótem. Y mis ojos abrió en la noche, en la noche.</p>
+                        </div>
+                        <div class="callout callout-vision">
+                            <p><strong>Búsqueda Ancestral y Revelación:</strong> La canción narra un viaje onírico y simbólico en busca de los ancestros, marcado por la incertidumbre ("¿culpar o agradecer?"). El encuentro con el Tótem representa una conexión profunda y reveladora ("mis ojos abrió") que desencadena otra visión surrealista (el barco, el remero), quizás explorando el más allá o la memoria colectiva.</p>
+                        </div>
+                    </section>
+                </article>
+
+                <hr>
+                <article id="cancion12">
+                    <section class="glassmorphism section" data-animate>
+                        <h2>12 • Planetas vecinos 🪐</h2>
+                        <figure>
+                            <img src="https://placehold.co/800x400/818cf8/000000?text=Dos+planetas+cercanos+pero+separados" alt="Dos planetas estilizados, cercanos en el espacio pero visiblemente separados y sin conexión">
+                        </figure>
+                        <blockquote>
+                            <em>"Hermanita, tú y yo vinimos de planetas vecinos..."</em>
+                        </blockquote>
+                        <div class="mermaid-container">
+                            <pre class="mermaid">
+%% Planetas Vecinos - Graph TD (v3.13)
+graph TD
+    c12_A("Planetas Vecinos") --> c12_PREMISA["Premisa: Origen Común pero Separado"];
+    c12_A --> c12_SENALES["Confirmaciones / Señales del Destino"];
+    c12_A --> c12_REALIDAD["La Realidad: Distancia Insalvable"];
+    c12_A --> c12_PERSISTENCIA["Persistencia del Sentimiento"];
+
+    subgraph c12_PREMISA ["Premisa: Origen Común pero Separado"]
+        c12_A1["Tú y Yo"];
+        c12_A1 --> c12_B1{"Vinimos de<br>Planetas Vecinos"}:::origin;
+        c12_B1 --> c12_C1["Divinos"];
+    end
+
+    subgraph c12_SENALES ["Confirmaciones / Señales del Destino"]
+        c12_D1["Gitana (Ojos Blancos)"] -- Revela --> c12_B1;
+        c12_E1["Estrellas del Horóscopo"] -- Lo dicen --> c12_B1;
+        c12_F1["Se lee en la Pared"] -- Lo dice --> c12_B1;
+        c12_G1["Espejo Roto"] -- Lo refleja --> c12_B1;
+    end
+
+    subgraph c12_REALIDAD ["La Realidad: Distancia Insalvable"]
+        c12_H1["Yo tan aquí"]:::pos1;
+        c12_I1["Tú tan allá"]:::pos2;
+        c12_J1["Entre los dos:<br>Todo un Mar"]:::barrier;
+        c12_K1["Entre los dos:<br>Espacio Imposible<br>de Cruzar"]:::barrier;
+        c12_H1 --> c12_J1; c12_I1 --> c12_J1;
+        c12_H1 --> c12_K1; c12_I1 --> c12_K1;
+    end
+
+    subgraph c12_PERSISTENCIA ["Persistencia del Sentimiento / Recuerdo"]
+        c12_L1["Lo supe esta mañana<br>(en la ducha)"];
+        c12_M1["Agua y jabón<br>NADA quita tu olor"];
+        c12_N1["Mente corre tras<br>el arcoíris<br>(Anhelo / Ilusión)"];
+    end
+
+    classDef origin fill:#9b59b6,stroke:#9b59b6,stroke-width:1.5px;
+    classDef pos1 fill:#3498db,stroke:#3498db,stroke-width:1.5px;
+    classDef pos2 fill:#e74c3c,stroke:#e74c3c,stroke-width:1.5px;
+    classDef barrier fill:#7f8c8d,stroke:#7f8c8d,stroke-width:1.5px;
+                            </pre>
+                        </div>
+                        <div class="lyrics">
+                           <p>Hermanita, tú y yo vinimos de planetas vecinos.<br>
+                           Hermanita, tú y yo divinos, planetas vecinos.<br>
+                           Me lo dijo una gitana de ojos blancos no supe qué hacer, puse un billete de diez en su mano.<br>
+                           Mi pera temblaba, ¿y qué?<br>
+                           Lo dicen las estrellas del horóscopo,<br>
+                           se lee en la pared.<br>
+                           Lo dicen las estrellas del horóscopo y en el espejo también,<br>
+                           en el espejo roto.</p>
+                           <p>Hermanita, tú y yo vinimos de planetas vecinos.<br>
+                           Yo tan aquí, tú tan allá y entre los dos todo un mar,<br>
+                           yo tan aquí, tú tan allá y entre los dos un espacio imposible de cruzar.</p>
+                           <p>Hermanita, tú y yo, divinos planetas vecinos.<br>
+                           Y lo supe esta mañana, en la ducha,<br>
+                           agua y jabón nada me quita tu olor de la mente que corre tras el arcoíris.</p>
+                           <p>Lo dicen las estrellas del horóscopo,<br>
+                           se lee en la pared.<br>
+                           Lo dicen las estrellas del horóscopo,<br>
+                           vinimos de planetas vecinos.<br>
+                           Yo tan aquí, tú tan allá y entre los dos todo un mar,<br>
+                           yo tan aquí,<br>
+                           tú tan allá y entre los dos un espacio imposible de cruzar.</p>
+                        </div>
+                        <div class="callout callout-galaxy">
+                            <p><strong>Proximidad y Distancia Cósmica:</strong> Utiliza la metáfora de "planetas vecinos" para describir una relación marcada por una conexión profunda y un origen compartido ("divinos"), pero condenada a la separación por una distancia infranqueable ("espacio imposible de cruzar"). A pesar de las señales del destino y la persistencia del recuerdo ("nada quita tu olor"), la realidad es la imposibilidad de unión.</p>
+                        </div>
+                    </section>
+                </article>
+
+                <hr>
+                <article id="cancion13">
+                    <section class="glassmorphism section" data-animate>
+                        <h2>13 • La vida que merezco ⚖️</h2>
+                        <figure>
+                            <img src="https://placehold.co/800x400/818cf8/000000?text=Silueta+de+una+ciudad+moderna" alt="Silueta de una ciudad moderna al atardecer o amanecer">
+                        </figure>
+                        <blockquote>
+                            <em>"Esto es la vida que merezco, esto es el mundo que merezco..."</em>
+                        </blockquote>
+                        <div class="mermaid-container">
+                            <pre class="mermaid">
+%% Diagrama de La vida que merezco (Graph TD - v3.13)
+graph TD
+    c13_A("La vida que merezco"):::main --> c13_B("Aceptación Radical");
+    c13_A --> c13_C("Contexto Urbano Moderno");
+    c13_A --> c13_D("Filosofía Personal / Valores");
+    c13_A --> c13_E("Observación / Crítica Social");
+    c13_A --> c13_F("Inquietud Nocturna");
+
+    subgraph c13_B ["Aceptación Radical"]
+        c13_B1["Declaración: 'Esto es...'<br>(Vida, Mundo, Gente)"];
+        c13_B2["Énfasis: 'Tal cual', 'Esto es así'"];
+    end
+
+    subgraph c13_C ["Contexto Urbano Moderno"]
+        c13_C1["Visual: 'Rascacielos de aluminio'"];
+        c13_C2["Sensorial: 'Bastante caliente'"];
+        c13_C3["Observación Nocturna:<br>'Desde la colina',<br>'Ventana iluminada'"];
+    end
+
+    subgraph c13_D ["Filosofía Personal / Valores"]
+        c13_D1["Tiempo: 'Cada minuto es oro',<br>'Sube su precio'"];
+        c13_D2["Tesoro Verdadero:<br>'Lo que puedo dar'"];
+        c13_D3["Aspiración:<br>'Quiera subir, que no me dejen bajar'"];
+        c13_D4["Necesidad Única:<br>'Solo el amor me sirve'"];
+        c13_D5["Rechazo a lo Superfluo"];
+        c13_D5 --> c13_D5a["'No necesito más bendiciones'"];
+        c13_D5 --> c13_D5b["'No necesito más vacaciones'"];
+    end
+
+    subgraph c13_E ["Observación / Crítica Social"]
+        c13_E1["Cambio / Desconexión:<br>'Lo que se ve no se presiente<br>de donde estabas ayer'"];
+        c13_E2["Frustración:<br>'Tanto tipo imbécil...'"];
+    end
+
+    subgraph c13_F ["Inquietud Nocturna"]
+        c13_F1["Imaginación:<br>'Vaginas o penes imaginas'"];
+        c13_F2["Consecuencia:<br>'No puedes dormir'"];
+    end
+
+    classDef main fill:#bdc3c7, color:#f0f0f0, stroke:#bdc3c7, stroke-width:1.5px;
+                            </pre>
+                        </div>
+                        <div class="lyrics">
+                           <p>Esto es la vida que merezco,<br>
+                           esto es el mundo que merezco,<br>
+                           esto es la gente que merezco,<br>
+                           esto es (esto es), esto es, tal cual.</p>
+                           <p>Entre rascacielos de aluminio está bastante caliente,<br>
+                           lo que se ve no se presiente de donde estabas ayer.</p>
+                           <p>Cada minuto es oro cuando el tiempo sube su precio,<br>
+                           por eso el único tesoro que deseo es el que puedo dar<br>
+                           y cuando quiera subir que no me dejen bajar.<br>
+                           No necesito más bendiciones, solo el amor me sirve.</p>
+                           <p>Esto es la vida que merezco,<br>
+                           esto es el mundo que merezco,<br>
+                           esto es la gente que merezco,<br>
+                           esto es (esto es), esto es (esto es), tal cual.</p>
+                           <p>Desde la colina se ilumina tu ventana en la noche<br>
+                           vaginas o penes imaginas y no puedes dormir.</p>
+                           <p>Tanto tipo imbécil que hay en este mundo no lo soporto,<br>
+                           por eso el único tesoro que deseo es el que puedo dar<br>
+                           y cuando quiero subir que no me dejen bajar.<br>
+                           No necesito más vacaciones,<br>
+                           solo el amor me sirve.</p>
+                           <p>Esto es la vida que merezco,<br>
+                           esto es el mundo que merezco,<br>
+                           esto es la gente que merezco,<br>
+                           esto es (esto es),<br>
+                           esto es (esto es así).</p>
+                        </div>
+                        <div class="callout callout-balance">
+                            <p><strong>Aceptación y Valoración:</strong> La canción es una declaración de aceptación radical de la propia realidad ("vida", "mundo", "gente") tal como es. En medio de un entorno urbano moderno y a veces hostil ("caliente", "imbécil"), se enfoca en valorar lo esencial: el tiempo, la capacidad de dar y, sobre todo, el amor como única necesidad verdadera, rechazando lo superficial ("bendiciones", "vacaciones").</p>
+                        </div>
+                    </section>
+                </article>
+
+                <hr>
+                <article id="cancion14">
+                    <section class="glassmorphism section" data-animate>
+                        <h2>14 • 1000 años 🕰️</h2>
+                        <figure>
+                            <img src="https://placehold.co/800x400/818cf8/000000?text=Cápsula+del+tiempo+enterrada" alt="Cápsula del tiempo metálica semi-enterrada en la tierra">
+                        </figure>
+                        <blockquote>
+                            <em>"Si alguien escuchara esta canción en 1000 años más..."</em>
+                        </blockquote>
+                        <div class="mermaid-container">
+                            <pre class="mermaid">
+%% Diagrama de 1000 años (Graph TD - v3.13)
+graph TD
+    c14_A("1000 Años"):::main --> c14_B("Pregunta Inicial: ¿Trascendencia?");
+    c14_A --> c14_C("Escenario Futuro Imaginado");
+    c14_A --> c14_D("Identidad Futura Idealizada");
+    c14_A --> c14_E("Crítica Implícita al Presente");
+
+    subgraph c14_B ["Pregunta Inicial: ¿Trascendencia?"]
+        c14_B1["'¿Escuchará alguien<br>esta canción?'"];
+        c14_B2["'¿Persistirán<br>símbolos actuales?'"];
+        c14_B2 --> c14_B2a["Bandera (genérica)"];
+        c14_B2 --> c14_B2b["Himno Nacional"];
+        c14_B3["Anhelo: 'Ojalá, ojalá...'"];
+    end
+
+    subgraph c14_C ["Escenario Futuro Imaginado"]
+        c14_C1["Entorno: 'Ciudad cubierta<br>por vegetación'"];
+        c14_C2["Vínculo Personal:<br>'¿Me esperarías para cenar?'"];
+    end
+
+    subgraph c14_D ["Identidad Futura Idealizada (Post-Identidades)"]
+        c14_D1["'Sin Nacionalidad Específica'<br>(No chileno, peruano, etc.)"];
+        c14_D2["'Sin Categoría Específica'<br>(No humano, ni marciano)"];
+        c14_D3["'Forma Pura / Liberada'"];
+        c14_D3 --> c14_D3a["Niña sin padres<br>(no huérfana)<br>-> Atributo: Real"];
+        c14_D3 --> c14_D3b["Mono sin padres<br>(no huérfano)<br>-> Atributo: Legal"];
+        c14_D4["(Implica liberación<br>de herencias/cargas)"];
+    end
+
+    subgraph c14_E ["Crítica Implícita al Presente"]
+        c14_E1["Calificativo: 'Mundo absurdo'<br>(actual)"];
+        c14_E2["Foco Erróneo:<br>Adoración a<br>'estrellas de internet'"];
+        c14_E3["Desconexión Natural:<br>Ignorancia del ciclo<br>(pájaro, gacela, león)"];
+    end
+
+    classDef main fill:#95a5a6, color:#f0f0f0, stroke:#95a5a6, stroke-width:1.5px;
+                            </pre>
+                        </div>
+                        <div class="lyrics">
+                           <p>Si alguien escuchara esta canción en 1000 años más,<br>
+                           ¿agitaría una bandera igual a las demás?<br>
+                           ¿se cantaría el himno nacional en mil años más?<br>
+                           Si alguien escuchara esta canción, ojalá, ojalá...</p>
+                           <p>Ojalá no sea chileno, ojalá no sea peruano,<br>
+                           ojalá no sea humano, ni marciano.<br>
+                           Ojalá, ojalá sea una niña sin padres pero no huérfana,<br>
+                           ojalá sea una niña real, real.</p>
+                           <p>Y miramos el mundo absurdo como se ve<br>
+                           y adoramos a las estrellas del internet,<br>
+                           sin saber se remoja el pájaro en un pilón,<br>
+                           la gacela se apaga en los dientes del león.</p>
+                           <p>Si alguien escuchara esta canción en 1000 años más<br>
+                           y esté cubierta por vegetación la ciudad<br>
+                           me esperarías tú para cenar en mil años más,<br>
+                           si alguien escuchara esta canción, ojalá, ojalá...</p>
+                           <p>Ojalá no sea argentino, ojalá no sea italiano,<br>
+                           ojalá no sea un chino, ni mexicano.<br>
+                           Ojalá, ojalá sea un mono sin padres pero no huérfano,<br>
+                           sin padres pero no huérfano, legal, legal.</p>
+                        </div>
+                        <div class="callout callout-time">
+                            <p><strong>Trascendencia y Desidentificación:</strong> La canción reflexiona sobre la posible perdurabilidad del arte ("esta canción") a lo largo de milenios, contrastándola con la fugacidad de las identidades nacionales y quizás incluso la humana. Expresa un deseo de un futuro donde estas categorías se disuelvan, dando paso a formas de ser más puras o libres ("niña/mono sin padres pero no huérfanos"), criticando implícitamente la superficialidad y desconexión del presente.</p>
+                        </div>
+                    </section>
+                </article>
+
+                <hr>
+                <article id="cancion15">
+                    <section class="glassmorphism section" data-animate>
+                        <h2>15 • Buscaré 🔍</h2>
+                        <figure>
+                            <img src="https://placehold.co/800x400/818cf8/000000?text=Explorador+con+mapa" alt="Explorador con sombrero mirando un mapa antiguo desplegado, buscando un destino">
+                        </figure>
+                        <blockquote>
+                            <em>"Buscaré donde la tierra toca con el cielo..."</em>
+                        </blockquote>
+                        <div class="mermaid-container">
+                            <pre class="mermaid">
+%% Buscaré - Graph TD (v3.13)
+graph TD
+    c15_A("BUSCARÉ"):::main --> c15_B("El Acto: Búsqueda Constante");
+    c15_A --> c15_C("Lugares Metafóricos / Imposibles");
+    c15_A --> c15_D("Actos de Liberación Personal");
+    c15_A --> c15_E("Estado Mental Asociado");
+    c15_A --> c15_F("Filosofía / Conclusión Vital");
+
+    subgraph c15_C ["Lugares Metafóricos / Imposibles"]
+        c15_C1["'Donde tierra toca con cielo'"];
+        c15_C2["'Donde en cerro brote río nuevo'"];
+        c15_C3["'Donde vivos hablan con muertos'"];
+        c15_C4["'Hasta encontrar petróleo en desierto'"];
+    end
+
+    subgraph c15_D ["Actos de Liberación Personal"]
+        c15_D1["'Quitarme el pantalón'"];
+        c15_D2["'Pies en el agua'"];
+        c15_D3["'Cabeza en el aire'"];
+        c15_D4["'Escapar del Babylon'<br>(Sistema opresor)"];
+    end
+
+    subgraph c15_E ["Estado Mental Asociado"]
+        c15_E1["'Nadie me dice qué hacer'"];
+        c15_E2["'Nadie me haría volver'"];
+        c15_E3["Libertad / Autonomía"];
+    end
+
+    subgraph c15_F ["Filosofía / Conclusión Vital"]
+        c15_F1["Indiferencia a la Opinión Ajena"];
+        c15_F1 --> c15_F1a["'Lo que digan de ti:<br>que no importe mañana'"];
+        c15_F1 --> c15_F1b["'Lo que digan de mí:<br>ya no me importa'"];
+        c15_F2["Única Manera de Vivir"];
+        c15_F2 --> c15_F2a["'Estar donde tus sueños están'"];
+    end
+
+    classDef main fill:#27ae60, color:#f0f0f0, stroke:#27ae60, stroke-width:1.5px;
+                            </pre>
+                        </div>
+                        <div class="lyrics">
+                           <p>Buscaré donde la tierra toca con el cielo.<br>
+                           Buscaré donde en el cerro brote un río nuevo.<br>
+                           Buscaré una razón para quitarme el pantalón,<br>
+                           con los pies en el agua pensando<br>
+                           que nadie en el mundo me dice qué hacer.</p>
+                           <p>Buscaré donde los vivos hablan con los muertos (ahora).<br>
+                           Buscaré hasta encontrar petróleo en el desierto.<br>
+                           Buscaré otra razón para escapar del Babylon.<br>
+                           La cabeza en el aire pensando<br>
+                           que nadie en la tierra me haría volver.</p>
+                           <p>Eh-eh-eh-eh Eh-eh-eh</p>
+                           <p>Y lo que digan de ti que no te importe mañana,<br>
+                           solo estar donde tus sueños están.<br>
+                           Y lo que digan de mí ya no me importa, lo juro,<br>
+                           solo hay una manera de vivir,<br>
+                           una manera de vivir<br>
+                           (vámonos pa' la casa mejor).</p>
+                        </div>
+                        <div class="callout callout-compass">
+                            <p><strong>Exploración como Libertad:</strong> La canción define la vida como una búsqueda constante de lugares imposibles y de liberación personal ("escapar del Babylon"). Esta búsqueda es un acto de autonomía ("nadie me dice qué hacer") que culmina en una filosofía de vida: ignorar las opiniones ajenas y vivir alineado con los propios sueños.</p>
+                        </div>
+                    </section>
+                </article>
+
+                <hr>
+                <article id="cancion16">
+                    <section class="glassmorphism section" data-animate>
+                        <h2>16 • Animal 🦁</h2>
+                        <figure>
+                            <img src="https://placehold.co/800x400/818cf8/000000?text=Ojo+de+animal+salvaje" alt="Primer plano intenso del ojo de un animal salvaje, como un león o tigre">
+                        </figure>
+                        <blockquote>
+                            <em>"Primero desperté sin el recuerdo de un ayer..."</em>
+                        </blockquote>
+                        <div class="mermaid-container">
+                            <pre class="mermaid">
+%% Diagrama de Animal (Graph TD - v3.13)
+graph TD
+    c16_A("ANIMAL"):::main --> c16_B("Origen / Despertar Primigenio");
+    c16_A --> c16_C("Contexto Social: La Manada");
+    c16_A --> c16_D("Conflicto Interno: Dualidad Hombre-Animal");
+    c16_A --> c16_E("Estado Actual: Introspección y Alerta");
+
+    subgraph c16_B ["Origen / Despertar Primigenio"]
+        c16_B1["Estado Inicial:<br>'Sin recuerdo / Amnesia ('Sin ayer')'"];
+        c16_B2["Acción Instintiva:<br>'Caminar por la tierra (Desierto -> Mar)'"];
+        c16_B3["Sonido Esencial:<br>''Grito de la selva = Del animal''"];
+    end
+
+    subgraph c16_C ["Contexto Social: La Manada"]
+        c16_C1["Vínculos:<br>''Casi todos parientes entre sí''"];
+        c16_C2["Violencia Inherente:<br>''Manchas en barba = sangre de otro man''"];
+        c16_C3["Pertenencia:<br>''Difícil de explicar / ¿Conflictiva?''"];
+    end
+
+    subgraph c16_D ["Conflicto Interno: Dualidad Hombre-Animal"]
+        c16_D1["Instinto (Corazón)"];
+        c16_D1 --> c16_D1a["Advertencia 1:<br>''No aceleres tu pulsación''"];
+        c16_D1 --> c16_D1b["Advertencia 2:<br>''No hagas caso a superstición''"];
+        c16_D2["Cuestionamiento (Externo/Interno)"];
+        c16_D2 --> c16_D2a["''¿Qué quieres más de mí?''"];
+        c16_D2 --> c16_D2b["''¿Qué esperas más de mí?''"];
+        c16_D3["Identidad Declarada (Contradictoria?)"];
+        c16_D3 --> c16_D3a["''Soy solo un hombre y nada más''"];
+        c16_D3 --> c16_D3b["''Si solo soy un animal''"];
+    end
+
+    subgraph c16_E ["Estado Actual: Introspección y Alerta"]
+        c16_E1["Ubicación: ''A la sombra''"];
+        c16_E2["Actividad Mental:<br>''Todo el día pensando en mí''"];
+        c16_E3["Estado Físico:<br>''Ojos abiertos cuando es hora de dormir'<br>(Vigilancia constante)'"];
+    end
+
+    classDef main fill:#d35400, color:#f0f0f0, stroke:#d35400, stroke-width:1.5px;
+                            </pre>
+                        </div>
+                        <div class="lyrics">
+                           <p>Primero desperté sin el recuerdo de un ayer,<br>
+                           segundo por la cara de la tierra caminé<br>
+                           desde el duro desierto hasta las costas en el mar,<br>
+                           el grito de la selva fue del animal.</p>
+                           <p>Difícil explicar a la manada en que nací,<br>
+                           en ella casi todos son parientes entre sí.<br>
+                           Las manchas en su barba son la sangre de otro man,<br>
+                           el grito de la selva fue del animal.</p>
+                           <p>Animal. Corazón, corazón, no aceleres tu pulsación.<br>
+                           Corazón, corazón, no hagas caso a superstición.<br>
+                           ¿Qué es lo que quieres más de mí?<br>
+                           Soy solo un hombre y nada más.<br>
+                           ¿Qué es lo que esperas más de mí?<br>
+                           Si solo soy un animal.</p>
+                           <p>Y a la sombra hoy estoy todo el día pensando en mí,<br>
+                           todo el día pensando en mí.<br>
+                           Con los ojos abiertos cuando es hora de dormir.</p>
+                           <p>Primero desperté sin el recuerdo de un ayer,<br>
+                           segundo por la cara de la tierra caminé<br>
+                           desde el duro desierto hasta las costas en el mar,<br>
+                           el grito de la selva fue del animal.</p>
+                           <p>Animal. Corazón, corazón, no aceleres tu pulsación.<br>
+                           Corazón, corazón, no hagas caso a superstición.<br>
+                           ¿Qué es lo que quieres más de mí?<br>
+                           Soy solo un hombre y nada más.<br>
+                           ¿Qué es lo que esperas más de mí?<br>
+                           Si solo soy un animal.</p>
+                           <p>Y a la sombra hoy estoy todo el día pensando en mí,<br>
+                           todo el día pensando en mí, todo el día pensando en mí,<br>
+                           todo el día pensando en mí, con los ojos abiertos<br>
+                           cuando es hora de dormir.</p>
+                        </div>
+                        <div class="callout callout-paw">
+                            <p><strong>Dualidad Humano-Animal:</strong> La canción explora la tensión inherente entre la naturaleza instintiva, primordial ("animal") y la conciencia reflexiva, social ("hombre"). Parte de un despertar amnésico, atraviesa la pertenencia a una "manada" violenta y llega a un estado de introspección y alerta constante ("ojos abiertos al dormir"), cuestionando las expectativas puestas sobre esta identidad dual.</p>
+                        </div>
+                    </section>
+                </article>
+
+                <hr>
+                <article id="cancion17">
+                    <section class="glassmorphism section" data-animate>
+                        <h2>17 • Well is small 🌊</h2>
+                        <figure>
+                            <img src="https://placehold.co/800x400/818cf8/000000?text=Ondas+sonoras+abstractas" alt="Ondas sonoras abstractas de diferentes frecuencias y amplitudes sobre fondo oscuro">
+                        </figure>
+                        <blockquote>
+                            <em>"Uuuuu Uaaauuuuuuuuu Wrouuur Wreeek..."</em>
+                        </blockquote>
+                        <div class="mermaid-container">
+                            <pre class="mermaid">
+%% Well is small - Graph TD (v3.13)
+graph TD
+    c17_A[Experimentación Sonora Pura]:::concept --> c17_B(Secuencia de Onomatopeyas / Vocalizaciones);
+    c17_B --> c17_PAISAJE["Paisaje Sonoro Evocado<br>(Interpretación Libre)"];
+
+    subgraph c17_PAISAJE ["Paisaje Sonoro Evocado"]
+        c17_C[Animales?]:::type;
+        c17_C --> c17_D["Aullidos<br>(Uuuuu, Auuuuuu)"];
+        c17_C --> c17_E["Gruñidos<br>(Wrouuur)"];
+        c17_C --> c17_F["Chirrido?<br>(Wreeek, Crriaccriac)"];
+
+        c17_G[Mecánicos?]:::type;
+        c17_G --> c17_H["Motor?<br>(rroooin)"];
+        c17_G --> c17_I["Fricción?<br>(Briiiooooo?)"];
+
+        c17_J[Naturaleza / Otros?]:::type;
+        c17_J --> c17_K["Viento? Agua?"];
+        c17_J --> c17_L["Sonidos Indefinidos<br>(Braaaaaá, Jeeee, Wreeef...)"];
+
+        c17_M[Humanos?]:::type;
+        c17_M --> c17_N["Vocalizaciones primitivas<br>(Uh uhuhuh, Fi fii...)"];
+    end
+
+    classDef concept fill:#2980b9, stroke:#2980b9, stroke-width:1.5px;
+    classDef type fill:#333, stroke:#818cf8, stroke-width:1px;
+                            </pre>
+                        </div>
+                        <div class="lyrics">
+                            <p>Uuuuu Uaaauuuuuuuuu Wrouuur Wreeek<br>
+                            Braaaaaá Jeeeeeeeeeeee Crriaccriac Aaaaar<br>
+                            Briiiooooo rroooin rrroiin Auuuuuu<br>
+                            Wreeef Uh uhuhuh Fi fii fiiiii Uaaauuuuuuuuu</p>
+                        </div>
+                        <div class="callout callout-music">
+                            <p><strong>Exploración Sonora Abstracta:</strong> Esta pieza se aleja de la letra convencional para centrarse puramente en la sonoridad. Utiliza un collage de onomatopeyas y vocalizaciones que evocan un paisaje sonoro abstracto, posiblemente animal, mecánico o natural, dejando la interpretación abierta a la imaginación del oyente. Es un ejercicio de sonido por el sonido mismo.</p>
+                        </div>
+                    </section>
+                </article>
+                <hr>
+            </main>
+        </div>
+        <footer class="footer" id="contacto">
+            <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+        </footer>
+    </div>
+    <script>
+        // Inicia el código del Canvas
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicialización de Three.js Background
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+            } else {
+                console.error("Three.js not loaded");
+            }
+
+            setupNavigation();
+            setupScrollAnimations();
+            
+            // Renderizado de diagramas Mermaid
+            mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
+                'primaryColor': '#111827',
+                'primaryTextColor': '#e5e7eb',
+                'lineColor': '#818cf8',
+                'nodeBorder': '#818cf8',
+                'mainBkg': '#111827',
+                'textColor': '#e5e7eb',
+                'background': '#000000'
+            } });
+        });
+
+        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById("bg-canvas"),
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 250;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error initializing Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points) {
+                points.rotation.y += 0.0003;
+                points.rotation.x += 0.0002;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- CÓDIGO DE NAVEGACIÓN ---
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.body.classList.toggle('menu-open');
+            });
+
+            navMenu.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                   document.body.classList.remove('menu-open');
+                }
+            });
+        }
+
+        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        
+                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid, ul, .authors');
+                        elementsToAnimate.forEach((el, index) => {
+                           el.style.transitionDelay = `${index * 100}ms`;
+                        });
+
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+    </script>
+</body>
+</html>
