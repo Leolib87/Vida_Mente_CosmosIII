@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía de Comandos Unix/Linux | O.C.V.M. Plantilla</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        /* Variables de CSS para colores y fuentes */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --font-code: 'Fira Code', monospace;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;   /* Rosa para nombres de personas */
+        }
+
+        /* Estilos generales para el cuerpo de la página */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+        p { text-align: justify; }
+
+        /* Canvas de fondo con animación Three.js */
+        #bg-canvas {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1; cursor: crosshair;
+        }
+
+        /* Estilo de glassmorphism para secciones y navegación */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000; display: flex; justify-content: center; align-items: center;
+            padding: 0 5%; pointer-events: auto;
+        }
+
+        .nav-content { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        
+        .nav-logo a {
+            font-size: 1.3em; font-weight: 700; color: #fff; text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow); display: flex; align-items: center; gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+
+        /* Sección del héroe o cabecera principal */
+        .hero {
+            min-height: 60vh; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative; padding: 1rem; margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 7vw, 4.5rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Contenedor principal para el contenido */
+        .main-container { 
+            width: 100%; max-width: 100%; margin: 0 auto; 
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem; pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content { pointer-events: auto; }
+        main p, .footer p { user-select: text; cursor: default; }
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem); border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        /* Animación de aparición para las secciones con scroll */
+        .section h2, .section h3, .section p, .mermaid, .section ul, .section .command-table, .section .authors {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .mermaid, .section.is-visible ul, .section.is-visible .command-table, .section.is-visible .authors {
+            opacity: 1; transform: translateY(0);
+        }
+        
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
+        
+        /* Clases para colorear palabras y conceptos */
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .concept2 { color: var(--concept-color-2); font-weight: 500; }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; }
+
+        /* Estilos para las tablas de comandos */
+        .command-table { width: 100%; border-collapse: collapse; margin-top: 2rem; }
+        .command-table th, .command-table td {
+            padding: 1rem; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .command-table th { color: var(--primary); font-weight: 600; }
+        .command-table code {
+            font-family: var(--font-code); background-color: rgba(0,0,0,0.3);
+            padding: 0.2em 0.4em; border-radius: 4px; color: var(--concept-color-2);
+            font-size: 0.95em;
+        }
+        .command-table .description span { display: block; font-size: 0.9em; opacity: 0.8; }
+        .command-table .example { font-family: var(--font-code); color: var(--concept-color-1); }
+
+        /* Pie de página */
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        /* Estilo para los diagramas de Mermaid */
+        .mermaid {
+            margin: 2rem auto; display: flex; justify-content: center; align-items: center;
+            width: 100%; max-width: 900px;
+        }
+        
+        /* Media queries para dispositivos móviles */
+        @media (max-width: 768px) {
+            .nav-container {
+                position: fixed; top: var(--nav-height); left: 0;
+                width: 100%; height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95); backdrop-filter: blur(15px);
+                flex-direction: column; justify-content: center; align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%); overflow-y: auto; padding: 2rem;
+            }
+            body.menu-open .nav-container { transform: translateY(0); }
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px; background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out; border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+            
+            .command-table { display: block; overflow-x: auto; }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo con animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=U" alt="Logo Unix" class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>Unix/Linux</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#files">Archivos</a></li>
+                <li><a href="#searching">Búsqueda</a></li>
+                <li><a href="#system">Sistema</a></li>
+                <li><a href="#processes">Procesos</a></li>
+                <li><a href="#permissions">Permisos</a></li>
+                <li><a href="#network">Red</a></li>
+                <li><a href="#compression">Compresión</a></li>
+                <li><a href="#shortcuts">Atajos</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Sección Hero -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Guía de Comandos Unix/Linux</h1>
+                <p>Una referencia rápida y completa para los comandos más utilizados en la terminal de Unix y Linux, con descripciones en inglés, español y ejemplos prácticos.</p>
+                <p class="authors">Basado en la guía de <span class="person">FOSSwire.com</span></p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                
+                <!-- Sección Comandos de Archivos -->
+                <section id="files" class="glassmorphism section" data-animate>
+                    <h2>File Commands / Comandos de Archivos</h2>
+                    <p>Estos comandos son esenciales para navegar y manipular archivos y directorios en el sistema.</p>
+                    <table class="command-table">
+                        <thead><tr><th>Comando</th><th>Descripción (EN/ES)</th><th>Ejemplo de Uso</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td><code>ls -al</code></td>
+                                <td class="description">Formatted listing with hidden files.<span>Lista formateada incluyendo archivos ocultos.</span></td>
+                                <td class="example">ls -al /home/usuario</td>
+                            </tr>
+                            <tr>
+                                <td><code>cd dir</code></td>
+                                <td class="description">Change directory to dir.<span>Cambia al directorio 'dir'.</span></td>
+                                <td class="example">cd /var/www</td>
+                            </tr>
+                            <tr>
+                                <td><code>pwd</code></td>
+                                <td class="description">Show current directory.<span>Muestra el directorio actual.</span></td>
+                                <td class="example">pwd</td>
+                            </tr>
+                            <tr>
+                                <td><code>mkdir dir</code></td>
+                                <td class="description">Create a directory dir.<span>Crea un directorio llamado 'dir'.</span></td>
+                                <td class="example">mkdir nuevo_proyecto</td>
+                            </tr>
+                            <tr>
+                                <td><code>rm file</code></td>
+                                <td class="description">Delete file.<span>Elimina un archivo.</span></td>
+                                <td class="example">rm archivo_temporal.txt</td>
+                            </tr>
+                            <tr>
+                                <td><code>rm -rf dir</code></td>
+                                <td class="description">Force remove directory dir.<span>Elimina forzosamente un directorio y su contenido.</span></td>
+                                <td class="example">rm -rf viejo_proyecto</td>
+                            </tr>
+                            <tr>
+                                <td><code>cp f1 f2</code></td>
+                                <td class="description">Copy file1 to file2.<span>Copia el archivo f1 a f2.</span></td>
+                                <td class="example">cp config.txt config.bak</td>
+                            </tr>
+                             <tr>
+                                <td><code>mv f1 f2</code></td>
+                                <td class="description">Rename or move file1 to file2.<span>Renombra o mueve el archivo f1 a f2.</span></td>
+                                <td class="example">mv reporte.doc /documentos/</td>
+                            </tr>
+                            <tr>
+                                <td><code>ln -s file link</code></td>
+                                <td class="description">Create symbolic link to file.<span>Crea un enlace simbólico al archivo.</span></td>
+                                <td class="example">ln -s /var/log/nginx/access.log web.log</td>
+                            </tr>
+                            <tr>
+                                <td><code>touch file</code></td>
+                                <td class="description">Create or update file.<span>Crea un archivo vacío o actualiza su fecha de modificación.</span></td>
+                                <td class="example">touch nuevo_fichero.txt</td>
+                            </tr>
+                            <tr>
+                                <td><code>cat file</code></td>
+                                <td class="description">Output the contents of file.<span>Muestra el contenido de un archivo.</span></td>
+                                <td class="example">cat /etc/hosts</td>
+                            </tr>
+                            <tr>
+                                <td><code>head file</code></td>
+                                <td class="description">Output the first 10 lines of file.<span>Muestra las primeras 10 líneas de un archivo.</span></td>
+                                <td class="example">head /var/log/syslog</td>
+                            </tr>
+                            <tr>
+                                <td><code>tail -f file</code></td>
+                                <td class="description">Output contents as it grows.<span>Muestra el contenido de un archivo mientras crece (ideal para logs).</span></td>
+                                <td class="example">tail -f /var/log/syslog</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- Sección Búsqueda -->
+                <section id="searching" class="glassmorphism section" data-animate>
+                    <h2>Searching / Búsqueda</h2>
+                    <p>Herramientas para encontrar archivos, directorios o texto dentro de archivos de manera eficiente.</p>
+                     <table class="command-table">
+                        <thead><tr><th>Comando</th><th>Descripción (EN/ES)</th><th>Ejemplo de Uso</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td><code>grep pattern file</code></td>
+                                <td class="description">Search for pattern in files.<span>Busca un 'patrón' de texto dentro de un archivo.</span></td>
+                                <td class="example">grep "error" /var/log/nginx/error.log</td>
+                            </tr>
+                            <tr>
+                                <td><code>grep -r pattern dir</code></td>
+                                <td class="description">Search recursively for pattern in dir.<span>Busca un patrón recursivamente en un directorio.</span></td>
+                                <td class="example">grep -r "API_KEY" /etc/nginx/</td>
+                            </tr>
+                            <tr>
+                                <td><code>command | grep</code></td>
+                                <td class="description">Search for pattern in the output.<span>Busca un patrón en la salida de otro comando.</span></td>
+                                <td class="example">ps aux | grep "apache"</td>
+                            </tr>
+                             <tr>
+                                <td><code>locate file</code></td>
+                                <td class="description">Find all instances of file.<span>Encuentra todas las instancias de un archivo (usa un índice).</span></td>
+                                <td class="example">locate httpd.conf</td>
+                            </tr>
+                            <tr>
+                                <td><code>find dir -name file</code></td>
+                                <td class="description">Find files by name.<span>Busca archivos por nombre en un directorio.</span></td>
+                                <td class="example">find /home -name "*.jpg"</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- Sección Información del Sistema -->
+                <section id="system" class="glassmorphism section" data-animate>
+                    <h2>System Info / Información del Sistema</h2>
+                    <p>Comandos para obtener información sobre el hardware, el kernel y el estado general del sistema operativo.</p>
+                     <table class="command-table">
+                        <thead><tr><th>Comando</th><th>Descripción (EN/ES)</th><th>Ejemplo de Uso</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td><code>date</code></td>
+                                <td class="description">Show the current date and time.<span>Muestra la fecha y hora actuales.</span></td>
+                                <td class="example">date</td>
+                            </tr>
+                            <tr>
+                                <td><code>cal</code></td>
+                                <td class="description">Show this month's calendar.<span>Muestra el calendario del mes actual.</span></td>
+                                <td class="example">cal</td>
+                            </tr>
+                            <tr>
+                                <td><code>uptime</code></td>
+                                <td class="description">Show current uptime.<span>Muestra cuánto tiempo ha estado encendido el sistema.</span></td>
+                                <td class="example">uptime</td>
+                            </tr>
+                            <tr>
+                                <td><code>whoami</code></td>
+                                <td class="description">Who you are logged in as.<span>Muestra el usuario con el que has iniciado sesión.</span></td>
+                                <td class="example">whoami</td>
+                            </tr>
+                            <tr>
+                                <td><code>uname -a</code></td>
+                                <td class="description">Show kernel information.<span>Muestra información detallada del kernel.</span></td>
+                                <td class="example">uname -a</td>
+                            </tr>
+                            <tr>
+                                <td><code>cat /proc/cpuinfo</code></td>
+                                <td class="description">CPU information.<span>Muestra información sobre la CPU.</span></td>
+                                <td class="example">cat /proc/cpuinfo</td>
+                            </tr>
+                            <tr>
+                                <td><code>df -h</code></td>
+                                <td class="description">Show disk usage (human-readable).<span>Muestra el uso del disco en formato legible.</span></td>
+                                <td class="example">df -h</td>
+                            </tr>
+                            <tr>
+                                <td><code>du -sh dir</code></td>
+                                <td class="description">Show directory space usage.<span>Muestra el espacio total usado por un directorio.</span></td>
+                                <td class="example">du -sh /home/usuario</td>
+                            </tr>
+                             <tr>
+                                <td><code>free -m</code></td>
+                                <td class="description">Show memory and swap usage (in MB).<span>Muestra el uso de memoria RAM y swap en Megabytes.</span></td>
+                                <td class="example">free -m</td>
+                            </tr>
+                             <tr>
+                                <td><code>man command</code></td>
+                                <td class="description">Show the manual for command.<span>Muestra el manual de ayuda para un comando.</span></td>
+                                <td class="example">man ls</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                 <!-- Sección Gestión de Procesos -->
+                <section id="processes" class="glassmorphism section" data-animate>
+                    <h2>Process Management / Gestión de Procesos</h2>
+                    <p>Herramientas para monitorear y gestionar los procesos que se están ejecutando en el sistema.</p>
+                    <table class="command-table">
+                        <thead><tr><th>Comando</th><th>Descripción (EN/ES)</th><th>Ejemplo de Uso</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td><code>ps aux</code></td>
+                                <td class="description">Display all currently active processes.<span>Muestra todos los procesos activos actualmente.</span></td>
+                                <td class="example">ps aux | grep nginx</td>
+                            </tr>
+                            <tr>
+                                <td><code>top</code></td>
+                                <td class="description">Display all running processes (interactive).<span>Muestra todos los procesos en ejecución de forma interactiva.</span></td>
+                                <td class="example">top</td>
+                            </tr>
+                            <tr>
+                                <td><code>kill pid</code></td>
+                                <td class="description">Kill process id pid.<span>Termina (mata) el proceso con el ID 'pid'.</span></td>
+                                <td class="example">kill 12345</td>
+                            </tr>
+                             <tr>
+                                <td><code>killall proc</code></td>
+                                <td class="description">Kill all processes named proc.<span>Termina todos los procesos con el nombre 'proc'.</span></td>
+                                <td class="example">killall firefox</td>
+                            </tr>
+                             <tr>
+                                <td><code>bg</code></td>
+                                <td class="description">Lists stopped or background jobs.<span>Lista y resume trabajos detenidos en segundo plano.</span></td>
+                                <td class="example">bg</td>
+                            </tr>
+                             <tr>
+                                <td><code>fg</code></td>
+                                <td class="description">Brings the most recent job to foreground.<span>Trae el trabajo más reciente al primer plano.</span></td>
+                                <td class="example">fg</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                     <div class="mermaid">
+                        sequenceDiagram
+                            participant User
+                            participant Terminal
+                            participant OS
+                            User->>Terminal: top
+                            activate Terminal
+                            Terminal->>OS: Solicitar lista de procesos
+                            activate OS
+                            OS-->>Terminal: Lista de procesos y uso de CPU/RAM
+                            deactivate OS
+                            Terminal-->>User: Muestra tabla interactiva
+                            deactivate Terminal
+                            User->>Terminal: q (para salir)
+                            Terminal->>User: Vuelve al prompt
+                    </div>
+                </section>
+
+                <!-- Sección Permisos de Archivos -->
+                <section id="permissions" class="glassmorphism section" data-animate>
+                    <h2>File Permissions / Permisos de Archivos</h2>
+                    <p>El comando <code>chmod</code> se utiliza para cambiar los permisos de lectura, escritura y ejecución de archivos y directorios. Se basa en un sistema octal.</p>
+                    <div class="mermaid">
+                        graph TD
+                            subgraph "Permiso Octal"
+                                A("`4`") --- B("Lectura (r)");
+                                C("`2`") --- D("Escritura (w)");
+                                E("`1`") --- F("Ejecución (x)");
+                            end
+                            subgraph "Cálculo de Permisos"
+                                G["`Propietario`"] -- Suma --> H((7 = rwx));
+                                I["`Grupo`"] -- Suma --> J((5 = r-x));
+                                K["`Otros`"] -- Suma --> L((5 = r-x));
+                            end
+                            M[Comando Final]
+                            H -- Concatena --> M;
+                            J -- Concatena --> M;
+                            L -- Concatena --> M;
+                            M --> N["`chmod 755 archivo.sh`"];
+                            
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style C fill:#34d399,stroke:#333,stroke-width:2px;
+                            style E fill:#f472b6,stroke:#333,stroke-width:2px;
+                            style H fill:#818cf8,stroke:#333,stroke-width:2px;
+                            style J fill:#818cf8,stroke:#333,stroke-width:2px;
+                            style L fill:#818cf8,stroke:#333,stroke-width:2px;
+                    </div>
+                    <table class="command-table">
+                        <thead><tr><th>Comando</th><th>Descripción (EN/ES)</th><th>Ejemplo de Uso</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td><code>chmod 755 file</code></td>
+                                <td class="description">Change permissions to rwxr-xr-x.<span>Cambia los permisos a lectura, escritura y ejecución para el dueño, y lectura y ejecución para el grupo y otros.</span></td>
+                                <td class="example">chmod 755 mi_script.sh</td>
+                            </tr>
+                            <tr>
+                                <td><code>chmod 644 file</code></td>
+                                <td class="description">Change permissions to rw-r--r--.<span>Cambia los permisos a lectura y escritura para el dueño, y solo lectura para el grupo y otros. Ideal para archivos web.</span></td>
+                                <td class="example">chmod 644 index.html</td>
+                            </tr>
+                            <tr>
+                                <td><code>chown user:group file</code></td>
+                                <td class="description">Change ownership of file.<span>Cambia el propietario y grupo de un archivo.</span></td>
+                                <td class="example">chown www-data:www-data config.php</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- Sección Red -->
+                <section id="network" class="glassmorphism section" data-animate>
+                    <h2>Network / Red</h2>
+                    <p>Comandos para diagnosticar problemas de red, transferir archivos y obtener información de dominios.</p>
+                    <table class="command-table">
+                        <thead><tr><th>Comando</th><th>Descripción (EN/ES)</th><th>Ejemplo de Uso</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td><code>ping host</code></td>
+                                <td class="description">Ping host and output results.<span>Envía paquetes a un 'host' para comprobar la conectividad.</span></td>
+                                <td class="example">ping google.com</td>
+                            </tr>
+                            <tr>
+                                <td><code>whois domain</code></td>
+                                <td class="description">Get whois information for domain.<span>Obtiene información 'whois' de un dominio.</span></td>
+                                <td class="example">whois google.com</td>
+                            </tr>
+                             <tr>
+                                <td><code>dig domain</code></td>
+                                <td class="description">Get DNS information for domain.<span>Obtiene información DNS de un dominio.</span></td>
+                                <td class="example">dig google.com</td>
+                            </tr>
+                            <tr>
+                                <td><code>wget file</code></td>
+                                <td class="description">Download file.<span>Descarga un archivo desde una URL.</span></td>
+                                <td class="example">wget https://example.com/file.zip</td>
+                            </tr>
+                            <tr>
+                                <td><code>ssh user@host</code></td>
+                                <td class="description">Connect to host as user.<span>Conecta a un servidor remoto 'host' como el usuario 'user'.</span></td>
+                                <td class="example">ssh admin@192.168.1.100</td>
+                            </tr>
+                            <tr>
+                                <td><code>scp</code></td>
+                                <td class="description">Secure copy (remote file copy).<span>Copia archivos de forma segura entre hosts en una red.</span></td>
+                                <td class="example">scp file.txt user@remote:/home/user/</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+                
+                 <!-- Sección Compresión -->
+                <section id="compression" class="glassmorphism section" data-animate>
+                    <h2>Compression / Compresión</h2>
+                    <p>Comandos para comprimir y descomprimir archivos y directorios, optimizando el espacio de almacenamiento.</p>
+                    <table class="command-table">
+                        <thead><tr><th>Comando</th><th>Descripción (EN/ES)</th><th>Ejemplo de Uso</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td><code>tar cf file.tar files</code></td>
+                                <td class="description">Create a tar named file.tar.<span>Crea un archivo 'tar' que agrupa varios archivos.</span></td>
+                                <td class="example">tar cf archive.tar doc1.pdf doc2.pdf</td>
+                            </tr>
+                            <tr>
+                                <td><code>tar xf file.tar</code></td>
+                                <td class="description">Extract the files from file.tar.<span>Extrae los archivos de un paquete 'tar'.</span></td>
+                                <td class="example">tar xf archive.tar</td>
+                            </tr>
+                            <tr>
+                                <td><code>tar czf file.tar.gz dir</code></td>
+                                <td class="description">Create a tar with Gzip compression.<span>Crea un archivo 'tar' comprimido con Gzip.</span></td>
+                                <td class="example">tar czf project.tar.gz /var/www/project</td>
+                            </tr>
+                            <tr>
+                                <td><code>tar xzf file.tar.gz</code></td>
+                                <td class="description">Extract a tar using Gzip.<span>Extrae un archivo 'tar' comprimido con Gzip.</span></td>
+                                <td class="example">tar xzf project.tar.gz</td>
+                            </tr>
+                             <tr>
+                                <td><code>gzip file</code></td>
+                                <td class="description">Compresses file.<span>Comprime un archivo y lo renombra a file.gz.</span></td>
+                                <td class="example">gzip large_log_file.log</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- Sección Atajos -->
+                <section id="shortcuts" class="glassmorphism section" data-animate>
+                    <h2>Shortcuts / Atajos del Teclado</h2>
+                    <p>Combinaciones de teclas que agilizan el trabajo en la línea de comandos.</p>
+                    <table class="command-table">
+                        <thead><tr><th>Atajo</th><th>Descripción (EN/ES)</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td><code>Ctrl + C</code></td>
+                                <td class="description">Halts the current command.<span>Detiene/cancela el comando actual.</span></td>
+                            </tr>
+                            <tr>
+                                <td><code>Ctrl + Z</code></td>
+                                <td class="description">Stops the current command.<span>Para el comando actual y lo envía al background.</span></td>
+                            </tr>
+                            <tr>
+                                <td><code>Ctrl + D</code></td>
+                                <td class="description">Log out of current session.<span>Cierra la sesión actual (similar a 'exit').</span></td>
+                            </tr>
+                             <tr>
+                                <td><code>Ctrl + R</code></td>
+                                <td class="description">Type to bring up a recent command.<span>Busca en el historial de comandos mientras escribes.</span></td>
+                            </tr>
+                             <tr>
+                                <td><code>!!</code></td>
+                                <td class="description">Repeats the last command.<span>Repite el último comando ejecutado.</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+
+            </main>
+        </div>
+        <footer class="footer" id="contacto">
+            <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+        </footer>
+    </div>
+    <script>
+        // Inicia el código del Canvas
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicialización de Three.js Background
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+            } else {
+                console.error("Three.js not loaded");
+            }
+
+            setupNavigation();
+            setupScrollAnimations();
+            
+            // Renderizado de diagramas Mermaid
+            mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
+                'primaryColor': '#111827',
+                'primaryTextColor': '#e5e7eb',
+                'lineColor': '#818cf8',
+                'nodeBorder': '#818cf8',
+                'mainBkg': 'transparent',
+                'textColor': '#e5e7eb',
+                'fontFamily': '"Inter", sans-serif',
+            }});
+        });
+
+        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById("bg-canvas"),
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 250;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error initializing Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points) {
+                points.rotation.y += 0.0003;
+                points.rotation.x += 0.0002;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- CÓDIGO DE NAVEGACIÓN ---
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.body.classList.toggle('menu-open');
+            });
+
+            navMenu.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                   document.body.classList.remove('menu-open');
+                }
+            });
+        }
+
+        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        
+                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid, .command-table, ul, .authors');
+                        elementsToAnimate.forEach((el, index) => {
+                           el.style.transitionDelay = `${index * 100}ms`;
+                        });
+
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+    </script>
+</body>
+</html>
+
