@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan de Trabajo: Análisis de Metagenomas | O.C.V.M.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        /* Variables de CSS para colores y fuentes */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;   /* Rosa para nombres de personas */
+        }
+
+        /* Estilos generales para el cuerpo de la página */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+            text-align: justify;
+        }
+        p {
+            text-align: justify;
+        }
+
+        /* Canvas de fondo con animación Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        /* Estilo de glassmorphism para secciones y navegación */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+
+        /* Sección del héroe o cabecera principal */
+        .hero {
+            min-height: 60vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 7vw, 4.5rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Contenedor principal para el contenido */
+        .main-container { 
+            width: 100%;
+            max-width: 100%; /* El contenedor usa todo el ancho */
+            margin: 0 auto; 
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content {
+            pointer-events: auto;
+        }
+
+        main p, .footer p {
+            user-select: text;
+            cursor: default;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        /* Animación de aparición para las secciones con scroll */
+        .section h2, .section h3, .section p, .mermaid, .section ul, .section ol, .section .authors, .section .code-block, .section .note {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .mermaid, .section.is-visible ul, .section.is-visible ol, .section.is-visible .authors, .section.is-visible .code-block, .section.is-visible .note {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
+        
+        /* Clases para colorear palabras y conceptos */
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .concept2 { color: var(--concept-color-2); font-weight: 500; }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; }
+
+        /* Estilo para bloques de código */
+        .code-block {
+            background-color: #1a202c; /* Un oscuro ligeramente más claro para contraste */
+            border: 1px solid #4a5568;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre-wrap;     /* Hace que el texto se ajuste */
+            word-wrap: break-word;   /* Rompe palabras largas */
+            color: #e2e8f0;
+            margin-top: 0.5rem;
+        }
+        
+        .note {
+            background-color: rgba(30, 41, 59, 0.5);
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        /* Pie de página */
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        /* Estilo para los diagramas de Mermaid */
+        .mermaid {
+            margin: 2rem auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 900px;
+        }
+        
+        /* Media queries para dispositivos móviles */
+        @media (max-width: 768px) {
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+            body.menu-open .nav-container {
+                transform: translateY(0);
+            }
+
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo con animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>O.C.V.M.</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#inicio">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                    Inicio</a></li>
+                <li><a href="#herramientas">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+                    Herramientas</a></li>
+                <li><a href="#datos">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4M4 7v10M12 11v10M20 7v10"/></svg>
+                    Datos</a></li>
+                <li><a href="#tutorial">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                     Tutorial</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Sección Hero -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Análisis de Metagenomas</h1>
+                <p>Estrategia y guía práctica para la identificación de genes de interés en datos genómicos ambientales.</p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                
+                <!-- Acceso y Herramientas -->
+                <section id="herramientas" class="glassmorphism section" data-animate>
+                    <h2>Acceso y Herramientas</h2>
+                     <p>El análisis se realizará de forma remota en un servidor computacional. A continuación se detallan las herramientas necesarias para establecer la conexión y gestionar los archivos.</p>
+                    <ul class="list-disc list-inside space-y-4 mt-4">
+                        <li><strong>Cliente SSH:</strong> Para la conexión segura al servidor.
+                            <ul class="list-none ml-8 mt-2 space-y-1">
+                                <li><span class="font-semibold text-gray-400">Herramienta recomendada:</span> <code class="bg-gray-700 px-2 py-1 rounded">PuTTY</code></li>
+                                <li><span class="font-semibold text-gray-400">Puerto de conexión:</span> <code class="bg-gray-700 px-2 py-1 rounded">4603</code></li>
+                            </ul>
+                        </li>
+                        <li><strong>Transferencia de Archivos (SFTP):</strong> Para mover archivos entre el computador local y el servidor.
+                             <ul class="list-none ml-8 mt-2 space-y-1">
+                                <li><span class="font-semibold text-gray-400">Herramientas recomendadas:</span> <code class="bg-gray-700 px-2 py-1 rounded">FileZilla</code> o <code class="bg-gray-700 px-2 py-1 rounded">WinSCP</code>.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Software de Análisis Principal:</strong> La herramienta clave para la búsqueda de homología de secuencias.
+                            <ul class="list-none ml-8 mt-2 space-y-1">
+                                <li><span class="font-semibold text-gray-400">Software:</span> <code class="bg-gray-700 px-2 py-1 rounded"><span class="concept1">DIAMOND</span></code>. Se utilizará para realizar alineamientos de tipo <span class="concept1">blastp</span> a alta velocidad.</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </section>
+
+                <!-- Descripción de los Datos -->
+                <section id="datos" class="glassmorphism section" data-animate>
+                    <h2>Descripción de los Datos</h2>
+                    <p>Los datos de partida son una colección de metagenomas obtenidos de la base de datos pública MG-RAST. Es fundamental comprender su estructura y particularidades antes de iniciar el análisis.</p>
+                    <ul class="list-disc list-inside space-y-4 mt-4">
+                        <li><strong>Ubicación en el servidor:</strong> <code class="bg-gray-700 px-2 py-1 rounded">/meet-meet/metagenomas/</code>. Dentro, se organizan en subcarpetas por ambiente (ej: <code class="bg-gray-700 px-2 py-1 rounded">marino/</code>).</li>
+                        <li><strong>Formato de Archivo:</strong> <code class="bg-gray-700 px-2 py-1 rounded">.faa</code> (FASTA de aminoácidos).
+                            <div class="note">
+                                <strong>Decisión Estratégica:</strong> Se trabaja con secuencias de aminoácidos en lugar de nucleótidos para aprovechar la velocidad de <span class="concept1">DIAMOND</span>, que es miles de veces más rápido que BLAST tradicional para búsquedas de proteína contra proteína.
+                            </div>
+                        </li>
+                        <li><strong>Nomenclatura:</strong> Siguen el patrón <code class="bg-gray-700 px-2 py-1 rounded">MGM[ID_Muestra].550.2.faa</code>.
+                            <ul class="list-none ml-8 mt-2 space-y-1">
+                               <li><code class="bg-gray-700 px-1 rounded">MGM</code>: Indica que es un Metagenoma.</li>
+                               <li><code class="bg-gray-700 px-1 rounded">[ID_Muestra]</code>: Identificador único de la muestra en MG-RAST, permite buscar sus metadatos (ej: coordenadas geográficas).</li>
+                               <li><code class="bg-gray-700 px-1 rounded">.550.2</code>: Indica que los datos han pasado por una etapa de control de calidad y filtrado inicial en la plataforma de origen.</li>
+                           </ul>
+                        </li>
+                        <li><strong class="text-red-400">Problema Crítico Detectado:</strong> Existe una enorme variabilidad en el tamaño de los metagenomas. <span class="text-red-300">Muchos archivos contienen muy pocas secuencias (ej. 600-900), lo que los hace estadísticamente poco informativos. El primer paso del análisis será filtrar estas muestras.</span></li>
+                    </ul>
+                </section>
+                
+                <!-- Tutorial Detallado -->
+                <section id="tutorial" class="glassmorphism section" data-animate>
+                    <h2>Tutorial Detallado: Guía Práctica</h2>
+                    
+                    <p>A continuación se presenta el flujo de trabajo completo, desde la preparación de los datos hasta la visualización final de los resultados. Este proceso está diseñado para ser reproducible y escalable.</p>
+
+                    <div class="mermaid">
+                        graph TD
+                            subgraph "Fase 1: Preparación y Filtrado"
+                                A[1. Acceso y Copia de Datos] --> B(2. Conteo de Secuencias);
+                                B --> C{3. ¿# Seqs > Umbral?};
+                                C --o|Sí| D[Metagenomas Válidos];
+                                C --x|No| E[Descartar];
+                            end
+
+                            subgraph "Fase 2: Construcción BD y Validación"
+                                F[4. Obtener Secuencias DSR] --> G(5. Crear BD de Referencia);
+                                H(6. Crear Metagenoma 'Mock');
+                                G & H --> I[7. Ejecutar DIAMOND en 'Mock'];
+                                I --> J{8. ¿Validación OK?};
+                            end
+                            
+                            subgraph "Fase 3: Análisis a Gran Escala"
+                                K[9. Bucle sobre Metagenomas];
+                                L[10. blastp vs BD DSR];
+                                M[11. blastp vs BD rpoB];
+                                K --> L;
+                                K --> M;
+                            end
+
+                            subgraph "Fase 4: Visualización"
+                                N[12. Normalizar Hits];
+                                O[13. Obtener Coordenadas];
+                                P((14. Mapeo Geográfico));
+                                N --> O --> P;
+                            end
+                            
+                            %% Conexiones entre Fases
+                            D --> H;
+                            J -- Sí --> K;
+                            D -.-> K;
+                            L --> N;
+                            M --> N;
+                            
+                            %% Estilos
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px
+                            style F fill:#fbbf24,stroke:#333,stroke-width:2px
+                            style C fill:#f472b6,stroke:#333,stroke-width:2px
+                            style J fill:#f472b6,stroke:#333,stroke-width:2px
+                            style P fill:#34d399,stroke:#333,stroke-width:4px
+                    </div>
+
+                    <ol class="list-decimal list-inside space-y-8 text-gray-300">
+                        <!-- PASO 1 -->
+                        <li>
+                            <strong>Inventario y Filtrado Inicial de Datos</strong>
+                            <p class="mt-2 mb-3 text-gray-400">El primer paso es crucial: debemos limpiar nuestro set de datos para trabajar solo con muestras informativas. No modificaremos los datos originales.</p>
+                            
+                            <h3 class="font-semibold text-cyan-400 mt-2">1.1. Crear un directorio de trabajo y copiar los datos:</h3>
+                            <div class="code-block">
+# Navega al directorio principal y crea una carpeta para el análisis
+cd /meet-meet/
+mkdir analisis_dsr
+# Copia los datos crudos para no alterarlos (esto puede tardar)
+cp -r metagenomas/marino/ analisis_dsr/
+                            </div>
+
+                            <h3 class="font-semibold text-cyan-400 mt-4">1.2. Contar secuencias y generar un reporte:</h3>
+                            <p class="mt-1 mb-2 text-gray-400">Un archivo FASTA de proteínas tiene 2 líneas por secuencia (header y secuencia). Contaremos las líneas totales y dividiremos por 2 para obtener el número de secuencias.</p>
+                            <div class="code-block">
+# Entra al directorio de trabajo
+cd analisis_dsr/marino
+# Cuenta las líneas de todos los archivos .faa y guarda el resultado
+wc -l *.faa > ../conteo_lineas.txt
+                            </div>
+                            
+                            <h3 class="font-semibold text-cyan-400 mt-4">1.3. Procesar el reporte y definir el umbral:</h3>
+                            <p class="mt-1 mb-2 text-gray-400">Descarga el archivo <code class="bg-gray-700 px-1 rounded">conteo_lineas.txt</code> a tu computador. Usa una hoja de cálculo para dividir el número de líneas por 2 y obtener el total de secuencias por muestra. Ordena los metagenomas por tamaño y analiza la distribución. <span class="text-red-300">Define un umbral razonable (ej. > 50,000 secuencias) basado en la literatura o en la distribución de tus datos para descartar los archivos más pequeños.</span></p>
+                        </li>
+
+                        <!-- PASO 2 -->
+                        <li>
+                            <strong>Construcción de la Base de Datos de Referencia (DSR)</strong>
+                            <p class="mt-2 mb-3 text-gray-400">Necesitamos una base de datos local con las secuencias del gen de interés (ej. DSR) contra la que compararemos nuestros metagenomas.</p>
+                            <h3 class="font-semibold text-cyan-400 mt-2">2.1. Obtener secuencias de referencia:</h3>
+                            <p class="mt-1 mb-2 text-gray-400">Ve a bases de datos como <a href="https://www.uniprot.org/" target="_blank" class="text-cyan-400 hover:underline">UniProt</a> o <a href="https://www.ncbi.nlm.nih.gov/protein" target="_blank" class="text-cyan-400 hover:underline">NCBI Protein</a>. Busca "dissimilatory sulfite reductase" (o genes específicos como <code class="bg-gray-700 px-1 rounded">dsrA</code> y <code class="bg-gray-700 px-1 rounded">dsrB</code>). Descarga una selección representativa de secuencias en formato FASTA.</p>
+
+                            <h3 class="font-semibold text-cyan-400 mt-4">2.2. Unificar y crear la base de datos DIAMOND:</h3>
+                            <div class="code-block">
+# Sube tus archivos FASTA (ej. dsrA.fasta, dsrB.fasta) a tu directorio de análisis
+# Combínalos en un solo archivo
+cat dsrA.fasta dsrB.fasta > dsr_database.faa
+# Crea la base de datos para DIAMOND
+# --in: archivo de entrada FASTA
+# -d: nombre para la base de datos de salida (.dmnd)
+<span class="concept1">diamond makedb</span> --in dsr_database.faa -d dsr_database
+                            </div>
+                        </li>
+
+                        <!-- PASO 3 -->
+                        <li>
+                            <strong>Validación del Método con un Metagenoma "Mock"</strong>
+                             <div class="note">
+                                <strong>Paso de Control de Calidad:</strong> Antes de procesar cientos de archivos, nos aseguramos de que el método funciona creando una prueba controlada para detectar las secuencias que sabemos que están ahí y evitar falsos positivos.
+                            </div>
+                            <h3 class="font-semibold text-cyan-400 mt-2">3.1. Crear el metagenoma "mock":</h3>
+                            <p class="mt-1 mb-2 text-gray-400">Toma un metagenoma real (uno de los filtrados) y añádele manualmente unas 5-10 secuencias de tu archivo <code class="bg-gray-700 px-1 rounded">dsr_database.faa</code>. Guárdalo como <code class="bg-gray-700 px-1 rounded">mock_metagenome.faa</code>. Ahora sabes exactamente cuántos hits "reales" deberías encontrar.</p>
+                            
+                            <h3 class="font-semibold text-cyan-400 mt-4">3.2. Ejecutar DIAMOND y verificar:</h3>
+                            <div class="code-block">
+# Ejecuta la búsqueda de DIAMOND
+# -d: tu base de datos | -q: tu archivo de consulta (el mock)
+# -o: el archivo de salida | --outfmt 6: formato tabular
+# --sensitive: modo más lento pero más preciso
+<span class="concept1">diamond blastp</span> -d dsr_database.dmnd -q mock_metagenome.faa -o mock_results.tsv --outfmt 6 --sensitive
+                            </div>
+                            <p class="mt-2 text-gray-400"><span class="text-yellow-300">Revisa el archivo <code class="bg-gray-700 px-1 rounded">mock_results.tsv</code>. Deberías encontrar los hits correspondientes a las secuencias que insertaste.</span> ¡Si es así, el método es confiable!</p>
+                        </li>
+
+                        <!-- PASO 4 -->
+                        <li>
+                            <strong>Procesamiento a Gran Escala</strong>
+                             <p class="mt-2 mb-3 text-gray-400">Ahora aplicamos el método validado a todos nuestros datos filtrados, tanto para el gen de interés como para un gen de normalización.</p>
+                             <h3 class="font-semibold text-cyan-400 mt-2">4.1. Crear base de datos para normalización:</h3>
+                             <p class="mt-1 mb-2 text-gray-400">Repite el paso 2, pero esta vez con un gen <span class="concept2">housekeeping</span> como <code class="bg-gray-700 px-1 rounded"><span class="concept2">rpoB</span></code> para poder normalizar los resultados. Llama a la base de datos <code class="bg-gray-700 px-1 rounded">rpob_database</code>.</p>
+                            <h3 class="font-semibold text-cyan-400 mt-4">4.2. Automatizar con un script:</h3>
+                            <p class="mt-1 mb-2 text-gray-400">Crea un archivo llamado <code class="bg-gray-700 px-1 rounded">run_analysis.sh</code>. Este script recorrerá cada metagenoma filtrado y ejecutará DIAMOND para DSR y rpoB.</p>
+                            <div class="code-block">
+#!/bin/bash
+# Script para procesar todos los metagenomas
+
+# Crea directorios para los resultados
+mkdir -p results_dsr
+mkdir -p results_rpob
+
+# Itera sobre cada archivo .faa en el directorio de trabajo
+for metagenome in *.faa
+do
+  # Extrae el nombre base del archivo
+  base=$(basename ${metagenome} .faa)
+  echo "Procesando ${base}..."
+
+  # Ejecuta DIAMOND para DSR (gen de interés)
+  diamond blastp -d ../dsr_database.dmnd -q ${metagenome} -o ../results_dsr/${base}.tsv --outfmt 6 --sensitive
+  
+  # Ejecuta DIAMOND para rpoB (gen de normalización)
+  diamond blastp -d ../rpob_database.dmnd -q ${metagenome} -o ../results_rpob/${base}.tsv --outfmt 6 --sensitive
+done
+
+echo "Análisis completo."
+                            </div>
+                            <p class="mt-2 text-gray-400">Ejecuta el script desde el directorio <code class="bg-gray-700 px-1 rounded">analisis_dsr/marino/</code> con: <code class="bg-gray-700 px-2 py-1 rounded">bash ../run_analysis.sh</code> (si el script está en la carpeta superior).</p>
+                        </li>
+                        
+                         <!-- PASO 5 -->
+                        <li>
+                            <strong>Análisis y Visualización Final</strong>
+                            <p class="mt-2 mb-3 text-gray-400">El último paso es consolidar los resultados, calcular la abundancia relativa y presentarlos de forma visual e intuitiva.</p>
+                            <h3 class="font-semibold text-cyan-400 mt-2">5.1. Extraer y normalizar los conteos:</h3>
+                            <p class="mt-1 mb-2 text-gray-400">Para cada muestra, cuenta el número de líneas (hits) en su archivo de resultados DSR y rpoB. Luego, calcula la abundancia relativa: <span class="concept2">(Total hits DSR) / (Total hits rpoB)</span>. Esto se puede hacer con un script (ej. Python/Pandas) o con comandos de bash.</p>
+                            
+                            <h3 class="font-semibold text-cyan-400 mt-4">5.2. Georreferenciación y Mapeo:</h3>
+                            <p class="mt-1 mb-2 text-gray-400">Para cada ID de muestra (ej. MGM4440039), búscalo en <a href="https://www.mg-rast.org/" target="_blank" class="text-cyan-400 hover:underline">MG-RAST</a> para encontrar sus metadatos, específicamente las coordenadas (latitud y longitud). Finalmente, usa una herramienta de visualización (como Python con Folium/Geopandas, o QGIS) para <span class="concept2">crear un mapa del mundo donde cada punto represente una muestra, y el color o tamaño del punto indique la abundancia relativa de genes DSR.</span></p>
+                        </li>
+
+                    </ol>
+                </section>
+            </main>
+        </div>
+        <footer class="footer" id="contacto">
+            <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+        </footer>
+    </div>
+    <script>
+        // Inicia el código del Canvas
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicialización de Three.js Background
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+            } else {
+                console.error("Three.js not loaded");
+            }
+
+            setupNavigation();
+            setupScrollAnimations();
+            
+            // Renderizado de diagramas Mermaid
+            mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
+                'primaryColor': '#111827',
+                'primaryTextColor': '#e5e7eb',
+                'lineColor': '#818cf8',
+                'nodeBorder': '#818cf8',
+                'mainBkg': 'transparent',
+                'textColor': '#e5e7eb',
+                'fontSize': '14px',
+            } });
+        });
+
+        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById("bg-canvas"),
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 250;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error initializing Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points) {
+                points.rotation.y += 0.0003;
+                points.rotation.x += 0.0002;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- CÓDIGO DE NAVEGACIÓN ---
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.body.classList.toggle('menu-open');
+            });
+
+            navMenu.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                   document.body.classList.remove('menu-open');
+                }
+            });
+        }
+
+        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        
+                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid, ul, ol, .authors, .code-block, .note');
+                        elementsToAnimate.forEach((el, index) => {
+                           el.style.transitionDelay = `${index * 100}ms`;
+                        });
+
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+    </script>
+</body>
+</html>
+
