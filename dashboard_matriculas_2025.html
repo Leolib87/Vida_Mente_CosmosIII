@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Matrículas 2024-2025 | O.C.V.M.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <style>
+        /* Variables de CSS para colores y fuentes */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;   /* Rosa para nombres de personas */
+        }
+
+        /* Estilos generales para el cuerpo de la página */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+        
+        /* Canvas de fondo con animación Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        /* Estilo de glassmorphism para secciones y navegación */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* Sección del héroe o cabecera principal */
+        .hero {
+            min-height: 50vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 6vw, 4rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Contenedor principal para el contenido */
+        .main-container { 
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto; 
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content, .search-container {
+            pointer-events: auto;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 2rem; margin-top: 2rem; }
+         @media (min-width: 1024px) {
+            .layout-grid {
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        /* Animación de aparición para las secciones con scroll */
+        .section h2, .section div, .search-container {
+             opacity: 0;
+             transform: translateY(20px);
+             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible div, .search-container.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        
+        /* Pie de página */
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        /* --- ESTILOS ESPECÍFICOS DEL DASHBOARD --- */
+        .tooltip {
+            position: absolute; text-align: center; padding: 8px 12px; font-size: 14px;
+            background: #111827; border: 1px solid var(--primary);
+            color: var(--primary-text); border-radius: 8px; pointer-events: none;
+            opacity: 0; transition: opacity 0.2s; z-index: 2000;
+        }
+
+        /* Estilos para el gráfico D3 */
+        .axis path, .axis line { stroke: var(--primary); }
+        .axis text { fill: var(--primary-text); font-size: 12px; }
+        .grid-line { stroke: var(--primary); stroke-opacity: 0.2; shape-rendering: crispEdges; }
+        .bar-label { fill: var(--primary-text); font-size: 9px; text-anchor: middle; }
+
+        /* Estilos para la tabla */
+        th { cursor: pointer; user-select: none; }
+        th:hover { background-color: rgba(129, 140, 248, 0.1); }
+        .table-container {
+            max-height: 660px; /* Altura máxima para la tabla */
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo con animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=D" alt="Logo Dashboard" class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>Dashboard Matrículas</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Sección Hero -->
+        <header class="hero">
+            <div class="hero-content">
+                <h1>Análisis de Matrículas de Educación Superior</h1>
+                <p>Comparativa de datos entre 2024 y 2025 en Chile</p>
+            </div>
+        </header>
+
+        <!-- Barra de Búsqueda -->
+        <div class="search-container mb-8 px-4 md:px-0" data-animate>
+            <div class="relative max-w-lg mx-auto">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <input type="text" id="search-input" class="w-full bg-gray-800 border border-gray-600 text-white placeholder-gray-400 text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block pl-10 p-2.5" placeholder="Buscar institución...">
+            </div>
+        </div>
+
+        <main class="layout-grid">
+            <!-- Sección del Gráfico Dinámico -->
+            <section id="chart-section" class="glassmorphism section" data-animate>
+                <h2>Top 15 Instituciones por Matrícula</h2>
+                <div id="chart-container" class="w-full h-96 md:h-[600px]"></div>
+            </section>
+
+            <!-- Sección de la Tabla de Datos -->
+            <section id="table-section" class="glassmorphism section" data-animate>
+                <h2>Tabla de Datos Completa</h2>
+                <div class="table-container">
+                    <table class="w-full text-sm text-left text-gray-300">
+                        <thead class="text-xs text-gray-200 uppercase bg-gray-900/50 sticky top-0">
+                            <tr>
+                                <th scope="col" class="px-4 py-3" data-sort="institucion">Institución ⇅</th>
+                                <th scope="col" class="px-4 py-3 text-right" data-sort="matricula2024">2024 ⇅</th>
+                                <th scope="col" class="px-4 py-3 text-right" data-sort="matricula2025">2025 ⇅</th>
+                                <th scope="col" class="px-2 py-3 text-center" data-sort="tendencia">Tend. ⇅</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- Filas generadas dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer" id="contacto">
+            <p style="text-align:center;">Visualización de datos interactiva.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">O.C.V.M. | 2025</p>
+        </footer>
+    </div>
+    
+    <!-- Tooltip para el gráfico -->
+    <div id="tooltip" class="tooltip"></div>
+
+    <script type="module">
+        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById("bg-canvas"),
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 250;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error initializing Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points) {
+                points.rotation.y += 0.0003;
+                points.rotation.x += 0.0002;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+
+        // --- MÓDULO DE DATOS Y VISUALIZACIÓN CON D3.JS ---
+        const setupD3 = () => {
+             const allData = [
+                { institucion: "IP Duoc UC", matricula2024: 105296, matricula2025: 108955 },
+                { institucion: "IP AIEP", matricula2024: 87763, matricula2025: 81655 },
+                { institucion: "Universidad Andrés Bello", matricula2024: 64227, matricula2025: 72385 },
+                { institucion: "IP Inacap", matricula2024: 57042, matricula2025: 61410 },
+                { institucion: "Pontificia Universidad Católica", matricula2024: 54940, matricula2025: 55730 },
+                { institucion: "Universidad de Chile", matricula2024: 45329, matricula2025: 54202 },
+                { institucion: "Universidad San Sebastián", matricula2024: 49510, matricula2025: 52974 },
+                { institucion: "IP Iplacex", matricula2024: 41248, matricula2025: 52137 },
+                { institucion: "CFT Inacap", matricula2024: 46795, matricula2025: 50433 },
+                { institucion: "Universidad Autónoma de Chile", matricula2024: 32279, matricula2025: 41899 },
+                { institucion: "CFT Santo Tomás", matricula2024: 38729, matricula2025: 39233 },
+                { institucion: "Universidad de Las Américas", matricula2024: 31708, matricula2025: 34925 },
+                { institucion: "IP IACC", matricula2024: 32095, matricula2025: 32951 },
+                { institucion: "IP Santo Tomás", matricula2024: 27468, matricula2025: 30730 },
+                { institucion: "Universidad Santo Tomás", matricula2024: 26929, matricula2025: 28971 },
+                { institucion: "Universidad de Concepción", matricula2024: 28491, matricula2025: 28017 },
+                { institucion: "Universidad de Santiago de Chile", matricula2024: 24725, matricula2025: 25075 },
+                { institucion: "Universidad Mayor", matricula2024: 24528, matricula2025: 24964 },
+                { institucion: "Universidad del Desarrollo", matricula2024: 22598, matricula2025: 23008 },
+                { institucion: "U. Técnica Federico Santa María", matricula2024: 22652, matricula2025: 22958 },
+                { institucion: "Universidad Diego Portales", matricula2024: 21520, matricula2025: 22187 },
+                { institucion: "IP Chile", matricula2024: 19580, matricula2025: 21477 },
+                { institucion: "Universidad de los Andes", matricula2024: 23316, matricula2025: 20595 },
+                { institucion: "Pontificia U. Católica de Valparaíso", matricula2024: 18662, matricula2025: 20167 },
+                { institucion: "Universidad Austral de Chile", matricula2024: 18284, matricula2025: 18125 },
+                { institucion: "Universidad Central de Chile", matricula2024: 15535, matricula2025: 17338 },
+                { institucion: "Universidad de Valparaíso", matricula2024: 16936, matricula2025: 17066 },
+                { institucion: "UC de la Santísima Concepción", matricula2024: 16052, matricula2025: 16576 },
+                { institucion: "IP Providencia", matricula2024: 14122, matricula2025: 14341 },
+                { institucion: "Universidad Adolfo Ibáñez", matricula2024: 12933, matricula2025: 14038 },
+                { institucion: "Universidad Católica del Maule", matricula2024: 13564, matricula2025: 13968 },
+                { institucion: "Universidad de Talca", matricula2024: 12113, matricula2025: 12654 },
+                { institucion: "Universidad Católica del Norte", matricula2024: 11704, matricula2025: 12329 },
+                { institucion: "Universidad de La Frontera", matricula2024: 12301, matricula2025: 12165 },
+                { institucion: "Universidad del Bío-Bío", matricula2024: 11619, matricula2025: 12051 },
+                { institucion: "Universidad Católica de Temuco", matricula2024: 11811, matricula2025: 11804 },
+                { institucion: "Universidad de Los Lagos", matricula2024: 10455, matricula2025: 11390 },
+                { institucion: "Universidad de Tarapacá", matricula2024: 10605, matricula2025: 10848 },
+                { institucion: "Universidad de Viña del Mar", matricula2024: 9792, matricula2025: 10806 },
+                { institucion: "Universidad Finis Terrae", matricula2024: 10243, matricula2025: 10468 },
+                { institucion: "Universidad Arturo Prat", matricula2024: 9548, matricula2025: 9819 },
+                { institucion: "Universidad del Alba", matricula2024: 8470, matricula2025: 9296 },
+                { institucion: "Universidad Alberto Hurtado", matricula2024: 8638, matricula2025: 8960 },
+                { institucion: "Universidad de O’Higgins", matricula2024: 7536, matricula2025: 8953 },
+                { institucion: "CFT ENAC", matricula2024: 8555, matricula2025: 8890 },
+                { institucion: "Universidad Bernardo O’Higgins", matricula2024: 9023, matricula2025: 8858 },
+                { institucion: "IP Dr. Virgilio Gómez", matricula2024: 8512, matricula2025: 8776 },
+                { institucion: "U.Tecnológica Metropolitana", matricula2024: 8204, matricula2025: 8546 },
+                { institucion: "CFT PUCV", matricula2024: 7850, matricula2025: 8316 },
+                { institucion: "Universidad de Atacama", matricula2024: 7894, matricula2025: 8144 },
+                { institucion: "Universidad de La Serena", matricula2024: 7654, matricula2025: 7763 },
+                { institucion: "CFT San Agustín", matricula2024: 7544, matricula2025: 7591 },
+                { institucion: "Universidad de Antofagasta", matricula2024: 7124, matricula2025: 7279 },
+                { institucion: "IP Escuela de Comercio de Santiago", matricula2024: 3549, matricula2025: 7102 },
+                { institucion: "UNACC", matricula2024: 7288, matricula2025: 6893 },
+                { institucion: "Universidad de Playa Ancha", matricula2024: 6895, matricula2025: 6798 },
+                { institucion: "CFT Ceduc-UCN", matricula2024: 5709, matricula2025: 6221 },
+                { institucion: "IPG", matricula2024: 4554, matricula2025: 6035 },
+                { institucion: "U. Católica Silva Henríquez", matricula2024: 6104, matricula2025: 5827 },
+                { institucion: "CFT Cenco", matricula2024: 4930, matricula2025: 5190 },
+                { institucion: "Universidad Gabriela Mistral", matricula2024: 3948, matricula2025: 4687 },
+                { institucion: "Universidad de Magallanes", matricula2024: 4237, matricula2025: 4500 },
+                { institucion: "U. Metropolitana de Cs. de la Educ.", matricula2024: 4132, matricula2025: 4278 },
+                { institucion: "U. Ac. Humanismo Cristiano", matricula2024: 4288, matricula2025: 4207 },
+                { institucion: "Universidad de Aconcagua", matricula2024: 5247, matricula2025: 3842 },
+                { institucion: "Universidad Miguel de Cervantes", matricula2024: 2980, matricula2025: 3252 },
+                { institucion: "IP Los Leones", matricula2024: 4456, matricula2025: 3116 },
+                { institucion: "U. Adventista de Chile", matricula2024: 2843, matricula2025: 2823 },
+                { institucion: "CFT de La Región de Arica", matricula2024: 2669, matricula2025: 2816 },
+                { institucion: "Universidad SEK", matricula2024: 3170, matricula2025: 2653 },
+                { institucion: "IP San Sebastián", matricula2024: 1468, matricula2025: 2522 },
+                { institucion: "IP Diego Portales", matricula2024: 2980, matricula2025: 2039 },
+                { institucion: "CFT Lota-Arauco", matricula2024: 2069, matricula2025: 2022 },
+                { institucion: "IP Arcos", matricula2024: 4258, matricula2025: 1963 },
+                { institucion: "CFT de La Región de Valparaíso", matricula2024: 1550, matricula2025: 1934 },
+                { institucion: "IP Contadores Auditores Santiago", matricula2024: 1827, matricula2025: 1895 },
+                { institucion: "CFT de La Región de La Araucanía", matricula2024: 1480, matricula2025: 1886 },
+                { institucion: "CFT de La Región de Tarapacá", matricula2024: 1549, matricula2025: 1778 },
+                { institucion: "CFT de la Región de O’Higgins", matricula2024: 972, matricula2025: 1599 },
+                { institucion: "CFT de La Región de Los Ríos", matricula2024: 1297, matricula2025: 1596 },
+                { institucion: "IP del Valle Central", matricula2024: 3137, matricula2025: 1565 },
+                { institucion: "CFT de La Región de Coquimbo", matricula2024: 1440, matricula2025: 1496 },
+                { institucion: "CFT de La Región del Maule", matricula2024: 1259, matricula2025: 1447 },
+                { institucion: "CFT Juan Bohon", matricula2024: 1464, matricula2025: 1219 },
+                { institucion: "CFT Manpower", matricula2024: 789, matricula2025: 1110 },
+                { institucion: "CFT ICCE", matricula2024: 1413, matricula2025: 1036 },
+                { institucion: "CFT de La Región Metropolitana", matricula2024: 409, matricula2025: 959 },
+                { institucion: "Universidad de Aysén", matricula2024: 662, matricula2025: 793 },
+                { institucion: "IP Escuela Moderna de Música", matricula2024: 830, matricula2025: 843 },
+                { institucion: "IP Agrario Adolfo Matthei", matricula2024: 821, matricula2025: 825 },
+                { institucion: "IP Instituto Nacional del Fútbol", matricula2024: 887, matricula2025: 822 },
+                { institucion: "IP EATRI", matricula2024: 807, matricula2025: 801 },
+                { institucion: "CFT de La Región de Los Lagos", matricula2024: 528, matricula2025: 644 },
+                { institucion: "CFT de La Región del Biobío", matricula2024: 592, matricula2025: 635 },
+                { institucion: "CFT de La Región de Aysén", matricula2024: 321, matricula2025: 633 },
+                { institucion: "CFT del Medio Ambiente", matricula2024: 707, matricula2025: 604 },
+                { institucion: "IP Inst. de Artes Culinary", matricula2024: 669, matricula2025: 604 },
+                { institucion: "CFT Laplace", matricula2024: 702, matricula2025: 563 },
+                { institucion: "Universidad La República", matricula2024: 1086, matricula2025: 528 },
+                { institucion: "CFT de La Región de Antofagasta", matricula2024: 471, matricula2025: 526 },
+                { institucion: "IP Inst. Est. Bancarios Subcaseaux", matricula2024: 1376, matricula2025: 502 },
+                { institucion: "CFT de La Región de Atacama", matricula2024: 337, matricula2025: 402 },
+                { institucion: "IP Projazz", matricula2024: 390, matricula2025: 390 },
+                { institucion: "Universidad Tecnológica Inacap", matricula2024: 1395, matricula2025: 338 },
+                { institucion: "IP Chileno Británico de Cultura", matricula2024: 495, matricula2025: 329 },
+                { institucion: "CFT Asimet", matricula2024: 270, matricula2025: 323 },
+                { institucion: "CFT Teodoro Wickel Kluwen", matricula2024: 1016, matricula2025: 312 },
+                { institucion: "Universidad Bolivariana", matricula2024: 416, matricula2025: 294 },
+                { institucion: "CFT Escuela Culinary Francesa", matricula2024: 260, matricula2025: 211 },
+                { institucion: "CFT Alpes", matricula2024: 188, matricula2025: 191 },
+                { institucion: "CFT de La Región de Magallanes", matricula2024: 167, matricula2025: 182 },
+                { institucion: "CFT Prodata", matricula2024: 134, matricula2025: 176 },
+                { institucion: "CFT Escuela de Marina Mercante", matricula2024: 122, matricula2025: 143 },
+                { institucion: "CFT Academia Chilena de Yoga", matricula2024: 40, matricula2025: 94 },
+                { institucion: "CFT Escuela de Comercio", matricula2024: 745, matricula2025: 89 },
+                { institucion: "IP Libertad de Los Andes", matricula2024: 213, matricula2025: 88 },
+                { institucion: "CFT Inst. Alemán de Comercio Insalco", matricula2024: 68, matricula2025: 76 },
+                { institucion: "CFT Iprosec", matricula2024: 96, matricula2025: 44 },
+                { institucion: "IP Cicerón", matricula2024: 20, matricula2025: 38 },
+                { institucion: "CFT Profasoc", matricula2024: 22, matricula2025: 14 }
+            ];
+            
+            allData.forEach(d => {
+                d.tendencia = d.matricula2025 - d.matricula2024;
+            });
+            
+            let currentData = [...allData];
+            let isSearchActive = false;
+
+            const tooltip = d3.select("#tooltip");
+            let currentSort = { key: 'matricula2025', asc: false };
+
+            const sortData = () => {
+                currentData.sort((a, b) => {
+                    let valA = a[currentSort.key];
+                    let valB = b[currentSort.key];
+                    if (typeof valA === 'string') {
+                        return currentSort.asc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                    }
+                    return currentSort.asc ? valA - valB : valB - valA;
+                });
+            };
+
+            const renderTable = () => {
+                const tableBody = d3.select("#table-body");
+                tableBody.selectAll("tr").remove();
+
+                const rows = tableBody.selectAll("tr")
+                    .data(currentData)
+                    .enter()
+                    .append("tr")
+                    .attr("class", "border-b border-gray-700 hover:bg-gray-800 transition-colors duration-200")
+                    .attr("data-institucion", d => d.institucion);
+
+                rows.append("td")
+                    .attr("class", "px-4 py-2 font-medium text-white")
+                    .text(d => d.institucion);
+                
+                rows.append("td")
+                    .attr("class", "px-4 py-2 text-right")
+                    .text(d => d.matricula2024.toLocaleString('es-CL'));
+
+                rows.append("td")
+                    .attr("class", "px-4 py-2 text-right")
+                    .text(d => d.matricula2025.toLocaleString('es-CL'));
+                
+                rows.append("td")
+                    .attr("class", "px-2 py-2 text-center")
+                    .html(d => {
+                        if (d.tendencia > 0) {
+                            return `<svg class="w-4 h-4 inline-block text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L5.03 9.77a.75.75 0 01-1.06-1.06l5.25-5.25a.75.75 0 011.06 0l5.25 5.25a.75.75 0 11-1.06 1.06L10.75 5.612V16.25A.75.75 0 0110 17z" clip-rule="evenodd"></path></svg>`;
+                        } else if (d.tendencia < 0) {
+                            return `<svg class="w-4 h-4 inline-block text-red-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l4.22-4.22a.75.75 0 111.06 1.06l-5.25 5.25a.75.75 0 01-1.06 0l-5.25-5.25a.75.75 0 111.06-1.06l4.22 4.22V3.75A.75.75 0 0110 3z" clip-rule="evenodd"></path></svg>`;
+                        } else {
+                            return `<span class="text-gray-400">-</span>`;
+                        }
+                    });
+            };
+
+            const renderChart = () => {
+                const chartContainer = d3.select("#chart-container");
+                chartContainer.select("svg").remove();
+
+                const chartData = currentData.slice(0, 15).map((d, i) => ({...d, index: i}));
+
+                const margin = { top: 30, right: 30, bottom: 150, left: 70 };
+                const width = chartContainer.node().getBoundingClientRect().width - margin.left - margin.right;
+                const height = chartContainer.node().getBoundingClientRect().height - margin.top - margin.bottom;
+
+                const svg = chartContainer.append("svg")
+                    .attr("width", "100%")
+                    .attr("height", "100%")
+                    .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+                    .append("g")
+                    .attr("transform", `translate(${margin.left},${margin.top})`);
+                
+                const x0 = d3.scaleBand()
+                    .domain(chartData.map(d => d.institucion))
+                    .range([0, width])
+                    .padding(0.2);
+
+                const x1 = d3.scaleBand()
+                    .domain(['2024', '2025'])
+                    .range([0, x0.bandwidth()])
+                    .padding(0.05);
+
+                const y = d3.scaleLinear()
+                    .domain([0, d3.max(chartData, d => Math.max(d.matricula2024, d.matricula2025)) * 1.05 || 10])
+                    .range([height, 0]);
+
+                const color = d3.scaleOrdinal().range(["#34d399", "#60a5fa"]); // Verde y Azul
+
+                const xAxis = g => g.attr("transform", `translate(0,${height})`).call(d3.axisBottom(x0)).selectAll("text").attr("transform", "translate(-10,0)rotate(-45)").style("text-anchor", "end");
+                const yAxis = g => g.call(d3.axisLeft(y).ticks(5).tickFormat(d => (d/1000) + "k"));
+
+                svg.append("g").call(xAxis).attr("class", "axis");
+                svg.append("g").call(yAxis).attr("class", "axis");
+                
+                svg.append('g').attr('class', 'grid').call(d3.axisLeft(y).ticks(5).tickSize(-width).tickFormat('')).selectAll("line").attr("class", "grid-line");
+
+                const group = svg.selectAll(".group").data(chartData).enter().append("g").attr("class", "group").attr("transform", d => `translate(${x0(d.institucion)},0)`);
+
+                group.selectAll("rect")
+                    .data(d => [{year: '2024', value: d.matricula2024}, {year: '2025', value: d.matricula2025}])
+                    .enter().append("rect")
+                    .attr("x", d => x1(d.year))
+                    .attr("y", height)
+                    .attr("width", x1.bandwidth())
+                    .attr("height", 0)
+                    .attr("fill", d => color(d.year))
+                    .on("mouseover", function(event, d) {
+                        const institucionData = d3.select(this.parentNode).datum();
+                        d3.select(`tr[data-institucion="${institucionData.institucion}"]`).style("background-color", "rgba(129, 140, 248, 0.2)");
+                        tooltip.style("opacity", 1).html(`<strong>${institucionData.institucion}</strong><br>Año: ${d.year}<br>Matrícula: ${d.value.toLocaleString('es-CL')}`);
+                    })
+                    .on("mousemove", function(event) {
+                        tooltip.style("left", (event.pageX + 15) + "px").style("top", (event.pageY - 28) + "px");
+                    })
+                    .on("mouseout", function() {
+                        const institucionData = d3.select(this.parentNode).datum();
+                        d3.select(`tr[data-institucion="${institucionData.institucion}"]`).style("background-color", "transparent");
+                        tooltip.style("opacity", 0);
+                    })
+                    .transition().duration(800)
+                    .delay(function(d, i) {
+                        const parentIndex = d3.select(this.parentNode).datum().index;
+                        return i * 50 + parentIndex * 100;
+                    })
+                    .attr("y", d => y(d.value))
+                    .attr("height", d => height - y(d.value));
+
+                if (isSearchActive) {
+                    group.selectAll(".bar-label")
+                        .data(d => [{year: '2024', value: d.matricula2024}, {year: '2025', value: d.matricula2025}])
+                        .enter().append("text")
+                        .attr("class", "bar-label")
+                        .attr("x", d => x1(d.year) + x1.bandwidth() / 2)
+                        .attr("y", height)
+                        .style("opacity", 0)
+                        .text(d => d.value.toLocaleString('es-CL'))
+                        .transition().duration(800)
+                        .delay(function(d, i) {
+                            const parentIndex = d3.select(this.parentNode).datum().index;
+                            return i * 50 + parentIndex * 100;
+                        })
+                        .attr("y", d => y(d.value) - 5)
+                        .style("opacity", 1);
+                }
+            };
+
+            d3.select("#search-input").on("input", function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                isSearchActive = searchTerm.length > 0;
+                currentData = allData.filter(d => 
+                    d.institucion.toLowerCase().includes(searchTerm)
+                );
+                sortData(); 
+                renderTable();
+                renderChart();
+            });
+
+            d3.selectAll("th").on("click", function() {
+                const key = d3.select(this).attr("data-sort");
+                if (!key) return;
+                if (currentSort.key === key) {
+                    currentSort.asc = !currentSort.asc;
+                } else {
+                    currentSort.key = key;
+                    currentSort.asc = true;
+                }
+                sortData();
+                renderTable();
+                renderChart();
+            });
+
+            // Renderizado inicial
+            sortData();
+            renderTable();
+            renderChart();
+
+            window.addEventListener('resize', () => {
+                onWindowResize(); // Actualiza el canvas de Three.js
+                renderChart(); // Vuelve a dibujar el gráfico D3
+            });
+        };
+        
+        // --- INICIALIZACIÓN ---
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+            }
+            setupScrollAnimations();
+            setupD3();
+        });
+
+    </script>
+</body>
+</html>
+
