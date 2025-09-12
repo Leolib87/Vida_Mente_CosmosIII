@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Carreras Científicas en Chile | O.C.V.M.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Variables de CSS para colores y fuentes */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;    /* Rosa para nombres de personas */
+        }
+
+        /* Estilos generales para el cuerpo de la página */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+            text-align: justify;
+        }
+        p {
+            text-align: justify;
+        }
+
+        /* Canvas de fondo con animación Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        /* Estilo de glassmorphism para secciones y navegación */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+
+        /* Sección del héroe o cabecera principal */
+        .hero {
+            min-height: 60vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 7vw, 4.5rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Contenedor principal para el contenido */
+        .main-container { 
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto; 
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content {
+            pointer-events: auto;
+        }
+
+        main p, .footer p {
+            user-select: text;
+            cursor: default;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        /* Animación de aparición para las secciones con scroll */
+        .section h2, .section h3, .section p, .section .grid, .section .chart-container, .section .details-panel, .section .table-container {
+             opacity: 0;
+             transform: translateY(20px);
+             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .grid, .section.is-visible .chart-container, .section.is-visible .details-panel, .section.is-visible .table-container {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
+        
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; }
+
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 550px;
+        }
+        
+        .filter-btn {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary-text);
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        .filter-btn:hover {
+            background-color: rgba(129, 140, 248, 0.3);
+            transform: scale(1.05);
+        }
+        .filter-btn.active {
+            background-color: var(--primary);
+            color: #000;
+            font-weight: 700;
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .details-panel {
+             background: rgba(0, 0, 0, 0.3);
+             border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Table Styles */
+        th {
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.3s;
+        }
+        th:hover {
+            background-color: rgba(129, 140, 248, 0.2);
+        }
+        table { color: var(--primary-text); }
+        thead { background-color: rgba(255, 255, 255, 0.05); }
+        tbody tr { transition: background-color 0.3s; }
+        tbody tr:hover { background-color: rgba(129, 140, 248, 0.1); }
+        
+        /* Media queries para dispositivos móviles */
+        @media (max-width: 768px) {
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+            body.menu-open .nav-container {
+                transform: translateY(0);
+            }
+
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo con animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>O.C.V.M.</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#inicio">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                    Inicio</a></li>
+                <li><a href="#highlights">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                    Datos Clave</a></li>
+                <li><a href="#dashboard">
+                     <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12A2.25 2.25 0 0020.25 14.25V3M3.75 20.25h16.5M3.75 12h16.5m-16.5 4.5h16.5m-16.5-8.25h16.5" /></svg>
+                    Explorador</a></li>
+                <li><a href="#data-table">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                    Tabla Completa</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Sección Hero -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Futuro Científico en Chile</h1>
+                <p>Una mirada interactiva a las carreras científicas con mayor demanda y proyección en el país.</p>
+                <p class="authors">Análisis de Datos Educacionales</p>
+            </div>
+        </div>
+
+        <main class="content">
+            <section id="highlights" class="glassmorphism section" data-animate>
+                 <h2>Panorama Científico: Datos Clave</h2>
+                 <p>
+                    Estos son algunos de los indicadores más destacados del mercado laboral para científicos en Chile. Reflejan las áreas de mayor retorno económico, estabilidad laboral y popularidad entre los nuevos estudiantes, ofreciendo una visión rápida de las tendencias actuales que definen el <span class="concept1">ecosistema científico nacional</span>.
+                 </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                    <div class="p-6 rounded-lg glassmorphism">
+                        <h3 class="text-sm font-medium text-gray-400">🏆 Mayor Ingreso Promedio (5° año)</h3>
+                        <p id="highest-income" class="mt-2 text-3xl font-bold" style="color: var(--primary);">Cargando...</p>
+                        <p id="highest-income-career" class="text-gray-300">Cargando...</p>
+                    </div>
+                    <div class="p-6 rounded-lg glassmorphism">
+                        <h3 class="text-sm font-medium text-gray-400">📈 Mayor Empleabilidad (1er año)</h3>
+                        <p id="highest-employability" class="mt-2 text-3xl font-bold" style="color: var(--primary);">Cargando...</p>
+                        <p id="highest-employability-career" class="text-gray-300">Cargando...</p>
+                    </div>
+                    <div class="p-6 rounded-lg glassmorphism">
+                        <h3 class="text-sm font-medium text-gray-400">👥 Mayor Matrícula Total (2023)</h3>
+                        <p id="highest-enrollment" class="mt-2 text-3xl font-bold" style="color: var(--primary);">Cargando...</p>
+                        <p id="highest-enrollment-career" class="text-gray-300">Cargando...</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="dashboard" class="glassmorphism section" data-animate>
+                <h2>Explorador Interactivo de Carreras</h2>
+                <p>
+                    Utiliza los filtros para comparar las carreras científicas según diferentes indicadores clave. Haz clic sobre una carrera en el gráfico para ver su perfil detallado, proyecciones y campo laboral. Esta herramienta te permite analizar la información desde la perspectiva que más te interese, fomentando una <span class="concept1">decisión informada</span> basada en datos.
+                </p>
+                <div class="flex flex-wrap justify-center gap-2 my-6">
+                    <button class="filter-btn active px-4 py-2 text-sm font-medium rounded-md" data-metric="employability1">Empleabilidad (1er año)</button>
+                    <button class="filter-btn px-4 py-2 text-sm font-medium rounded-md" data-metric="income5">Ingreso Promedio (5° año)</button>
+                    <button class="filter-btn px-4 py-2 text-sm font-medium rounded-md" data-metric="enrollmentTotal">Matrícula Total (2023)</button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 chart-container">
+                        <canvas id="careersChart"></canvas>
+                    </div>
+                    <div id="details-panel" class="details-panel p-4 rounded-lg">
+                        <h3 class="font-bold text-lg mb-2" style="color: var(--primary-glow);">Selecciona una carrera</h3>
+                        <p class="text-gray-400 text-sm">Haz clic en una de las barras del gráfico para ver la información detallada de esa carrera aquí.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="data-table" class="glassmorphism section" data-animate>
+                <h2>Tabla Comparativa Completa</h2>
+                 <p>
+                    Para un análisis más profundo, esta tabla contiene todos los datos utilizados en el explorador. Puedes ordenar la información haciendo clic en los encabezados de las columnas para comparar directamente todas las carreras según el indicador que prefieras y descubrir patrones en el <span class="concept1">panorama completo de datos</span>.
+                 </p>
+                <div class="overflow-x-auto rounded-lg table-container mt-8">
+                    <table class="min-w-full divide-y divide-gray-700">
+                        <thead class="bg-gray-50/10">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider" data-sort="name">Carrera</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider" data-sort="employability1">Empleabilidad (1er año)</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider" data-sort="income5">Ingreso (5° año)</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider" data-sort="enrollmentTotal">Matrícula Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="careers-table-body" class="divide-y divide-gray-800">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+        
+        <footer class="footer">
+            <p style="text-align:center;">Fuente de datos: Agregado de información pública de MiFuturo.cl (MINEDUC), DEMRE y reportes de mercado. Los datos son referenciales.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+        </footer>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicialización de Three.js y Navegación O.C.V.M.
+            if (typeof THREE !== 'undefined') initThreeJS();
+            setupNavigation();
+            setupScrollAnimations();
+            
+            // --- INICIO DE LÓGICA DEL DASHBOARD ---
+
+            const careersData = [
+                { id: 'geologia', name: 'Geología', employability1: 85.1, income5: 2450000, enrollmentTotal: 4520, description: 'Estudia la composición, estructura, dinámica e historia de la Tierra. Crucial para la minería, energía y gestión de riesgos naturales, áreas estratégicas para Chile.', outlook: 'Alta demanda en el sector minero y energético, aunque sujeta a ciclos económicos. Creciente importancia en geotecnia, hidrología y evaluación de impacto ambiental.' },
+                { id: 'ing_biotecnologia', name: 'Ing. en Biotecnología', employability1: 79.5, income5: 1850000, enrollmentTotal: 3890, description: 'Aplica principios de la ciencia y la ingeniería para el tratamiento de materiales por agentes biológicos. Clave en sectores como la salud, acuicultura y agricultura.', outlook: 'Campo en plena expansión. Oportunidades en investigación y desarrollo (I+D), producción de biofármacos, mejoramiento genético y bioremediación ambiental.' },
+                { id: 'quimica_farmacia', name: 'Química y Farmacia', employability1: 96.3, income5: 1980000, enrollmentTotal: 12500, description: 'Ciencia de la salud que vincula las ciencias químicas con las ciencias biológicas para el desarrollo, producción, control y uso de fármacos.', outlook: 'Demanda estable y alta, tanto en el sector público como privado (farmacias, laboratorios, industria cosmética). Crecimiento en áreas de investigación clínica.' },
+                { id: 'astronomia', name: 'Astronomía / Astrofísica', employability1: 75.2, income5: 1750000, enrollmentTotal: 850, description: 'Estudia los cuerpos celestes del universo, desde planetas y estrellas hasta galaxias y la cosmología. Chile es un polo mundial de observación astronómica.', outlook: 'Campo altamente especializado y competitivo. Oportunidades en investigación académica y operación de observatorios internacionales. Habilidades en data science muy valoradas.' },
+                { id: 'biologia_marina', name: 'Biología Marina', employability1: 68.4, income5: 1350000, enrollmentTotal: 2900, description: 'Estudia los organismos marinos y sus ecosistemas. Fundamental para la conservación y el manejo sustentable de recursos en un país con una extensa costa.', outlook: 'Creciente relevancia por la crisis climática y la necesidad de una acuicultura sostenible. Oportunidades en gestión ambiental, investigación y consultoría.' },
+                { id: 'ciencia_datos', name: 'Ciencia de Datos / Ing. Informática', employability1: 92.5, income5: 2200000, enrollmentTotal: 35000, description: 'Extrae conocimiento y conclusiones de grandes volúmenes de datos. Es una disciplina transversal que impacta a todas las demás áreas científicas y empresariales.', outlook: 'Demanda explosiva en todos los sectores. Esencial para la investigación moderna, la inteligencia de negocios y el desarrollo de inteligencia artificial.' },
+                { id: 'fisica', name: 'Lic. en Física', employability1: 70.1, income5: 1600000, enrollmentTotal: 1200, description: 'Busca comprender las leyes fundamentales que gobiernan la naturaleza, desde lo subatómico hasta el cosmos. Base para muchas otras disciplinas tecnológicas.', outlook: 'Principalmente orientada a la academia e investigación. Sus graduados son valorados en finanzas, data science y modelamiento complejo por su sólida formación analítica.' },
+                { id: 'ciencias_ambientales', name: 'Ing. en Cs. Ambientales', employability1: 78.8, income5: 1550000, enrollmentTotal: 4100, description: 'Integra diversas ciencias para estudiar los problemas ambientales y plantear soluciones sostenibles para el desarrollo humano y la conservación de la naturaleza.', outlook: 'Demanda en fuerte crecimiento debido a la legislación ambiental, la necesidad de energías renovables y la gestión de la crisis hídrica y de residuos.' }
+            ];
+
+            let chartInstance = null;
+            let currentMetric = 'employability1';
+            let sortConfig = { key: 'name', direction: 'asc' };
+
+            const formatCurrency = (value) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(value);
+            const formatPercentage = (value) => `${value}%`;
+            const formatNumber = (value) => new Intl.NumberFormat('es-CL').format(value);
+
+            function updateHighlights() {
+                const highestIncome = [...careersData].sort((a, b) => b.income5 - a.income5)[0];
+                document.getElementById('highest-income').textContent = formatCurrency(highestIncome.income5);
+                document.getElementById('highest-income-career').textContent = highestIncome.name;
+
+                const highestEmployability = [...careersData].sort((a, b) => b.employability1 - a.employability1)[0];
+                document.getElementById('highest-employability').textContent = formatPercentage(highestEmployability.employability1);
+                document.getElementById('highest-employability-career').textContent = highestEmployability.name;
+
+                const highestEnrollment = [...careersData].sort((a, b) => b.enrollmentTotal - a.enrollmentTotal)[0];
+                document.getElementById('highest-enrollment').textContent = formatNumber(highestEnrollment.enrollmentTotal);
+                document.getElementById('highest-enrollment-career').textContent = highestEnrollment.name;
+            }
+
+            function updateDetailsPanel(career) {
+                const panel = document.getElementById('details-panel');
+                if (!career) {
+                    panel.innerHTML = `<h3 class="font-bold text-lg mb-2" style="color: var(--primary-glow);">Selecciona una carrera</h3><p class="text-gray-400 text-sm">Haz clic en una de las barras del gráfico para ver la información detallada de esa carrera aquí.</p>`;
+                    return;
+                }
+                panel.innerHTML = `
+                    <h3 class="font-bold text-lg mb-2" style="color: var(--primary-glow);">${career.name}</h3>
+                    <p class="text-sm text-gray-300 mb-4">${career.description}</p>
+                    <div class="space-y-3 text-sm">
+                        <div><p class="font-semibold text-gray-200">Empleabilidad (1er año):</p><p style="color:var(--primary);" class="font-bold">${formatPercentage(career.employability1)}</p></div>
+                        <div><p class="font-semibold text-gray-200">Ingreso Promedio (5° año):</p><p style="color:var(--primary);" class="font-bold">${formatCurrency(career.income5)}</p></div>
+                        <div><p class="font-semibold text-gray-200">Matrícula Total (2023):</p><p style="color:var(--primary);" class="font-bold">${formatNumber(career.enrollmentTotal)}</p></div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-700">
+                        <h4 class="font-semibold text-md mb-1 text-gray-200">Proyección y Campo Laboral</h4>
+                        <p class="text-sm text-gray-400">${career.outlook}</p>
+                    </div>`;
+            }
+
+            function renderChart() {
+                const sortedData = [...careersData].sort((a, b) => b[currentMetric] - a[currentMetric]);
+                const labels = sortedData.map(c => c.name);
+                const dataValues = sortedData.map(c => c[currentMetric]);
+
+                let labelText = '';
+                let tooltipCallback;
+
+                if (currentMetric === 'employability1') {
+                    labelText = 'Empleabilidad al 1er año (%)';
+                    tooltipCallback = (context) => `${context.label}: ${formatPercentage(context.raw)}`;
+                } else if (currentMetric === 'income5') {
+                    labelText = 'Ingreso Promedio al 5° año (CLP)';
+                    tooltipCallback = (context) => `${context.label}: ${formatCurrency(context.raw)}`;
+                } else {
+                    labelText = 'Matrícula Total (2023)';
+                    tooltipCallback = (context) => `${context.label}: ${formatNumber(context.raw)}`;
+                }
+
+                const chartData = {
+                    labels: labels,
+                    datasets: [{
+                        label: labelText,
+                        data: dataValues,
+                        backgroundColor: 'rgba(129, 140, 248, 0.6)',
+                        borderColor: 'rgba(129, 140, 248, 1)',
+                        borderWidth: 1,
+                        hoverBackgroundColor: 'rgba(129, 140, 248, 0.9)'
+                    }]
+                };
+
+                const ctx = document.getElementById('careersChart').getContext('2d');
+                if (chartInstance) {
+                    chartInstance.data = chartData;
+                    chartInstance.options.scales.x.title.text = labelText;
+                    chartInstance.options.plugins.tooltip.callbacks.label = tooltipCallback;
+                    chartInstance.update();
+                } else {
+                    Chart.defaults.color = '#FFFFFF';
+                    chartInstance = new Chart(ctx, {
+                        type: 'bar',
+                        data: chartData,
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                                    titleFont: { size: 14, weight: 'bold' },
+                                    bodyFont: { size: 12 },
+                                    callbacks: { label: tooltipCallback }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    grid: { color: 'rgba(229, 231, 235, 0.1)' },
+                                    ticks: { color: '#FFFFFF' },
+                                    title: { display: true, text: labelText, color: '#FFFFFF' }
+                                },
+                                y: {
+                                    grid: { color: 'rgba(229, 231, 235, 0.1)' },
+                                    ticks: { color: '#FFFFFF' }
+                                }
+                            },
+                            onClick: (event, elements) => {
+                                if (elements.length > 0) {
+                                    const clickedIndex = elements[0].index;
+                                    const career = sortedData[clickedIndex];
+                                    updateDetailsPanel(career);
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            function renderTable() {
+                const sortedData = [...careersData].sort((a, b) => {
+                    const valA = a[sortConfig.key];
+                    const valB = b[sortConfig.key];
+                    let comparison = 0;
+                    if (valA > valB) comparison = 1;
+                    else if (valA < valB) comparison = -1;
+                    return sortConfig.direction === 'asc' ? comparison : comparison * -1;
+                });
+
+                const tableBody = document.getElementById('careers-table-body');
+                tableBody.innerHTML = sortedData.map(c => `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-200">${c.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">${formatPercentage(c.employability1)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">${formatCurrency(c.income5)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">${formatNumber(c.enrollmentTotal)}</td>
+                    </tr>`).join('');
+            }
+            
+            document.querySelectorAll('.filter-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    document.querySelector('.filter-btn.active').classList.remove('active');
+                    button.classList.add('active');
+                    currentMetric = button.dataset.metric;
+                    renderChart();
+                });
+            });
+
+            document.querySelectorAll('th[data-sort]').forEach(header => {
+                header.addEventListener('click', () => {
+                    const key = header.dataset.sort;
+                    if (sortConfig.key === key) {
+                        sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        sortConfig.key = key;
+                        sortConfig.direction = 'asc';
+                    }
+                    renderTable();
+                });
+            });
+
+            updateHighlights();
+            renderChart();
+            renderTable();
+
+            // --- FIN DE LÓGICA DEL DASHBOARD ---
+        });
+
+        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById("bg-canvas"),
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 250;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error initializing Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points) {
+                points.rotation.y += 0.0003;
+                points.rotation.x += 0.0002;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- CÓDIGO DE NAVEGACIÓN ---
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.body.classList.toggle('menu-open');
+            });
+
+            navMenu.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                   document.body.classList.remove('menu-open');
+                }
+            });
+        }
+
+        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        
+                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .grid, .chart-container, .details-panel, .table-container');
+                        elementsToAnimate.forEach((el, index) => {
+                           el.style.transitionDelay = `${index * 100}ms`;
+                        });
+
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+    </script>
+</body>
+</html>
+
