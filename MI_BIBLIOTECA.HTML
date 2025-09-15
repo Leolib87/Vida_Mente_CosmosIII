@@ -240,7 +240,7 @@
             
             .mega-menu {
                 position: static; display: grid; opacity: 1; transform: none; visibility: visible; width: 100%; box-shadow: none; 
-                border: none; padding: 1rem 0 1.5rem 0; background: none; backdrop-filters: none;
+                border: none; padding: 1rem 0 1.5rem 0; background: none; backdrop-filter: none;
                 grid-template-columns: 1fr; border-top: 1px solid rgba(129, 140, 248, 0.2); margin-top: 1rem;
             }
             
@@ -514,83 +514,6 @@
             }
             #network, #bar-chart, #pie-chart, #treemap {
                 height: 300px;
-            }
-            .node text {
-                font-size: 8px;
-                max-width: 80px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            .bar-text {
-                font-size: 8px;
-            }
-            .arc text {
-                font-size: 8px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            nav {
-                padding: 0 2%;
-            }
-            .nav-logo a {
-                font-size: 1.1em;
-            }
-            .hero {
-                padding: 0.5rem;
-            }
-            .hero h1 {
-                font-size: clamp(1.8rem, 12vw, 4rem);
-            }
-            .hero p {
-                font-size: clamp(0.8rem, 4vw, 1.1rem);
-            }
-            .main-container {
-                padding: var(--nav-height) 0.5rem 1rem;
-            }
-            .section {
-                padding: 1rem;
-                margin-bottom: 1rem;
-            }
-            .filters {
-                gap: 5px;
-                margin-bottom: 15px;
-            }
-            .filters select, .filters input {
-                padding: 10px;
-                font-size: 16px; /* Prevent zoom on iOS */
-            }
-            .section table {
-                font-size: 0.75em;
-            }
-            .section th, .section td {
-                padding: 6px 4px;
-            }
-            .chart-container {
-                padding: 0.5rem;
-                margin: 10px 0;
-            }
-            #network, #bar-chart, #pie-chart, #treemap {
-                height: 250px;
-            }
-            .node text {
-                font-size: 6px;
-            }
-            .bar-text, .arc text {
-                font-size: 6px;
-            }
-            .treemap-text {
-                font-size: 6px;
-            }
-            h2 {
-                font-size: clamp(1.2rem, 6vw, 1.8rem);
-            }
-            h3 {
-                font-size: clamp(1rem, 5vw, 1.3rem);
-            }
-            .footer {
-                padding: 1.5rem 0.5rem;
             }
         }
     </style>
@@ -992,7 +915,7 @@
         const links = [...bookLinks, ...genreLinks];
 
         const width = () => document.getElementById('network').clientWidth;
-        const height = () => window.innerWidth <= 768 ? (window.innerWidth <= 480 ? 250 : 300) : 500;
+        const height = () => window.innerWidth <= 768 ? (window.innerWidth <= 480 ? 300 : 400) : 500;
 
         const svg = d3.select("#network")
             .append("svg")
@@ -1298,26 +1221,26 @@
                 .on("click", (event, d) => updateGenreFilter(d.data.genre));
 
             arcs.append("text")
-                .attr("transform", d => `translate(${d.adjustedPos[0]},${d.adjustedPos[1]})`)
+                .attr("transform", d => `translate(${d.adjustedPos})`)
                 .attr("dy", ".35em")
                 .style("text-anchor", d => {
                     const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
                     return midAngle < Math.PI ? "start" : "end";
                 })
-                .attr("dx", d => {
+                .text(d => `${d.data.genre} (${((d.data.count / totalBooks) * 100).toFixed(1)}%)`)
+                .each(function(d) {
+                    const bbox = this.getBBox();
                     const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
-                    return midAngle < Math.PI ? 5 : -5;
-                })
-                .text(d => `${d.data.genre} (${((d.data.count / totalBooks) * 100).toFixed(1)}%)`);
+                    const offsetX = midAngle < Math.PI ? bbox.width + 10 : -bbox.width - 10;
+                    d3.select(this).attr("dx", offsetX > 0 ? 5 : -5);
+                });
 
             arcs.append("polyline")
                 .attr("points", d => {
+                    const pos = outerArc.centroid(d);
                     const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
-                    const p1 = arc.centroid(d);
-                    const p2 = outerArc.centroid(d);
-                    const p3x = pieRadius * (midAngle < Math.PI ? 1.2 : -1.2);
-                    const p3y = d.adjustedPos[1];
-                    return `${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${p3x},${p3y}`;
+                    const offset = pieRadius * (midAngle < Math.PI ? 1.2 : -1.2);
+                    return [arc.centroid(d), outerArc.centroid(d), [offset, d.adjustedPos[1]]];
                 })
                 .attr("stroke", d3.select("body").style("--secondary-glow"))
                 .attr("fill", "none");
@@ -1396,10 +1319,6 @@
             const changeEvent = new Event('change');
             genreFilter.dispatchEvent(changeEvent);
         }
-
-        let scene, camera, renderer, points, lines;
-        let mouseX = 0;
-        let mouseY = 0;
 
         function initThreeJS() {
             try {
