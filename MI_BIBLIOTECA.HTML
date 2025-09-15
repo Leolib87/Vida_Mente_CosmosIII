@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Biblioteca de Humanidades y Cs. Sociales | Exploración Transdisciplinaria</title>
+    <title>Mi Biblioteca de Humanidades y Cs. Sociales | O.C.V.M.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
+        /* Variables de CSS para colores y fuentes */
         :root {
             --primary: #818cf8;
             --primary-dark: #6366f1;
@@ -18,20 +20,25 @@
             --secondary-glow: #22d3ee;
             --font-main: 'Inter', sans-serif;
             --nav-height: 70px;
+            --concept-color-1: #fbbf24;
+            --concept-color-2: #34d399;
+            --person-color: #f472b6;
         }
 
+        /* Estilos generales para el cuerpo de la página */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         html { scroll-behavior: smooth; }
-
         body {
             background-color: #000000;
             color: var(--primary-text);
             font-family: var(--font-main);
             line-height: 1.8;
             overflow-x: hidden;
+            text-align: justify;
         }
-        
+        p { text-align: justify; }
+
+        /* Canvas de fondo con animación Three.js */
         #bg-canvas {
             position: fixed;
             top: 0;
@@ -42,6 +49,7 @@
             cursor: crosshair;
         }
 
+        /* Estilo de glassmorphism para secciones y navegación */
         .glassmorphism {
             background: rgba(17, 24, 39, 0.8);
             backdrop-filter: blur(12px);
@@ -49,15 +57,18 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        body.menu-open {
-            overflow: hidden;
-        }
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
         
         nav {
             position: fixed; top: 0; width: 100%; height: var(--nav-height);
             z-index: 1000;
             display: flex; justify-content: center; align-items: center;
             padding: 0 5%;
+            pointer-events: none;
+        }
+
+        nav:hover, nav.active {
             pointer-events: auto;
         }
 
@@ -79,40 +90,39 @@
             gap: 0.75rem;
         }
 
-        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 0.5rem;}
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
         nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
         nav .nav-container > li > a {
             color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
             transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
         }
-        nav .nav-container > li > a:hover, nav .nav-container > li:hover > a { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
-        
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+
         .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
-        
+
+        /* Estilos para el mega-menú */
         .mega-menu {
-            position: fixed;
+            position: absolute;
             top: var(--nav-height);
             left: 50%;
             transform: translateX(-50%) scale(0.95);
             border-radius: 10px; width: auto;
             min-width: clamp(300px, 80vw, 950px); max-width: 95vw;
-            padding: 2rem; 
+            padding: 2rem;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 2rem; 
+            gap: 2rem;
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease, transform 0.3s ease, visibility 0s 0.3s;
             transform-origin: top center;
         }
-        
-        .mega-menu.is-active { 
+        .mega-menu.is-active {
             opacity: 1;
             visibility: visible;
             transform: translateX(-50%) scale(1);
             transition: opacity 0.3s ease, transform 0.3s ease, visibility 0s 0s;
         }
-        
         .mega-menu h3 {
             color: var(--primary-glow); font-size: 1.1em; margin-bottom: 1rem;
             text-shadow: 0 0 5px var(--primary-glow);
@@ -143,16 +153,18 @@
         }
         .mega-menu a:hover { color: #000; background-color: var(--primary-glow); padding-left: 2.5rem; }
         .mega-menu a:hover::before { color: #000; }
-        
+
+        /* Sección del héroe o cabecera principal */
         .hero {
-            height: 100vh; min-height: 500px;
+            min-height: 60vh;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             text-align: center; position: relative;
             padding: 1rem;
+            margin-top: var(--nav-height);
         }
         .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
         .hero h1 {
-            font-size: clamp(2.5rem, 8vw, 5.5rem); font-weight: 700; color: #fff;
+            font-size: clamp(2rem, 7vw, 4.5rem); font-weight: 700; color: #fff;
             text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
             animation: pulse-glow 3s infinite alternate;
         }
@@ -163,10 +175,12 @@
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .main-container { 
+        /* Contenedor principal para el contenido */
+        .main-container {
             width: 100%;
-            margin: 0 auto; 
-            padding: var(--nav-height) clamp(1rem, 5vw, 4rem) 1rem;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
             pointer-events: none;
         }
         
@@ -188,153 +202,111 @@
         }
         .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
         
-        .section h2, .section h3, .section p, .section .visualization-container, .section iframe {
-             opacity: 0;
-             transform: translateY(20px);
-             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-        }
-
-        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .visualization-container, .section.is-visible iframe {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
         h2 {
             font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
             border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
         }
-        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2rem 0 1rem 0; }
-        .highlight { color: var(--primary-glow); font-weight: bold; }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
         
+        /* Clases para colorear palabras y conceptos */
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .concept2 { color: var(--concept-color-2); font-weight: 500; }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; }
+
+        /* Estilo para los diagramas de Mermaid */
+        .mermaid {
+            margin: 2rem auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        /* Pie de página */
         .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
-        
-        /* Mobile-first: El diseño base ya está optimizado para móviles */
-        @media (min-width: 1025px) {
-            .menu-toggle { display: none; }
-            .nav-container { display: flex; }
+
+        /* Estilos de tabla y filtros */
+        .filters {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        .filters select, .filters input {
+            background: #000000;
+            border: 2px solid var(--primary-glow);
+            color: var(--primary-text);
+            padding: 8px;
+            font-family: var(--font-main);
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            width: 100%;
         }
 
-        @media (max-width: 1024px) {
-            .nav-content { justify-content: space-between; }
-            .nav-container {
-                position: fixed;
-                top: var(--nav-height);
-                left: 0;
-                width: 100%;
-                height: calc(100vh - var(--nav-height));
-                background: rgba(17, 24, 39, 0.95);
-                backdrop-filter: blur(15px);
-                -webkit-backdrop-filter: blur(15px);
-                flex-direction: column;
-                justify-content: flex-start;
-                align-items: center;
-                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-                transform: translateY(-110%);
-                overflow-y: auto;
-                padding: 2rem;
+        @media (min-width: 768px) {
+             .filters select, .filters input {
+                width: auto;
             }
-            body.menu-open .nav-container {
-                transform: translateY(0);
-            }
-
-            nav .nav-container > li { width: 100%; height: auto; flex-direction: column; align-items: center; text-align: center; }
-            nav .nav-container > li > a { padding: 1rem; width: 100%; font-size: 1.5em;}
-            
-            .mega-menu {
-                position: static; display: grid; opacity: 1; transform: none; visibility: visible; width: 100%; box-shadow: none; 
-                border: none; padding: 1rem 0 1.5rem 0; background: none; backdrop-filter: none;
-                grid-template-columns: 1fr; border-top: 1px solid rgba(129, 140, 248, 0.2); margin-top: 1rem;
-            }
-            
-            .mega-menu h3 { 
-                text-align: center; 
-                font-size: 1.8em;
-            }
-            .mega-menu ul { 
-                align-items: stretch;
-                text-align: left;
-                list-style: none;
-                padding-left: 0;
-            }
-            
-            .mega-menu a {
-                font-size: 1.5em;
-                padding: 0.8rem 1rem 0.8rem 2.5rem;
-                display: block;
-                text-align: left;
-                position: relative;
-            }
-
-            .mega-menu a::before {
-                content: '■';
-                color: var(--primary-glow);
-                position: absolute;
-                left: 0.5rem;
-                top: 50%;
-                transform: translateY(-50%) scale(0.6);
-                font-size: 1.5em;
-            }
-
-            .mega-menu a:hover {
-                padding-left: 2.5rem;
-                color: #000;
-                background-color: var(--primary-glow);
-            }
-            .mega-menu a:hover::before {
-                color: #000;
-            }
-            
-            .menu-toggle {
-                display: block; position: relative; z-index: 1001;
-                width: 30px; height: 22px;
-                background: none; border: none; cursor: pointer;
-            }
-            .icon-bar {
-                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
-                margin: 6px 0; transition: all 0.3s ease-in-out;
-                border-radius: 2px;
-            }
-
-            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
-            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
-            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
         }
         
+        .filters select:hover, .filters select:focus {
+            background: var(--primary-glow);
+            color: #000000;
+            outline: none;
+        }
+        .filters input {
+            background: #000000;
+            border: 2px solid var(--primary-glow);
+            color: var(--primary-text);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
         .section table {
             width: 100%;
+            min-width: 700px;
             border-collapse: collapse;
             font-size: 0.95em;
-            border-radius: 8px; /* Borde redondeado para la tabla */
-            box-shadow: 0 0 20px rgba(129, 140, 248, 0.1); /* Sombra para darle profundidad */
-            overflow: hidden; /* Para que la sombra no afecte los bordes redondeados */
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
         .section th, .section td {
-            padding: 12px; /* Aumentado el padding para más espacio */
+            padding: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             text-align: left;
         }
         .section th {
             background: rgba(129, 140, 248, 0.1);
             color: var(--primary-glow);
-            font-weight: 600; /* Texto más grueso para los encabezados */
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         .section tr {
-            transition: all 0.3s ease; /* Transición para el hover */
+            transition: all 0.3s ease;
         }
         .section tr:nth-child(even) {
             background: rgba(129, 140, 248, 0.05);
         }
         .section tr:hover {
             background: rgba(129, 140, 248, 0.25);
-            transform: translateY(-2px); /* Efecto de elevación al pasar el cursor */
-            box-shadow: 0 8px 16px rgba(129, 140, 248, 0.2); /* Sombra más fuerte al pasar el cursor */
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(129, 140, 248, 0.2);
         }
-
-        /* Estilos de colores para las filas de la tabla */
-        .row-Filosofía { background: rgba(129, 140, 248, 0.15); } /* --primary */
-        .row-Política { background: rgba(34, 211, 238, 0.15); } /* --secondary */
+        .row-Filosofía { background: rgba(129, 140, 248, 0.15); }
+        .row-Política { background: rgba(34, 211, 238, 0.15); }
         .row-Poesía { background: rgba(251, 191, 36, 0.15); }
         .row-Narrativa { background: rgba(52, 211, 153, 0.15); }
         .row-Religión { background: rgba(244, 114, 182, 0.15); }
@@ -347,33 +319,6 @@
         .row-Teatro { background: rgba(255, 255, 0, 0.15); }
         .row-Educación { background: rgba(153, 102, 255, 0.15); }
         .row-default { background: rgba(129, 140, 248, 0.05); }
-
-        .filters {
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-        }
-        .filters select {
-            background: #000000;
-            border: 2px solid var(--primary-glow);
-            color: var(--primary-text);
-            padding: 8px;
-            font-family: var(--font-main);
-            border-radius: 5px;
-            transition: all 0.3s ease;
-        }
-        .filters select:hover, .filters select:focus {
-            background: var(--primary-glow);
-            color: #000000;
-            outline: none;
-        }
-        .filters input {
-            background: #000000;
-            border: 2px solid var(--primary-glow);
-            color: var(--primary-text);
-        }
 
         #network {
             width: 100%;
@@ -488,6 +433,91 @@
         }
         
         /* Mobile-first enhancements */
+        @media (max-width: 1024px) {
+            .nav-content { justify-content: space-between; }
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                -webkit-backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+            body.menu-open .nav-container {
+                transform: translateY(0);
+            }
+
+            nav .nav-container > li { width: 100%; height: auto; flex-direction: column; align-items: center; text-align: center; }
+            nav .nav-container > li > a { padding: 1rem; width: 100%; font-size: 1.5em;}
+            
+            .mega-menu {
+                position: static; display: grid; opacity: 1; transform: none; visibility: visible; width: 100%; box-shadow: none;
+                border: none; padding: 1rem 0 1.5rem 0; background: none; backdrop-filter: none;
+                grid-template-columns: 1fr; border-top: 1px solid rgba(129, 140, 248, 0.2); margin-top: 1rem;
+            }
+            
+            .mega-menu h3 {
+                text-align: center;
+                font-size: 1.8em;
+            }
+            .mega-menu ul {
+                align-items: stretch;
+                text-align: left;
+                list-style: none;
+                padding-left: 0;
+            }
+            
+            .mega-menu a {
+                font-size: 1.5em;
+                padding: 0.8rem 1rem 0.8rem 2.5rem;
+                display: block;
+                text-align: left;
+                position: relative;
+            }
+
+            .mega-menu a::before {
+                content: '■';
+                color: var(--primary-glow);
+                position: absolute;
+                left: 0.5rem;
+                top: 50%;
+                transform: translateY(-50%) scale(0.6);
+                font-size: 1.5em;
+            }
+
+            .mega-menu a:hover {
+                padding-left: 2.5rem;
+                color: #000;
+                background-color: var(--primary-glow);
+            }
+            .mega-menu a:hover::before {
+                color: #000;
+            }
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text);
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+
         @media (max-width: 768px) {
             .hero h1 {
                 font-size: clamp(2rem, 10vw, 5.5rem);
@@ -506,27 +536,38 @@
                 width: 100%;
             }
             .section th, .section td {
-                padding: 8px; 
+                padding: 6px;
             }
             .section table {
-                font-size: 0.85em;
-                min-width: 0; /* Corrección crucial para pantallas pequeñas */
-            }
-            .chart-container {
-                padding: 1rem;
+                font-size: 0.75em;
             }
             #network, #bar-chart, #pie-chart, #treemap {
-                height: 300px;
+                height: 250px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .section th, .section td {
+                padding: 4px;
+            }
+            .section table {
+                font-size: 0.65em;
+            }
+            #network, #bar-chart, #pie-chart, #treemap {
+                height: 200px;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Canvas de fondo con animación Three.js -->
     <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    
+    <!-- Barra de Navegación con Mega-Menú -->
     <nav class="glassmorphism">
         <div class="nav-content">
             <div class="nav-logo">
-                <a href="#">
+                <a href="#inicio">
                     <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
                     <span>O.C.V.M.</span>
                 </a>
@@ -630,7 +671,7 @@
                                 <li><a href="#">Colección de Gráficos</a></li>
                                 <li><a href="#">Líneas y Treemaps</a></li>
                                 <li><a href="#">Treemap de IAs</a></li>
-                                <li><a href="#">INFLACION EN ARGENTINA</a></li>                     
+                                <li><a href="#">INFLACION EN ARGENTINA</a></li>
                             </ul>
                         </div>
                         <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>Mapas Conceptuales</h3>
@@ -639,15 +680,6 @@
                                 <li><a href="#">Cartografía Varela (3D)</a></li>
                                 <li><a href="#">Cartografía Varela (2D)</a></li>
                                 <li><a href="#">Visualización Filosófica</a></li>
-                            </ul>
-                        </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>Herramientas Digitales y IA</h3>
-                            <ul>
-                                <li><a href="#">Guía de Herramientas</a></li>
-                                <li><a href="#">Buscador de IAs</a></li>
-                                <li><a href="#">IAs de Google</a></li>
-                                <li><a href="#">Red de IAs</a></li>
-                                <li><a href="#">Plantilla Web para Papers</a></li>
                             </ul>
                         </div>
                         <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>Recursos y Proyectos</h3>
@@ -661,7 +693,7 @@
                                 <li><a href="#">Empleos en Educación Superior</a></li>
                                 <li><a href="#">Pedagogías en Biología (Chile)</a></li>
                                 <li><a href="#">Química y Farmacia (Chile)</a></li>
-                                <li><a href="#">Tiny Houses (Chile)</a></li>                     
+                                <li><a href="#">Tiny Houses (Chile)</a></li>
                             </ul>
                         </div>
                     </div>
@@ -676,24 +708,46 @@
             </button>
         </div>
     </nav>
-
     <div class="main-container" id="inicio">
+        <!-- Sección Hero -->
         <div class="hero">
             <div class="hero-content">
                 <h1>Mi Biblioteca de Humanidades y Cs. Sociales</h1>
                 <p>Explorando mi universo literario y académico</p>
             </div>
         </div>
-
         <div class="layout-grid">
             <main class="content">
-                <section id="library" class="glassmorphism" data-animate>
+                <!-- Sección para el Diagrama de Mermaid -->
+                <section id="seccion-mermaid" class="glassmorphism section">
+                    <h2>Mapa Conceptual de la Biblioteca</h2>
+                    <p>
+                        Este diagrama de flujo muestra el proceso mental de categorización que aplico a mi biblioteca. Se inicia con la clasificación de un libro por su <span class="concept1">Género</span>, lo que lleva a la identificación de <span class="concept2">Temas</span> clave y, finalmente, a la asociación con un <span class="person">Autor</span>. Este proceso me ayuda a entender mejor las interconexiones en mi colección.
+                    </p>
+                    <div class="mermaid">
+                        graph TD
+                            A[Libro] -->|Clasificar por| B(Género);
+                            B -->|Identificar| C{Temas Clave};
+                            A -->|Asociar con| D[Autor];
+                            C --> E[Análisis Profundo];
+                            D --> E;
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style B fill:#34d399,stroke:#333,stroke-width:2px;
+                            style C fill:#22d3ee,stroke:#333,stroke-width:2px;
+                            style D fill:#f472b6,stroke:#333,stroke-width:2px;
+                            style E fill:#818cf8,stroke:#333,stroke-width:4px;
+                    </div>
+                </section>
+                <!-- Sección para la red de conexiones -->
+                <section id="library" class="glassmorphism section">
                     <h2>Red de Conexiones Literarias por Género</h2>
+                    <p>Esta visualización interactiva te permite explorar la interconexión de los libros en mi colección. Haz clic en un nodo para filtrar la tabla de libros por ese género o para reorganizar el gráfico. Los círculos grandes representan los géneros, y los más pequeños los libros.</p>
                     <div class="visualization-container">
                         <div id="network"></div>
                     </div>
                     
                     <h3>Catálogo de Libros</h3>
+                    <p>Aquí puedes explorar mi colección completa. Utiliza los filtros y el buscador para encontrar libros específicos o agruparlos por género y tema. Los colores de las filas corresponden al género del libro.</p>
                     <div class="filters">
                         <select id="genreFilter" class="glassmorphism">
                             <option value="">Todos los Géneros</option>
@@ -703,7 +757,7 @@
                         </select>
                         <input type="text" id="searchInput" placeholder="Buscar por título o autor..." class="glassmorphism px-3 py-2 rounded-md border text-sm text-gray-200">
                     </div>
-                    <div class="overflow-x-auto">
+                    <div class="table-container">
                         <table id="bookTable">
                             <thead>
                                 <tr>
@@ -719,8 +773,10 @@
                     </div>
                 </section>
                 
-                <section class="glassmorphism" data-animate>
+                <!-- Sección para los análisis visuales -->
+                <section class="glassmorphism section">
                     <h2>Análisis Visual de mi Colección</h2>
+                    <p>Estas visualizaciones adicionales ofrecen una perspectiva diferente de los datos de mi biblioteca. El gráfico de barras muestra la distribución de libros por género, el de torta la proporción relativa y el treemap organiza los libros por autor, con el tamaño de cada rectángulo representando la cantidad de títulos que tengo de ese autor.</p>
                     <div class="chart-container">
                         <h3>Distribución por Género (Barras)</h3>
                         <div class="visualization-container" id="bar-chart"></div>
@@ -738,13 +794,11 @@
             </main>
         </div>
         <footer class="footer" id="contacto">
-            <h2>Contacto</h2>
-            <p>Este espacio es una cartografía personal y una invitación al diálogo.</p>
-            <p style="margin-top:1.5rem; font-size: 0.9em;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+            <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
         </footer>
     </div>
     <script>
-        // Data for the library
         const books = [
             { title: "From the Closed World to the Infinite Universe", author: "Alexandre Koyré", comments: "Obra filosófica sobre la evolución del pensamiento científico.", genre: "Filosofía", theme: "ESPECIAL" },
             { title: "Democracia en América (Selección)", author: "Alexis de Tocqueville", comments: "Selección de textos del clásico libro sobre democracia y política.", genre: "Política", theme: "Política" },
@@ -918,7 +972,7 @@
         const links = [...bookLinks, ...genreLinks];
 
         const width = () => document.getElementById('network').clientWidth;
-        const height = () => window.innerWidth <= 768 ? (window.innerWidth <= 480 ? 300 : 400) : 500;
+        const height = () => window.innerWidth <= 768 ? (window.innerWidth <= 480 ? 200 : 250) : 500;
 
         const svg = d3.select("#network")
             .append("svg")
@@ -1065,6 +1119,8 @@
         genreFilter.addEventListener('change', renderTable);
         themeFilter.addEventListener('change', renderTable);
         searchInput.addEventListener('input', renderTable);
+        
+        // Carga inicial de la tabla
         renderTable();
 
         function resizeCharts() {
@@ -1295,7 +1351,6 @@
                     d3.select("#treemap-info").text("");
                 });
             
-            // Añade texto a los treemaps para autores con el nombre y la inicial del apellido
             treemapG.selectAll(".treemap-text")
                 .data(root.leaves())
                 .join("text")
@@ -1323,8 +1378,8 @@
             genreFilter.dispatchEvent(changeEvent);
         }
 
-        let scene, camera, renderer, points, lines; // Declare variables in a global scope
-
+        let scene, camera, renderer, points, lines;
+        
         function initThreeJS() {
             try {
                 const canvas = document.getElementById("bg-canvas");
@@ -1332,7 +1387,6 @@
                     console.error('Canvas element with id "bg-canvas" not found.');
                     return;
                 }
-
                 scene = new THREE.Scene();
                 camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
                 camera.position.z = 50;
@@ -1361,7 +1415,6 @@
                 window.addEventListener("resize", onWindowResize, false);
                 document.addEventListener('mousemove', onMouseMove, false);
                 renderer.domElement.addEventListener('click', onCanvasClick, false);
-                
             } catch (error) {
                 console.error('Error initializing Three.js:', error);
             }
@@ -1372,10 +1425,11 @@
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
+                resizeCharts();
             }
         }
 
-        let mouseX = 0, mouseY = 0; // Initialize mouse position variables
+        let mouseX = 0, mouseY = 0;
         function onMouseMove(event) {
             mouseX = (event.clientX - window.innerWidth / 2) / 100;
             mouseY = (event.clientY - window.innerHeight / 2) / 100;
@@ -1383,7 +1437,7 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            if(scene && camera && renderer && points && lines) { // Check if lines is defined
+            if(scene && camera && renderer && points && lines) {
                 points.rotation.y += 0.0005;
                 lines.rotation.y += 0.0005;
                 camera.position.x += (mouseX - camera.position.x) * 0.05;
@@ -1449,15 +1503,18 @@
         function setupNavigation() {
             const menuToggleBtn = document.getElementById('menu-toggle-btn');
             const navMenu = document.getElementById('nav-menu');
+            const nav = document.querySelector('nav');
 
             menuToggleBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 document.body.classList.toggle('menu-open');
+                nav.classList.toggle('active');
             });
 
             navMenu.addEventListener('click', (e) => {
                 if (e.target.tagName === 'A' && window.innerWidth <= 1024) {
                    document.body.classList.remove('menu-open');
+                   nav.classList.remove('active');
                 }
             });
 
@@ -1483,34 +1540,29 @@
                 });
             }
         }
-
-        function setupScrollAnimations() {
-            const animatedSections = document.querySelectorAll('[data-animate]');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                        
-                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .visualization-container, iframe');
-                        elementsToAnimate.forEach((el, index) => {
-                            el.style.transitionDelay = `${index * 150}ms`;
-                        });
-
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.2 });
-            animatedSections.forEach(section => observer.observe(section));
-        }
-
-        // --- Event Listeners and Initializers ---
+        
         document.addEventListener('DOMContentLoaded', () => {
             setupNavigation();
-            setupScrollAnimations();
             
             drawBarChart();
             drawPieChart();
             drawTreemap();
+            
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+                animate();
+            } else {
+                console.error("Three.js not loaded");
+            }
+            
+            mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
+                'primaryColor': '#000000',
+                'primaryTextColor': '#e5e7eb',
+                'lineColor': '#818cf8',
+                'nodeBorder': '#818cf8',
+                'mainBkg': '#111827',
+                'textColor': '#e5e7eb'
+            } });
 
             let resizeTimer;
             window.addEventListener('resize', () => {
@@ -1519,13 +1571,6 @@
                     resizeCharts();
                 }, 250);
             });
-
-            if (typeof THREE !== 'undefined') {
-                initThreeJS();
-                animate();
-            } else {
-                console.error("Three.js not loaded");
-            }
         });
     </script>
 </body>
