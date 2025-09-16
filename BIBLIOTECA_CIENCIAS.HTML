@@ -722,56 +722,52 @@
                 const pie = d3.pie().value(d => d.count).sort((a, b) => d3.ascending(a.genre, b.genre));
                 const arc = d3.arc().innerRadius(pieRadius * 0.5).outerRadius(pieRadius);
                 const outerArc = d3.arc().innerRadius(pieRadius * 0.9).outerRadius(pieRadius * 1.1);
-
                 const arcsData = pie(genreData);
-                const arcs = pieG.selectAll(".arc").data(arcsData).join("g").attr("class", "arc");
-                const labelPositions = [];
-                arcsData.forEach((d, i) => {
-                    const pos = outerArc.centroid(d);
-                    const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
-                    const side = midAngle < Math.PI ? 1 : -1;
-                    
-                    if (isMobile) {
-                        pos[0] = pieRadius * (midAngle < Math.PI ? 1.05 : -1.05);
-                    } else {
-                        pos[0] = pieRadius * (midAngle < Math.PI ? 1.2 : -1.2);
-                    }
-                    
-                    let adjustedY = pos[1];
-                    for (let j = 0; j < labelPositions.length; j++) {
-                        const prevPos = labelPositions[j];
-                        const offset = isMobile ? 15 : 20;
-                        if (Math.abs(prevPos.y - adjustedY) < offset && prevPos.side === side) {
-                            adjustedY += (adjustedY > prevPos.y ? offset : -offset);
-                        }
-                    }
-                    labelPositions.push({ y: adjustedY, side });
-                    d.adjustedPos = [pos[0], adjustedY];
-                    d.color = colorScale(d.data.genre);
-                });
 
+                // Pre-calculate positions for labels to avoid overlap
+                if (!isMobile) {
+                    const labelPositions = [];
+                    arcsData.forEach((d, i) => {
+                        const pos = outerArc.centroid(d);
+                        const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
+                        pos[0] = pieRadius * (midAngle < Math.PI ? 1.2 : -1.2);
+                        let adjustedY = pos[1];
+                        const side = midAngle < Math.PI ? 1 : -1;
+                        for (let j = 0; j < labelPositions.length; j++) {
+                            const prevPos = labelPositions[j];
+                            if (Math.abs(prevPos.y - adjustedY) < 20 && prevPos.side === side) {
+                                adjustedY += (adjustedY > prevPos.y ? 20 : -20);
+                            }
+                        }
+                        labelPositions.push({ y: adjustedY, side });
+                        d.adjustedPos = [pos[0], adjustedY];
+                    });
+                }
+                
+                const arcs = pieG.selectAll(".arc").data(arcsData).join("g").attr("class", "arc");
+                
                 arcs.append("path").attr("d", arc)
                     .attr("fill", d => colorScale(d.data.genre))
                     .attr("stroke", primaryGlow)
                     .on("click", (event, d) => updateGenreFilter(d.data.genre));
                 
-                arcs.append("text")
-                    .attr("transform", d => `translate(${d.adjustedPos})`)
+                const labels = arcs.append("text")
                     .attr("dy", ".35em")
-                    .style("text-anchor", d => (d.startAngle + (d.endAngle - d.startAngle) / 2) < Math.PI ? "start" : "end")
+                    .attr("fill", primaryText)
+                    .attr("transform", d => isMobile ? `translate(${arc.centroid(d)})` : `translate(${d.adjustedPos})`)
+                    .style("text-anchor", d => isMobile ? "middle" : ((d.startAngle + (d.endAngle - d.startAngle) / 2) < Math.PI ? "start" : "end"))
                     .text(d => {
                         const percentage = ((d.data.count / totalBooks) * 100).toFixed(1);
                         return isMobile ? `${d.data.genre.slice(0, 5)}... (${percentage}%)` : `${d.data.genre} (${percentage}%)`;
                     })
-                    .attr("fill", primaryText)
                     .style("font-size", isMobile ? "9px" : "10px");
                 
-                arcs.append("polyline").attr("points", d => {
-                    const pos = arc.centroid(d);
-                    const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
-                    const offset = pieRadius * (midAngle < Math.PI ? 1.05 : -1.05); // Use smaller offset for mobile
-                    return [arc.centroid(d), outerArc.centroid(d), [d.adjustedPos[0], d.adjustedPos[1]]];
-                }).attr("stroke", primaryText).attr("fill", "none");
+                if (!isMobile) {
+                    arcs.append("polyline").attr("points", d => {
+                        const pos = arc.centroid(d);
+                        return [arc.centroid(d), outerArc.centroid(d), d.adjustedPos];
+                    }).attr("stroke", primaryText).attr("fill", "none");
+                }
             }
 
             let treemapSvg;
