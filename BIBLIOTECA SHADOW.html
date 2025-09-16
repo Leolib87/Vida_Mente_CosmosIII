@@ -689,31 +689,19 @@
                         Las <span class="concept1">bibliotecas sombra</span> (Shadow Libraries) son archivos digitales a gran escala de contenido que, de otro modo, sería inaccesible. Funcionan al margen de las leyes de derechos de autor contemporáneas para garantizar el <span class="concept2">acceso al conocimiento</span>. Este diagrama ilustra el flujo conceptual, desde la necesidad del usuario hasta la consolidación del conocimiento en archivos masivos.
                     </p>
                     <div class="mermaid">
-                        flowchart LR
-                            subgraph "Problemática: Acceso Restringido"
-                                direction LR
-                                A["fa:fa-user Usuario con Necesidad de Información"] --> B{"fa:fa-lock Contenido Inaccesible <br/>(Paywalls, Copyright, etc.)"};
-                            end
-                            
-                            subgraph "Solución: Ecosistema Abierto"
-                                direction LR
-                                C["fa:fa-server<br>Biblioteca Sombra"] --> D["fa:fa-users Comunidad Global <br/>(Investigadores, Estudiantes, Público)"];
-                                D --> E("fa:fa-lightbulb-o<br>Creación de Nuevo Conocimiento y Cultura");
-                            end
-                        
-                            B -- "Digitalización y Archivo <br/> (Esfuerzo Comunitario)" --> C
-                        
-                            classDef start fill:#fbbf24,stroke:#333,stroke-width:2px,color:#000;
-                            classDef barrier fill:#f472b6,stroke:#333,stroke-width:2px,color:#000;
-                            classDef shadowlib fill:#818cf8,stroke:#fff,stroke-width:3px,color:#fff;
-                            classDef users fill:#34d399,stroke:#333,stroke-width:2px,color:#000;
-                            classDef result fill:#22d3ee,stroke:#333,stroke-width:2px,color:#000;
-                        
-                            class A start;
-                            class B barrier;
-                            class C shadowlib;
-                            class D users;
-                            class E result;
+                        graph TD
+                            A[fa:fa-user Inicia: Usuario con Necesidad] --> B{fa:fa-lock Barrera: Acceso Restringido};
+                            B --> C{fa:fa-share Esfuerzo Comunitario <br> Digitalización y Archivo};
+                            C --> D[fa:fa-database Solución: Biblioteca Sombra];
+                            D --> E[fa:fa-users Beneficiarios: Comunidad Global];
+                            E --> F(fa:fa-lightbulb-o Resultado: Acceso al Conocimiento);
+
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px,color:#000
+                            style B fill:#f472b6,stroke:#333,stroke-width:2px,color:#000
+                            style C fill:#34d399,stroke:#333,stroke-width:2px,color:#000
+                            style D fill:#818cf8,stroke:#fff,stroke-width:3px,color:#fff
+                            style E fill:#22d3ee,stroke:#333,stroke-width:2px,color:#000
+                            style F fill:#a78bfa,stroke:#333,stroke-width:2px,color:#000
                     </div>
                 </section>
                 <!-- Sección para la red de conexiones -->
@@ -908,7 +896,7 @@
         const svg = d3.select("#network")
             .append("svg")
             .attr("width", "100%")
-            .attr("height", height())
+            .attr("height", "100%")
             .attr("viewBox", `0 0 ${width()} ${height()}`)
             .attr("preserveAspectRatio", "xMidYMid meet");
 
@@ -1047,7 +1035,7 @@
         function resizeCharts() {
             const newWidth = width();
             const newHeight = height();
-            svg.attr("width", "100%").attr("height", newHeight);
+            svg.attr("width", "100%").attr("height", "100%");
             svg.attr("viewBox", `0 0 ${newWidth} ${newHeight}`);
             simulation.force("center", d3.forceCenter(newWidth / 2, newHeight / 2));
             simulation.force("x", d3.forceX(newWidth / 2).strength(0.1));
@@ -1187,38 +1175,37 @@
                         .attr("fill", colorPalette(d.data.genre));
                 });
 
-            const polyline = pieG.selectAll("polyline")
+            const labelLines = pieG.selectAll('allPolylines')
                 .data(pieData)
-                .join("polyline")
-                .attr("stroke", "var(--primary-text)")
-                .style("fill", "none")
-                .attr("stroke-width", 1)
-                .attr("points", function(d) {
-                    const posA = arc.centroid(d);
-                    const posB = outerArc.centroid(d);
-                    const posC = outerArc.centroid(d);
-                    const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2;
-                    posC[0] = pieRadius * 0.95 * (midangle < Math.PI ? 1 : -1);
-                    return [posA, posB, posC];
-                });
+                .join('polyline')
+                  .attr("stroke", "var(--primary-text)")
+                  .style("fill", "none")
+                  .attr("stroke-width", 1)
+                  .attr('points', function(d) {
+                      const posA = arc.centroid(d) 
+                      const posB = outerArc.centroid(d)
+                      const posC = outerArc.centroid(d);
+                      const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2
+                      posC[0] = pieRadius * 1.05 * (midangle < Math.PI ? 1 : -1);
+                      return [posA, posB, posC]
+                  });
 
-            const labels = pieG.selectAll("text.label")
+            const labelText = pieG.selectAll('allLabels')
                 .data(pieData)
-                .join("text")
-                .attr("class", "label")
-                .text(d => `${d.data.genre} (${((d.data.count / totalBooks) * 100).toFixed(1)}%)`)
-                .attr('transform', function(d) {
-                    const pos = outerArc.centroid(d);
-                    const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2
-                    pos[0] = pieRadius * 1 * (midangle < Math.PI ? 1 : -1);
-                    return `translate(${pos})`;
-                })
-                .style('text-anchor', function(d) {
-                    const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2
-                    return (midangle < Math.PI ? 'start' : 'end')
-                })
-                .style("font-size", isMobile ? "9px" : "11px")
-                .attr("fill", "var(--primary-text)");
+                .join('text')
+                   .text(d => `${d.data.genre} (${((d.data.count / totalBooks) * 100).toFixed(1)}%)`)
+                   .attr('transform', function(d) {
+                       const pos = outerArc.centroid(d);
+                       const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2
+                       pos[0] = pieRadius * 1.1 * (midangle < Math.PI ? 1 : -1);
+                       return `translate(${pos})`;
+                   })
+                   .style('text-anchor', function(d) {
+                       const midangle = d.startAngle + (d.endAngle - d.startAngle) / 2
+                       return (midangle < Math.PI ? 'start' : 'end')
+                   })
+                   .style("font-size", isMobile ? "9px" : "11px")
+                   .attr("fill", "var(--primary-text)");
         }
 
         function drawTreemap() {
@@ -1279,7 +1266,7 @@
                 const nameParts = d.data.name.split('.');
                 const displayName = nameParts.length > 1 ? nameParts[0] : d.data.name;
 
-                if (width > 35 && height > 15) {
+                if (width > 40 && height > 30) {
                      g.append("text")
                         .attr("x", 4)
                         .attr("y", 14)
@@ -1287,6 +1274,14 @@
                         .text(displayName)
                         .attr("font-size", "10px")
                         .attr("fill", "white")
+                        .style("text-shadow", "0 0 3px black");
+                    g.append("text")
+                        .attr("x", 4)
+                        .attr("y", 28)
+                        .attr("class", "treemap-text")
+                        .text(d.data.value + " recurso(s)")
+                        .attr("font-size", "9px")
+                        .attr("fill", "rgba(255,255,255,0.8)")
                         .style("text-shadow", "0 0 3px black");
                 }
             });
@@ -1485,8 +1480,5 @@
     </script>
 </body>
 </html>
-
-
-
 
 
