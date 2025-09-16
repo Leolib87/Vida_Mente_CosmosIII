@@ -198,6 +198,7 @@
         .section {
             padding: clamp(1.5rem, 5vw, 2.5rem);
             border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
         
@@ -224,7 +225,7 @@
         }
         
         /* Pie de página */
-        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid rgba(255, 255, 255, 0.2); margin-top: 2rem; }
 
         /* Estilos de tabla y filtros */
         .filters {
@@ -238,7 +239,7 @@
             background: #000000;
             border: 2px solid var(--primary-glow);
             color: var(--primary-text);
-            padding: 8px;
+            padding: 8px 12px;
             font-family: var(--font-main);
             border-radius: 5px;
             transition: all 0.3s ease;
@@ -251,17 +252,13 @@
             }
         }
         
-        .filters select:hover, .filters select:focus {
+        .filters select:hover, .filters select:focus, .filters input:hover, .filters input:focus {
             background: var(--primary-glow);
             color: #000000;
             outline: none;
+            box-shadow: 0 0 10px var(--primary-glow);
         }
-        .filters input {
-            background: #000000;
-            border: 2px solid var(--primary-glow);
-            color: var(--primary-text);
-        }
-
+        
         .table-container {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -279,9 +276,10 @@
             -webkit-backdrop-filter: blur(8px);
         }
         .section th, .section td {
-            padding: 12px;
+            padding: 12px 15px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             text-align: left;
+            vertical-align: middle;
         }
         .section th {
             background: rgba(129, 140, 248, 0.1);
@@ -395,7 +393,7 @@
         }
         .bar-text {
             fill: var(--primary-text);
-            font-size: 10px;
+            font-size: 11px;
             text-shadow: 0 0 5px #000000;
         }
         .arc path {
@@ -430,6 +428,7 @@
             margin-top: 10px;
             text-align: center;
         }
+        .menu-toggle { display: none; }
         
         /* Mobile-first enhancements */
         @media (max-width: 1024px) {
@@ -575,10 +574,12 @@
                 position: relative;
                 padding-left: 50%;
                 text-align: right;
-                min-height: 2.5em; 
+                min-height: 3.5em; 
                 display: flex;
                 align-items: center;
                 justify-content: flex-end;
+                padding-top: 0.5rem;
+                padding-bottom: 0.5rem;
             }
 
             .section td:last-child {
@@ -611,6 +612,9 @@
             }
              .bar-text, .arc text, .node text {
                 font-size: 9px;
+            }
+            .x-axis text {
+                font-size: 10px;
             }
         }
     </style>
@@ -1202,17 +1206,18 @@
                 .attr("width", "100%")
                 .attr("height", 400);
 
-            const barMargin = { top: 20, right: 20, bottom: 100, left: 40 };
+            const barMargin = { top: 40, right: 20, bottom: 120, left: 40 };
             const barWidth = barSvg.node().clientWidth - barMargin.left - barMargin.right;
             const barHeight = 400 - barMargin.top - barMargin.bottom;
 
             const barX = d3.scaleBand()
                 .domain(genreData.map(d => d.genre))
                 .range([0, barWidth])
-                .padding(0.1);
+                .padding(0.2);
 
             const barY = d3.scaleLinear()
                 .domain([0, d3.max(genreData, d => d.count)])
+                .nice()
                 .range([barHeight, 0]);
 
             const barG = barSvg.append("g")
@@ -1223,8 +1228,8 @@
                 .attr("transform", `translate(0,${barHeight})`)
                 .call(d3.axisBottom(barX))
                 .selectAll("text")
-                .attr("fill", d3.select("body").style("--primary-text"))
-                .attr("text-shadow", `0 0 5px ${d3.select("body").style("--secondary-glow")}`)
+                .attr("fill", "var(--primary-text)")
+                .attr("text-shadow", `0 0 5px var(--secondary-glow)`)
                 .attr("transform", "rotate(-45)")
                 .style("text-anchor", "end");
 
@@ -1232,7 +1237,7 @@
                 .attr("class", "y-axis")
                 .call(d3.axisLeft(barY))
                 .selectAll("text")
-                .attr("fill", d3.select("body").style("--primary-text"));
+                .attr("fill", "var(--primary-text)");
 
             barG.selectAll(".bar")
                 .data(genreData)
@@ -1256,9 +1261,9 @@
                 .join("text")
                 .attr("class", "bar-text")
                 .attr("x", d => barX(d.genre) + barX.bandwidth() / 2)
-                .attr("y", d => barY(d.count) + (barHeight - barY(d.count)) / 2)
+                .attr("y", d => barY(d.count) - 8)
                 .attr("text-anchor", "middle")
-                .text(d => `${d.count} (${((d.count / totalBooks) * 100).toFixed(1)}%)`);
+                .text(d => `${d.count} (${((d.count / totalBooks) * 100).toFixed(0)}%)`);
         }
 
         function drawPieChart() {
@@ -1397,7 +1402,8 @@
                     return book ? colorPalette(book.genre) : '#999';
                 })
                 .on("mouseover", function(event, d) {
-                    d3.select(this).attr('fill', hoverColorPalette(books.find(b => b.author === d.data.name).genre));
+                    const book = books.find(b => b.author === d.data.name);
+                    d3.select(this).attr('fill', book ? hoverColorPalette(book.genre) : '#ccc');
                     d3.select("#treemap-info")
                         .text(`Autor: ${d.data.name} | Libros: ${d.data.value}`);
                 })
