@@ -176,7 +176,7 @@
             .section { padding: clamp(1rem, 5vw, 2.5rem); }
             .filters { flex-direction: column; align-items: stretch; }
             .filters select, .filters input { width: 100%; }
-            #network, .visualization-container { height: 300px; }
+            #network { height: 300px; }
             .table-container { border: none; }
             .section table { min-width: 100%; border: none; }
             .section table, .section thead, .section tbody, .section th, .section td, .section tr { display: block; }
@@ -185,12 +185,14 @@
             .section tr:hover { transform: none; box-shadow: 0 0 15px rgba(129, 140, 248, 0.4); }
             .section td { border: none; border-bottom: 1px solid rgba(129, 140, 248, 0.1); position: relative; padding: 1rem 12px; text-align: justify; display: block; word-break: break-word; }
             .section td::before { content: attr(data-label); display: block; text-align: left; font-weight: 600; color: var(--primary-glow); margin-bottom: 0.5rem; white-space: nowrap; }
+            .visualization-container { height: 300px; }
         }
         @media (max-width: 480px) {
             .section { padding: 1rem; } .chart-container { padding: 10px; }
             .section th, .section td { padding: 4px; font-size: 0.9em; }
             .section table { font-size: 0.8em; }
-            #network, .visualization-container { height: 250px; }
+            #network { height: 250px; }
+            .visualization-container { height: 250px; }
             .bar-text, .arc text, .node text { font-size: 9px; }
             .x-axis text, .y-axis text { font-size: 9px; }
         }
@@ -484,101 +486,94 @@
         });
 
         // D3.js Visualizations and Table Logic
-        document.addEventListener('DOMContentLoaded', () => {
-            // Define CSS variables as JavaScript constants
-            const rootStyles = getComputedStyle(document.documentElement);
-            const secondaryGlow = rootStyles.getPropertyValue('--secondary-glow').trim();
-            const primaryText = rootStyles.getPropertyValue('--primary-text').trim();
-            const primaryGlow = rootStyles.getPropertyValue('--primary-glow').trim();
-            const bgColor = '#000000'; // Hardcoded for D3 fill
+        
+        // --- DATA INITIALIZATION (MOVED TO GLOBAL SCOPE FOR ACCESSIBILITY) ---
+        const rootStyles = getComputedStyle(document.documentElement);
+        const secondaryGlow = rootStyles.getPropertyValue('--secondary-glow').trim();
+        const primaryText = rootStyles.getPropertyValue('--primary-text').trim();
+        const primaryGlow = rootStyles.getPropertyValue('--primary-glow').trim();
+        const bgColor = '#000000'; // Hardcoded for D3 fill
+        
+        const genresList = [...new Set(books.map(book => book.genre))].sort();
+        const themes = [...new Set(books.map(book => book.theme))].sort();
+        const genreCounts = d3.rollup(books, v => v.length, d => d.genre);
+        const genreData = Array.from(genreCounts, ([genre, count]) => ({ genre, count }));
+        const totalBooks = books.length;
+        const authorCounts = d3.rollup(books, v => v.length, d => d.author.split(',')[0].trim());
+        const authorData = Array.from(authorCounts, ([author, count]) => ({ name: author, value: count }));
+        const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
-            const genresList = [...new Set(books.map(book => book.genre))].sort();
-            const themes = [...new Set(books.map(book => book.theme))].sort();
-            const genreFilter = document.getElementById('genreFilter');
-            const themeFilter = document.getElementById('themeFilter');
-            const searchInput = document.getElementById('searchInput');
+        // --- D3 FUNCTIONS ---
+        function renderTable() {
+            const selectedGenre = genreFilter.value;
+            const selectedTheme = themeFilter.value;
+            const searchText = searchInput.value.toLowerCase();
+            const filteredBooks = books.filter(book => 
+                (!selectedGenre || book.genre === selectedGenre) &&
+                (!selectedTheme || book.theme === selectedTheme) &&
+                (book.title.toLowerCase().includes(searchText) || book.author.toLowerCase().includes(searchText))
+            );
 
-            genresList.forEach(genre => {
-                const option = document.createElement('option');
-                option.value = genre;
-                option.textContent = genre;
-                genreFilter.appendChild(option);
+            const tbody = document.querySelector('#bookTable tbody');
+            tbody.innerHTML = '';
+            filteredBooks.forEach(book => {
+                const row = document.createElement('tr');
+                const genreClass = `row-${book.genre.replace(/[\/\s]/g, '')}`;
+                row.classList.add(genreClass);
+                row.innerHTML = `
+                    <td data-label="Título">${book.title}</td>
+                    <td data-label="Autor/Editor">${book.author}</td>
+                    <td data-label="Comentarios">${book.comments}</td>
+                    <td data-label="Género">${book.genre}</td>
+                    <td data-label="Tema">${book.theme}</td>
+                `;
+                tbody.appendChild(row);
             });
+        }
 
-            themes.forEach(theme => {
-                const option = document.createElement('option');
-                option.value = theme;
-                option.textContent = theme;
-                themeFilter.appendChild(option);
-            });
+        // D3.js Network Graph
+        const genres_for_network = [...new Set(books.map(book => book.genre))].sort();
+        const genreNodes = genres_for_network.map((genre, index) => ({ id: `genre-${index}`, name: genre, type: "genre" }));
+        const bookNodes = books.map((book, index) => ({ id: `book-${index}`, title: book.title, genre: book.genre, theme: book.theme, type: "book" }));
+        const nodes = [...genreNodes, ...bookNodes];
 
-            function renderTable() {
-                const selectedGenre = genreFilter.value;
-                const selectedTheme = themeFilter.value;
-                const searchText = searchInput.value.toLowerCase();
-                const filteredBooks = books.filter(book => 
-                    (!selectedGenre || book.genre === selectedGenre) &&
-                    (!selectedTheme || book.theme === selectedTheme) &&
-                    (book.title.toLowerCase().includes(searchText) || book.author.toLowerCase().includes(searchText))
-                );
+        const bookLinks = bookNodes.map(bookNode => ({
+            source: bookNode.id,
+            target: genreNodes.find(genreNode => genreNode.name === bookNode.genre).id,
+            type: "book-genre"
+        }));
 
-                const tbody = document.querySelector('#bookTable tbody');
-                tbody.innerHTML = '';
-                filteredBooks.forEach(book => {
-                    const row = document.createElement('tr');
-                    const genreClass = `row-${book.genre.replace(/[\/\s]/g, '')}`;
-                    row.classList.add(genreClass);
-                    row.innerHTML = `
-                        <td data-label="Título">${book.title}</td>
-                        <td data-label="Autor/Editor">${book.author}</td>
-                        <td data-label="Comentarios">${book.comments}</td>
-                        <td data-label="Género">${book.genre}</td>
-                        <td data-label="Tema">${book.theme}</td>
-                    `;
-                    tbody.appendChild(row);
-                });
-            }
-
-            genreFilter.addEventListener('change', renderTable);
-            themeFilter.addEventListener('change', renderTable);
-            searchInput.addEventListener('input', renderTable);
-            renderTable();
-
-            // D3.js Network Graph
-            const genres_for_network = [...new Set(books.map(book => book.genre))].sort();
-            const genreNodes = genres_for_network.map((genre, index) => ({ id: `genre-${index}`, name: genre, type: "genre" }));
-            const bookNodes = books.map((book, index) => ({ id: `book-${index}`, title: book.title, genre: book.genre, theme: book.theme, type: "book" }));
-            const nodes = [...genreNodes, ...bookNodes];
-
-            const bookLinks = bookNodes.map(bookNode => ({
-                source: bookNode.id,
-                target: genreNodes.find(genreNode => genreNode.name === bookNode.genre).id,
-                type: "book-genre"
-            }));
-
-            const genreLinks = [];
-            for (let i = 0; i < genreNodes.length; i++) {
-                for (let j = i + 1; j < genreNodes.length; j++) {
-                    const genre1 = genreNodes[i].name;
-                    const genre2 = genreNodes[j].name;
-                    const booksInGenre1 = books.filter(b => b.genre === genre1);
-                    const booksInGenre2 = books.filter(b => b.genre === genre2);
-                    const themesInGenre1 = new Set(booksInGenre1.map(b => b.theme));
-                    const themesInGenre2 = new Set(booksInGenre2.map(b => b.theme));
-                    const sharedThemes = [...themesInGenre1].filter(theme => themesInGenre2.has(theme));
-                    if (sharedThemes.length > 0) {
-                        genreLinks.push({ source: genreNodes[i].id, target: genreNodes[j].id, type: "genre-genre" });
-                    }
+        const genreLinks = [];
+        for (let i = 0; i < genreNodes.length; i++) {
+            for (let j = i + 1; j < genreNodes.length; j++) {
+                const genre1 = genreNodes[i].name;
+                const genre2 = genreNodes[j].name;
+                const booksInGenre1 = books.filter(b => b.genre === genre1);
+                const booksInGenre2 = books.filter(b => b.genre === genre2);
+                const themesInGenre1 = new Set(booksInGenre1.map(b => b.theme));
+                const themesInGenre2 = new Set(booksInGenre2.map(b => b.theme));
+                const sharedThemes = [...themesInGenre1].filter(theme => themesInGenre2.has(theme));
+                if (sharedThemes.length > 0) {
+                    genreLinks.push({ source: genreNodes[i].id, target: genreNodes[j].id, type: "genre-genre" });
                 }
             }
+        }
 
-            const links = [...bookLinks, ...genreLinks];
+        const links = [...bookLinks, ...genreLinks];
 
+        let networkSvg, simulation, networkLinks, node;
+
+        function initNetwork() {
             const width = document.getElementById('network').clientWidth;
-            const height = 400;
+            const height = document.getElementById('network').clientHeight;
+            
+            if (networkSvg) {
+                networkSvg.remove();
+            }
 
-            const svg = d3.select("#network").append("svg").attr("width", width).attr("height", height);
-            const simulation = d3.forceSimulation(nodes)
+            networkSvg = d3.select("#network").append("svg").attr("width", width).attr("height", height);
+
+            simulation = d3.forceSimulation(nodes)
                 .force("link", d3.forceLink(links).id(d => d.id).distance(d => d.type === "genre-genre" ? 150 : 100).strength(0.5))
                 .force("charge", d3.forceManyBody().strength(-150))
                 .force("center", d3.forceCenter(width / 2, height / 2))
@@ -586,11 +581,11 @@
                 .force("x", d3.forceX(width / 2).strength(0.1))
                 .force("y", d3.forceY(height / 2).strength(0.1));
 
-            const networkLinks = svg.append("g").attr("class", "links").selectAll("line").data(links).join("line")
+            networkLinks = networkSvg.append("g").attr("class", "links").selectAll("line").data(links).join("line")
                 .attr("class", d => `link ${d.type === "genre-genre" ? "genre-link" : ""}`)
                 .attr("stroke", d => d.type === "genre-genre" ? primaryGlow : secondaryGlow);
 
-            const node = svg.append("g").attr("class", "nodes").selectAll("g").data(nodes).join("g")
+            node = networkSvg.append("g").attr("class", "nodes").selectAll("g").data(nodes).join("g")
                 .attr("class", d => `node ${d.type}`)
                 .call(d3.drag().on("start", dragStarted).on("drag", dragged).on("end", dragEnded))
                 .on("click", (event, d) => {
@@ -651,46 +646,24 @@
                 event.subject.fx = null;
                 event.subject.fy = null;
             }
+        }
 
-            function resize() {
-                const newWidth = document.getElementById('network').clientWidth;
-                const newHeight = 400;
-                svg.attr("width", newWidth).attr("height", newHeight);
-                simulation.force("center", d3.forceCenter(newWidth / 2, newHeight / 2));
-                simulation.force("x", d3.forceX(newWidth / 2).strength(0.1));
-                simulation.force("y", d3.forceY(newHeight / 2).strength(0.1));
-                simulation.alpha(1).restart();
-            }
-            window.addEventListener("resize", resize);
-
-            // D3.js Charts
-            const genreCounts = d3.rollup(books, v => v.length, d => d.genre);
-            const genreData = Array.from(genreCounts, ([genre, count]) => ({ genre, count }));
-            const totalBooks = books.length;
+        let barSvg, barX, barY, barG;
+        function initBarChart() {
+            const container = document.getElementById('bar-chart');
+            if (barSvg) barSvg.remove();
             
-            // Group by first author only for Treemap
-            const authorCounts = d3.rollup(books, v => v.length, d => d.author.split(',')[0].trim());
-            const authorData = Array.from(authorCounts, ([author, count]) => ({ name: author, value: count }));
-
-            function updateGenreFilter(genre) {
-                const genreFilter = document.getElementById('genreFilter');
-                genreFilter.value = genre;
-                genreFilter.dispatchEvent(new Event('change'));
-            }
-
-            // Color scale
-            const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-
-            // Bar Chart
-            const barSvg = d3.select("#bar-chart").append("svg").attr("width", "100%").attr("height", 400);
+            const width = container.clientWidth;
+            const height = container.clientHeight;
             const barMargin = { top: 20, right: 20, bottom: 100, left: 40 };
-            const barWidth = barSvg.node().clientWidth - barMargin.left - barMargin.right;
-            const barHeight = 400 - barMargin.top - barMargin.bottom;
+            const barWidth = width - barMargin.left - barMargin.right;
+            const barHeight = height - barMargin.top - barMargin.bottom;
 
-            const barX = d3.scaleBand().domain(genreData.map(d => d.genre)).range([0, barWidth]).padding(0.1);
-            const barY = d3.scaleLinear().domain([0, d3.max(genreData, d => d.count)]).range([barHeight, 0]);
+            barSvg = d3.select("#bar-chart").append("svg").attr("width", "100%").attr("height", "100%");
+            barX = d3.scaleBand().domain(genreData.map(d => d.genre)).range([0, barWidth]).padding(0.1);
+            barY = d3.scaleLinear().domain([0, d3.max(genreData, d => d.count)]).range([barHeight, 0]);
 
-            const barG = barSvg.append("g").attr("transform", `translate(${barMargin.left},${barMargin.top})`);
+            barG = barSvg.append("g").attr("transform", `translate(${barMargin.left},${barMargin.top})`);
             barG.append("g").attr("class", "x-axis").attr("transform", `translate(0,${barHeight})`).call(d3.axisBottom(barX))
                 .selectAll("text")
                 .attr("transform", "rotate(-45)")
@@ -709,14 +682,22 @@
                 .attr("text-anchor", "middle")
                 .text(d => `${d.count} (${((d.count / totalBooks) * 100).toFixed(1)}%)`)
                 .attr("fill", primaryText);
+        }
 
-            // Pie Chart
-            const pieSvg = d3.select("#pie-chart").append("svg").attr("width", "100%").attr("height", 400);
-            const pieWidth = pieSvg.node().clientWidth - barMargin.left - barMargin.right;
-            const pieHeight = 400 - barMargin.top - barMargin.bottom;
+        let pieSvg;
+        function initPieChart() {
+            const container = document.getElementById('pie-chart');
+            if (pieSvg) pieSvg.remove();
+            
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const pieMargin = { top: 20, right: 20, bottom: 20, left: 20 };
+            const pieWidth = width - pieMargin.left - pieMargin.right;
+            const pieHeight = height - pieMargin.top - pieMargin.bottom;
             const pieRadius = Math.min(pieWidth, pieHeight) / 2 - 20;
 
-            const pieG = pieSvg.append("g").attr("transform", `translate(${pieWidth / 2 + barMargin.left},${pieHeight / 2 + 40})`);
+            pieSvg = d3.select("#pie-chart").append("svg").attr("width", "100%").attr("height", "100%");
+            const pieG = pieSvg.append("g").attr("transform", `translate(${width / 2},${height / 2})`);
             const pie = d3.pie().value(d => d.count).sort((a, b) => d3.ascending(a.genre, b.genre));
             const arc = d3.arc().innerRadius(pieRadius * 0.5).outerRadius(pieRadius);
             const outerArc = d3.arc().innerRadius(pieRadius * 0.9).outerRadius(pieRadius * 0.9);
@@ -762,17 +743,26 @@
                 const offset = pieRadius * (midAngle < Math.PI ? 1.2 : -1.2);
                 return [arc.centroid(d), outerArc.centroid(d), [offset, d.adjustedPos[1]]];
             }).attr("stroke", primaryText).attr("fill", "none");
-            
-            // Treemap
-            const treemapSvg = d3.select("#treemap").append("svg").attr("width", "100%").attr("height", 400);
-            const treemapWidth = treemapSvg.node().clientWidth - barMargin.left - barMargin.right;
-            const treemapHeight = 400 - barMargin.top - barMargin.bottom;
+        }
 
+        let treemapSvg;
+        function initTreemap() {
+            const container = document.getElementById('treemap');
+            if (treemapSvg) treemapSvg.remove();
+
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const treemapMargin = { top: 20, right: 20, bottom: 20, left: 20 };
+            const treemapWidth = width - treemapMargin.left - treemapMargin.right;
+            const treemapHeight = height - treemapMargin.top - treemapMargin.bottom;
+
+            treemapSvg = d3.select("#treemap").append("svg").attr("width", "100%").attr("height", "100%");
+            
             const treemap = d3.treemap().size([treemapWidth, treemapHeight]).padding(4).round(true);
             const root = d3.hierarchy({ children: authorData }).sum(d => d.value);
             treemap(root);
 
-            const treemapG = treemapSvg.append("g").attr("transform", `translate(${barMargin.left},${barMargin.top})`);
+            const treemapG = treemapSvg.append("g").attr("transform", `translate(${treemapMargin.left},${treemapMargin.top})`);
             
             const leaf = treemapG.selectAll("g")
                 .data(root.leaves())
@@ -783,7 +773,7 @@
                 .attr("class", "treemap-rect")
                 .attr("width", d => d.x1 - d.x0)
                 .attr("height", d => d.y1 - d.y0)
-                .attr("fill", (d, i) => colorScale(d.data.name))
+                .attr("fill", d => colorScale(d.data.name))
                 .attr("stroke", secondaryGlow)
                 .on("click", (event, d) => {
                     const authorBooks = books.filter(b => b.author.split(',')[0].trim() === d.data.name);
@@ -792,12 +782,59 @@
                 });
 
             leaf.append("text")
-                .attr("x", 5)
-                .attr("y", 15)
+                .attr("x", d => Math.min(d.x1 - d.x0, 5))
+                .attr("y", d => Math.min(d.y1 - d.y0, 15))
                 .attr("fill", primaryText)
-                .style("font-size", "7px")
-                .style("text-shadow", "0 0 5px black")
-                .text(d => d.data.name);
+                .style("font-size", d => Math.min(10, Math.sqrt((d.x1-d.x0)*(d.y1-d.y0))/10) + "px") // dynamic font size
+                .text(d => d.data.name)
+                .each(function(d) {
+                    const textElement = d3.select(this);
+                    const rectWidth = d.x1 - d.x0;
+                    let text = d.data.name;
+                    while(text.length > 0 && textElement.node().getComputedTextLength() > rectWidth - 10) {
+                        text = text.slice(0, -1);
+                        textElement.text(text + '...');
+                    }
+                });
+        }
+
+        function resize() {
+            initNetwork();
+            initBarChart();
+            initPieChart();
+            initTreemap();
+        }
+
+        // --- EVENT LISTENER ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const genreFilter = document.getElementById('genreFilter');
+            const themeFilter = document.getElementById('themeFilter');
+            const searchInput = document.getElementById('searchInput');
+
+            genresList.forEach(genre => {
+                const option = document.createElement('option');
+                option.value = genre;
+                option.textContent = genre;
+                genreFilter.appendChild(option);
+            });
+
+            themes.forEach(theme => {
+                const option = document.createElement('option');
+                option.value = theme;
+                option.textContent = theme;
+                themeFilter.appendChild(option);
+            });
+
+            genreFilter.addEventListener('change', renderTable);
+            themeFilter.addEventListener('change', renderTable);
+            searchInput.addEventListener('input', renderTable);
+            renderTable();
+
+            initNetwork();
+            initBarChart();
+            initPieChart();
+            initTreemap();
+            window.addEventListener("resize", resize);
         });
 
         // Mermaid.js
