@@ -577,13 +577,14 @@
                 border-bottom: 1px solid rgba(129, 140, 248, 0.1);
                 position: relative;
                 padding-left: 50%;
-                text-align: justify;
+                text-align: right;
                 min-height: 3.5em;
-                display: block;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
                 padding-top: 0.75rem;
                 padding-bottom: 0.75rem;
                 padding-right: 12px;
-                word-break: break-word;
             }
 
             .section td:last-child {
@@ -594,7 +595,8 @@
                 content: attr(data-label);
                 position: absolute;
                 left: 12px;
-                top: 0.75rem;
+                top: 50%;
+                transform: translateY(-50%);
                 width: 45%;
                 padding-right: 10px;
                 white-space: nowrap;
@@ -1292,7 +1294,8 @@
             const isMobile = window.innerWidth <= 480;
             const pieWidth = container.node().clientWidth;
             const pieHeight = container.node().clientHeight;
-            const pieRadius = Math.min(pieWidth, pieHeight) / 2 * (isMobile ? 0.55 : 0.65);
+            const pieRadius = Math.min(pieWidth, pieHeight) / 2 * (isMobile ? 0.5 : 0.6);
+            const labelRadius = pieRadius * (isMobile ? 1.4 : 1.3);
 
             const pieG = pieSvg.append("g")
                 .attr("transform", `translate(${pieWidth / 2},${pieHeight / 2})`);
@@ -1308,13 +1311,11 @@
             const arcHover = d3.arc()
                 .innerRadius(pieRadius * 0.5)
                 .outerRadius(pieRadius * 1.1);
-
-            const outerArc = d3.arc()
-                .innerRadius(pieRadius * (isMobile ? 1.3 : 1.2))
-                .outerRadius(pieRadius * (isMobile ? 1.3 : 1.2));
             
+            const pieData = pie(genreData);
+
             const arcs = pieG.selectAll(".arc")
-                .data(pie(genreData))
+                .data(pieData)
                 .join("g")
                 .attr("class", "arc");
 
@@ -1337,32 +1338,59 @@
                 })
                 .on("click", (event, d) => updateGenreFilter(d.data.genre));
 
-            arcs.append("polyline")
-                .attr("stroke", "var(--primary-text)")
-                .style("fill", "none")
-                .attr("stroke-width", 1)
-                .attr('points', function(d) {
-                    var posA = arc.centroid(d); 
-                    var posB = outerArc.centroid(d);
-                    var posC = outerArc.centroid(d);
-                    var midangle = d.startAngle + (d.endAngle - d.startAngle) / 2;
-                    posC[0] = pieRadius * (isMobile ? 1.4 : 1.25) * (midangle < Math.PI ? 1 : -1);
-                    return [posA, posB, posC];
-                });
-            
-            arcs.append("text")
-                 .text(d => `${d.data.genre} (${((d.data.count / totalBooks) * 100).toFixed(0)}%)`)
-                 .attr('transform', function(d) {
-                    var pos = outerArc.centroid(d);
-                    var midangle = d.startAngle + (d.endAngle - d.startAngle) / 2
-                    pos[0] = pieRadius * (isMobile ? 1.45 : 1.3) * (midangle < Math.PI ? 1 : -1);
-                    return 'translate(' + pos + ')';
-                })
+            // Logic to prevent label overlap
+            const labelData = pieData.map(d => {
+                const angle = (d.startAngle + d.endAngle) / 2;
+                const centroid = arc.centroid(d);
+                return {
+                    ...d,
+                    x: Math.cos(angle - Math.PI / 2) * labelRadius,
+                    y: Math.sin(angle - Math.PI / 2) * labelRadius,
+                    cy: centroid[1]
+                };
+            });
+
+            const right = labelData.filter(d => d.x > 0);
+            const left = labelData.filter(d => d.x <= 0);
+
+            [left, right].forEach(group => {
+                group.sort((a,b) => a.y - b.y);
+                for (let i = 1; i < group.length; i++) {
+                    const prev = group[i - 1];
+                    const curr = group[i];
+                    if (curr.y - prev.y < 12) { // 12 is min label height
+                        curr.y = prev.y + 12;
+                    }
+                }
+            });
+
+            const labels = pieG.selectAll("g.label-group")
+                .data(labelData)
+                .join("g")
+                .attr("class", "label-group")
+                .attr("transform", d => `translate(${d.x}, ${d.y})`);
+
+            labels.append("text")
+                .text(d => `${d.data.genre} (${((d.data.count / totalBooks) * 100).toFixed(0)}%)`)
+                .attr("text-anchor", d => d.x > 0 ? "start" : "end")
+                .attr("dx", d => d.x > 0 ? 5 : -5)
+                .attr("dy", "0.35em")
                 .style("font-size", isMobile ? "9px" : "10px")
-                .style('text-anchor', function(d) {
-                    var midangle = d.startAngle + (d.endAngle - d.startAngle) / 2
-                    return (midangle < Math.PI ? 'start' : 'end')
-                });
+                .attr("fill", "var(--primary-text)");
+
+            labels.append("line")
+                .attr("x1", 0)
+                .attr("x2", d => {
+                    const startPoint = arc.centroid(d);
+                    return startPoint[0] - d.x;
+                })
+                .attr("y1", 0)
+                .attr("y2", d => {
+                    const startPoint = arc.centroid(d);
+                    return startPoint[1] - d.y;
+                })
+                .attr("stroke", "var(--primary-text)")
+                .attr("stroke-width", 1);
         }
 
         function drawTreemap() {
@@ -1416,41 +1444,24 @@
             
             cell.selectAll('.treemap-text').remove(); 
 
-            cell.append("text")
-                .attr("x", 4)
-                .attr("y", 14)
-                .attr("class", "treemap-text")
-                .text(d => {
-                    const width = d.x1 - d.x0;
-                    const height = d.y1 - d.y0;
-                    const nameParts = d.data.name.split(' ');
-                    if (width > 40 && height > 35) {
-                        return nameParts[0];
-                    } else if (width > 30 && height > 15) {
-                        return nameParts.length > 1 ? nameParts[nameParts.length - 1] : nameParts[0];
-                    }
-                    return '';
-                })
-                .attr("font-size", "10px")
-                .attr("fill", "white")
-                .style("text-shadow", "0 0 3px black");
+            cell.each(function(d) {
+                const g = d3.select(this);
+                const width = d.x1 - d.x0;
+                const height = d.y1 - d.y0;
+                const nameParts = d.data.name.split(' ');
+                const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : nameParts[0];
 
-            cell.append("text")
-                .attr("x", 4)
-                .attr("y", 28)
-                .attr("class", "treemap-text")
-                .text(d => {
-                    const width = d.x1 - d.x0;
-                    const height = d.y1 - d.y0;
-                    const nameParts = d.data.name.split(' ');
-                     if (width > 40 && height > 35 && nameParts.length > 1) {
-                        return nameParts[nameParts.length - 1];
-                     }
-                    return '';
-                })
-                .attr("font-size", "10px")
-                .attr("fill", "white")
-                .style("text-shadow", "0 0 3px black");
+                if (width > 35 && height > 15) {
+                     g.append("text")
+                        .attr("x", 4)
+                        .attr("y", 14)
+                        .attr("class", "treemap-text")
+                        .text(lastName)
+                        .attr("font-size", "10px")
+                        .attr("fill", "white")
+                        .style("text-shadow", "0 0 3px black");
+                }
+            });
         }
         
         function updateGenreFilter(genre) {
