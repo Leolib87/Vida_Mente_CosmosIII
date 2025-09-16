@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cinco Fórmulas Fristonianas | O.C.V.M. Plantilla</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    
+    <!-- MathJax for beautiful math rendering -->
+    <script>
+        MathJax = {
+          tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true
+          },
+          svg: {
+            fontCache: 'global'
+          }
+        };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+
+    <style>
+        /* Variables de CSS para colores y fuentes */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;   /* Rosa para nombres de personas */
+        }
+
+        /* Estilos generales para el cuerpo de la página */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+            text-align: justify;
+        }
+        p {
+            text-align: justify;
+        }
+
+        /* Canvas de fondo con animación Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        /* Estilo de glassmorphism para secciones y navegación */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Estilos para Contenedor de Ecuaciones */
+        .math-display {
+            padding: 1.5rem 0;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 0.5rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+
+        /* Sección del héroe o cabecera principal */
+        .hero {
+            min-height: 70vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 7vw, 4.5rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Contenedor principal para el contenido */
+        .main-container { 
+            width: 100%;
+            max-width: 100%; /* El contenedor usa todo el ancho */
+            margin: 0 auto; 
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content {
+            pointer-events: auto;
+        }
+
+        main p, .footer p {
+            user-select: text;
+            cursor: default;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        /* Animación de aparición para las secciones con scroll */
+        .section h2, .section h3, .section p, .mermaid, .section ul, .section .authors, .section .math-display, .formula-image {
+             opacity: 0;
+             transform: translateY(20px);
+             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .mermaid, .section.is-visible ul, .section.is-visible .authors, .section.is-visible .math-display, .section.is-visible .formula-image {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
+        
+        /* Clases para colorear palabras y conceptos */
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .concept2 { color: var(--concept-color-2); font-weight: 500; }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; font-size: 0.9em; max-width: 600px; margin-left: auto; margin-right: auto; }
+
+        /* Pie de página */
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        /* Estilo para los diagramas de Mermaid */
+        .mermaid {
+            margin: 2rem auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 900px;
+        }
+        
+        /* Estilos para las imágenes de las fórmulas */
+        .formula-image {
+            display: block;
+            margin: 2rem auto;
+            max-width: 400px;
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(129, 140, 248, 0.2);
+        }
+        
+        /* Media queries para dispositivos móviles */
+        @media (max-width: 768px) {
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+            body.menu-open .nav-container {
+                transform: translateY(0);
+            }
+
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.5em;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo con animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=F" alt="Logo Fórmulas Fristonianas" class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>Fórmulas Fristonianas</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#formula1">Fórmula 1</a></li>
+                <li><a href="#formula2">Fórmula 2</a></li>
+                <li><a href="#formula3">Fórmula 3</a></li>
+                <li><a href="#formula4">Fórmula 4</a></li>
+                <li><a href="#formula5">Fórmula 5</a></li>
+                <li><a href="#referencias">Referencias</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Sección Hero -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Cinco Fórmulas Fristonianas</h1>
+                <p>Un recorrido profundo por las contribuciones científicas de Karl Friston, explorando cinco ecuaciones que han redefinido la neurociencia teórica y campos afines.</p>
+                <p class="authors">Una adaptación detallada del artículo de <span class="person">Thomas Parr, Giovanni Pezzulo, Rosalyn Moran, Maxwell Ramstead, Axel Constant, y Anjali Bhat</span>, en celebración del 65º aniversario de Karl Friston.</p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                
+                <!-- Introducción -->
+                <section id="introduccion" class="glassmorphism section" data-animate>
+                    <h2>Introducción: Un Viaje a través de la Neurobiología Moderna</h2>
+                    <p>Este documento se erige como una celebración de las monumentales contribuciones científicas de <span class="person">Karl Friston</span>. Para ello, hemos estructurado este análisis en torno a cinco de sus ecuaciones más influyentes, cada una un pilar que ilustra su impacto sin parangón en la neurociencia. Estas fórmulas trazan una cronología conceptual, comenzando con el uso de modelos generativos simples para la inferencia estadística en neuroimagen, transitando hacia la complejidad de los sistemas dinámicos no lineales, y culminando en una teoría unificada sobre cómo los modelos generativos de nuestro cerebro no solo interpretan el mundo, sino que también guían activamente nuestro comportamiento.</p>
+                    <p>El hilo conductor a lo largo de este viaje es el concepto de <span class="concept1">modelo generativo</span>: una descripción probabilística de cómo los datos observados son generados por causas ocultas. Veremos cómo esta idea evoluciona desde una herramienta para el análisis de datos hasta convertirse en una hipótesis fundamental sobre la función cerebral. En este recorrido, emergen temas recurrentes: la centralidad de la <span class="concept2">evidencia del modelo bayesiano</span> como el árbitro para comparar hipótesis, y la unificación de la percepción y la acción bajo un único imperativo computacional.</p>
+                </section>
+                
+                <!-- Fórmula 1 -->
+                <section id="formula1" class="glassmorphism section" data-animate>
+                    <h2>Fórmula 1: El Modelo Lineal General (MLG)</h2>
+                    <p>El punto de partida es el <span class="concept1">Modelo Lineal General (MLG)</span>, una piedra angular del análisis de datos en neuroimagen. Su aplicación en el análisis masivo univariado, donde se ajusta un modelo a cada vóxel del cerebro de forma independiente, es la base del <span class="concept2">Mapeo Estadístico Paramétrico (SPM)</span>. Esta metodología, originalmente desarrollada para Tomografía por Emisión de Positrones (PET) y ahora omnipresente en la Resonancia Magnética funcional (fMRI), revolucionó el campo al permitir a los investigadores crear "mapas" que muestran dónde en el cerebro ocurren cambios de actividad relacionados con una tarea o estímulo específico.</p>
+                    <p>La idea es tan elegante como potente: tratar cada punto del cerebro como un punto de datos y preguntarse: "¿La actividad en este punto específico se correlaciona con mi diseño experimental?". Al hacer esto para cientos de miles de vóxeles, se construye un mapa estadístico que revela la anatomía funcional subyacente a procesos cognitivos. Sin embargo, realizar tantas pruebas estadísticas simultáneamente infla el riesgo de falsos positivos. La solución de <span class="person">Friston</span> fue aplicar la <span class="concept1">Teoría de Campos Aleatorios</span> para establecer umbrales de significancia estadística que corrijan este problema, una innovación crucial para la validez de los resultados en neuroimagen.</p>
+                    
+                    <img src="https://i.imgur.com/k2A75N4.png" alt="Mapeo Estadístico Paramétrico" class="formula-image">
+                    
+                    <h3>La Ecuación del Modelo Lineal General</h3>
+                    <p>En su núcleo, el MLG es un <span class="concept1">modelo generativo</span> que postula una relación lineal entre lo que hacemos en un experimento y lo que medimos en el escáner. La ecuación es la siguiente:</p>
+                    <div class="math-display">$$Y = X\beta + \epsilon$$</div>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li><b>$Y$</b>: Representa los datos medidos. Es una matriz donde cada columna corresponde a un vóxel y cada fila a un punto en el tiempo. Es, en esencia, la película de la actividad cerebral.</li>
+                        <li><b>$X$</b>: La "matriz de diseño", el corazón del experimento. Cada columna representa una variable que hemos manipulado o medido (ej. "mostrar una cara", "escuchar un sonido") o una variable de confusión (ej. movimiento de la cabeza). Cada fila corresponde a un punto en el tiempo, indicando qué estaba sucediendo en cada momento.</li>
+                        <li><b>$\beta$</b>: Los parámetros del modelo o "pesos". Esta matriz contiene los valores que queremos descubrir. Cada elemento de $\beta$ cuantifica la fuerza de la relación entre una variable experimental (una columna en $X$) y la actividad en un vóxel específico (una columna en $Y$). Un valor alto significa una fuerte conexión.</li>
+                        <li><b>$\epsilon$</b>: El error o "ruido". Es una matriz que captura toda la variabilidad en los datos que no es explicada por nuestro modelo. Se asume que este ruido sigue una distribución normal con media cero.</li>
+                    </ul>
+                    <p>El objetivo es estimar los parámetros $\beta$ que mejor expliquen los datos $Y$. Esto se logra típicamente mediante métodos de máxima verosimilitud o mínimos cuadrados, que encuentran los valores de $\beta$ que hacen que los datos observados sean lo más probables posible. El resultado es un mapa de valores $\beta$, que luego se convierte en un mapa estadístico (como un mapa t o F) para la inferencia.</p>
+                    <div class="mermaid">
+                        graph TD;
+                            A["Datos Crudos de fMRI (Y)"] --> C{"Modelo Lineal General"};
+                            B["Diseño Experimental (X)"] --> C;
+                            C -- "Estimación" --> D["Mapa de Parámetros (β)"];
+                            D -- "Contraste Estadístico" --> E["Mapa Estadístico (SPM)"];
+                            E -- "Teoría de Campos Aleatorios" --> F["Corrección de Comparaciones Múltiples"];
+                            F -- "Inferencia" --> G["Activación Cerebral Significativa"];
+                        
+                            style C fill:#818cf8,stroke:#fff,stroke-width:2px;
+                            style G fill:#fbbf24,stroke:#333,stroke-width:2px;
+                    </div>
+                    <p>A pesar de su éxito, el MLG se basa en una suposición fundamental: la linealidad. Asume que la respuesta cerebral es una simple suma ponderada de las influencias experimentales. Esto ignora la rica dinámica no lineal de las interacciones neuronales. Esta limitación y el deseo de pasar de la "segregación funcional" (dónde) a la "integración funcional" (cómo se conectan las regiones) nos lleva a la siguiente fórmula.</p>
+                </section>
+
+                <!-- Fórmula 2 -->
+                <section id="formula2" class="glassmorphism section" data-animate>
+                    <h2>Fórmula 2: Modelado Causal Dinámico (MCD)</h2>
+                    <p>Para trascender la simple localización y entender cómo las redes cerebrales funcionan, necesitamos modelos que capturen la <span class="concept1">dinámica</span> (la evolución en el tiempo) y la <span class="concept2">causalidad</span>. El <span class="concept1">Modelado Causal Dinámico (MCD)</span> fue la respuesta. En lugar de ajustar datos a un modelo estadístico, el MCD ajusta modelos biofísicamente plausibles de interacciones neuronales a los datos. Esto representa un cambio fundamental: de preguntar "¿dónde?" a preguntar "¿cómo?". El MCD modela la <span class="concept1">conectividad efectiva</span>: la influencia dirigida que una población neuronal ejerce sobre otra.</p>
+                    <p>Metodológicamente, el MCD abandona el enfoque de máxima verosimilitud del MLG en favor de un marco de <span class="concept2">inferencia bayesiana</span>, específicamente la inferencia variacional. Esto es crucial por dos razones. Primero, permite incorporar conocimiento previo (priors) sobre los parámetros biológicos. Segundo, el proceso de inferencia no solo estima los parámetros, sino que también calcula la <span class="concept1">evidencia del modelo</span>. La evidencia es una medida de qué tan bien un modelo explica los datos, penalizando la complejidad innecesaria. Esto permite la comparación bayesiana de modelos: podemos formular hipótesis neurobiológicas como diferentes arquitecturas de red y dejar que los datos nos digan cuál es la más plausible.</p>
+
+                    <img src="https://i.imgur.com/GzB04oU.png" alt="Modelado Causal Dinámico" class="formula-image">
+
+                    <h3>Las Ecuaciones del Modelado Causal Dinámico</h3>
+                    <p>Un MCD se define por un par de ecuaciones acopladas: una para la dinámica neuronal no observada (estados ocultos) y otra para cómo estos estados generan los datos medidos.</p>
+                    <div class="math-display">$$\dot{x} = f(x, \theta)$$</div>
+                    <p>Esta es la ecuación de estado. Describe la tasa de cambio de los estados del sistema ($\dot{x}$), como la actividad neuronal promedio en diferentes poblaciones, como una función no lineal ($f$) del estado actual ($x$) y un conjunto de parámetros de conectividad ($\theta$). Estos parámetros representan las constantes de velocidad sináptica que determinan la fuerza y la naturaleza de las conexiones entre regiones.</p>
+                    <div class="math-display">$$y = g(x, \vartheta) + \epsilon$$</div>
+                    <p>Esta es la ecuación de observación. Vincula los estados neuronales ocultos ($x$) con los datos medidos ($y$) a través de una función de observación ($g$) y parámetros de observación ($\vartheta$). En fMRI, esta función modela la compleja cascada hemodinámica que transforma la actividad neuronal en la señal BOLD. En EEG/MEG, sería un "campo de plomo" que mapea las fuentes corticales a los sensores del cuero cabelludo.</p>
+                    <p>El desafío es invertir este modelo generativo. Dado $y$, queremos inferir los parámetros $\theta$ y $\vartheta$. En el enfoque variacional, esto se logra encontrando una distribución aproximada $q$ que minimice una cantidad llamada <span class="concept1">Energía Libre Variacional</span> ($F$):</p>
+                    <div class="math-display">$$q(\theta, \vartheta) = \arg\min_q F$$</div>
+                    <p>La energía libre $F$ es una cota superior de la sorpresa (evidencia del modelo negativa). Al minimizarla, forzamos a nuestra distribución aproximada $q$ a parecerse a la verdadera distribución posterior, y el valor mínimo de $F$ nos da una aproximación a la evidencia del modelo, permitiendo la comparación de hipótesis. Este concepto de energía libre se volverá central en el resto de nuestro viaje.</p>
+
+                    <div class="mermaid">
+                        graph TD;
+                            subgraph "Microcircuito Canónico";
+                                Input["Entrada Externa"] --> Exc["Poblaciones Excitatorias (Piramidales)"];
+                                Exc -- "Excitación" --> Inh["Poblaciones Inhibitorias (Interneuronas)"];
+                                Inh -- "Inhibición" --> Exc;
+                                Exc -- "Recurrencia" --> Exc;
+                            end;
+                        
+                            style Exc fill:#34d399,stroke:#fff,stroke-width:2px;
+                            style Inh fill:#f472b6,stroke:#fff,stroke-width:2px;
+                            style Input stroke:#fff,stroke-width:1px;
+                    </div>
+                </section>
+
+                <!-- Fórmula 3 -->
+                <section id="formula3" class="glassmorphism section" data-animate>
+                    <h2>Fórmula 3: Filtrado Generalizado</h2>
+                    <p>El <span class="concept1">filtrado generalizado</span> representa una sofisticación de la inferencia bayesiana que cierra la brecha entre el MCD y una teoría neurobiológica fundamental: la <span class="concept2">codificación predictiva</span>. Mientras que el MCD estándar es determinista, el mundo real es ruidoso y estocástico. El filtrado generalizado es un esquema para inferir los estados de sistemas dinámicos que son inherentemente ruidosos, optimizando la misma energía libre variacional, pero de una manera particular.</p>
+                    <p>Lo hace mediante un descenso de gradiente en un <span class="concept1">marco de referencia móvil</span>. Esto significa que el sistema no solo infiere el estado actual de una variable (su "posición"), sino también sus derivadas temporales: su velocidad, aceleración, tirón, etc. En esencia, el cerebro modela una trayectoria local de los estados del mundo. Esta representación en "coordenadas generalizadas de movimiento" permite al sistema manejar procesos de ruido coloreado (autocorrelacionado), que es mucho más realista para los sistemas biológicos que el ruido blanco simple.</p>
+                    
+                    <img src="https://i.imgur.com/k9b8xIu.png" alt="Filtrado Generalizado" class="formula-image">
+
+                    <h3>La Ecuación del Filtrado Generalizado</h3>
+                    <p>La dinámica de las expectativas o creencias ($\tilde{\mu}$) sobre los estados ocultos evoluciona para minimizar la energía libre. Esta dinámica se describe como:</p>
+                    <div class="math-display">$$\dot{\tilde{\mu}} = D\tilde{\mu} - \nabla F$$</div>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li><b>$\tilde{\mu}$</b>: Las creencias (la media de la distribución $q$) sobre las causas de los datos, expresadas en coordenadas generalizadas de movimiento. El vector contiene estimaciones de la posición, velocidad, aceleración, etc.</li>
+                        <li><b>$D$</b>: Una matriz de operador diferencial. Su función es simple pero crucial: desplaza los elementos del vector $\tilde{\mu}$, de modo que la creencia sobre la velocidad actualiza la creencia sobre la posición, la aceleración actualiza la velocidad, y así sucesivamente. Esto asegura que las creencias fluyan suavemente en el tiempo.</li>
+                        <li><b>$\nabla F$</b>: El gradiente de la energía libre. Este es el término correctivo. Impulsa las creencias en la dirección que reduce más rápidamente la energía libre (es decir, que mejor explica los datos sensoriales).</li>
+                    </ul>
+                    <p>La revelación clave es que, bajo la aproximación de Laplace (asumiendo que la energía libre es aproximadamente cuadrática), esta ecuación se simplifica y se vuelve formalmente idéntica a los esquemas de <span class="concept1">codificación predictiva</span>. Esta teoría postula que el cerebro es una máquina de predicción. Las áreas superiores generan predicciones de arriba hacia abajo (top-down) sobre la actividad en las áreas inferiores. Estas predicciones se comparan con la actividad real, y solo la discrepancia, el <span class="concept2">error de predicción</span>, se propaga hacia arriba (bottom-up). Este proceso actualiza continuamente las creencias (o "modelo del mundo") para minimizar los errores de predicción futuros.</p>
+                    <p>Esta formulación no es solo una analogía matemática; tiene un asombroso correlato neuroanatómico. Se cree que las células piramidales profundas de la neocorteza transmiten las predicciones hacia abajo, mientras que las células piramidales superficiales calculan y transmiten los errores de predicción hacia arriba. El filtrado generalizado proporciona una justificación desde primeros principios para este flujo de mensajes asimétrico y jerárquico.</p>
+
+                    <div class="mermaid">
+                        graph TD;
+                           subgraph "Jerarquía de Codificación Predictiva";
+                               L2_P["Nivel Superior (Creencias Abstractas)"] -- "Predicción (Top-Down)" --> L1_P["Nivel Inferior (Creencias Sensoriales)"];
+                               L1_P -- "Predicción (Top-Down)" --> S["Entrada Sensorial"];
+                               S -- "Comparación" --> PE1["Error de Predicción"];
+                               PE1 -- "Señal de Error (Bottom-Up)" --> L1_P;
+                               L1_P -- "Comparación" --> PE2["Error de Predicción"];
+                               PE2 -- "Señal de Error (Bottom-Up)" --> L2_P;
+                           end;
+                        
+                            style L2_P fill:#818cf8,stroke:#fff,stroke-width:2px;
+                            style L1_P fill:#6366f1,stroke:#fff,stroke-width:2px;
+                            style PE1 fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style PE2 fill:#fbbf24,stroke:#333,stroke-width:2px;
+                    </div>
+                </section>
+                
+                <!-- Fórmula 4 -->
+                <section id="formula4" class="glassmorphism section" data-animate>
+                    <h2>Fórmula 4: El Principio de Energía Libre (PEL)</h2>
+                    <p>Con el <span class="concept1">Principio de Energía Libre (PEL)</span>, la energía libre trasciende su papel en la inferencia para convertirse en una teoría fundamental sobre la existencia misma de los sistemas autoorganizados, desde una célula hasta un ser humano. El PEL establece que cualquier sistema que se mantiene en un estado de no equilibrio con su entorno (es decir, cualquier cosa que esté "viva" o exista) debe actuar de una manera que minimice su energía libre variacional. Este principio se deriva de la dinámica de sistemas separados de su entorno por un límite estadístico conocido como <span class="concept2">manta de Markov</span>.</p>
+                    <p>La manta de Markov particiona los estados de un sistema en cuatro conjuntos: estados internos ($\mu$), estados sensoriales ($s$), estados activos ($a$) y estados externos ($\eta$). Los estados internos y externos no interactúan directamente; toda su comunicación está mediada por la manta, compuesta por los estados sensoriales (que influyen en los internos) y los activos (que influyen en los externos). El PEL afirma que tanto los estados internos (percepción, aprendizaje) como los activos (acción) evolucionan para minimizar la energía libre de los estados sensoriales. Esto conduce a una visión unificada y profundamente encarnada de la mente:</p>
+                    <ol class="list-decimal list-inside my-4 space-y-2">
+                        <li><b>Percepción:</b> Es el proceso de optimizar los estados internos ($\mu$) para minimizar la energía libre. Esto equivale a cambiar nuestras creencias para que se ajusten mejor a nuestros datos sensoriales. Es la inferencia bayesiana que ya hemos visto.</li>
+                        <li><b>Acción:</b> Es el proceso de optimizar los estados activos ($a$) para minimizar la energía libre. Esto equivale a actuar sobre el mundo para que nuestros datos sensoriales se ajusten mejor a las predicciones de nuestro modelo interno.</li>
+                    </ol>
+                    <p>Esta segunda vía es revolucionaria. Sugiere que la acción no es el resultado de un cálculo complejo sobre recompensas, sino un reflejo para hacer que el mundo se conforme a nuestras predicciones. Un comando motor, en esta visión, es simplemente una <span class="concept1">predicción propioceptiva</span> de que nuestro cuerpo estará en una nueva configuración. El cuerpo se mueve para hacer esa predicción realidad, minimizando así el error de predicción propioceptivo.</p>
+                    
+                    <img src="https://i.imgur.com/eBwF4oR.png" alt="Principio de Energía Libre" class="formula-image">
+
+                    <h3>Las Ecuaciones del Principio de Energía Libre</h3>
+                    <p>El principio establece que tanto la acción como la percepción son dos caras de la misma moneda: un descenso de gradiente sobre la energía libre F.</p>
+                    <div class="math-display">
+                        $$
+                        \left. \begin{aligned}
+                            a &= \arg\min_a F \\
+                            q_\mu &= \arg\min_q F
+                        \end{aligned} \right\} \implies F \approx \mathfrak{I}(s)
+                        $$
+                    </div>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li>La acción ($a$) y las creencias internas (parametrizadas por $\mu$ en la distribución $q_\mu$) se ajustan para encontrar el mínimo de la energía libre ($F$).</li>
+                        <li>Cuando la energía libre está en su mínimo, se aproxima a la <span class="concept1">auto-información</span> o <span class="concept2">sorpresa</span> ($\mathfrak{I}(s)$), definida como el logaritmo negativo de la probabilidad de los estados sensoriales, $P(s)$.</li>
+                    </ul>
+                    <p>Por lo tanto, minimizar la energía libre es equivalente a minimizar la sorpresa a largo plazo. Los sistemas vivos actúan y perciben para evitar sorpresas y mantenerse en los estados fenotípicos que esperan ocupar. La Manta de Markov es la clave que permite a un sistema inferir causas externas sin tener acceso directo a ellas, utilizando únicamente sus propios estados sensoriales y activos.</p>
+                    
+                    <div class="mermaid">
+                        graph TD;
+                            subgraph "Partición de la Manta de Markov";
+                                mu["Estados Internos (μ)<br>Creencias, memoria"];
+                                s["Estados Sensoriales (s)<br>Percepción"];
+                                a["Estados Activos (a)<br>Acción"];
+                                eta["Estados Externos (η)<br>El Mundo"];
+                            
+                                eta -- "Causa" --> s;
+                                a -- "Causa" --> s;
+                                s -- "Influencia" --> mu;
+                                mu -- "Influencia" --> a;
+                            end;
+                        
+                            style mu fill:#818cf8,stroke:#fff,stroke-width:2px;
+                            style a fill:#6366f1,stroke:#fff,stroke-width:2px;
+                            style s fill:#34d399,stroke:#fff,stroke-width:2px;
+                            style eta fill:#fbbf24,stroke:#333,stroke-width:2px;
+                    </div>
+                </section>
+                
+                <!-- Fórmula 5 -->
+                <section id="formula5" class="glassmorphism section" data-animate>
+                    <h2>Fórmula 5: Inferencia Activa</h2>
+                    <p>La <span class="concept1">inferencia activa</span> es la aplicación del Principio de Energía Libre a la planificación y la toma de decisiones. Mientras que el PEL explica la acción reflexiva momento a momento, la inferencia activa aborda cómo elegimos secuencias de acciones (o "políticas") que se desarrollan en el futuro. Lo hace tratando la planificación como un problema de <span class="concept2">inferencia y selección de modelos</span>: cada política posible es un modelo diferente de cómo podría ser el futuro, y el agente selecciona la política (el modelo) que cree que es más probable que siga.</p>
+                    <p>No podemos minimizar la energía libre de observaciones futuras porque aún no han ocurrido. En su lugar, minimizamos la <span class="concept1">energía libre esperada</span> ($G$). Esta cantidad ingeniosa evalúa las políticas futuras y tiene una descomposición natural que resuelve uno de los dilemas más antiguos en la toma de decisiones: el equilibrio entre exploración y explotación.</p>
+                    
+                    <img src="https://i.imgur.com/k2j1mUf.png" alt="Inferencia Activa" class="formula-image">
+                    
+                    <h3>La Ecuación de la Inferencia Activa</h3>
+                    <p>La sorpresa (o improbabilidad) de seguir una política particular, $\pi$, es proporcional a su energía libre esperada, $G(\pi)$. Por lo tanto, el agente selecciona la política que minimiza $G$.</p>
+                    <div class="math-display">$$\mathfrak{I}(\pi) \propto G(\pi)$$</div>
+                    <p>La energía libre esperada se puede descomponer en dos términos con un significado intuitivo y profundo:</p>
+                    <div class="math-display">$$G(\pi) = \underbrace{\mathbb{E}_q[D_{KL}(q(s|\pi) || P(s))]}_{\text{Valor Pragmático (Explotación)}} + \underbrace{\mathbb{E}_q[H(q(s|\pi)) - H(q(s|\pi, \theta))]}_{\text{Valor Epistémico (Exploración)}}$$</div>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li><b>Valor Pragmático (Explotación):</b> Este término mide qué tan cerca se espera que estén los resultados sensoriales ($s$) de nuestros resultados preferidos o metas (codificados en la distribución a priori $P(s)$). Minimizar este término significa elegir acciones que nos lleven a estados valiosos o deseados. Es la búsqueda de recompensas.</li>
+                        <li><b>Valor Epistémico (Exploración):</b> Este término cuantifica la cantidad de información que esperamos ganar sobre las causas ocultas del mundo ($\theta$) al seguir una política. Es la reducción esperada de la incertidumbre. Minimizar este término significa elegir acciones que resuelvan la ambigüedad y nos permitan aprender sobre el entorno. Es la curiosidad matemática.</li>
+                    </ul>
+                    <p>Por lo tanto, la inferencia activa postula que toda decisión intencionada es una inferencia sobre qué hacer a continuación, donde "lo mejor" se define como aquello que minimiza la sorpresa futura esperada. Esta sorpresa se puede reducir yendo a lugares predecibles y preferidos (explotación) o yendo a lugares informativos para hacer el mundo más predecible (exploración). Esto dota al comportamiento de un propósito y una apariencia de sintiencia, todo derivado de un único imperativo: la minimización de la energía libre.</p>
+
+                    <div class="mermaid">
+                        stateDiagram-v2
+                            [*] --> Planificación
+                            Planificación --> Decisión: "Evaluar políticas futuras"
+                            Decisión --> Acción: "Seleccionar política con G mínimo"
+                            Acción --> Resultado
+                            Resultado --> Aprendizaje: "Actualizar Creencias"
+                            Aprendizaje --> Planificación
+                            
+                            note right of Decisión
+                                Minimizar G implica equilibrar:
+                                Valor Pragmático (Explotación)
+                                y Valor Epistémico (Exploración)
+                            end note
+                    </div>
+                </section>
+                
+                <!-- Conclusión -->
+                <section id="conclusion" class="glassmorphism section" data-animate>
+                    <h2>Conclusión: De los Datos a la Sintiencia</h2>
+                    <p>El recorrido a través de estas cinco fórmulas nos ha transportado en un viaje intelectual extraordinario: desde un método estadístico para analizar píxeles en imágenes cerebrales hasta una teoría de primeros principios que aspira a explicar el comportamiento de cualquier sistema vivo. Hemos visto una progresión conceptual clara: del <span class="concept2">SPM</span> y el <span class="concept2">MCD</span> como herramientas para que el neurocientífico modele el cerebro, a la <span class="concept1">codificación predictiva</span>, el <span class="concept1">Principio de Energía Libre</span> y la <span class="concept1">Inferencia Activa</span> como teorías sobre cómo el propio cerebro se modela a sí mismo y a su mundo.</p>
+                    <p>Es difícil sobrestimar el impacto que cada uno de estos avances ha tenido, no solo en la neurociencia, sino también en la psiquiatría, la inteligencia artificial, la filosofía de la mente y la biología teórica. Estas ecuaciones han proporcionado a innumerables científicos un lenguaje y un conjunto de herramientas para abordar problemas de una complejidad abrumadora. Más que meras fórmulas, representan una forma de pensar sobre la mente, la vida y la inteligencia que es a la vez elegante, unificadora y profundamente poderosa. Son, en esencia, una celebración adecuada de las contribuciones inigualables que <span class="person">Karl Friston</span> ha hecho a nuestra comprensión del cerebro.</p>
+                </section>
+
+
+                <!-- Referencias -->
+                <section id="referencias" class="glassmorphism section" data-animate>
+                    <h2>Referencias</h2>
+                    <ul class="list-disc list-inside space-y-2 text-sm">
+                        <li><span class="person">Parr, T., et al.</span> (2025). Five Fristonian Formulae. <i>Entropy, 27</i>, 944.</li>
+                        <li><span class="person">Friston, K.J., et al.</span> (1994). Statistical parametric maps in functional imaging: A general linear approach. <i>Hum. Brain Mapp., 2</i>, 189–210.</li>
+                        <li><span class="person">Friston, K.J., Harrison, L., & Penny, W.</span> (2003). Dynamic causal modelling. <i>NeuroImage, 19</i>, 1273–1302.</li>
+                        <li><span class="person">Friston, K., & Kiebel, S.</span> (2009). Predictive coding under the free-energy principle. <i>Philos. Trans. R. Soc. B Biol. Sci., 364</i>, 1211.</li>
+                        <li><span class="person">Friston, K.</span> (2009). The free-energy principle: a rough guide to the brain? <i>Trends Cogn. Sci., 13</i>, 293–301.</li>
+                        <li><span class="person">Friston, K., et al.</span> (2017). Active Inference: A Process Theory. <i>Neural Comput., 29</i>, 1–49.</li>
+                        <li><span class="person">Parr, T., Pezzulo, G., & Friston, K.J.</span> (2022). <i>Active Inference: The Free Energy Principle in Mind, Brain, and Behavior</i>. MIT Press.</li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+        <footer class="footer" id="contacto">
+            <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+        </footer>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicialización de Three.js Background
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+            } else {
+                console.error("Three.js no está cargado");
+            }
+
+            setupNavigation();
+            setupScrollAnimations();
+            
+            // Renderizado de diagramas Mermaid
+            mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
+                'primaryColor': '#111827',
+                'primaryTextColor': '#e5e7eb',
+                'lineColor': '#818cf8',
+                'nodeBorder': '#818cf8',
+                'mainBkg': '#111827',
+                'textColor': '#e5e7eb'
+            }});
+
+        });
+
+        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById("bg-canvas"),
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 250;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error al inicializar Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points) {
+                points.rotation.y += 0.0003;
+                points.rotation.x += 0.0002;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- CÓDIGO DE NAVEGACIÓN ---
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.body.classList.toggle('menu-open');
+            });
+
+            navMenu.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                   document.body.classList.remove('menu-open');
+                }
+            });
+        }
+
+        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        
+                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid, ul, .authors, .math-display, .formula-image');
+                        elementsToAnimate.forEach((el, index) => {
+                           el.style.transitionDelay = `${index * 100}ms`;
+                        });
+
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+    </script>
+</body>
+</html>
+
+
