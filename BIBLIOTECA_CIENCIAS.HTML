@@ -713,16 +713,15 @@
                 
                 const width = container.clientWidth;
                 const height = container.clientHeight;
-                const pieMargin = { top: 20, right: 20, bottom: 20, left: 20 };
-                const pieWidth = width - pieMargin.left - pieMargin.right;
-                const pieHeight = height - pieMargin.top - pieMargin.bottom;
-                const pieRadius = Math.min(pieWidth, pieHeight) / 2 - 20;
-
+                
+                const isMobile = width <= 480;
+                const pieRadius = Math.min(width, height) / 2 - (isMobile ? 30 : 60);
+                
                 pieSvg = d3.select("#pie-chart").append("svg").attr("width", "100%").attr("height", "100%");
                 const pieG = pieSvg.append("g").attr("transform", `translate(${width / 2},${height / 2})`);
                 const pie = d3.pie().value(d => d.count).sort((a, b) => d3.ascending(a.genre, b.genre));
                 const arc = d3.arc().innerRadius(pieRadius * 0.5).outerRadius(pieRadius);
-                const outerArc = d3.arc().innerRadius(pieRadius * 0.9).outerRadius(pieRadius * 0.9);
+                const outerArc = d3.arc().innerRadius(pieRadius * 0.9).outerRadius(pieRadius * 1.1);
 
                 const arcsData = pie(genreData);
                 const arcs = pieG.selectAll(".arc").data(arcsData).join("g").attr("class", "arc");
@@ -731,13 +730,19 @@
                     const pos = outerArc.centroid(d);
                     const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
                     const side = midAngle < Math.PI ? 1 : -1;
-                    pos[0] = pieRadius * (midAngle < Math.PI ? 1.2 : -1.2);
-                    pos[1] += (midAngle > Math.PI/2 && midAngle < 3*Math.PI/2) ? 10 : -10;
+                    
+                    if (isMobile) {
+                        pos[0] = pieRadius * (midAngle < Math.PI ? 1.05 : -1.05);
+                    } else {
+                        pos[0] = pieRadius * (midAngle < Math.PI ? 1.2 : -1.2);
+                    }
+                    
                     let adjustedY = pos[1];
                     for (let j = 0; j < labelPositions.length; j++) {
                         const prevPos = labelPositions[j];
-                        if (Math.abs(prevPos.y - adjustedY) < 20 && prevPos.side === side) {
-                            adjustedY += (adjustedY > prevPos.y ? 20 : -20);
+                        const offset = isMobile ? 15 : 20;
+                        if (Math.abs(prevPos.y - adjustedY) < offset && prevPos.side === side) {
+                            adjustedY += (adjustedY > prevPos.y ? offset : -offset);
                         }
                     }
                     labelPositions.push({ y: adjustedY, side });
@@ -750,20 +755,22 @@
                     .attr("stroke", primaryGlow)
                     .on("click", (event, d) => updateGenreFilter(d.data.genre));
                 
-                arcs.append("text").attr("transform", d => `translate(${d.adjustedPos})`).attr("dy", ".35em")
+                arcs.append("text")
+                    .attr("transform", d => `translate(${d.adjustedPos})`)
+                    .attr("dy", ".35em")
                     .style("text-anchor", d => (d.startAngle + (d.endAngle - d.startAngle) / 2) < Math.PI ? "start" : "end")
-                    .text(d => `${d.data.genre} (${((d.data.count / totalBooks) * 100).toFixed(1)}%)`)
+                    .text(d => {
+                        const percentage = ((d.data.count / totalBooks) * 100).toFixed(1);
+                        return isMobile ? `${d.data.genre.slice(0, 5)}... (${percentage}%)` : `${d.data.genre} (${percentage}%)`;
+                    })
                     .attr("fill", primaryText)
-                    .each(function(d) {
-                        const bbox = this.getBBox();
-                        const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
-                        d3.select(this).attr("dx", midAngle < Math.PI ? 5 : -5);
-                    });
+                    .style("font-size", isMobile ? "9px" : "10px");
+                
                 arcs.append("polyline").attr("points", d => {
                     const pos = arc.centroid(d);
                     const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
-                    const offset = pieRadius * (midAngle < Math.PI ? 1.2 : -1.2);
-                    return [arc.centroid(d), outerArc.centroid(d), [offset, d.adjustedPos[1]]];
+                    const offset = pieRadius * (midAngle < Math.PI ? 1.05 : -1.05); // Use smaller offset for mobile
+                    return [arc.centroid(d), outerArc.centroid(d), [d.adjustedPos[0], d.adjustedPos[1]]];
                 }).attr("stroke", primaryText).attr("fill", "none");
             }
 
