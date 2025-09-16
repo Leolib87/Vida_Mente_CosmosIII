@@ -721,17 +721,13 @@
                 const pieG = pieSvg.append("g").attr("transform", `translate(${width / 2},${height / 2})`);
                 const pie = d3.pie().value(d => d.count).sort((a, b) => d3.ascending(a.genre, b.genre));
                 const arc = d3.arc().innerRadius(pieRadius * 0.5).outerRadius(pieRadius);
-
-                // Adjust outerArc and labels for mobile
-                const mobileOuterArc = d3.arc().innerRadius(pieRadius * 1).outerRadius(pieRadius * 1.1);
-                const desktopOuterArc = d3.arc().innerRadius(pieRadius * 1).outerRadius(pieRadius * 1.05);
-
+                const outerArc = d3.arc().innerRadius(pieRadius * 1).outerRadius(pieRadius * 1.05);
                 const arcsData = pie(genreData);
 
                 // Pre-calculate positions for labels to avoid overlap
                 const labelPositions = [];
                 arcsData.forEach(d => {
-                    const pos = isMobile ? mobileOuterArc.centroid(d) : desktopOuterArc.centroid(d);
+                    const pos = isMobile ? outerArc.centroid(d) : outerArc.centroid(d);
                     const midAngle = d.startAngle + (d.endAngle - d.startAngle) / 2;
                     
                     if (!isMobile) {
@@ -748,21 +744,6 @@
                                 adjustedY += (adjustedY > prevPos.y ? 20 : -20);
                             }
                         }
-                    } else {
-                        // Mobile logic for stacking labels
-                        let newY = pos[1];
-                        let overlaps = true;
-                        while(overlaps){
-                            overlaps = false;
-                            for (let j = 0; j < labelPositions.length; j++){
-                                const prevPos = labelPositions[j];
-                                if (Math.abs(prevPos.y - newY) < 15) {
-                                    newY += (newY > prevPos.y ? 15 : -15);
-                                    overlaps = true;
-                                }
-                            }
-                        }
-                        adjustedY = newY;
                     }
                     
                     labelPositions.push({ y: adjustedY, side });
@@ -792,8 +773,7 @@
                 
                 arcs.append("polyline").attr("points", d => {
                     const pos = arc.centroid(d);
-                    const pos2 = isMobile ? mobileOuterArc.centroid(d) : desktopOuterArc.centroid(d);
-                    return [pos, pos2, d.adjustedPos];
+                    return [arc.centroid(d), outerArc.centroid(d), d.adjustedPos];
                 }).attr("stroke", primaryText).attr("fill", "none");
             }
 
