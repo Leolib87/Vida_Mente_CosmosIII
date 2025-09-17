@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis del Cráter Jezero | O.C.V.M. Plantilla</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        /* Variables de CSS para colores y fuentes */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;    /* Rosa para nombres de personas */
+        }
+
+        /* Estilos generales para el cuerpo de la página */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+            text-align: justify;
+        }
+        p {
+            text-align: justify;
+        }
+
+        /* Canvas de fondo con animación Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        /* Estilo de glassmorphism para secciones y navegación */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+
+        /* Sección del héroe o cabecera principal */
+        .hero {
+            min-height: 60vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 7vw, 4.5rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Contenedor principal para el contenido */
+        .main-container { 
+            width: 100%;
+            max-width: 100%; /* El contenedor usa todo el ancho */
+            margin: 0 auto; 
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content {
+            pointer-events: auto;
+        }
+
+        main p, .footer p {
+            user-select: text;
+            cursor: default;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        /* Animación de aparición para las secciones con scroll */
+        .section h2, .section h3, .section p, .mermaid, .section ul, .section .authors {
+             opacity: 0;
+             transform: translateY(20px);
+             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible p, .section.is-visible .mermaid, .section.is-visible ul, .section.is-visible .authors, .section.is-visible h3 {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
+        
+        /* Clases para colorear palabras y conceptos */
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .concept2 { color: var(--concept-color-2); font-weight: 500; }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; }
+
+        /* Pie de página */
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        /* Estilo para los diagramas de Mermaid */
+        .mermaid {
+            margin: 2rem auto;
+            display: flex; /* Usar flexbox para centrar */
+            justify-content: center; /* Centrar horizontalmente */
+            align-items: center; /* Centrar verticalmente */
+            width: 100%;
+            max-width: 900px;
+        }
+        
+        /* Media queries para dispositivos móviles */
+        @media (max-width: 768px) {
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+            body.menu-open .nav-container {
+                transform: translateY(0);
+            }
+
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo con animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>O.C.V.M.</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#inicio">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                    Inicio</a></li>
+                <li><a href="#seccion1">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                    Misión y Contexto</a></li>
+                <li><a href="#seccion2">
+                     <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12A2.25 2.25 0 0020.25 14.25V3M3.75 20.25h16.5M3.75 12h16.5m-16.5 4.5h16.5m-16.5-8.25h16.5" /></svg>
+                    Observaciones</a></li>
+                <li><a href="#seccion4">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" /></svg>
+                    Nódulos y Frentes de Reacción</a></li>
+                <li><a href="#seccion5">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.05 4.275a2.25 2.25 0 0 1 3.9 0l2.1 4.25a2.25 2.25 0 0 1 1.669 2.53l-3.358 10.075a2.25 2.25 0 0 1-4.148 0L3.28 11.055a2.25 2.25 0 0 1 1.67-2.53l2.1-4.25ZM15.75 10.5a2.25 2.25 0 0 1-2.25 2.25h-3a2.25 2.25 0 0 1-2.25-2.25V7.5a2.25 2.25 0 0 1 2.25-2.25h3a2.25 2.25 0 0 1 2.25 2.25v3Z" /></svg>
+                    Mecanismos</a></li>
+                <li><a href="#referencias">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                    Referencias</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Sección Hero -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Asociaciones Minerales y Orgánicas Impulsadas por Reacciones Redox en el Cráter Jezero, Marte</h1>
+                <p>Un análisis detallado de las rocas sedimentarias de la formación "Bright Angel" revela procesos redox post-deposicionales que involucran carbono orgánico y la formación de minerales de hierro, fósforo y azufre, abriendo interrogantes sobre la habitabilidad y posibles biofirmas.</p>
+                <p class="authors">Por <span class="person">Joel A. Hurowitz</span>, <span class="person">M. M. Tice</span>, <span class="person">A. C. Allwood</span> y más de 50 colaboradores.</p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                
+                <!-- Sección 1 -->
+                <section id="seccion1" class="glassmorphism section" data-animate>
+                    <h2>Misión y Contexto Geológico</h2>
+                    <p>La misión Mars 2020 de la NASA, con su rover <span class="concept1">Perseverance</span>, tiene como objetivo principal explorar el cráter Jezero para caracterizar sus procesos geológicos, evaluar su habitabilidad pasada, buscar signos de vida antigua y recolectar muestras para un futuro retorno a la Tierra. El rover está equipado con un sofisticado conjunto de instrumentos, como <span class="person">PIXL</span> (litografía de rayos X), <span class="person">SHERLOC</span> (espectroscopía Raman y luminiscencia) y <span class="person">SuperCam</span> (espectroscopía láser y visible/infrarroja), que le permiten analizar la textura, la composición elemental y la mineralogía de las rocas a escala milimétrica.</p>
+                    <p>Perseverance ha investigado tres terrenos geológicos principales en Jezero: <strong>(1)</strong> el suelo del cráter, compuesto por rocas ígneas alteradas por agua; <strong>(2)</strong> el Abanico Occidental, una secuencia de rocas sedimentarias depositadas en un antiguo sistema delta-lago; y <strong>(3)</strong> la Unidad de Margen, una secuencia rica en olivino y carbonato. Este estudio se centra en un conjunto de rocas expuestas en <span class="concept2">Neretva Vallis</span>, el antiguo canal fluvial que alimentaba el Abanico Occidental. Dentro de este valle, el rover investigó un afloramiento distintivo de tonos claros conocido informalmente como la <span class="concept1">formación "Bright Angel"</span>, que representa un entorno geológico único y prometedor para la astrobiología.</p>
+                    
+                    <div class="mermaid">
+                        graph TD
+                            subgraph "Estrategia de Exploración del Rover Perseverance"
+                                A["Aterrizaje en el Suelo del Cráter"] -- "Análisis de rocas ígneas alteradas" --> B["Exploración del Abanico Occidental"];
+                                B -- "Estudio de sedimentos deltaicos y lacustres" --> C["Investigación de la Unidad de Margen"];
+                                C -- "Análisis de olivino y carbonatos" --> D["Entrada a Neretva Vallis"];
+                                D -- "Seguimiento del antiguo canal fluvial" --> E{"Foco: Formación 'Bright Angel'"};
+                                E -- "Toma de muestra 'Sapphire Canyon'" --> F["Descubrimiento de Biofirmas Potenciales"];
+                            end
+                            style A fill:#6366f1,stroke:#fff,stroke-width:2px;
+                            style E fill:#fbbf24,stroke:#333,stroke-width:3px,color:#000;
+                            style F fill:#f472b6,stroke:#fff,stroke-width:2px;
+                            style B fill:#34d399,stroke:#333,stroke-width:2px;
+                            style C fill:#34d399,stroke:#333,stroke-width:2px;
+                    </div>
+
+                    <h3>La Formación Bright Angel</h3>
+                    <p>La formación Bright Angel consiste en bloques de aproximadamente un metro de escala, fracturados por la meteorización física. Las observaciones del radar de penetración terrestre (RIMFAX) sugieren que esta formación podría yacer estratigráficamente por encima de la Unidad de Margen. Los afloramientos muestran una compleja diversidad de texturas, incluyendo intervalos masivos, otros con grandes <span class="concept2">rasgos nodulares</span> (de hasta varios centímetros), y rocas estratificadas cortadas por venas y fracturas mineralizadas de tonos claros. Al otro lado del valle, en el área de "Masonic Temple", se encuentran rocas similares, incluyendo <span class="concept1">conglomerados</span> mal clasificados con cantos rodados de hasta varios centímetros, lo que indica una deposición en un entorno con corrientes de alta energía, posiblemente flujos de detritos o corrientes fluviales rápidas.</p>
+                </section>
+
+                <!-- Sección 2 -->
+                <section id="seccion2" class="glassmorphism section" data-animate>
+                    <h2>Observaciones Petrográficas y Detección de Orgánicos</h2>
+                    <p>A pesar de la diversidad de texturas, todas las rocas de la formación Bright Angel contienen un componente de grano fino, o facies, que constituye la mayor parte de su volumen. Los granos individuales son extremadamente pequeños (diámetro ≤30-110 μm), lo que clasifica a esta facies como <span class="concept1">lodolita (mudstone)</span>. Los análisis espectrales indican que estas lodolitas son ricas en $SiO_2$, $Al_2O_3$ y FeO, y están débilmente hidratadas. Las fases candidatas incluyen arcillas filosilicatadas y sílice opalina, junto con sulfato de calcio, probablemente como <span class="concept2">basanita</span> ($CaSO_{4}\cdot0.5H_{2}O$).</p>
+                    <p>Un hallazgo crucial fue la detección de <span class="concept1">materia orgánica</span> en las lodolitas del área de Bright Angel, específicamente en los objetivos "Cheyava Falls", "Walhalla Glades" y "Apollo Temple". Esta detección se realizó con el instrumento <span class="person">SHERLOC</span>, que identificó una "banda G" característica en los espectros Raman alrededor de los 1600 cm⁻¹, asociada a carbono orgánico. En contraste, no se detectó esta señal en el área de Masonic Temple, que presenta una mayor oxidación. El instrumento SuperCam también detectó una fuerte fluorescencia de fondo en el espectro Raman, consistente con la presencia de materia orgánica, aunque no es una prueba concluyente por sí misma.</p>
+
+                    <div class="mermaid">
+                        graph LR
+                            subgraph "Análisis de la Lodolita de Bright Angel"
+                                A(Matriz de Lodolita) -- "Composición Principal" --> B["<br><b>Rica en:</b><br>- SiO₂ (Sílice)<br>- Al₂O₃ (Alúmina)<br>- FeO (Hierro)"];
+                                A -- "Fases Minerales" --> C["<br><b>Contiene:</b><br>- Arcillas/Sílice Opalina<br>- Sulfato de Calcio (Basanita)<br>- Granos detríticos (Olivino, Carbonato)"];
+                                A -- "Análisis Espectral" --> D{Detección de Materia Orgánica};
+                                D -- "Instrumento SHERLOC" --> E["Señal Raman 'Banda G'<br><i>(en Cheyava Falls, Apollo Temple)</i>"];
+                                D -- "Instrumento SuperCam" --> F["Fuerte Fluorescencia de Fondo<br><i>(Consistente con orgánicos)</i>"];
+                            end
+                            style A fill:#818cf8,stroke:#fff,stroke-width:2px;
+                            style D fill:#fbbf24,stroke:#333,stroke-width:3px,color:#000;
+                            style E fill:#f472b6,stroke:#fff,stroke-width:2px;
+                            style F fill:#f472b6,stroke:#fff,stroke-width:2px;
+                    </div>
+                    
+                    <h3>Composición Elemental y Mineralogía</h3>
+                    <p>Los análisis de microfluorescencia de rayos X (XRF) del instrumento <span class="person">PIXL</span> confirmaron que la lodolita es rica en sílice, alúmina y hierro, y pobre en magnesio y manganeso. Estas características sugieren que el sedimento proviene de una fuente que sufrió una intensa <span class="concept2">meteorización química oxidativa</span>. Las rocas también contienen granos detríticos de arena de olivino y carbonato de Fe-Mg, probablemente erosionados de la adyacente Unidad de Margen. Los análisis de difracción de rayos X muestran que la lodolita y los sulfatos de calcio son predominantemente microcristalinos o no difractantes, con dominios cristalinos muy pequeños (menores a 40-60 µm), lo que descarta un metamorfismo de contacto a altas temperaturas y apoya un entorno de <span class="concept1">baja temperatura</span> para la precipitación de yeso (posteriormente deshidratado a basanita).</p>
+                </section>
+                
+                <section id="seccion3" class="glassmorphism section" data-animate>
+                    <h2>Procedencia y Ambientes Deposicionales</h2>
+                    <p>Las observaciones de la formación Bright Angel son consistentes con su interpretación como lodolitas depositadas por decantación en suspensión en un cuerpo de agua, formando lechos masivos y estratificados. La sistemática de los elementos mayores y las propiedades espectroscópicas indican que la fuente de la lodolita fue <span class="concept1">químicamente meteorizada y oxidada</span>, resultando en un enriquecimiento de Si, Al y $Fe^{3+}$ y un empobrecimiento de Mg y Mn. Estas características son distintas a las observadas en las rocas sedimentarias del Abanico Occidental, que muestran poca o ninguna fraccionación de Fe con respecto a Mg o Mn, indicando que se formaron en condiciones anóxicas.</p>
+                    <p>En el contacto con la Unidad de Margen, se observan capas interestratificadas que contienen tanto lodolita de grano fino como capas de grano grueso con olivino. También se observan litologías mal clasificadas ricas en lodo que contienen olivino y carbonato. La presencia de conglomerados en el área de Masonic Temple indica variaciones significativas en las velocidades de las corrientes. Por lo tanto, interpretamos que la formación Bright Angel se formó a partir de una compleja interacción de procesos sedimentarios que incluyeron <span class="concept2">meteorización, erosión, transporte y deposición</span> por agua, tanto por caída desde suspensión en aguas tranquilas como por corrientes energéticas o flujos de detritos en un entorno fluvial dinámico.</p>
+                </section>
+
+                <!-- Sección 4 -->
+                <section id="seccion4" class="glassmorphism section" data-animate>
+                    <h2>Nódulos Autigénicos y Frentes de Reacción</h2>
+                    <p>Dispersas por toda la lodolita de grano fino en el área de Bright Angel, se observan masas circulares a irregulares de 100-200 µm, de color negro a azul oscuro o verde oscuro. El equipo científico las apodó informalmente <span class="concept2">"semillas de amapola"</span>. Los datos de XRF de PIXL indican que estas masas están enriquecidas en Fe, P y Zn en relación con la lodolita que las alberga. Su composición elemental (con una proporción molar FeO:P de ~3:2) y sus propiedades de color son consistentes con acumulaciones microcristalinas de <span class="concept1">vivianita</span> ($Fe^{2+}_3(PO_4)_2·8H_2O$) y sus productos de oxidación.</p>
+                    <p>Estas masas de fosfato de hierro no están ordenadas en láminas, lo que sugiere que no fueron depositadas como granos detríticos. En cambio, su distribución aleatoria indica que se formaron por procesos químicos después de la deposición de la lodolita, por lo que se consideran <span class="concept1">nódulos autigénicos</span>. Su formación parece ser anterior a la de los nódulos y venas de sulfato de calcio que los rodean o atraviesan, indicando múltiples episodios de flujo de fluidos y diagénesis.</p>
+                    
+                    <div class="mermaid">
+                        sequenceDiagram
+                            participant Sedimento as Sedimento Oxidado (Lodolita rica en Fe³⁺, PO₄³⁻, SO₄²⁻)
+                            participant Diagenesis as Diagénesis Temprana (Post-Deposición)
+                            participant Reacciones as Reacciones Redox
+                            participant N_Vivianita as Nódulos de Vivianita (Fe²⁺-Fosfato)
+                            participant FR_Greigita as Frentes de Reacción (Fe-Sulfuro + Fe-Fosfato)
+
+                            Sedimento->>Diagenesis: Inicio del proceso en el subsuelo
+                            activate Diagenesis
+                            Diagenesis->>Reacciones: Materia orgánica actúa como reductor
+                            activate Reacciones
+                            Reacciones-->>N_Vivianita: <b>Paso 1:</b> Reducción de Fe³⁺ y precipitación de nódulos
+                            Reacciones-->>FR_Greigita: <b>Paso 2:</b> Reducción de SO₄²⁻ y precipitación en núcleos
+                            deactivate Reacciones
+                            deactivate Diagenesis
+                    </div>
+
+                    <h3>Frentes de Reacción: "Manchas de Leopardo"</h3>
+                    <p>Una característica llamativa observada en el objetivo "Cheyava Falls" (y en la muestra de núcleo "Sapphire Canyon") son unas manchas distintivas con bordes oscuros y núcleos más claros, apodadas <span class="concept2">"manchas de leopardo"</span>. Estas estructuras, de 200 µm a 1 mm de diámetro, no están depositadas en capas y parecen representar <span class="concept1">frentes de reacción in situ</span>. Los análisis de PIXL revelan que los bordes de estos frentes de reacción están enriquecidos en Fe y P, consistentes con la vivianita de los nódulos. Los núcleos, sin embargo, están enriquecidos en S, Fe, Ni y Zn. En el objetivo cercano "Apollo Temple", se encontró una región con una proporción molar Fe:S de aproximadamente 3:4, con propiedades químicas y de color consistentes con el mineral de sulfuro de hierro <span class="concept1">greigita</span> ($Fe_3S_4$). Estos frentes de reacción, por lo tanto, parecen tener un núcleo rico en sulfuro de hierro (greigita) y un borde rico en fosfato de hierro (vivianita), registrando una secuencia compleja de reacciones químicas.</p>
+                </section>
+
+                <!-- Sección 5 -->
+                <section id="seccion5" class="glassmorphism section" data-animate>
+                    <h2>Explorando los Mecanismos de Reacción: ¿Abiogénicos o Biogénicos?</h2>
+                    <p>Los datos químicos y sedimentológicos indican que el hierro y el azufre reducidos se generaron, movilizaron y precipitaron después de la deposición del sedimento oxidado. Existe una relación inversa clara: cuanta mayor es la abundancia de vivianita y greigita, más fuerte es la señal de <span class="concept1">materia orgánica</span> y menos oxidada (menos roja) es la lodolita. Esto sugiere fuertemente que la materia orgánica participó como combustible en las reacciones redox que produjeron estos minerales.</p>
+
+                    <h3>La Hipótesis Nula: Un Origen Abiogénico</h3>
+                    <p>Se considera la hipótesis de que, en el entorno sedimentario de baja temperatura propuesto, <span class="concept2">reacciones abióticas</span> produjeron el Fe ferroso ($Fe^{2+}$) y el S reducido. Una amplia variedad de compuestos de carbono orgánico (que pudieron formarse abióticamente en Marte o ser entregados por fuentes exógenas) son capaces de promover la disolución reductiva de minerales de óxido de hierro férrico a bajas temperaturas (10-80 °C). Sin embargo, la reducción abiótica de sulfato a sulfuro por materia orgánica es un proceso cinéticamente muy lento a temperaturas inferiores a 150-200 °C, temperaturas que probablemente no se alcanzaron en la formación Bright Angel, ya que se necesitarían más de 5 km de soterramiento para alcanzarlas.</p>
+
+                    <h3>La Alternativa: Una Vía Biológica</h3>
+                    <p>Una vía alternativa, y más plausible dadas las condiciones, es la <span class="concept1">mediación biológica</span>. En la Tierra, los nódulos de vivianita se forman comúnmente como un subproducto de reacciones de reducción de hierro mediadas por microbios a baja temperatura en ambientes acuáticos. De manera similar, minerales de sulfuro de hierro como la greigita son productos característicos de la reducción microbiana de sulfato. La mezcla de reactivos disponible en la formación Bright Angel (sedimentos oxidados ricos en Fe y S, y materia orgánica) podría haber proporcionado los ingredientes perfectos para un conjunto de reacciones redox biológicas que impulsaron la reducción de Fe y S, la oxidación de la materia orgánica y la precipitación de los minerales observados, procesos análogos a los que sustentan ecosistemas microbianos en la Tierra.</p>
+                    
+                    <div class="mermaid">
+                        graph TD
+                            A["<b>Condiciones Iniciales:</b><br>Sedimento Oxidado (Fe³⁺, SO₄²⁻)<br>+ Materia Orgánica"] --> B{¿Cuál es el mecanismo de reducción?};
+                            
+                            subgraph "Hipótesis Abiogénica"
+                                C["<b>Proceso:</b><br>Reducción química directa<br><b>Viabilidad:</b><br>- Reducción de Fe³⁺: Posible a baja T.<br>- Reducción de SO₄²⁻: Cinéticamente muy lenta (<150°C)"];
+                            end
+
+                            subgraph "Hipótesis Biológica"
+                                D["<b>Proceso:</b><br>Metabolismos microbianos<br><b>Viabilidad:</b><br>- Respiración de Hierro (Fe³⁺ → Fe²⁺)<br>- Respiración de Sulfato (SO₄²⁻ → S²⁻)<br><i>(Procesos eficientes a baja T)</i>"];
+                            end
+                            
+                            B --> |Vía Química| C;
+                            B --> |Vía Biológica| D;
+                            
+                            C --> E["<b>Resultado:</b><br>Formación de Vivianita y Greigita<br><i>(Poco probable/extremadamente lenta)</i>"];
+                            D --> F["<b>Resultado:</b><br>Formación de Vivianita y Greigita<br><i>(Consistente con observaciones)</i>"];
+                            
+                            F --> G[Conclusión: Las características observadas<br>son una <b>biofirma potencial</b><br>que justifica un análisis más profundo];
+                            
+                            style A fill:#a78bfa,stroke:#fff,stroke-width:2px;
+                            style B fill:#f472b6,stroke:#fff,stroke-width:3px;
+                            style C fill:#34d399,stroke:#333,stroke-width:2px;
+                            style D fill:#fbbf24,stroke:#333,stroke-width:2px,color:#000;
+                            style G fill:#818cf8,stroke:#fff,stroke-width:2px,color:#000;
+                    </div>
+
+                    <p>En este escenario, el hierro oxidado y el sulfato habrían sido utilizados como aceptores de electrones terminales para el consumo de materia orgánica. Donde se formaron los nódulos de vivianita, la reacción se habría detenido después de la reducción del hierro. Donde se formaron los frentes de reacción más grandes, con núcleos de sulfuro, podría sugerir que metabolismos de reducción de sulfato (con menor rendimiento energético) se activaron una vez que el $Fe^{3+}$ disponible se agotó, pero antes de que se consumiera todo el carbono orgánico en el núcleo del frente de reacción, creando una zonación geoquímica.</p>
+                </section>
+
+                <section id="conclusion" class="glassmorphism section" data-animate>
+                    <h2>Conclusión: ¿Biofirmas Potenciales?</h2>
+                    <p>En resumen, nuestro análisis nos lleva a concluir que la formación Bright Angel contiene una combinación de texturas, características químicas, minerales y firmas orgánicas que merecen ser consideradas como <span class="concept1">"biofirmas potenciales"</span>. Una biofirma potencial es, según la definición de la NASA, "una característica que es consistente con procesos biológicos y que, cuando se encuentra, desafía al investigador a atribuirla a procesos inanimados o biológicos, obligando a recopilar más datos". Esta evaluación se ve reforzada por el contexto geológico, que indica un origen sedimentario depositado desde el agua en condiciones habitables.</p>
+                    <p>Quedan muchas preguntas importantes sobre el origen de los nódulos y los frentes de reacción. En última instancia, el retorno de muestras de Marte para su estudio en la Tierra con instrumentación de alta sensibilidad, incluida la muestra <span class="concept2">"Sapphire Canyon"</span> recolectada de la formación Bright Angel, proporcionará la mejor oportunidad para determinar de manera concluyente el origen de los minerales, los orgánicos y las texturas únicas aquí descritas, y quizás, responder a la pregunta de si alguna vez existió vida en Marte.</p>
+                </section>
+
+                <!-- Sección 4: Referencias -->
+                <section id="referencias" class="glassmorphism section" data-animate>
+                    <h2>Referencias</h2>
+                    <ul class="list-disc list-inside space-y-2">
+                         <li><span class="person">Hurowitz, J.A., Tice, M.M., Allwood, A.C. et al.</span> (2025). Redox-driven mineral and organic associations in Jezero Crater, Mars. <i>Nature</i>.</li>
+                         <li><span class="person">Farley, K. A. et al.</span> (2020). Mars 2020 mission overview. <i>Space Sci. Rev.</i></li>
+                         <li><span class="person">Sharma, S, et al.</span> (2023). Diverse organic-mineral associations in Jezero Crater, Mars. <i>Nature</i>.</li>
+                         <li><span class="person">Mustard, J. F. et al.</span> (2013). Report of the Mars 2020 Science Definition Team.</li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+        <footer class="footer" id="contacto">
+            <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+        </footer>
+    </div>
+    <script>
+        // Inicia el código del Canvas
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicialización de Three.js Background
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+            } else {
+                console.error("Three.js not loaded");
+            }
+
+            setupNavigation();
+            setupScrollAnimations();
+            
+            // Renderizado de diagramas Mermaid
+            mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
+                'primaryColor': '#111827',
+                'primaryTextColor': '#e5e7eb',
+                'lineColor': '#818cf8',
+                'nodeBorder': '#818cf8',
+                'mainBkg': 'rgba(17, 24, 39, 0.1)',
+                'textColor': '#e5e7eb'
+            } });
+        });
+
+        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById("bg-canvas"),
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 250;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error initializing Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points) {
+                points.rotation.y += 0.0003;
+                points.rotation.x += 0.0002;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- CÓDIGO DE NAVEGACIÓN ---
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.body.classList.toggle('menu-open');
+            });
+
+            navMenu.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                   document.body.classList.remove('menu-open');
+                }
+            });
+        }
+
+        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        
+                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid, ul, .authors');
+                        elementsToAnimate.forEach((el, index) => {
+                           el.style.transitionDelay = `${index * 100}ms`;
+                        });
+
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+    </script>
+</body>
+</html>
+
