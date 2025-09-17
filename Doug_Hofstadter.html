@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Douglas Hofstadter: Un Bucle Extraño | O.C.V.M. Plantilla</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        /* Variables de CSS para colores y fuentes */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;    /* Rosa para nombres de personas */
+        }
+
+        /* Estilos generales para el cuerpo de la página */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+            text-align: justify;
+        }
+        p {
+            text-align: justify;
+        }
+
+        /* Canvas de fondo con animación Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        /* Estilo de glassmorphism para secciones y navegación */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+
+        /* Sección del héroe o cabecera principal */
+        .hero {
+            min-height: 60vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 7vw, 4.5rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Contenedor principal para el contenido */
+        .main-container { 
+            width: 100%;
+            max-width: 100%; /* El contenedor usa todo el ancho */
+            margin: 0 auto; 
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content {
+            pointer-events: auto;
+        }
+
+        main p, .footer p {
+            user-select: text;
+            cursor: default;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        /* Animación de aparición para las secciones con scroll */
+        .section h2, .section h3, .section p, .mermaid, .section ul, .section .authors, .section li {
+             opacity: 0;
+             transform: translateY(20px);
+             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .mermaid, .section.is-visible ul, .section.is-visible .authors, .section.is-visible li {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
+        
+        /* Clases para colorear palabras y conceptos */
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .concept2 { color: var(--concept-color-2); font-weight: 500; }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; }
+
+        /* Pie de página */
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        /* Estilo para los diagramas de Mermaid */
+        .mermaid {
+            margin: 2rem auto;
+            display: flex; /* Usar flexbox para centrar */
+            justify-content: center; /* Centrar horizontalmente */
+            align-items: center; /* Centrar verticalmente */
+            width: 100%;
+            max-width: 800px; /* Reducir un poco el ancho máximo */
+        }
+        
+        /* Media queries para dispositivos móviles */
+        @media (max-width: 768px) {
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+            body.menu-open .nav-container {
+                transform: translateY(0);
+            }
+
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo con animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>O.C.V.M.</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#inicio">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                    Inicio</a></li>
+                <li><a href="#vida">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                    Vida</a></li>
+                <li><a href="#obra">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12A2.25 2.25 0 0020.25 14.25V3M3.75 20.25h16.5M3.75 12h16.5m-16.5 4.5h16.5m-16.5-8.25h16.5" /></svg>
+                    Obra</a></li>
+                <li><a href="#ambigramas">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 7.5a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM12 14.25a6.75 6.75 0 00-6.75 6.75h13.5A6.75 6.75 0 0012 14.25z" /></svg>
+                    Ambigramas</a></li>
+                <li><a href="#ai">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9.049 14.25H5.064M9.813 15.904a3.75 3.75 0 01-5.188.498L3.75 16.5m9.363-8.878A3.75 3.75 0 0120.25 10.5M12.438 8.411a3.75 3.75 0 015.188-.498L20.25 7.5m-.981 12.035a3.75 3.75 0 01-5.021 1.708L14.25 19.5m-.38-2.434a3.75 3.75 0 01-.01 5.373A3.75 3.75 0 0112 21.75m-6.38-2.434a3.75 3.75 0 015.021 1.708L9.75 19.5" /></svg>
+                    Visión IA</a></li>
+                <li><a href="#obras-completas">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                    Obras</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Sección Hero -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Douglas R. Hofstadter</h1>
+                <p>Científico cognitivo y de la computación, autor de obras seminales como <span class="concept1">Gödel, Escher, Bach</span>, y un explorador incansable de la <span class="concept2">mente</span>, la <span class="concept2">conciencia</span> y el <span class="concept1">bucle extraño</span>.</p>
+                <p class="authors">Por <span class="person">O.C.V.M. Web Mermaid</span></p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                
+                <!-- Sección Vida y Carrera Académica -->
+                <section id="vida" class="glassmorphism section" data-animate>
+                    <div style="display: flex; justify-content: center; margin-bottom: 2rem;">
+                        <img src="https://placehold.co/400x400/818cf8/000000?text=Foto+de+Douglas+Hofstadter" alt="Foto de Douglas Hofstadter" class="rounded-lg shadow-xl" />
+                    </div>
+                    <h2>Vida y Carrera Académica</h2>
+                    <p>Douglas Richard Hofstadter (nacido el 15 de febrero de 1945) es un científico cognitivo y de la computación estadounidense. Su investigación abarca conceptos como el <span class="concept2">sentido del yo</span> en relación con el mundo externo, la <span class="concept1">conciencia</span>, la creación de <span class="concept2">analogías</span>, los <span class="concept1">bucles extraños</span>, los <span class="concept2">ambigramas</span>, la inteligencia artificial y el descubrimiento en las matemáticas y la física.</p>
+                    <p>Hijo del futuro ganador del Premio Nobel de Física, <span class="person">Robert Hofstadter</span>, creció en el campus de la Universidad de Stanford. Se graduó en matemáticas en Stanford en 1965 y obtuvo su doctorado en física en la Universidad de Oregón en 1975, donde su estudio de los <span class="concept2">niveles de energía de los electrones de Bloch</span> en un campo magnético lo llevó a su descubrimiento del fractal conocido como la <span class="concept1">mariposa de Hofstadter</span>.</p>
+                    <p>Hofstadter fue inicialmente nombrado en la facultad de informática de la Universidad de Indiana en 1977. En 1984, se trasladó a la Universidad de Míchigan como profesor de psicología y ocupó la Cátedra Walgreen para el Estudio de la Comprensión Humana. En 1988, regresó a la Universidad de Indiana como Profesor Distinguido de Ciencias Cognitivas y Literatura Comparada, donde dirige el Centro de Investigación sobre Conceptos y Cognición, que incluye el "Grupo de Investigación de Analogías Fluidas" (FARG).</p>
+                    
+                    <div class="mermaid">
+                        graph TD
+                            subgraph "Formación y Descubrimiento"
+                                direction LR
+                                A[Nueva York, 1945] --> B(BS Matemáticas, Stanford, 1965)
+                                B --> C(PhD Física, Oregon, 1975)
+                                C --> D[Tesis sobre Electrones de Bloch]
+                                D --> E(Mariposa de Hofstadter, 1976)
+                            end
+                            subgraph "Carrera e Investigación"
+                                F(Profesor U. Indiana, 1977)
+                                F --> G(Profesor U. Míchigan, 1984)
+                                G --> H(Regreso a U. Indiana, 1988)
+                                H --> I{Dirige Centro de Investigación}
+                                I --> J[Grupo de Investigación FARG]
+                            end
+                            style F fill:#818cf8,stroke:#818cf8,stroke-width:2px;
+                            style G fill:#818cf8,stroke:#818cf8,stroke-width:2px;
+                            style H fill:#818cf8,stroke:#818cf8,stroke-width:2px;
+                            style I fill:#fbbf24,stroke:#fbbf24,stroke-width:2px;
+                            style J fill:#34d399,stroke:#34d399,stroke-width:2px;
+                    </div>
+                </section>
+
+                <!-- Sección Trabajos y Publicaciones -->
+                <section id="obra" class="glassmorphism section" data-animate>
+                    <h2>Trabajos y Publicaciones</h2>
+                    <p>Su libro de 1979, <span class="concept1">Gödel, Escher, Bach: Un Bucle Dorado Eterno</span>, ganó el Premio Pulitzer de no ficción general y un National Book Award de Ciencia. Su libro de 2007, <span class="concept1">Soy un Bucle Extraño</span>, ganó el Premio del Libro del Los Angeles Times. En estas obras, Hofstadter explora la <span class="concept2">autorreferencia</span> y los sistemas formales, vinculando las ideas de un lógico (<span class="person">Kurt Gödel</span>), un artista (<span class="person">M.C. Escher</span>) y un músico (<span class="person">J.S. Bach</span>).</p>
+                    
+                    <h3>Conciencia y Bucles Extraños</h3>
+                    <p>La tesis de Hofstadter sobre la <span class="concept1">conciencia</span> es que es una "consecuencia emergente de la efervescente actividad de bajo nivel en el cerebro." Para explicarlo, utiliza la analogía de una colonia de hormigas y la mente, vista como una "colonia" coherente de neuronas. Afirma que nuestro sentido del "yo" proviene de un patrón abstracto que él denomina <span class="concept1">bucle extraño</span>. El ejemplo prototípico es la estructura autorreferencial en los teoremas de incompletitud de Gödel.</p>
+
+                    <div class="mermaid">
+                        graph TD
+                            subgraph "Proceso de emergencia del 'Yo'"
+                                A(Información del Mundo Externo) --> C{Percepción de Alto Nivel};
+                                B(Actividad de Bajo Nivel) --> C;
+                                C --> D[Patrón de Activación Abstracto];
+                                D --> E("Representación del 'Yo'");
+                                E --> D;
+                            end
+                            style A fill:#34d399,stroke:#34d399,stroke-width:2px;
+                            style B fill:#34d399,stroke:#34d399,stroke-width:2px;
+                            style C fill:#818cf8,stroke:#818cf8,stroke-width:2px;
+                            style D fill:#fbbf24,stroke:#fbbf24,stroke-width:2px;
+                            style E fill:#f472b6,stroke:#f472b6,stroke-width:2px;
+                            linkStyle 4 stroke:#f472b6,stroke-width:4px,fill:none;
+                    </div>
+
+                    <h3>Proyectos de Investigación en IA</h3>
+                    <p>Hofstadter y sus estudiantes, a través del <span class="concept1">Grupo de Investigación de Analogías Fluidas</span> (FARG), han desarrollado varios modelos computacionales de la cognición:
+                    <ul class="list-disc list-inside space-y-2 mt-4">
+                        <li><span class="concept2">Copycat</span> (con Melanie Mitchell): Un modelo de "percepción de alto nivel" y creación de analogías.</li>
+                        <li><span class="concept2">Tabletop</span> (con Robert M. French): Un modelo estocástico de emergencia para la creación de analogías.</li>
+                        <li><span class="concept2">Letter Spirit</span>: Un proyecto que modela la creatividad artística diseñando tipografías estilísticamente uniformes.</li>
+                        <li><span class="concept2">Phaeaco</span> (con Harry Foundalis): Modela la percepción de alto nivel en problemas de Bongard.</li>
+                        <li><span class="concept2">SeqSee</span> (con Abhijit Mahabal): Modela la creación de analogías en secuencias numéricas.</li>
+                        <li><span class="concept2">George</span> (con Francisco Lara-Dammer): Modela los procesos de percepción y descubrimiento en la geometría de los triángulos.</li>
+                    </ul></p>
+
+                    <div class="mermaid">
+                        graph TD
+                            subgraph "FARG: Grupo de Investigación de Analogías Fluidas"
+                                FARG[Grupo de Investigación] --> A(Copycat);
+                                FARG --> B(Tabletop);
+                                FARG --> C(Letter Spirit);
+                                FARG --> D(Phaeaco);
+                                FARG --> E(SeqSee);
+                                FARG --> F(George);
+                            end
+                            style FARG fill:#818cf8,stroke:#818cf8,stroke-width:2px;
+                            style A fill:#34d399,stroke:#34d399,stroke-width:2px;
+                            style B fill:#34d399,stroke:#34d399,stroke-width:2px;
+                            style C fill:#34d399,stroke:#34d399,stroke-width:2px;
+                            style D fill:#34d399,stroke:#34d399,stroke-width:2px;
+                            style E fill:#34d399,stroke:#34d399,stroke-width:2px;
+                            style F fill:#34d399,stroke:#34d349,stroke-width:2px;
+                    </div>
+
+                    <h3>Traducciones y Columnas Periodísticas</h3>
+                    <p>Hofstadter ha publicado traducciones de poesía y novelas, incluyendo una traducción en verso de <span class="person">Eugenio Oneguin</span> de <span class="person">Alexander Pushkin</span>. Su libro <span class="concept2">Le Ton beau de Marot</span> está dedicado a la traducción y el lenguaje. Como columnista de la revista <span class="concept1">Scientific American</span>, escribió "Metamagical Themas" (un anagrama de "Mathematical Games"), donde introdujo ideas como la <span class="concept2">superracionalidad</span> y la <span class="concept2">Ley de Hofstadter</span>. Una de sus ideas más originales fue el concepto de "Reviews of This Book", un libro que solo contiene reseñas cruzadas de sí mismo.</p>
+                </section>
+
+                <!-- Sección La Ley de Hofstadter y Ambigramas -->
+                <section id="ambigramas" class="glassmorphism section" data-animate>
+                    <h2>La Ley de Hofstadter y los Ambigramas</h2>
+                    <p>La <span class="concept1">Ley de Hofstadter</span> es una observación humorística pero profunda sobre la naturaleza del trabajo y la planificación: "Siempre se tarda más de lo que se espera, incluso cuando se tiene en cuenta la Ley de Hofstadter." Se ha convertido en una máxima popular en la informática y la gestión de proyectos.</p>
+                    <div class="mermaid">
+                        graph TD
+                            subgraph "Recursividad de la Ley de Hofstadter"
+                                A[Tarea X];
+                                A --> B{Estimación de tiempo};
+                                B --> C(Planificación);
+                                C --> D(Implementación);
+                                D --> E[Tiempo Real];
+                                E --> F{¿Es igual a la estimación?};
+                                F -->|No| B;
+                                F -->|Sí| G[¡Terminado!];
+                            end
+                            style A fill:#34d399,stroke:#34d399,stroke-width:2px;
+                            style B fill:#818cf8,stroke:#818cf8,stroke-width:2px;
+                            style C fill:#fbbf24,stroke:#fbbf24,stroke-width:2px;
+                            style D fill:#818cf8,stroke:#818cf8,stroke-width:2px;
+                            style E fill:#f472b6,stroke:#f472b6,stroke-width:2px;
+                            style F fill:#818cf8,stroke:#818cf8,stroke-width:2px;
+                            style G fill:#34d399,stroke:#34d399,stroke-width:2px;
+                    </div>
+                    <p>Hofstadter acuñó el término <span class="concept1">ambigrama</span> en 1983-1984. Un ambigrama es una composición caligráfica que puede leerse de diferentes maneras, a menudo al girar el diseño. Hofstadter ha creado cientos de ellos y los ha exhibido en galerías. Su próximo libro de 2025, <span class="concept2">Ambigrammia Between Creation and Discovery (ABCD)</span>, es una reflexión sobre esta forma de arte y presenta una vasta colección de sus trabajos.</p>
+                </section>
+                
+                <!-- Sección Visión sobre la IA -->
+                <section id="ai" class="glassmorphism section" data-animate>
+                    <h2>Visión de la Inteligencia Artificial</h2>
+                    <p>A pesar de su trabajo en la IA, Hofstadter ha expresado sentirse "incómodo con la cultura nerd que se centra en los ordenadores" y ha manifestado que no tiene "ningún interés en los ordenadores" como tales. Su escepticismo sobre la <span class="concept1">singularidad tecnológica</span> es bien conocido. Ha participado en varios simposios para discutir si los robots espirituales podrían reemplazar a la humanidad. Por ejemplo, sobre la derrota de <span class="person">Garry Kasparov</span> por <span class="concept2">Deep Blue</span>, comentó: "Fue un acontecimiento histórico, pero no tiene nada que ver con que los ordenadores se vuelvan inteligentes."</p>
+                    <p>Sin embargo, en una entrevista de 2023, Hofstadter admitió que el rápido avance de la IA ha hecho que algunas de sus "creencias fundamentales" sobre sus limitaciones se "colapsen." Insinuando una posible <span class="concept1">toma de control por la IA</span>, añadió que los seres humanos pronto podrían ser eclipsados por "algo más que es mucho más inteligente y se volverá incomprensible para nosotros."</p>
+                </section>
+
+                <!-- Sección Vida Personal y Legado -->
+                <section id="vida-personal" class="glassmorphism section" data-animate>
+                    <h2>Vida Personal y Legado</h2>
+                    <p>Douglas Hofstadter se casó con <span class="person">Carol Ann Brush</span> en 1985, con quien tuvo dos hijos. Carol falleció en 1993. Posteriormente, se casó con <span class="person">Baofen Lin</span> en 2012. Hofstadter ha compuesto música para piano y voz, publicando un CD con sus piezas. Su dedicación a su hermana <span class="person">Molly</span>, que nunca desarrolló la capacidad de hablar, resalta su empatía y su profunda reflexión sobre la conciencia y la cognición.</p>
+                    <p>Su influencia se extiende a la cultura popular:
+                    <ul class="list-disc list-inside space-y-2 mt-4">
+                        <li>En la novela <span class="concept2">2010: Odisea Dos</span>, <span class="person">Arthur C. Clarke</span> describe a HAL 9000 atrapado en un "bucle Hofstadter–Möbius".</li>
+                        <li>En 1995, el libro de Hofstadter <span class="concept2">Fluid Concepts and Creative Analogies</span> fue el primer libro vendido por Amazon.com.</li>
+                        <li>El musical de <span class="person">Michael R. Jackson</span>, <span class="concept2">A Strange Loop</span>, hace referencia directa a sus conceptos.</li>
+                    </ul></p>
+                </section>
+                
+                <!-- Sección Obras Completas -->
+                <section id="obras-completas" class="glassmorphism section" data-animate>
+                    <h2>Obras Completas</h2>
+                    <h3>Libros</h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li><span class="concept1">Gödel, Escher, Bach: an Eternal Golden Braid</span> (1979)</li>
+                        <li><span class="concept2">Metamagical Themas</span> (1985)</li>
+                        <li><span class="concept2">Ambigrammi</span> (1987, solo en italiano)</li>
+                        <li><span class="concept2">Fluid Concepts and Creative Analogies</span> (1995)</li>
+                        <li><span class="concept2">Le Ton beau de Marot</span> (1997)</li>
+                        <li><span class="concept1">I Am a Strange Loop</span> (2007)</li>
+                        <li><span class="concept2">Surfaces and Essences</span> (2013)</li>
+                        <li><span class="concept2">Ambigrammia Between Creation and Discovery (ABCD)</span> (2025)</li>
+                    </ul>
+
+                    <h3>Traducciones</h3>
+                    <ul class="list-disc list-inside space-y-2 mt-4">
+                        <li><span class="concept2">Eugene Onegin</span> (1999) del ruso de <span class="person">Alexander Pushkin</span>.</li>
+                        <li><span class="concept2">The Discovery of Dawn</span> (2007) del italiano de <span class="person">Walter Veltroni</span>.</li>
+                        <li><span class="concept2">That Mad Ache</span> (2009) del francés de <span class="person">Françoise Sagan</span>.</li>
+                    </ul>
+                </section>
+
+                <footer class="footer" id="contacto">
+                    <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo.</p>
+                    <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+                </footer>
+            </main>
+        </div>
+    </div>
+    <script>
+        // Inicia el código del Canvas
+        window.onload = function () {
+            // Inicialización de Three.js Background
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+            } else {
+                console.error("Three.js not loaded");
+            }
+
+            setupNavigation();
+            setupScrollAnimations();
+            
+            // Renderizado de diagramas Mermaid
+            if (typeof mermaid !== 'undefined') {
+                mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
+                    'primaryColor': '#000000',
+                    'primaryTextColor': '#e5e7eb',
+                    'lineColor': '#818cf8',
+                    'nodeBorder': '#818cf8',
+                    'mainBkg': '#111827',
+                    'textColor': '#e5e7eb'
+                } });
+            } else {
+                console.error("Mermaid library not loaded.");
+            }
+        };
+
+        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById("bg-canvas"),
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 250;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error initializing Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points) {
+                points.rotation.y += 0.0003;
+                points.rotation.x += 0.0002;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- CÓDIGO DE NAVEGACIÓN ---
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.body.classList.toggle('menu-open');
+            });
+
+            navMenu.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                   document.body.classList.remove('menu-open');
+                }
+            });
+        }
+
+        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        
+                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid, ul, .authors, li');
+                        elementsToAnimate.forEach((el, index) => {
+                           el.style.transitionDelay = `${index * 100}ms`;
+                        });
+
+                        // Desconectar el observador después de animar para optimizar
+                        // observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+    </script>
+</body>
+</html>
