@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Vida es Preciosa por Ser Precaria | T. Froese</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        /* Variables de CSS para colores y fuentes */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;    /* Rosa para nombres de personas */
+        }
+
+        /* Estilos generales para el cuerpo de la página */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+            text-align: justify;
+        }
+        p {
+            text-align: justify;
+        }
+
+        /* Canvas de fondo con animación Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        /* Estilo de glassmorphism para secciones y navegación */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+
+        /* Sección del héroe o cabecera principal */
+        .hero {
+            min-height: 60vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 7vw, 4.5rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Contenedor principal para el contenido */
+        .main-container { 
+            width: 100%;
+            max-width: 100%; /* El contenedor usa todo el ancho */
+            margin: 0 auto; 
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content {
+            pointer-events: auto;
+        }
+
+        main p, .footer p {
+            user-select: text;
+            cursor: default;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        /* Animación de aparición para las secciones con scroll */
+        .section h2, .section h3, .section p, .mermaid, .section ul, .section .authors, .section li {
+             opacity: 0;
+             transform: translateY(20px);
+             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .mermaid, .section.is-visible ul, .section.is-visible .authors, .section.is-visible li {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
+        
+        /* Clases para colorear palabras y conceptos */
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .concept2 { color: var(--concept-color-2); font-weight: 500; }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; }
+
+        /* Pie de página */
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        /* Estilo para los diagramas de Mermaid */
+        .mermaid {
+            margin: 2rem auto;
+            display: flex; /* Usar flexbox para centrar */
+            justify-content: center; /* Centrar horizontalmente */
+            align-items: center; /* Centrar verticalmente */
+            width: 100%;
+            max-width: 800px; /* Reducir un poco el ancho máximo */
+        }
+        
+        /* Media queries para dispositivos móviles */
+        @media (max-width: 768px) {
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+            body.menu-open .nav-container {
+                transform: translateY(0);
+            }
+
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle { display: none; }
+        }
+
+        .quote-block {
+            border-left: 4px solid var(--primary-dark);
+            padding-left: 1.5rem;
+            margin: 2rem 0;
+            font-style: italic;
+            color: var(--primary-text);
+            font-size: 1.1em;
+        }
+
+        .quote-block cite {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 0.9em;
+            text-align: right;
+            color: var(--concept-color-2);
+        }
+
+        .ref-link {
+            font-size: 0.8em;
+            color: var(--secondary);
+            font-weight: 600;
+            text-decoration: none;
+            vertical-align: super;
+            margin-left: 2px;
+            transition: color 0.3s;
+        }
+        .ref-link:hover {
+            color: var(--primary-glow);
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo con animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>O.C.V.M.</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#inicio">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                    Inicio</a></li>
+                <li><a href="#computacionalismo">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                    El Computacionalismo</a></li>
+                <li><a href="#enactivismo">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12A2.25 2.25 0 0020.25 14.25V3M3.75 20.25h16.5M3.75 12h16.5m-16.5 4.5h16.5m-16.5-8.25h16.5" /></svg>
+                    El Enfoque Enactivo</a></li>
+                <li><a href="#mortalidad">
+                     <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c.34-.175.6-.47.82-.82a4.5 4.5 0 001.128-5.78 3 3 0 00-1.128-5.78A3 3 0 005.4 3.375c-.34.175-.6.47-.82.82A4.5 4.5 0 003.375 9.122a3 3 0 005.78 1.128 2.25 2.25 0 012.4 2.245 4.5 4.5 0 00-8.4 2.245c-.34.175-.6.47-.82.82A4.5 4.5 0 003.375 16.122zM21.75 12a9.75 9.75 0 00-9.75-9.75V12h9.75z" /></svg>
+                    La Mortalidad</a></li>
+                <li><a href="#referencias">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                    Referencias</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Sección Hero -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>La vida es preciosa por ser precaria: individualidad, mortalidad y el significado</h1>
+                <p>Una exploración de la individualidad, la mortalidad y el problema del significado en el contexto de la ciencia cognitiva y la filosofía. </p>
+                <p class="authors">Por <span class="person">Tom Froese</span></p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                
+                <!-- Sección 1: Crítica al Computacionalismo -->
+                <section id="computacionalismo" class="glassmorphism section" data-animate>
+                    <h2>El Computacionalismo y su Crítica</h2>
+                    <p>El <span class="concept1">computacionalismo</span>, que aspira a ser una teoría unificadora de la vida y la mente, se define por la explicación de los fenómenos naturales en términos de "objetos y relaciones pertenecientes al dominio de entidades abstractas" <a href="#ref-39" class="ref-link">[39]</a>. Este enfoque enfrenta su principal fracaso al carecer de las herramientas conceptuales para abordar el problema del <span class="concept2">significado</span>. Para un sistema computacional, la vida es una mera colección de datos formales, no una experiencia con valor intrínseco. El valor de la vida, según Froese, emana de su precariedad, del constante esfuerzo de un individuo por mantenerse existiendo.</p>
+                    
+                    <h3>El Problema del Significado y la Individualidad</h3>
+                    <p>La mente, bajo el legado cartesiano, ha sido tratada como un mecanismo, indistinguible de un objeto inanimado. Sin embargo, un ser vivo se presenta de manera inmediata frente a un mundo significativo, no a un conjunto de "hechos objetivos" de un físico. El problema del significado es cómo las cosas pueden ser significativas para un sistema desde su propia perspectiva. Este dilema se manifiesta en famosos experimentos como el argumento de la habitación china <a href="#ref-52" class="ref-link">[52]</a>, el problema del anclaje del símbolo <a href="#ref-37" class="ref-link">[37]</a> y el problema del marco <a href="#ref-19" class="ref-link">[19]</a>.</p>
+
+                    <p>La noción de "información" ofrece una solución ilusoria. Se basa en una ambigüedad entre su definición técnica y su significado psicológico. La idea de que "la información es una diferencia [...] que hace una diferencia para un agente" <a href="#ref-22" class="ref-link">[22]</a> no explica cómo una covarianza física se transforma en contenido mental con sentido. Se recurre a una interpretación causal, pero "la idea de causa y efecto no basta para explicar cómo hacer una diferencia en uno de los sistemas puede hacer una diferencia para ese sistema".</p>
+
+                    <p>El computacionalismo también fracasa en definir la <span class="concept1">individualidad</span>, un concepto esencial para entender la agencia. Si cualquier sistema físico, desde una molécula hasta un planeta, puede ser un "agente", la definición pierde su valor explicativo. Sin una historia que diferencie la agencia de los seres vivos de la de los objetos, nos vemos forzados a elegir entre el panpsiquismo o el nihilismo. Los conceptos de computación e información, por ser inherentemente relativos al observador, no pueden capturar la autodeterminación que es intrínseca a la vida <a href="#ref-18" class="ref-link">[18]</a><a href="#ref-25" class="ref-link">[25]</a>.</p>
+
+                    <div class="mermaid">
+                        graph TD
+                            A[Computacionalismo] --> B{Problema del Significado};
+                            B --> C(Cajas chinas, problema del marco, etc.);
+                            A --> D{Problema de la Individualidad};
+                            D --> E(Relatividad del observador);
+                            D --> F{Falta de una definición clara de 'agente'};
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style B fill:#f472b6,stroke:#333,stroke-width:2px;
+                            style C fill:#34d399,stroke:#333,stroke-width:2px;
+                            style D fill:#f472b6,stroke:#333,stroke-width:2px;
+                            style E fill:#34d399,stroke:#333,stroke-width:2px;
+                            style F fill:#34d399,stroke:#333,stroke-width:2px;
+                    </div>
+
+                </section>
+
+                <!-- Sección 2: El Enfoque Enactivo y la Muerte -->
+                <section id="enactivismo" class="glassmorphism section" data-animate>
+                    <h2>El Enfoque Enactivo: Autopoiesis y el Rol de la Muerte</h2>
+                    <p>La <span class="concept2">ciencia cognitiva enactiva</span> se funda en el concepto de <span class="concept1">autopoiesis</span>, una "red de procesos que forman un todo en tanto que los procesos se posibilitan unos a otros" <a href="#ref-54" class="ref-link">[54]</a>. Esta identidad autoorganizada es la base de la individualidad y la agencia. A diferencia de los sistemas computacionales, un sistema autopoiético no es una caja de información, sino una entidad que se auto-produce y se auto-mantiene, y cuyo comportamiento emerge de su continua auto-realización metabólica. Este vínculo intrínseco entre ser y hacer es lo que permite que el mundo tenga sentido para el agente <a href="#ref-33" class="ref-link">[33]</a>.</p>
+
+                    <p>El enactivismo rescata una comprensión de la mortalidad presente en muchas cosmovisiones tradicionales, donde la muerte no es vista como un final, sino como un elemento constitutivo de la vida. En la antigua Mesoamérica, la dualidad de vida y muerte era un principio de complementariedad, visible en la relación de los humanos con el maíz y en la deificación de <span class="person">Ometeotl</span> <a href="#ref-49" class="ref-link">[49]</a>. En el hinduismo, el tiempo es circular, con la tríada de dioses <span class="person">Brahma</span>, <span class="person">Vishnu</span> y <span class="person">Shiva</span> representando la creación, preservación y destrucción, respectivamente <a href="#ref-15" class="ref-link">[15]</a>. La filosofía budista va más allá, argumentando que "la muerte de un momento de la experiencia es realmente [...] una precondición causal para el surgimiento del momento siguiente" <a href="#ref-62" class="ref-link">[62]</a>.   </p>
+
+                    <div class="mermaid">
+                        flowchart LR
+                            subgraph "Cosmovisión Mesoamericana"
+                                A[Vida] <--> B[Muerte]
+                            end
+                            subgraph "Cosmovisión Hinduista"
+                                C[Creación] --> D[Preservación] --> E[Destrucción] --> C
+                            end
+                            F[Enactivismo Moderno] --> G{Redescubrimiento de la precariedad};
+                            G --> H(Mortalidad como principio explicativo);
+                            style A fill:#34d399,stroke:#333;
+                            style B fill:#f472b6,stroke:#333;
+                            style C fill:#fbbf24,stroke:#333;
+                            style D fill:#34d399,stroke:#333;
+                            style E fill:#f472b6,stroke:#333;
+                            style F fill:#818cf8,stroke:#333,stroke-width:2px;
+                            style G fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style H fill:#f472b6,stroke:#333;
+                    </div>
+
+                    <h3>El Papel de la Muerte en la Ciencia Enactiva</h3>
+                    <p>El camino hacia el enactivismo comenzó con la <span class="concept1">cibernética</span> de <span class="person">Ashby</span> y la <span class="concept1">autopoiesis</span> de <span class="person">Maturana</span> y <span class="person">Varela</span>. Varela finalmente superó la concepción de la muerte como un evento contingente, influenciado por la filosofía de <span class="person">Hans Jonas</span>. Jonas argumentó que la mortalidad es la "puerta estrecha a través de la cual el solo valor [...] pudo entrar en el, de otra forma, universo indiferente" <a href="#ref-42" class="ref-link">[42]</a>. La posibilidad de un "no-ser" irrevocable otorga a la existencia un valor intrínseco. Los "desajustes" en el comportamiento de un organismo, como un trasplante de órganos, revelan la <span class="concept2">precariedad</span> que define su ser y su capacidad para rearticularse creativamente <a href="#ref-59" class="ref-link">[59]</a><a href="#ref-58" class="ref-link">[58]</a>.</p>
+                    <p>Desde la perspectiva de Jonas, la vida y la muerte no son opuestos, sino dos caras de una misma moneda. Al construir sus propios límites, los seres vivos le dan un valor intrínseco a su existencia. "Ser se convierte más en una tarea que en un estado dado, una posibilidad siempre a ser realizada de nuevo en oposición a su contrario siempre presente: el no-ser". La vida importa porque es finita y cada momento es precioso precisamente por ello.</p>
+
+                    <div class="mermaid">
+                        graph TD
+                            A[Cibernética de Ashby] --> B[Teoría de la Autopoiesis];
+                            B --> C{Enactivismo de Varela};
+                            C --> D[Rupturas creativas];
+                            C --> E[Filosofía de Jonas];
+                            E --> F{La mortalidad da sentido a la vida};
+                            style A fill:#34d399,stroke:#333;
+                            style B fill:#34d399,stroke:#333;
+                            style C fill:#818cf8,stroke:#333,stroke-width:2px;
+                            style D fill:#fbbf24,stroke:#333;
+                            style E fill:#fbbf24,stroke:#333;
+                            style F fill:#f472b6,stroke:#333;
+                    </div>
+                </section>
+                
+                <!-- Sección 3: La Muerte Virtual -->
+                <section id="mortalidad" class="glassmorphism section" data-animate>
+                    <h2>Sobre la Imposibilidad de una Muerte Virtual</h2>
+                    <p>El computacionalismo, al abstraerse de la materialidad de la existencia biológica, no puede comprender la precariedad de un ser vivo irremplazable. Los agentes virtuales son "inmortales" porque su existencia se agota en estructuras de información que pueden ser recreadas de forma idéntica, lo que anula la singularidad de la existencia <a href="#ref-35" class="ref-link">[35]</a>. Un sistema virtual puede desintegrarse, pero esto no es una muerte en el sentido real, ya que su identidad puramente abstracta puede ser revivida. La muerte real es la pérdida de un individuo único e insustituible. 
+
+[Image of binary code]
+ </p>
+                    <p>Como concluye Froese, esta es la diferencia fundamental. La muerte de un organismo real es la transición a un "no-ser eterno" e irrevocable, mientras que la "muerte" de un agente virtual es solo un estado temporal de no-realización. Solo un organismo real, en su constante lucha por continuar su forma de vida, puede preocuparse genuinamente por su existencia. Es este potencial de "no-ser irrevocable" lo que hace que la vida sea significativa, una noción que desafía el <span class="concept1">transhumanismo</span>, que ve la mortalidad como una carga a eliminar y no como un principio constitutivo del valor. La conciencia de nuestra finitud es el incentivo para "contar nuestros días y hacer que cuenten" <a href="#ref-42" class="ref-link">[42]</a>.</p>
+
+                    <div class="mermaid">
+                        graph TD
+                            A(Organismo Vivo) -- Autoproducción --> B{Identidad Única};
+                            A -- Amenaza constante --> C[Muerte Irrevocable];
+                            B -- Confiere valor --> C;
+                            C -- Diferencia fundamental de --> D(Agente Virtual);
+                            D -- Es una estructura --> E[Clonable e inmortal];
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style B fill:#34d399,stroke:#333,stroke-width:2px;
+                            style C fill:#f472b6,stroke:#333,stroke-width:4px;
+                            style D fill:#818cf8,stroke:#333,stroke-width:2px;
+                            style E fill:#34d399,stroke:#333;
+                    </div>
+                </section>
+
+                <section id="referencias" class="glassmorphism section" data-animate>
+                    <h2>Referencias</h2>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li id="ref-1"><span class="person">Ashby, William Ross</span> (1947), "The nervous system as physical machine: With special reference to the origin of adaptive behavior", <i>Mind</i> 56(221), pp. 44-59.</li>
+                        <li id="ref-15"><span class="person">Coe, Michael D.</span> (2003), <i>Angkor and the Khmer Civilization</i>, Londres, Thames y Hudson.</li>
+                        <li id="ref-19"><span class="person">Dennett, Daniel C.</span> (1984), "Cognitive wheels: The frame problem of AI", en: Christopher Hookway (ed.), <i>Minds, Machines and Evolution: Philosophical Studies</i>, Cambridge, Cambridge University Press, pp. 129-152.</li>
+                        <li id="ref-22"><span class="person">Dodig-Crnkovic, Gordana</span> (2014), "Info-computational constructivism and cognition", <i>Constructivist Foundations</i>, 9(2), pp. 223-231.</li>
+                        <li id="ref-35"><span class="person">Gershenson, Carlos</span> (2011), "What does artificial life tell us about death?", <i>International Journal of Artificial Life Research</i>, 2(3), pp. 1-5.</li>
+                        <li id="ref-37"><span class="person">Harnad, Stevan</span> (1990), "The symbol grounding problem", <i>Physica D: Nonlinear Phenomena</i>, vol. 42, pp. 335-346.</li>
+                        <li id="ref-39"><span class="person">Horsman, Dominic C., Viv Kendon, Susan Stepney y J. Peter W. Young</span> (en prensa), "Abstraction and representation in living organisms: when does a biological system compute?", en: Gordana Dodig-Crnkovic y Raffaela Giovagnoli (eds.), <i>Representation and Reality: Humans, Animals and Machines</i>, Heidelberg, Springer.</li>
+                        <li id="ref-42"><span class="person">Jonas, Hans</span> (1992), "The burden and blessing of mortality", <i>The Hastings Center Report</i>, 22(1), pp. 34-40.</li>
+                        <li id="ref-49"><span class="person">Miller, Mary y Karl Taube</span> (1993), <i>An Illustrated Dictionary of the Gods and Symbols of Ancient Mexico and the Maya</i>, Londres, Thames y Hudson.</li>
+                        <li id="ref-52"><span class="person">Searle, John R.</span> (1980), "Minds, brains, and programs", <i>Behavioral and Brain Sciences</i>, 3(3), pp. 417-424.</li>
+                        <li id="ref-54"><span class="person">Thompson, Evan</span> (2007), <i>Mind in Life: Biology, Phenomenology, and the Sciences of Mind</i>, Mass., Harvard University Press.</li>
+                        <li id="ref-58"><span class="person">Varela, Francisco J.</span> (1995), "The re-enchantment of the concrete: Some biological ingredients for a nouvelle cognitive science", en: Luc Steels y Rodney Brooks (eds.), <i>The Artificial Life Route to Artificial Intelligence</i>, Hove, Lawrence Erlbaum, pp. 11-22.</li>
+                        <li id="ref-59"><span class="person">Varela, Francisco J.</span> (2001), "Intimate distances: Fragments for a phenomenology of organ transplantation", <i>Journal of Consciousness Studies</i>, 8(5-7) pp. 259-271.</li>
+                        <li id="ref-62"><span class="person">Varela, Francisco J., Evan Thompson y Eleanor Rosch</span> (1991), <i>The Embodied Mind: Cognitive Science and Human Experience</i>, Mass., MIT Press.</li>
+                    </ul>
+                </section>
+            </main>
+        </div>
+        <footer class="footer" id="contacto">
+            <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+        </footer>
+    </div>
+    <script>
+        // Inicia el código del Canvas
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicialización de Three.js Background
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+            } else {
+                console.error("Three.js not loaded");
+            }
+
+            setupNavigation();
+            setupScrollAnimations();
+            setupReferenceLinks();
+            
+            // Renderizado de diagramas Mermaid
+            mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
+                'primaryColor': '#000000',
+                'primaryTextColor': '#e5e7eb',
+                'lineColor': '#818cf8',
+                'nodeBorder': '#818cf8',
+                'mainBkg': '#111827',
+                'textColor': '#e5e7eb'
+            } });
+        });
+
+        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById("bg-canvas"),
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 250;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error initializing Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points) {
+                points.rotation.y += 0.0003;
+                points.rotation.x += 0.0002;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- CÓDIGO DE NAVEGACIÓN ---
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.body.classList.toggle('menu-open');
+            });
+
+            navMenu.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                   document.body.classList.remove('menu-open');
+                }
+            });
+        }
+
+        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        
+                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid, ul, .authors, li');
+                        elementsToAnimate.forEach((el, index) => {
+                           el.style.transitionDelay = `${index * 100}ms`;
+                        });
+
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+
+        // --- CÓDIGO DE ENLACES DE REFERENCIA ---
+        function setupReferenceLinks() {
+            document.querySelectorAll('.ref-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = e.target.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>
