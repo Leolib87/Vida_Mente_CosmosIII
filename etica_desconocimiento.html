@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ética del Desconocimiento | O.C.V.M. Plantilla</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        /* Variables de CSS para colores y fuentes */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;    /* Rosa para nombres de personas */
+        }
+
+        /* Estilos generales para el cuerpo de la página */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+            text-align: justify;
+        }
+        p {
+            text-align: justify;
+        }
+
+        /* Canvas de fondo con animación Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        /* Estilo de glassmorphism para secciones y navegación */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+
+        /* Sección del héroe o cabecera principal */
+        .hero {
+            min-height: 60vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 7vw, 4.5rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Contenedor principal para el contenido */
+        .main-container { 
+            width: 100%;
+            max-width: 100%; /* El contenedor usa todo el ancho */
+            margin: 0 auto; 
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content {
+            pointer-events: auto;
+        }
+
+        main p, .footer p {
+            user-select: text;
+            cursor: default;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        /* Animación de aparición para las secciones con scroll */
+        .section h2, .section h3, .section p, .mermaid, .section ul, .section .authors, .section img {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .mermaid, .section.is-visible ul, .section.is-visible .authors, .section.is-visible img {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
+        
+        /* Clases para colorear palabras y conceptos */
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .concept2 { color: var(--concept-color-2); font-weight: 500; }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; }
+
+        /* Pie de página */
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        /* Estilo para los diagramas de Mermaid */
+        .mermaid {
+            margin: 2rem auto;
+            display: flex; /* Usar flexbox para centrar */
+            justify-content: center; /* Centrar horizontalmente */
+            align-items: center; /* Centrar verticalmente */
+            width: 100%;
+            max-width: 800px; /* Reducir un poco el ancho máximo */
+        }
+        
+        /* Media queries para dispositivos móviles */
+        @media (max-width: 768px) {
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+            body.menu-open .nav-container {
+                transform: translateY(0);
+            }
+
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo con animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>O.C.V.M.</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#inicio">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                    Inicio</a></li>
+                <li><a href="#conceptos">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                    Conceptos</a></li>
+                <li><a href="#embrión">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12A2.25 2.25 0 0020.25 14.25V3M3.75 20.25h16.5M3.75 12h16.5m-16.5 4.5h16.5m-16.5-8.25h16.5" /></svg>
+                    Embrión</a></li>
+                <li><a href="#etica">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                    Ética de la Incertidumbre</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Sección Hero -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Ética del Desconocimiento</h1>
+                <p>Análisis de la importancia de lidiar con la ignorancia en la ética, con un enfoque en el problema del estatuto del embrión humano.</p>
+                <p class="authors">Por <span class="person">Pablo Razeto Barry</span></p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                
+                <!-- Sección 1: Introducción y Contexto -->
+                <section id="introduccion" class="glassmorphism section" data-animate>
+                    <h2>Introducción: El Proyecto Socrático</h2>
+                    <p>Buenas tardes. Partiré sin mucha introducción porque lo que quiero decir es un poco largo. En primer lugar, quiero recordar el proyecto socrático de <span class="person">Sócrates</span>, en el que él describe la sabiduría como la capacidad de reconocer la propia ignorancia y saber lidiar con ella. El punto principal de esta ponencia es la importancia de analizar el desconocimiento, la falta de conocimiento o la ignorancia y aprender a lidiar con ella en el ámbito de la ética.</p>
+                    <img src="https://placehold.co/400x300/818cf8/000000?text=Socrates+Filosofia" alt="Imagen de Sócrates" class="mx-auto rounded-xl shadow-lg my-8">
+                    <p>Desde el proyecto socrático, la filosofía se ha dedicado a estudiar los límites del conocimiento y la ausencia del mismo. Recientemente, han surgido otras disciplinas como la teoría de probabilidades, las ciencias de la complejidad, la neuroeconomía y la sociología del riesgo, que también analizan este hecho. Sin embargo, en el caso de la ética, da la impresión de que ha tenido un efecto práctico bajo, tomando muy poco en cuenta qué hacer cuando no sabemos algo. Para defender esta idea, me centraré en el problema del estatuto del embrión humano como un caso particular.</p>
+                    <h3>La Tendencia Humana a la Certidumbre</h3>
+                    <p>Una razón que podría explicar la falta de efecto de este proyecto es la fuerte tendencia humana a creer fuertemente en cosas, incluso en ausencia de pruebas. <span class="person">William James</span> ya reconoció esta profunda voluntad a creer y a tener certidumbre, aún sin justificación. En la actualidad, vemos una sociedad donde la <span class="concept1">certidumbre emocional</span> abunda, pero no la <span class="concept2">certidumbre epistémica</span>.</p>
+                    <p>La <span class="concept1">neuroeconomía</span> ha estudiado cómo en situaciones de incertidumbre se sobreactiva la aversión a la falta de conocimiento. De igual forma, la psicología cognitiva ha analizado la aversión a la ambigüedad y cómo nuestros sesgos cognitivos, como el <span class="concept2">sesgo de confirmación</span>, nos hacen querer sentir que sabemos. La consecuencia es que experimentamos fuertes sentimientos de certidumbre en contextos donde esta no puede justificarse, un fenómeno que permea la argumentación moral cotidiana.</p>
+                </section>
+
+                <!-- Sección 2: Conceptos y Tipos de Ignorancia -->
+                <section id="conceptos" class="glassmorphism section" data-animate>
+                    <h2>Conceptos de la Epistemología Negativa</h2>
+                    <p>Para abordar el problema, es necesario desarrollar algunos conceptos clave. <span class="concept1">Creencia</span> es el contenido mental de un hecho. <span class="concept1">Certidumbre epistémica</span> es el grado de justificación o confiabilidad de esa creencia. <span class="concept1">Certidumbre emocional</span> es la fuerza de la creencia experimentada por el sujeto. El <span class="concept1">conocimiento</span> lo entendemos como la creencia verdadera justificada. Por otro lado, la <span class="concept1">epistemología negativa</span> aborda los conceptos de ausencia de conocimiento.</p>
+                    <h3>Tipos de Ignorancia</h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li><span class="concept1">Conocimiento Negativo:</span> El conocimiento sobre los límites de nuestro conocimiento; lo que sabemos que no sabemos.</li>
+                        <li><span class="concept1">No Conocimiento:</span> La ausencia total de conocimiento. Aquello que no se sabe que no se sabe.</li>
+                        <li><span class="concept1">Ignorancia Superficial:</span> Conocimiento que se sabe que no se tiene, pero que se sabe que es susceptible de obtenerse en el futuro.</li>
+                        <li><span class="concept1">Ignorancia Profunda:</span> Conocimiento que se sabe que no se tiene, y que se sabe que no es plausiblemente susceptible de obtenerse en el futuro.</li>
+                    </ul>
+                    <div class="mermaid">
+                        graph TD
+                            A[Conocimiento] --> B[Conocimiento Negativo];
+                            B --> C[Ignorancia Superficial];
+                            B --> D[Ignorancia Profunda];
+                            C --> E[Se puede obtener];
+                            D --> F[No se puede obtener];
+                            E --> A;
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style B fill:#f472b6,stroke:#333,stroke-width:2px;
+                            style C fill:#34d399,stroke:#333,stroke-width:2px;
+                            style D fill:#34d399,stroke:#333,stroke-width:2px;
+                            style E fill:#818cf8,stroke:#333,stroke-width:2px;
+                            style F fill:#818cf8,stroke:#333,stroke-width:2px;
+                    </div>
+                    <p>A esto le llamo la **paradoja de la epistemología negativa**: mientras más aumenta el conocimiento, la cantidad percibida de ignorancia también se incrementa, ya que cualquier estado de conocimiento abre aún más nociones de lo que no se sabe. La tesis que defiendo es que el aumento del conocimiento biológico ha hecho evidente nuestro desconocimiento sobre el estatuto ontológico del embrión humano, llevándolo de una ignorancia superficial a una <span class="concept1">ignorancia profunda</span>.</p>
+                </section>
+
+                <!-- Sección 3: El problema del Embrión Humano -->
+                <section id="embrión" class="glassmorphism section" data-animate>
+                    <h2>El Estatuto del Embrión Humano</h2>
+                    <p>El estatuto moral del embrión humano es un tema larguísimo. La estructura general de la argumentación moral puede dividirse en tres tipos de creencias: la **creencia moral** (es incorrecto matar a una persona inocente), la **creencia ontológica** (los embriones son personas) y la **creencia científica** (cierta actividad genera daño al embrión).</p>
+                    <p>La historia de los criterios para considerar al embrión como persona es muy compleja, con propuestas como el **criterio de información** (cigoto), la **unicidad** (día 14), o la **implantación** en el útero. Todas estas posturas tienen problemas críticos y se basan en cualidades específicas que parecen ser una decisión arbitraria. El conocimiento biológico actual es profundísimo, y a pesar de ello, no parece para nada claro qué falta por saber para resolver este problema. No es una cuestión de que "aún no lo sabemos", sino que la evidencia científica y filosófica sugiere que es un caso de <span class="concept1">ignorancia profunda</span>.</p>
+                    <p>El conocimiento negativo que tenemos acerca de este problema nos lleva a la conclusión de que es inverosímil esperar asignar una probabilidad de que el problema se resolverá en el futuro. Nos enfrentamos a una situación paradójica en la que no podemos descartar la afirmación de que el embrión es una persona, porque en algún momento de su desarrollo el organismo humano sí se convierte en una persona. Por lo tanto, no podemos evadir el problema.</p>
+                </section>
+                
+                <!-- Sección 4: Ética de la Incertidumbre -->
+                <section id="etica" class="glassmorphism section" data-animate>
+                    <h2>Hacia una Ética de la Incertidumbre</h2>
+                    <p>Si estamos en un caso de ignorancia profunda, ¿qué hacemos? Ante ignorancia superficial, se podría aplicar el **principio precautorio** (<span class="person">Manuel Cuya</span>, <span class="person">Peterson</span>), que dice que si hay un daño potencial, uno no debería proceder. O, desde una perspectiva utilitarista, se podría aplicar el **principio de maximización de utilidad esperada**.</p>
+                    <p>Sin embargo, estos principios no aplican a la ignorancia profunda. El ejemplo de lanzar una flecha a un bosque que ha sido exhaustivamente explorado, pero donde podría haber seres indetectables por definición, muestra que no tiene sentido asignar una probabilidad a su existencia. Por ello, propongo dos principios éticos para la ignorancia profunda:</p>
+                    <h3>Principios para la Ignorancia Profunda</h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li>**Principio de Presunción de Inocencia:** No es moralmente aceptable condenar a personas a graves perjuicios (como la cárcel o pesos existenciales) en ausencia radical de certidumbre respecto a la inmoralidad del acto. Condenar a personas con la fuerza de la ley en base a creencias sin resolución certera es simplemente inmoral.</li>
+                        <li>**Principio de Supererogación:** Ante casos de ignorancia profunda, los juicios morales no implican exigencias en el sentido de obligaciones o prohibiciones, sino que son juicios de valor, recomendaciones o persuasiones. No se puede imponer una moral coercitiva.</li>
+                    </ul>
+                    <div class="mermaid">
+                        graph TD
+                            A[Ignorancia Profunda] --> B[Presunción de Inocencia];
+                            A --> C[Principio de Supererogación];
+                            B --> D[No Condenar sin Certeza];
+                            C --> E[Moral No Coercitiva];
+                            D --> F[Libertad de la Persona];
+                            E --> G[Recomendaciones, Persuasión];
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style B fill:#34d399,stroke:#333,stroke-width:2px;
+                            style C fill:#34d399,stroke:#333,stroke-width:2px;
+                            style D fill:#f472b6,stroke:#333,stroke-width:2px;
+                            style E fill:#f472b6,stroke:#333,stroke-width:2px;
+                            style F fill:#818cf8,stroke:#333,stroke-width:2px;
+                            style G fill:#818cf8,stroke:#333,stroke-width:2px;
+                    </div>
+                    <p>En el caso del embrión, instituciones como la Iglesia Católica o movimientos Pro-vida pueden defender públicamente el estatuto moral del embrión humano e intentar persuadir a las personas, pero no pueden obligar, exigir o condenar a otros. En una sociedad del conocimiento, una ética del desconocimiento se vuelve cada vez más necesaria.</p>
+                </section>
+
+            </main>
+        </div>
+        <footer class="footer" id="contacto">
+            <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+        </footer>
+    </div>
+    <script>
+        // Inicia el código del Canvas
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicialización de Three.js Background
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+            } else {
+                console.error("Three.js not loaded");
+            }
+
+            setupNavigation();
+            setupScrollAnimations();
+            
+            // Renderizado de diagramas Mermaid
+            mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
+                'primaryColor': '#000000',
+                'primaryTextColor': '#e5e7eb',
+                'lineColor': '#818cf8',
+                'nodeBorder': '#818cf8',
+                'mainBkg': '#111827',
+                'textColor': '#e5e7eb'
+            } });
+        });
+
+        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById("bg-canvas"),
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 250;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error initializing Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points) {
+                points.rotation.y += 0.0003;
+                points.rotation.x += 0.0002;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- CÓDIGO DE NAVEGACIÓN ---
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.body.classList.toggle('menu-open');
+            });
+
+            navMenu.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                   document.body.classList.remove('menu-open');
+                }
+            });
+        }
+
+        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        
+                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid, ul, .authors, img');
+                        elementsToAnimate.forEach((el, index) => {
+                           el.style.transitionDelay = `${index * 100}ms`;
+                        });
+
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+    </script>
+</body>
+</html>
