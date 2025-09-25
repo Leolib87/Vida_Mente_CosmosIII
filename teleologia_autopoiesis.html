@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estabilidad Termodinámica y Teleología | O.C.V.M. Plantilla</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        /* Variables de CSS para colores y fuentes */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;    /* Rosa para nombres de personas */
+        }
+
+        /* Estilos generales para el cuerpo de la página */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+            text-align: justify;
+        }
+        p {
+            text-align: justify;
+        }
+
+        /* Canvas de fondo con animación Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        /* Estilo de glassmorphism para secciones y navegación */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+
+        /* Sección del héroe o cabecera principal */
+        .hero {
+            min-height: 60vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 7vw, 4.5rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Contenedor principal para el contenido */
+        .main-container { 
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto; 
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content {
+            pointer-events: auto;
+        }
+
+        main p, .footer p {
+            user-select: text;
+            cursor: default;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        /* Animación de aparición para las secciones con scroll */
+        .section h2, .section h3, .section p, .mermaid, .section ul, .section .authors {
+             opacity: 0;
+             transform: translateY(20px);
+             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .mermaid, .section.is-visible ul, .section.is-visible .authors {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
+        
+        /* Clases para colorear palabras y conceptos */
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .concept2 { color: var(--concept-color-2); font-weight: 500; }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; }
+
+        /* Pie de página */
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        /* Estilo para los diagramas de Mermaid */
+        .mermaid {
+            margin: 2rem auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        /* Media queries para dispositivos móviles */
+        @media (max-width: 768px) {
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+            body.menu-open .nav-container {
+                transform: translateY(0);
+            }
+
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo con animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>O.C.V.M.</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#inicio">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                    Inicio</a></li>
+                <li><a href="#seccion1">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                    Contenido</a></li>
+                <li><a href="#referencias">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                    Referencias</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Sección Hero -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Estabilidad Termodinámica en Desequilibrio: La Aparente Teleología de los Seres Vivos</h1>
+                <p>Un análisis de por qué la <span class="concept1">teleología</span> de los seres vivos no es una propiedad real, sino un resultado de su <span class="concept2">estabilidad</span> como estructuras disipativas.</p>
+                <p class="authors">Por <span class="person">Mario Villalobos</span></p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                
+                <!-- Sección 1: Resumen -->
+                <section id="seccion1" class="glassmorphism section" data-animate>
+                    <h2>Resumen</h2>
+                    <p>Entre los sistemas físicos, los seres vivos se suelen considerar los únicos sistemas naturales genuinamente teleológicos. En este trabajo, sostengo que la supuesta <span class="concept1">teleología</span> de los seres vivos no es una propiedad real, sino solo una apariencia, detrás de la cual lo que realmente existe es una versión compleja de la <span class="concept2">estabilidad</span>. La complejidad de los seres vivos como sistemas estables tiene que ver principalmente, aunque no exclusivamente, con el hecho de que son <span class="concept1">estructuras disipativas</span> que obedecen al principio termodinámico de máxima producción de entropía.</p>
+                </section>
+
+                <!-- Sección 2: Seres Vivos: ¿Estabilidad o Teleología? -->
+                <section id="seccion2" class="glassmorphism section" data-animate>
+                    <h2>Seres Vivos: ¿Estabilidad o Teleología?</h2>
+                    <p>Los seres vivos permanecen con vida en la medida en que un conjunto de variables metabólicas o fisiológicas (usualmente llamadas variables críticas o esenciales) mantienen sus valores dentro de ciertos rangos específicos (llamados rangos fisiológicos o metabólicos) (<span class="person">Ashby</span>, 1960). La habilidad de los seres vivos para mantener, a pesar de las perturbaciones, su condición fisiológica o metabólica dentro de estos rangos es lo que se conoce como <span class="concept2">homeostasis</span>. La homeostasis es una versión particular de la <span class="concept2">estabilidad</span>, una propiedad relativamente común entre los sistemas físicos. Todos los <span class="concept2">sistemas estables</span>, cuando son perturbados, generan en mayor o menor grado un patrón de comportamiento característico que parece ser teleológico (<span class="person">Ashby</span>, 1960). Exhiben un patrón de comportamiento típicamente convergente; es decir, sin importar de qué manera sean desplazados de su estado estacionario (la variabilidad de las perturbaciones), siempre regresan al mismo estado. Un péndulo, por ejemplo, sin importar el ángulo del desplazamiento, siempre regresará al mismo estado de equilibrio (la posición de reposo). Es la combinación de variabilidad (por el lado del comportamiento) con la invariancia (por el lado del estado estacionario), lo que da la idea de "flexibilidad" en el sistema. El sistema, de alguna manera, parece tener un objetivo fijo alrededor del cual es capaz de variar y 'acomodar' su comportamiento de acuerdo con las diferentes circunstancias. Sin embargo, el sistema, por ejemplo, el péndulo, en realidad no se mueve de acuerdo con objetivos o propósitos; simplemente sigue leyes físicas.</p>
+
+                    <p>Los seres vivos, como sistemas estables altamente complejos, no son la excepción a esta regla, sino más bien el caso más representativo y fuerte (<span class="person">Villalobos</span>, 2015). Cuando tratamos con péndulos, la mayoría de nosotros no encontramos una explicación teleológica terriblemente atractiva, ya que las variables físicas simples son suficientes para explicar su comportamiento. Sin embargo, cuando tratamos con sistemas vivos, la situación parece cambiar. ¿Por qué es así? ¿Por qué somos tan propensos a atribuir algún tipo de <span class="concept1">teleología</span> a los seres vivos?</p>
+                    
+                    <h3>La Apariencia de la Teleología</h3>
+                    <p>La pregunta es: "¿Qué es lo peculiar de los seres vivos, es decir, su constitución y funcionamiento, para que su <span class="concept2">comportamiento</span> parezca ser teleológico?" La respuesta, sostengo, tiene que ver con la complejidad de los seres vivos como <span class="concept2">sistemas estables</span>. La relativa simplicidad o complejidad de un sistema estable tiene que ver, principalmente, aunque no exclusivamente, con los siguientes factores: a) su dimensionalidad (el número de variables en las que el sistema exhibe estabilidad), b) su régimen termodinámico, c) la presencia o ausencia de mecanismos de retroalimentación, y d) su orden de estabilidad. Todos estos factores, sostengo, enriquecen o complican la forma en que los seres vivos generan su <span class="concept2">comportamiento</span> como sistemas estables, pero no introducen ninguna excepcionalidad ontológica en términos de <span class="concept1">teleología</span>. Es decir, aunque mucho más complejos, los seres vivos siguen siendo tan carentes de propósito como los péndulos.</p>
+
+                    <div class="mermaid">
+                        graph TD
+                            A[Seres Vivos] -->|Sistemas Complejos| B(Estabilidad);
+                            B -->|Patrón de Comportamiento Convergente| C{Apariencia de Teleología};
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style B fill:#34d399,stroke:#333,stroke-width:2px;
+                            style C fill:#f472b6,stroke:#333,stroke-width:2px;
+                    </div>
+
+                </section>
+
+                <!-- Sección 3: Estabilidad Termodinámica en Desequilibrio -->
+                <section id="seccion3" class="glassmorphism section" data-animate>
+                    <h2>Estabilidad Termodinámica en Desequilibrio</h2>
+                    <p>Desde un punto de vista termodinámico, los seres vivos pertenecen a un grupo especial de sistemas fisicoquímicos llamados <span class="concept1">estructuras disipativas</span> (<span class="person">Prigogine</span> y <span class="person">Stengers</span>, 1984). Ejemplos de estas estructuras incluyen las células de Benard, las llamas, los huracanes y los remolinos (<span class="person">Ji</span>, 2012; <span class="person">Ulanowicz</span> y <span class="person">Hannon</span>, 1987). La peculiaridad de estos sistemas, a diferencia de las llamadas estructuras de equilibrio, es que se constituyen en condiciones <span class="concept1">lejos del equilibrio termodinámico</span> y mantienen su integridad a través del intercambio constante de energía (y materia en el caso de sistemas abiertos) con el entorno. En otras palabras, se desintegran si este intercambio se interrumpe. Los seres vivos, como cualquier otra <span class="concept1">estructura disipativa</span>, son sistemas cuya región de estabilidad fisicoquímica está <span class="concept1">lejos del equilibrio termodinámico</span>. Esto significa que, cuando son perturbados, no se mueven hacia el equilibrio, sino hacia la región específica <span class="concept1">lejos del equilibrio</span> en la que conservan su integridad.</p>
+                    
+                    <h3>El Principio de Máxima Producción de Entropía</h3>
+                    <p>Toda <span class="concept1">estructura disipativa</span> exhibe el mismo patrón de <span class="concept2">estabilidad</span>. Si perturbamos la llama de una vela, vemos cómo se reconstituye como tal. Lo mismo ocurre con un remolino en el mar. Una vez que un estado estacionario en desequilibrio se estabiliza, es capaz de exhibir un grado considerable de <span class="concept2">estabilidad</span> (<span class="person">Kondepudi</span>, 2012). Ciertamente, la <span class="concept2">estabilidad</span> que puede alcanzar un volumen físico en condiciones <span class="concept1">lejos del equilibrio</span> es más débil que la que podría alcanzar en condiciones de equilibrio, sin embargo, sigue siendo una <span class="concept2">estabilidad</span> bastante robusta.</p>
+
+                    <p>Según una hipótesis relativamente establecida en termodinámica, las <span class="concept1">estructuras disipativas</span>, vivas o no, se originan, existen, se comportan y evolucionan siguiendo lo que se conoce como el '<span class="concept1">principio de máxima producción de entropía</span>' (MEPP) (<span class="person">Kondepudi</span>, 2012; <span class="person">Martyushev</span> y <span class="person">Seleznev</span>, 2006; <span class="person">Michaelian</span>, 2011; <span class="person">Swenson</span>, 2009). El MEPP, a grandes rasgos, establece que dado un gradiente termodinámico a través de un sistema, los subsistemas estructurados tienden a organizarse y comportarse de manera que maximizan la producción de <span class="concept1">entropía</span>. Esta hipótesis, si es correcta, explicaría, en lugar de retener, la concepción teleológica de los seres vivos.</p>
+
+                    <div class="mermaid">
+                        graph LR
+                            A[Gradiente Termodinámico] --> B(Sistema Fisicoquímico);
+                            B -->|Se organiza como| C[Estructura Disipativa];
+                            C --> D[Maximiza la Producción de Entropía];
+                            D --> E{Comportamiento con apariencia de propósito};
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style B fill:#34d399,stroke:#333,stroke-width:2px;
+                            style C fill:#818cf8,stroke:#333,stroke-width:4px;
+                            style D fill:#fbbf24,stroke:#333,stroke-width:2px;
+                            style E fill:#f472b6,stroke:#333,stroke-width:2px;
+                    </div>
+
+                </section>
+
+                <!-- Sección 4: Discusión -->
+                <section id="discusión" class="glassmorphism section" data-animate>
+                    <h2>Discusión</h2>
+                    <p>Los seres vivos enfrentan un flujo continuo de perturbaciones, tanto internas como externas, y su <span class="concept2">comportamiento</span> como <span class="concept1">estructuras disipativas</span> es un retorno constante a la condición <span class="concept1">lejos del equilibrio</span> en la que existen. Los vemos renovando constantemente el intercambio de energía y materia con el entorno, y tendemos a interpretar este <span class="concept2">comportamiento</span> como un indicativo de propósitos o <span class="concept1">teleología</span> intrínseca. Sin embargo, el mismo principio termodinámico, a saber, el MEPP, se aplica tanto a las <span class="concept1">estructuras disipativas</span> no vivas como a las vivas y parece explicar lo que consideramos <span class="concept2">comportamientos</span> con propósito. El <span class="concept2">comportamiento</span> de estos <span class="concept2">sistemas</span>, sin embargo, según el argumento presentado aquí, representa solo una versión diferente, es decir, una versión en desequilibrio, de un fenómeno físico fundamental y ordinario: la <span class="concept2">estabilidad</span>. De los péndulos a las cuentas, de las llamas a los seres vivos, parece haber una distancia considerable e innegable. Sin embargo, la distancia, por significativa que sea, parece ser una cuestión de grado termodinámico, y no una cuestión de <span class="concept1">teleología</span>.</p>
+                </section>
+                
+                <!-- Sección 5: Agradecimientos y Referencias -->
+                <section id="referencias" class="glassmorphism section" data-animate>
+                    <h2>Agradecimientos</h2>
+                    <p>Este trabajo fue parcialmente apoyado por el Convenio de Desempeño UTA-MINEDUC.</p>
+                    
+                    <h3>Referencias</h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li><span class="person">Abramova, K.</span>, y <span class="person">Villalobos, M.</span> (2015). The apparent Ur-intentionality of living beings and the game of content. <i>Philosophia, 43</i>(3): 651-668.</li>
+                        <li><span class="person">Ashby, W. R.</span> (1960). <i>Design for a brain</i>. Chapman & Hall, Londres.</li>
+                        <li><span class="person">England, J. L.</span> (2015). Dissipative adaptation in driven self-assembly. <i>Nature Nanotechnology, 10</i>: 919-923.</li>
+                        <li><span class="person">Ji, S.</span> (2012). <i>Molecular theory of the living cell: Concepts, molecular mechanisms, and biomedical applications</i>. Springer. Nueva York.</li>
+                        <li><span class="person">Kondepudi, D.</span> (2012). Self-organization, entropy production, and physical intelligence. <i>Ecological Psychology, 24</i>(1): 33-45.</li>
+                        <li><span class="person">Kondepudi, D.</span>, <span class="person">Kay, B.</span>, y <span class="person">Dixon, J.</span> (2015). End-directed evolution and energy-seeking behavior in a complex system. <i>Physical Review E, 91</i>, 050902.</li>
+                        <li><span class="person">Martyushev, L. M.</span>, y <span class="person">Seleznev, V. D.</span> (2006). Maximum entropy production principle in physics, chemistry and biology. <i>Physics Reports, 426</i>: 1-45.</li>
+                        <li><span class="person">Michaelian, K.</span> (2011). Thermodynamic dissipation theory for the origin of life. <i>Earth System Dynamics, 2</i>: 37-51.</li>
+                        <li><span class="person">Prigogine, I.</span>, y <span class="person">Stengers, I.</span> (1984). <i>Order out of chaos: Man’s new dialogue with nature</i>. Bantam Books, Canadá.</li>
+                        <li><span class="person">Shaw, R. E.</span>, y <span class="person">Kinsella-Shaw, J.</span> (2012). Hints of intelligence from first principles. <i>Ecological Psychology, 24</i>(1): 60-93.</li>
+                        <li><span class="person">Swenson, R.</span> (2009). The fourth law of thermodynamics: The law of maximum entropy production (LMEP). <i>Chemistry, 18</i>: 333–339.</li>
+                        <li><span class="person">Swenson, R.</span>, y <span class="person">Turvey, M. T.</span> (1991). Thermodynamic reasons for perception–action cycles. <i>Ecological Psychology, 4</i>: 317–348.</li>
+                        <li><span class="person">Turvey, M. T.</span>, y <span class="person">Carello, C.</span> (2012). On intelligence from first principles: Guidelines for inquiry into the hypothesis of physical intelligence (PI). <i>Ecological Psychology, 24</i>(1): 3-32.</li>
+                        <li><span class="person">Ulanowicz, R. E.</span>, y <span class="person">Hannon, B. M.</span> (1987). Life and the production of entropy. <i>Proceedings of the Royal Society of London. Series B. Biological Sciences, 232</i>(1267): 181–192.</li>
+                        <li><span class="person">Villalobos, M.</span> (2015). The Biological Roots of Cognition and the Social Origins of Mind. Ph.D. thesis, School of Philosophy, Psychology and Language Sciences, University of Edinburgh.</li>
+                    </ul>
+                </section>
+            </main>
+        </div>
+        <footer class="footer" id="contacto">
+            <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+        </footer>
+    </div>
+    <script>
+        // Inicia el código del Canvas
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicialización de Three.js Background
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+            } else {
+                console.error("Three.js not loaded");
+            }
+
+            setupNavigation();
+            setupScrollAnimations();
+            
+            // Renderizado de diagramas Mermaid
+            mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
+                'primaryColor': '#000000',
+                'primaryTextColor': '#e5e7eb',
+                'lineColor': '#818cf8',
+                'nodeBorder': '#818cf8',
+                'mainBkg': '#111827',
+                'textColor': '#e5e7eb'
+            } });
+        });
+
+        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById("bg-canvas"),
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 250;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error initializing Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points) {
+                points.rotation.y += 0.0003;
+                points.rotation.x += 0.0002;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- CÓDIGO DE NAVEGACIÓN ---
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.body.classList.toggle('menu-open');
+            });
+
+            navMenu.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                   document.body.classList.remove('menu-open');
+                }
+            });
+        }
+
+        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        
+                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid, ul, .authors');
+                        elementsToAnimate.forEach((el, index) => {
+                           el.style.transitionDelay = `${index * 100}ms`;
+                        });
+
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+    </script>
+</body>
+</html>
