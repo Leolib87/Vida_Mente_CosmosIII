@@ -1,0 +1,775 @@
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Las Variedades del Enactivismo: Un Viaje a la Mente Corpórea | O.C.V.M. Plantilla</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Dependencias obligatorias -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        /* Variables de CSS para colores y fuentes */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;    /* Rosa para nombres de personas */
+        }
+
+        /* Estilos generales para el cuerpo de la página */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+            text-align: justify;
+        }
+        p {
+            text-align: justify;
+        }
+
+        /* Canvas de fondo con animación Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        /* Estilo de glassmorphism para secciones y navegación */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+
+        /* Sección del héroe o cabecera principal */
+        .hero {
+            min-height: 70vh; /* Aumentado para un impacto mayor */
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 7vw, 4.5rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Contenedor principal para el contenido */
+        .main-container { 
+            width: 100%;
+            max-width: 100%; 
+            margin: 0 auto; 
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content {
+            pointer-events: auto;
+        }
+
+        main p, .footer p {
+            user-select: text;
+            cursor: default;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        /* Animación de aparición para las secciones con scroll */
+        .section h2, .section h3, .section p, .mermaid, .section ul, .section .authors, .section li {
+             opacity: 0;
+             transform: translateY(20px);
+             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .mermaid, .section.is-visible ul, .section.is-visible .authors, .section.is-visible li {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
+        
+        /* Clases para colorear palabras y conceptos */
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .concept2 { color: var(--concept-color-2); font-weight: 500; }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; }
+
+        /* Pie de página */
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        /* Estilo para los diagramas de Mermaid */
+        .mermaid {
+            margin: 2rem auto;
+            padding: 1.5rem;
+            background: rgba(30, 41, 59, 0.9); /* Darker background for diagram */
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(129, 140, 248, 0.3);
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            width: 100%;
+            max-width: 900px;
+            overflow-x: auto; /* Permitir scroll si el diagrama es muy ancho */
+        }
+        
+        /* Media queries para dispositivos móviles (manteniendo la lógica del template) */
+        @media (max-width: 768px) {
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+            body.menu-open .nav-container {
+                transform: translateY(0);
+            }
+
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle { display: none; }
+            .layout-grid {
+                /* Asegurar que el layout grid no limite el ancho si se necesita para Mermaid */
+                grid-template-columns: 1fr; 
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo con animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    
+    <!-- Navegación -->
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>O.C.V.M.</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#inicio">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                    Inicio</a></li>
+                <li><a href="#ancestros">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                    Orígenes</a></li>
+                <li><a href="#variedades">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12A2.25 2.25 0 0020.25 14.25V3M3.75 20.25h16.5M3.75 12h16.5m-16.5 4.5h16.5m-16.5-8.25h16.5" /></svg>
+                    Variedades</a></li>
+                <li><a href="#extendida">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.5 14.75a.75.75 0 100-1.5.75.75 0 000 1.5zm-3.75-2.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm-3.75 2.25a.75.75 0 100-1.5.75.75 0 000 1.5zm11.25-1.5a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm-2.25-3.75a.75.75 0 100-1.5.75.75 0 000 1.5zm-3.75 2.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm-3.75-2.25a.75.75 0 100-1.5.75.75 0 000 1.5zm-2.25-3.75a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg>
+                    Extendida</a></li>
+                <li><a href="#genealogia">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                    Diagrama</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Sección Hero -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Las Variedades del Enactivismo: Un Viaje a la Mente Corpórea</h1>
+                <p>Una síntesis ambiciosa que busca articular una nueva ciencia cognitiva, trascendiendo el paradigma cognitivista y uniendo la ciencia empírica con la experiencia vivida, el cuerpo y el entorno. Un recorrido por los 25 años desde <i>The Embodied Mind</i>.</p>
+                <p class="authors">Por <span class="person">Dave Ward</span>, <span class="person">David Silverman</span> y <span class="person">Mario Villalobos</span> (Basado en Topoi, 2017)</p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                
+                <!-- Sección 1: Orígenes y Ancestros -->
+                <section id="ancestros" class="glassmorphism section" data-animate>
+                    <h2>1. Ancestros: Las Corrientes Fundacionales del Cambio</h2>
+                    <p>El enfoque enactivo emergió a finales del siglo XX como una reacción directa a la crisis del <span class="concept1">Cognitivismo Clásico</span>. Este paradigma intentaba entender la inteligencia mediante la manipulación de estados internos que representaban propiedades del mundo, guiado por la metáfora de la **mente como computadora**. La dificultad para modelar la flexibilidad, la sensibilidad al contexto y las capacidades básicas como el control motor y la percepción impulsaron la convergencia de alternativas teóricas, prefigurando la visión enactiva de la mente como activa, encarnada (*embodied*) y incrustada (*embedded*).</p>
+                    <p>Las historias abreviadas de cualquier área, especialmente una tan joven como la ciencia cognitiva, son inevitablemente parciales y sesgadas. Sin embargo, considerar cómo aparece una parte relevante de la historia intelectual desde una perspectiva particular ayuda a entender esa perspectiva y sus motivaciones. La siguiente cuenta de la historia reciente de la ciencia cognitiva desde la perspectiva del enactivismo no pretende ser completa ni objetiva. Sin embargo, entender las formas en que diferentes grupos de teóricos han combinado los ingredientes a continuación es útil para comprender las variedades del enactivismo.</p>
+
+                    <h3>1.1. La Crisis del Representacionalismo y la Dinámica</h3>
+                    <p>Frente a las representaciones discretas y seriales del cognitivismo, la investigación en <span class="concept2">Redes Neuronales Conexionistas</span> y la <span class="concept2">Teoría de Sistemas Dinámicos (DST)</span> demostró que la conducta adaptativa puede emerger de **sistemas de auto-organización** en una red densamente interconectada. El lenguaje de la DST, que describe el desarrollo de sistemas complejos en términos de un **espacio de estados** y **atractores** (puntos estables a los que tiende la actividad del sistema), prescinde de la necesidad de representaciones estáticas internas. En su lugar, enfatiza una descripción global del estado y la actividad del sistema.</p>
+                    <p>El trabajo en redes neuronales conexionistas sugería que las explicaciones computacionales de la conducta inteligente no necesitan apelar a la producción serial y manipulación de estados representacionales discretos; en cambio, la conducta adaptativa puede emerger de la actividad de una red densamente interconectada de unidades interactuantes. Importante, los patrones de conectividad que especifican la estructura de una red conexionista no necesitan ser rígidos o pre-especificados. En cambio, las redes conexionistas pueden ser sistemas auto-organizantes; la estructura que subyace a su conducta inteligente puede emerger como resultado del aprendizaje y la historia interactiva de la red. Los modelos conexionistas tuvieron éxito notable en dominios que preocupaban a los cognitivistas, como el reconocimiento de patrones y el control sensorimotor.</p>
+                    <p>Una tema emergente estrechamente relacionado era el uso de herramientas de la teoría de sistemas dinámicos (DST) para caracterizar la organización cognitiva. DST proporciona aparatos formales y conceptuales para describir las operaciones en desarrollo de sistemas complejos compuestos de múltiples partes interactuantes cercanas—incluyendo sistemas auto-organizantes como (algunas) redes conexionistas. El lenguaje de DST caracteriza sistemas en términos de un espacio multidimensional de posibles estados en los que el sistema puede estar, ecuaciones que describen las formas en que el sistema puede transitar de un punto en el espacio de estados a otro, y puntos teóricamente significativos en ese espacio como atractores—estados estables a los que la actividad de un sistema a menudo tenderá. De especial relevancia para la narrativa histórica que estamos construyendo aquí es el hecho de que estas caracterizaciones evitan hablar de representaciones discretas y estáticas en favor de una descripción global del estado de un sistema y su actividad.</p>
+
+                    <h3>1.2. La Percepción Activa y las Oportunidades (Affordances)</h3>
+                    <p>La <span class="concept1">Psicología Ecológica</span> de <span class="person">J.J. Gibson</span> sugirió una reacción complementaria. Para Gibson, la percepción visual es <span class="concept2">directa</span> porque la percepción es inherentemente **activa**: la información del entorno se revela a través de nuestra propia actividad exploratoria (como mover la cabeza, pestañear o acercarnos), lo que permite al sistema perceptual modular los efectos sensoriales a lo largo del tiempo. Lo que percibimos está intrínsecamente ligado a nuestras capacidades y propósitos, es decir, percibimos <span class="concept1">Affordances</span> (oportunidades para la acción) en lugar de información neutral que deba ser interpretada internamente. Este concepto subraya la co-dependencia entre el organismo y el entorno.</p>
+                    <p>De acuerdo con la psicología ecológica de Gibson, la percepción visual del entorno es directa en que no debe entenderse en términos de estados representacionales o computacionales que reconstruyen información ambiental perdida en la transducción sensorial. Parte de la razón por la que tales estados no son requeridos es que la percepción es activa en al menos dos formas. Primero, dado que los efectos sensoriales del entorno sobre nosotros se desarrollan en el tiempo, y pueden ser modulados por nuestra propia actividad (entrecerrar los ojos, mirar más de cerca, moverse alrededor), una concepción de la percepción visual como la recuperación de información detallada de un estímulo perceptual estático e impoverished subestima los recursos disponibles para nuestros sistemas perceptivos. Segundo, lo que percibimos está ligado a nuestros propósitos y capacidades. Percibimos affordances—oportunidades para interactuar con el entorno en formas que reflejan nuestras necesidades y planes—en lugar de información prácticamente neutral que nuestros sistemas perceptivos deben interpretar y poner en contacto con nuestras capacidades para la acción. Finalmente, esta concepción activa y directa de la percepción va junto con una concepción del perceptor y el entorno como co-definidos y co-dependientes. El entorno de un perceptor es solo ese conjunto de características que pueden guiar perceptualmente sus actividades en curso. Y ser un perceptor es ser el tipo de criatura que puede ser guiada por el entorno de esa manera.</p>
+                    <p>No queremos sugerir aquí que la psicología gibsoniana fue una inspiración central de TEM misma—Varela, Thompson y Rosch (1991, pp. 202–203) se cuidan de señalar las diferencias entre su visión y la de Gibson (1979). El trabajo anterior de Varela con Maturana (e.g. Maturana y Varela 1980; ver también Varela 1997) y las corrientes fenomenológicas discutidas abajo son antecedentes teóricos más importantes de la visión relacional de la cognición desarrollada en TEM.</p>
+
+                    <h3>1.3. Inteligencia sin Representación</h3>
+                    <p>La <span class="concept2">Robótica Situada</span>, ejemplificada por <span class="person">Rodney Brooks</span> y sus 'Creatures' (como 'Herbert'), proporcionó una prueba de existencia de que la inteligencia adaptativa simple podía lograrse sin un modelo interno detallado del entorno. Brooks diseñó sus robots con múltiples subsistemas que conectaban **percepción a acción directamente**. Su principio fundamental era **usar el mundo como su mejor modelo**, priorizando el acceso rápido y fiable a la información conductualmente relevante sobre la reconstrucción interna de un modelo centralizado. Brooks lo resumió: <i>"Just as there is no central representation there is not even a central system... Out of the local chaos of their interactions there emerges... a coherent pattern of behavior."</i></p>
+                    <p>Brooks' Creatures proporcionaron una prueba de existencia de que modos simples de inteligencia podrían ser ingenierizados mediante múltiples capacidades sensorimotoras interactuantes, sin recurrir a un modelo detallado del entorno como locus de control central. En cambio, Brooks diseñó sus Creatures para usar el mundo como su propio mejor modelo, enfatizando la capacidad para acceder rápidamente y de manera confiable a información relevante para la conducta sobre la capacidad para reconstruir esa información internamente.</p>
+                    <p>Al mismo tiempo que estas tendencias, el trabajo en la tradición de la psicología ecológica sugería un conjunto complementario de reacciones al cognitivismo. Finalmente, el trabajo en robótica situada fue ganando momentum durante la gestación de TEM. Como se notó arriba, los modelos cognitivistas exitosos a menudo exhibían solo capacidades frágiles y específicas de dominio para respuesta inteligente, y luchaban en particular con control sensorimotor adaptativo. El roboticista de MIT Rodney Brooks notó que estas limitaciones también se reflejaban en la IA cognitivista, con los robots más sofisticados existentes fallando en aproximar la inteligencia sensorimotora ecológicamente robusta de insectos simples. Para remediar esto, Brooks (1991) ingenierizó y construyó una serie de robots (o 'Creatures') diseñados para producir flexiblemente un rango de comportamientos adaptativos simples en interacción con entornos reales. En lugar de diseñar según principios cognitivistas—con comportamiento guiado por producir y actualizar continuamente representaciones detalladas del entorno objetivo—los robots de Brooks consistían en un número de subsistemas de propósito especial, la mayoría de los cuales guiaban un comportamiento sensorimotor simple. En lugar de tener cada subsistema alimentando a un procesador central que calcularía y comandaría un solo curso de acción para el robot, los subsistemas estaban interconectados de tal manera que la actividad de cada uno podía inhibir la actividad de otros, en formas que podían ser fácilmente ajustadas y manipuladas por los ingenieros.</p>
+
+                    <h3>1.4. La Raíz Fenomenológica y el Cuerpo Vivido</h3>
+                    <p>El transfondo filosófico esencial del enactivismo proviene de la <span class="concept2">Fenomenología</span>. Pensadores como <span class="person">Martin Heidegger</span> (con su análisis del *Dasein*) y <span class="person">Maurice Merleau-Ponty</span> argumentaron que la capacidad de representar explícitamente el entorno depende de una capacidad previa para <span class="concept1">interactuar hábilmente</span>. El ejemplo es que la capacidad de concebir un martillo como 'demasiado pesado' presupone una capacidad previa para **martillar** y una sensación de lo que implica que la acción se desarrolle bien o mal. La <span class="person">concepción del cuerpo</span> de Merleau-Ponty, con sus capacidades de interacción y su esquema corporal, es fundamental para la estructura del pensamiento y la experiencia, rechazando la visión de la mente como un asiento de actitudes proposicionales desapegadas del cuerpo.</p>
+                    <p>La división entre proponentes del cognitivismo y aquellos tentados por los programas de investigación alternativos esbozados arriba parecía sintomática de divisiones filosóficas más profundas. El atractivo teórico del cognitivismo puede rastrearse parcialmente hasta la demostración de Frege de que una amplia clase de inferencias lógicas—el tipo de cosas en las que las mentes parecen traficar—pueden especificarse en términos de reglas formales para manipular estructuras sintácticas, y la demostración de Turing de que cualquier conjunto de tales reglas puede implementarse y seguirse por una máquina. Contra este fondo, los cognitivistas podrían ocuparse en identificar las estructuras sintácticas relevantes, las reglas para manipularlas, y los principios de ingeniería según los cuales estas estructuras y reglas se implementaban en el cerebro humano. Los orígenes del cognitivismo así se superponen con los de un hilo central de 'filosofía analítica'—la interpretación del pensamiento en términos de transiciones formales entre proposiciones, y la interpretación de las mentes como fundamentalmente asientos de actitudes proposicionales. El trabajo de varios fenomenólogos, sin embargo, sugería una alternativa a esta concepción de fondo de la mentalidad. Por ejemplo, Heidegger es a menudo leído como argumentando que la capacidad de un pensador para representar explícitamente elementos de su entorno (como en una actitud proposicional) depende de una capacidad previa para interactuar hábilmente con el entorno en formas que ya están sujetas a restricciones normativas. La capacidad para pensar en un martillo como demasiado pesado para este trabajo particular depende de una capacidad previa para martillar, y un sentido previo de lo que es como para que el martilleo vaya bien o mal. Merleau-Ponty argumenta de manera similar que la capacidad para estar en una relación cognitiva significativa con el entorno depende de un conjunto de capacidades para interacción corporal, con esta dependencia resultando en que los detalles particulares de nuestra encarnación hacen contribuciones cruciales a la estructura del pensamiento y la experiencia. Hubert Dreyfus argumentó influyentemente que los límites del cognitivismo habían sido predichos con precisión por críticas fenomenológicas de la psicología empirista y racionalista, y estos comentarios parecían cada vez más prescientes a medida que el cognitivismo luchaba por modelar los tipos de inteligencia flexible, activa y comprometida enfatizados por los fenomenólogos.</p>
+
+                    <h3>1.5. Diagrama de Influencias Ancestrales</h3>
+                    <p>El siguiente diagrama ilustra las principales corrientes que confluyeron en el enactivismo, mostrando cómo se interconectan las ideas de diferentes campos.</p>
+                    <div class="mermaid">
+                        graph TB
+                            A[Cognitivismo Crisis] --> B[Connectionism]
+                            A --> C[DST]
+                            A --> D[Ecological Psychology]
+                            A --> E[Situated Robotics]
+                            A --> F[Phenomenology]
+                            B --> G[TEM]
+                            C --> G
+                            D --> G
+                            E --> G
+                            F --> G
+
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px
+                            style B fill:#34d399,stroke:#333,stroke-width:2px
+                            style C fill:#34d399,stroke:#333,stroke-width:2px
+                            style D fill:#818cf8,stroke:#333,stroke-width:2px
+                            style E fill:#f472b6,stroke:#333,stroke-width:2px
+                            style F fill:#e5e7eb,stroke:#333,stroke-width:2px,color:#000
+                            style G fill:#22d3ee,stroke:#333,stroke-width:3px
+                    </div>
+                </section>
+
+                <!-- Sección 2: El Manifiesto Enactivo: The Embodied Mind (TEM) -->
+                <section id="tem" class="glassmorphism section" data-animate>
+                    <h2>2. El Manifiesto Enactivo: The Embodied Mind (TEM)</h2>
+                    <p>Publicado por <span class="person">Francisco Varela</span>, <span class="person">Evan Thompson</span> y <span class="person">Eleanor Rosch</span> en 1991, *The Embodied Mind* (TEM) fue una síntesis ambiciosa que combinó estas ideas con la biología de sistemas y la filosofía budista. El enfoque enactivo se consolidó a través de dos puntos centrales:</p>
+                    <ol class="list-decimal list-inside space-y-2 mt-4 ml-4">
+                        <li>La percepción consiste en la <span class="concept1">acción guiada perceptualmente</span>.</li>
+                        <li>Las estructuras cognitivas <span class="concept1">emergen</span> de los patrones sensorimotores recurrentes que permiten que la acción sea guiada perceptualmente.</li>
+                    </ol>
+                    <p>El enfoque enactivo introducido en The Embodied Mind se basó en cada una de las corrientes anteriores en grados variables, y delineó un marco explicativo unificador que las combinó con conceptos de biología de sistemas y prácticas budistas. En una definición inicial del enactivismo, los autores nos dicen: "En pocas palabras, el enfoque enactivo consiste en dos puntos: (1) la percepción consiste en acción guiada perceptualmente y (2) las estructuras cognitivas emergen de los patrones sensorimotores recurrentes que permiten que la acción sea guiada perceptualmente." (TEM, p. 173). Para los propósitos de entender el enactivismo de TEM, este segundo punto tiene prioridad. Para el cognitivismo, como se esbozó arriba, las estructuras cognitivas de interés son estados internos que representan propiedades determinadas del entorno que están ausentes o imperfectamente accedidas. El enactivismo en cambio enfatiza estructuras cognitivas emergentes que se auto-organizan como resultado de interacciones entre organismo y entorno.</p>
+                    <p>Todas estas ideas estaban en el aire mientras se desarrollaba el primer manifiesto enactivista. Contra el énfasis explicativo del cognitivismo en la construcción y manipulación de representaciones que eran discretas e internas, cada una de estas tendencias enfatizaba de diferentes maneras el poder explicativo de la interacción con el entorno del cognizador, y la importancia de factores externos o implementacionales. Como hemos visto, estos pueden incluir propiedades del cuerpo del cognizador, su entorno, o la dinámica de las interacciones entre estos factores.</p>
+                    <p>TEM también expresa escepticismo sobre el alcance de la filosofía fenomenológica, preocupándose de que consista en teorización post-hoc desapegada que podría distorsionar las experiencias que pretende analizar. En respuesta, TEM argumenta que las prácticas de meditación y mindfulness budistas deben integrarse en una ciencia cognitiva enactiva: 'las técnicas de mindfulness están diseñadas para llevar la mente de vuelta de sus teorías y preocupaciones, de vuelta de la actitud abstracta, a la situación de la experiencia misma' (p. 22). Gran parte de TEM consiste en poner insights de tradiciones budistas en contacto con el aparato conceptual y análisis del enactivismo.</p>
+                    <p>Todo esto permite ver por qué Varela, Thompson y Rosch comienzan TEM diciendo: 'Este libro comienza y termina con la convicción de que las nuevas ciencias de la mente necesitan ampliar su horizonte para abarcar tanto la experiencia humana vivida como las posibilidades de transformación inherentes en la experiencia humana. La experiencia ordinaria, cotidiana, por otro lado, debe ampliar su horizonte para beneficiarse de los insights y análisis que son distinctly wrought por las ciencias de la mente.' (p.xv). La misión del enactivismo, como se delineó en TEM, es explorar las formas en que la ciencia cognitiva y la experiencia humana se informan recíprocamente. La afirmación clave de los autores es que las varias tendencias científicas cognitivas encuestadas arriba y sintetizadas en TEM apoyan una visión de la mente como emergente, encarnada y comprometida que fue vislumbrada por fenomenólogos como Merleau-Ponty, y articulada y hecha central en muchas tradiciones budistas. Esta convergencia debería animarnos a preferir la ciencia cognitiva enactiva a sus precursores cognitivistas, y a transformar nuestra auto-comprensión mediante el compromiso en prácticas de mindfulness que corroboren estos descubrimientos.</p>
+
+                    <h3>2.1. Autopoiesis, Autonomía y Creación de Sentido (Sense-making)</h3>
+                    <p>TEM enfatiza la noción de **Autonomía** (basada en la <span class="concept2">Autopoiesis</span> de <span class="person">Maturana</span> y <span class="person">Varela</span>), definida como el proceso por el cual un sistema biológico "genera y especifica su propia organización a través de su operación como un sistema de producción de sus propios componentes" (Maturana y Varela 1980, p. 79). Esta dinámica auto-sostenida es lo que crea un límite entre el organismo y su entorno. Es en virtud de esta existencia autónoma que el significado emerge.</p>
+                    <p>El significado, o <span class="concept1">Sense-making (Creación de Sentido)</span>, es <span class="concept2">promulgado o enactado</span>, no representado. El ejemplo canónico es la bacteria: aunque la sacarosa es una molécula real, su estatus como <span class="concept2">alimento</span> no es intrínseco, sino una **característica relacional** vinculada al metabolismo de la bacteria, lo que le confiere un valor o significancia para la persistencia del organismo. La cognición y el entorno significativo <span class="concept1">co-producen</span> y emergen de un conjunto de procesos dinámicos auto-organizados.</p>
+                    <p>El enfoque enactivo así implica que tanto el organismo como las estructuras ambientales significativas emergen de un conjunto de procesos dinámicos auto-organizantes. Estas estructuras ambientales son significativas en la medida en que impactan en el éxito o fracaso del organismo en mantenerse como una unidad autopoietica, y en ese sentido tienen significancia para la existencia del organismo. Y es en virtud de esta significancia que el enactivista cuenta las estructuras producidas por tales interacciones como cognitivas. Mientras que el cognitivista sostiene que la significancia (o significado) es otorgada por el organismo representando estructuras ambientales al servicio de la conducta adaptativa, TEM argumenta que la significancia es enactada como parte de un proceso dinámico que crea y sostiene tanto al organismo como al entorno al que responde—la conducta adaptativa emerge de, y es sostenida por, un conjunto de interacciones dinámicas que en sí mismo da lugar a la distinción organismo/entorno.</p>
+                    <p>Es esta visión de la co-producción de cognizador y entorno a través de interacción dinámica lo que explica la visión de TEM de la percepción como acción guiada perceptualmente. Varela, Thompson y Rosch reclaman las Creatures de Brooks como un ejemplo ilustrativo de ciencia cognitiva enactiva (TEM pp. 207–212) en virtud del énfasis de Brooks en la interacción ambiental acoplada sobre la construcción de representaciones internas detalladas. De manera similar, las afinidades entre el enactivismo de TEM y el enfoque ecológico de Gibson son claras—hay tanto un énfasis compartido en organismo y entorno como co-dependientes, como en la capacidad del organismo para interacción directa con estructuras que impactan en el éxito de sus actividades. Para Gibson, la percepción no es un proceso de recepción pasiva de información que se construye en una representación de un entorno significativo, sino sensibilidad directa—a menudo hecha posible por actividad exploratoria—a propiedades del entorno que ya son relevantes para la acción. TEM está de acuerdo con esta imagen gibsoniana, pero añade una visión específica de la relación acoplada que hace posible tal percepción directa. Como veremos abajo, el vínculo entre percepción y acción guiada perceptualmente se toma en varias formas por teóricos enactivistas subsiguientes.</p>
+                    <p>El énfasis de TEM en actividad comprometida sobre representación desapegada, y la forma en que detalles de encarnación determinan detalles de relaciones cognitivas con el entorno, son dos puntos de contacto con la tradición fenomenológica esbozada arriba. Otro es su rechazo de una concepción estrictamente realista u objetivista del mundo al que respondemos en percepción, en favor de una concepción del mundo como tanto un producto como reflexión de nuestra actividad comprometida. La agenda de TEM se anuncia al principio como 'una continuación moderna de un programa de investigación fundado hace más de una generación por el filósofo francés, Maurice Merleau-Ponty' (p. xv), y sigue a Merleau-Ponty en apuntar a un terreno medio entre concepciones realistas e idealistas de la relación entre mente y mundo.</p>
+
+                    <h3>2.2. El Lazo Enactivo (Diagrama de Flujo)</h3>
+                    <p>La visión de TEM establece una relación co-dependiente y circular donde la distinción organismo/entorno es un resultado dinámico. El siguiente diagrama ilustra cómo el sistema cognitivo no procesa datos, sino que participa en un ciclo de auto-organización que da forma al mundo que experimenta.</p>
+
+                    <div class="mermaid">
+                        graph LR
+                            A[Organismo: Embodiment/Cuerpo] -->|Interacción Dinámica| B((Interacción/Acción Exploratoria));
+                            B -->|Promulgación de Significancia| C(Entorno: Affordances y Valores);
+                            C -->|Feedback Sensorial y Teleológico| D[Percepción Guiada por Acción];
+                            D -->|Emergencia de Patrones| E[Estructuras Cognitivas Recurrentes];
+                            E -->|Realimentación Adaptiva| B;
+                            B -->|Auto-Organización| A;
+                            
+                            style A fill:#f472b6,stroke:#333,stroke-width:2px
+                            style B fill:#34d399,stroke:#333,stroke-width:2px
+                            style C fill:#fbbf24,stroke:#333,stroke-width:2px
+                            style D fill:#818cf8,stroke:#333,stroke-width:2px
+                            style E fill:#e5e7eb,stroke:#333,stroke-width:2px,color:#000
+                    </div>
+                </section>
+
+                <!-- Sección 2.3: Influencia Budista en TEM -->
+                <section id="budismo" class="glassmorphism section" data-animate>
+                    <h2>2.3. La Influencia Budista en TEM: Mindfulness y Transformación</h2>
+                    <p>TEM no solo se inspira en la fenomenología occidental, sino que integra prácticas budistas para superar las limitaciones de la reflexión teórica. Los autores argumentan que la fenomenología podría distorsionar la experiencia al ser una teorización post-hoc. En contraste, las prácticas budistas de <span class="concept1">mindfulness</span> y meditación están diseñadas para retornar la mente a la experiencia misma, libre de abstracciones. Esto permite un diálogo entre la ciencia cognitiva enactiva y la transformación personal inherente en la experiencia humana.</p>
+                    <p>La convergencia entre enactivismo y budismo radica en la visión de la mente como <span class="concept2">groundless</span> (sin fundamento fijo), enfatizando la co-dependencia y la impermanencia. TEM dedica gran parte a poner insights budistas en contacto con el marco enactivo, proponiendo que las prácticas meditativas corroboren empiricamente la visión de la cognición como enactada.</p>
+                    <p>El siguiente diagrama muestra la integración de corrientes en TEM, destacando el rol del budismo.</p>
+                    <div class="mermaid">
+                        graph TD
+                            A[Fenomenología] --> TEM[The Embodied Mind]
+                            B[Biología Autopoiética] --> TEM
+                            C[Budismo: Mindfulness] --> TEM
+                            D[Cognitive Science Trends] --> TEM
+                            TEM --> E[Enactivismo: Mente Emergente]
+
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px
+                            style B fill:#34d399,stroke:#333,stroke-width:2px
+                            style C fill:#818cf8,stroke:#333,stroke-width:2px
+                            style D fill:#f472b6,stroke:#333,stroke-width:2px
+                            style TEM fill:#22d3ee,stroke:#333,stroke-width:3px
+                            style E fill:#e5e7eb,stroke:#333,stroke-width:2px,color:#000
+                    </div>
+                </section>
+
+                <!-- Sección 3: Las Variedades Modernas del Enactivismo: Ramificaciones Teóricas -->
+                <section id="variedades" class="glassmorphism section" data-animate>
+                    <h2>3. Las Variedades Modernas del Enactivismo: Ramificaciones Teóricas</h2>
+                    <p>Desde la publicación de TEM, las ideas se han bifurcado en distintas escuelas de pensamiento, cada una enfatizando diferentes aspectos del manifiesto original, lo que ha generado un rico panorama de debates en la ciencia cognitiva. Desde TEM, han surgido al menos tres corrientes semi-distintas de teorización enactivista. Primero, lo que a veces se llama enactivismo autopoiético, que enfatiza el proyecto de TEM de fundamentar la cognición en la biodinámica de sistemas vivos; segundo, enactivismo sensorimotor, que se enfoca en analizar la estructura, contenido y carácter de la experiencia perceptual en términos de las relaciones entre sensación y actividad encarnada; tercero, enactivismo radical, que se enfoca en el caso para rechazar explicaciones representacionalistas de capacidades cognitivas en favor de estrategias explicativas enfatizando patrones de interacción encarnada. Finalmente, la teorización enactivista se superpone con varios intentos de entender mentes como encarnadas, incrustadas, extendidas y afectivas que se basan en las tradiciones esbozadas en la Sección 1, mientras rechazan o permanecen neutrales sobre tenets enactivistas particulares.</p>
+
+                    <h3>3.1. Enactivismo Autopoiético: La Fuerte Continuidad Vida/Mente</h3>
+                    <p>Esta corriente, continuada por <span class="person">Evan Thompson</span> y <span class="person">Ezequiel Di Paolo</span>, se adhiere a la <span class="concept1">Continuidad Fuerte de Vida y Mente</span>. Sostiene que los principios organizacionales distintivos de la cognición son versiones enriquecidas de los que rigen la vida biológica (*biodinámica*). Un concepto clave es la <span class="concept1">Adaptividad</span>, propuesta por <span class="person">Di Paolo</span>, que es la capacidad del organismo para modificar activamente su relación con el entorno para asegurar su persistencia como unidad autopoiética.</p>
+                    <p>Esta corriente del enactivismo teórico enfatiza y desarrolla este intento de fundamentar la cognición en la biodinámica de sistemas vivos. Al sostener que la cognición está fundamentada en la dinámica de la vida biológica misma, los enactivistas autopoiéticos incurren en un compromiso con la fuerte continuidad de vida y mente—la visión de que las estructuras y principios organizacionales distintivos de la mente son simplemente versiones enriquecidas de las estructuras y principios que fundamentan la vida misma. Como vimos arriba, los enactivistas autopoiéticos sostienen que interacciones sensorimotoras simples entre organismo y entorno traen consigo una forma de directedness teleológica hacia el entorno (como cuando la actividad de la bacteria apunta a las porciones ricas en sacarosa de su entorno) y significancia o valor en el entorno del organismo (como cuando la composición química del entorno de la bacteria se vuelve buena para la bacteria en virtud de la dinámica de su encarnación). Este proceso de enactar estructuras cognitivas a veces se llama sense-making por los enactivistas autopoiéticos.</p>
+                    <p>Una fuente de diferencia dentro de las visiones enactivistas autopoiéticas es la concepción particular de la biodinámica requerida para la organización cognitiva. Mientras que TEM enfatiza la dinámica de la organización autónoma, Di Paolo influyentemente propuso que la cognición genuina requiere una capacidad por parte del organismo para modificar activamente su relación con el entorno en formas que lo ayuden a persistir como una unidad autopoiética (como cuando, por ejemplo, la bacteria mueve sus flagelos de una manera que la propulsa hacia el área rica en sacarosa). Tanto esta capacidad, como la dinámica a través de la cual se realiza, se llaman adaptividad por Di Paolo y enactivistas subsiguientes. La contribución de Barandiaran a este número toma este debate, argumentando que la organización autónoma es la marca de sistemas cognitivos, y ofreciendo una concepción mejorada de autonomía que hace claro su rol fundacional, y es complementada por trabajo en curso en robótica simulada.</p>
+                    <p>Otra característica distintiva de mucho enactivismo autopoiético contemporáneo es la forma en que se argumenta la profunda continuidad de vida y mente. Mientras que TEM implica que la dinámica de la organización autónoma directamente implica una relación teleológica entre organismo y entorno que marca los comienzos de la mentalidad, Weber y Varela argumentan que la continuidad de vida y mente es primero y ante todo fenomenológicamente evidente para nosotros, y que esta evidencia fenomenológica es lo que ultimadamente fundamenta el intento enactivista de explicar la cognición en términos de biodinámica. En esto están parcialmente inspirados por el fenomenólogo Hans Jonas y su dictum de que 'la vida solo puede ser conocida por la vida'. En línea con TEM, Jonas entendió la dinámica de procesos metabólicos como produciendo entidades autónomas que estaban en relaciones teleológicas con sus entornos. Pero, al considerar cómo una relación teleológica puede inferirse de dinámica metabólica, Jonas pregunta: "Pero ¿qué tipo de inferencia es esta? ¿Y por quién? ¿Cómo puede el observador no preparado inferir lo que ningún mero análisis del registro físico jamás producirá? El observador no preparado no puede... El observador de la vida debe estar preparado por la vida. En otras palabras, la existencia orgánica con su propia experiencia es requerida de sí mismo para que sea capaz de hacer esa inferencia." (Jonas 1966, p. 82). Esta 'inferencia Jonasiana' de nuestra propia experiencia vivida a la profunda continuidad de vida y mente juega un rol importante en mucho enactivismo autopoiético contemporáneo. La contribución de Barrett a este número especial examina críticamente la forma en que conceptos normativos como concern y flourishing han sido introducidos en el enactivismo autopoiético, argumentando que los varios tipos de dinámica organizacional en los que los enactivistas intentan fundamentar las propiedades normativas de la cognición implican solo normatividad proscriptiva—pueden constituir un sistema que retrocede del peligro o inestabilidad, pero no uno que busca auto-preservación, o valora positivamente su entorno. El argumento de Barrett plantea problemas serios para muchos enactivistas autopoiéticos contemporáneos, quienes ven (prescriptiva) concern y care por el propio bienestar como una propiedad fundamental de la cognición.</p>
+                    <p>El enactivismo autopoiético, entonces, toma el proyecto general delineado en TEM y lo persigue con un énfasis particular en la forma en que las estructuras cognitivas emergen de dinámica interactiva. Sus instancias más canónicas suplementan la inspiración fenomenológica Merleau-Pontiana de TEM con ideas de la fenomenología de la vida de Hans Jonas, y su asociada profunda continuidad de vida y mente.</p>
+
+                    <h3>3.1.1. Diagrama de la Continuidad Vida-Mente</h3>
+                    <p>El siguiente diagrama ilustra la fuerte continuidad entre vida y mente en el enactivismo autopoiético, mostrando cómo la dinámica biológica se enriquece hacia la cognición.</p>
+                    <div class="mermaid">
+                        graph TB
+                            A[Vida: Autopoiesis y Autonomía] -->|Enriquecimiento| B[Adaptividad y Teleología]
+                            B -->|Sense-Making| C[Mente Básica: Cognición Emergente]
+                            C -->|Interacción Social/Cultural| D[Mente Rica: Cognición Humana]
+                            A -->|Inferencia Jonasiana| D
+
+                            style A fill:#34d399,stroke:#333,stroke-width:2px
+                            style B fill:#fbbf24,stroke:#333,stroke-width:2px
+                            style C fill:#818cf8,stroke:#333,stroke-width:2px
+                            style D fill:#f472b6,stroke:#333,stroke-width:2px
+                    </div>
+
+                    <h3>3.2. Enactivismo Sensorimotor: La Percepción Habilidosa</h3>
+                    <p>Liderado por <span class="person">J. Kevin O'Regan</span> y <span class="person">Alva Noë</span>, este enfoque se centra en explicar la <span class="concept2">experiencia perceptual</span> sin comprometerse con la continuidad vida/mente. La clave son las <span class="concept1">Contingencias Sensorimotoras (SMCs)</span>: patrones regulares de dependencia entre la sensación y el movimiento exploratorio. El enfoque está motivado por límites sensoriales como la **baja fidelidad de la visión parafoveal** y el **punto ciego**.</p>
+                    <p>El enactivismo sensorimotor usualmente se presenta como una forma de explicar las características intencionales y fenomenales de la experiencia perceptual en lugar de una cuenta general de la mente. Comparte con TEM una concepción de la percepción como una exploración activa del entorno en lugar de la construcción de un modelo interno que recupera información perdida en la transducción sensorial, y así comparte raíces Merleau-Pontianas, Gibsonianas y Brooksianas con TEM y el enactivismo autopoiético. El enactivismo sensorimotor enfatiza el rol de las contingencias sensorimotoras (SMCs)—los patrones regulares de dependencia entre sensación y movimiento—en estructurar la experiencia perceptual. La experiencia perceptual, según esta visión, se constituye por el conocimiento práctico implícito de cómo la apariencia sensorial cambiará como resultado de movimientos particulares. Este enfoque está motivado por características de nuestros sistemas sensoriales, como la baja resolución de la visión periférica, el punto ciego de la retina, y la distorsión introducida por sacadas oculares, que hacen improbable que la experiencia perceptual sea sostenida por un modelo interno detallado del entorno. En cambio, la experiencia perceptual es un acceso virtual a un vasto repositorio de información en el entorno, al que accedemos hábilmente según sea necesario. La contribución de Degenaar y O'Regan a este número considera el alcance de las explicaciones sensorimotoras de la experiencia perceptual, argumentando que, aunque el enactivismo sensorimotor no necesita comprometerse con el antirepresentacionalismo, su explicación de la experiencia perceptual es más plausible cuando se combina con el rechazo radical de las representaciones cognitivas. La contribución de Silverman muestra cómo las explicaciones sensorimotoras de la experiencia perceptual pueden enriquecerse con consideraciones fenomenológicas, particularmente sobre la estructura temporal de la experiencia, y cómo este enriquecimiento hace que el enactivismo sensorimotor sea más plausible como una cuenta de la experiencia perceptual.</p>
+                    <p>La visión es un <span class="concept2">acceso virtual</span> continuo a la información vasta del entorno; el mundo actúa como una "memoria externa" que se accede hábilmente. La conciencia perceptual requiere el **conocimiento implícito** o <span class="concept1">dominio práctico</span> de estas SMCs. Sin embargo, existe un debate sobre cómo se implementa este "conocimiento": algunos lo ven como puramente **dinámico y no representacional**, mientras que otros lo han adoptado en marcos más **cognitivistas** como el Procesamiento Predictivo.</p>
+
+                    <h3>3.2.1. Diagrama de Contingencias Sensorimotoras</h3>
+                    <p>El siguiente diagrama representa el ciclo de contingencias sensorimotoras, mostrando cómo la acción modula la sensación para estructurar la experiencia perceptual.</p>
+                    <div class="mermaid">
+                        graph LR
+                            A[Acción Exploratoria] -->|Modula| B[Sensación Ambiental]
+                            B -->|Patrón de Dependencia| C[Contingencia Sensorimotora]
+                            C -->|Conocimiento Práctico| D[Experiencia Perceptual]
+                            D -->|Guía| A
+
+                            style A fill:#fbbf24,stroke:#333,stroke-width:2px
+                            style B fill:#34d399,stroke:#333,stroke-width:2px
+                            style C fill:#818cf8,stroke:#333,stroke-width:2px
+                            style D fill:#f472b6,stroke:#333,stroke-width:2px
+                    </div>
+
+                    <h3>3.3. Enactivismo Radical (REC): Mentes Básicas sin Contenido</h3>
+                    <p>Propuesto por <span class="person">Daniel Hutto</span> y <span class="person">Erik Myin</span>, el REC busca una <span class="concept2">purga completa del representacionalismo</span>, basándose en la falta de progreso en la naturalización del **contenido intencional** (por ejemplo, la indeterminación de las teorías teleosemánticas para distinguir entre "tigre" y "depredador rayado"). REC niega que las dinámicas interactivas básicas constituyan, por sí mismas, el contenido proposicional.</p>
+                    <p>REC establece una distinción crucial: 1) una <span class="concept1">Mente Básica sin Contenido</span>, explicada puramente por patrones dinámicos adaptativos; y 2) la **Cognición Humana Rica** (con contenido, juicios, razonamiento), que se logra solo mediante un <span class="concept1">andamiaje social y cultural</span> (lenguaje y prácticas interpersonales). Por lo tanto, el REC unifica los enfoques anti-representacionales al mantenerlos libres de cualquier compromiso conceptual con la representación o el contenido.</p>
+                    <p>El enactivismo radical enfatiza el rechazo de explicaciones representacionales de capacidades cognitivas, argumentando que el progreso en la ciencia cognitiva ha sido obstaculizado por suposiciones representacionales implícitas. Hutto y Myin argumentan que las explicaciones cognitivas deben ser libres de contenido, y que las capacidades cognitivas básicas pueden explicarse en términos de patrones de interacción encarnada sin apelar a representaciones internas. La contribución de Hutto a este número defiende el enactivismo radical contra críticas de que es demasiado restrictivo o no puede dar cuenta de fenómenos cognitivos complejos.</p>
+
+                    <h3>3.3.1. Diagrama de Mentes Básicas vs. Ricas</h3>
+                    <p>Este diagrama contrasta la mente básica (sin contenido) con la cognición rica, mostrando el rol del andamiaje social.</p>
+                    <div class="mermaid">
+                        graph TD
+                            A[Mente Básica: Patrones Interactivos Sin Contenido] -->|Andamiaje Social| B[Cognición Rica: Contenido Proposicional]
+                            B -->|Lenguaje y Prácticas| C[Juicios, Razonamiento]
+                            A -->|Dinámica Encarnada| D[Conducta Adaptativa Básica]
+
+                            style A fill:#34d399,stroke:#333,stroke-width:2px
+                            style B fill:#fbbf24,stroke:#333,stroke-width:2px
+                            style C fill:#818cf8,stroke:#333,stroke-width:2px
+                            style D fill:#f472b6,stroke:#333,stroke-width:2px
+                    </div>
+                    
+                    <h3>3.4. Afectividad Enactiva: La Emoción como Promulgación</h3>
+                    <p>Una extensión crítica del Enactivismo Autopoiético es la <span class="concept2">Afectividad Enactiva</span>, desarrollada por autores como <span class="person">Giovanna Colombetti</span>. Esta perspectiva argumenta que la afectividad (emoción, estados de ánimo) es inherente al proceso de *sense-making*. La preocupación básica por la <span class="concept1">persistencia</span> o el *care* que surge de la autonomía biológica implica una forma primitiva de <span class="concept2">afecto</span>. Por lo tanto, los procesos dinámicos constitutivos de la vida conllevan una forma elemental de afectividad que se extiende y se enriquece en la cognición de alto nivel, vinculando estrechamente la emoción, el cuerpo y la dinámica de interacción.</p>
+
+                    <h3>3.5. Enactivismo vs. Cognición Extendida: La Controversia de la Extensión</h3>
+                    <p>La relación entre el Enactivismo y la <span class="concept1">Cognición Extendida</span> (<span class="person">Clark</span> y <span class="person">Chalmers</span>) es compleja. Mientras que ambos ven la cognición como *embedded* (incrustada), la disputa se centra en si es *extended* (constituida por elementos externos).</p>
+                    <ul class="list-disc list-inside space-y-2 mt-4 ml-4">
+                        <li>El **Enactivismo Autopoiético** tiende a ser cauteloso, ya que las dinámicas biológicas definen un <span class="concept2">límite estricto</span> (organismo/entorno) para los procesos constitutivos. El argumento de <span class="person">Wheeler</span> es que la autopoiesis "bloquea" la cognición dentro de los límites del organismo.</li>
+                        <li>El **Enactivismo Radical** (<span class="person">Hutto et al.</span>) argumenta lo contrario: al deshacerse del contenido, el REC se convierte en una forma por defecto de <span class="concept1">Enactivismo Extensivo</span>. El enfoque en los patrones de **interacción andamiada** hace que la concepción relacional de la cognición sea el punto de partida, implicando constitutivamente al entorno.</li>
+                    </ul>
+                    <p>El enactivismo teorizante se superpone con varios intentos de entender mentes como encarnadas, incrustadas, extendidas y afectivas que se basan en las tradiciones esbozadas en la Sección 1, mientras rechazan o permanecen neutrales sobre tenets enactivistas particulares. La contribución de Wheeler a este número examina la relación entre el enactivismo y la cognición extendida, argumentando que el enactivismo radical implica una forma de extensión constitutiva.</p>
+
+                    <h3>3.6. Comparación de Variedades Enactivistas</h3>
+                    <p>Para clarificar las diferencias, el siguiente diagrama compara las tres variedades principales en términos de foco, compromisos y debates clave.</p>
+                    <div class="mermaid">
+                        classDiagram
+                            class EnactivismoAutopoietico {
+                                +Foco: Biodinámica y Continuidad Vida/Mente
+                                +Compromiso: Autopoiesis, Adaptividad
+                                +Debate: Normatividad Prescriptiva vs. Proscriptiva
+                            }
+                            class EnactivismoSensorimotor {
+                                +Foco: Experiencia Perceptual
+                                +Compromiso: SMCs, Acceso Virtual
+                                +Debate: Representacional vs. No Representacional
+                            }
+                            class EnactivismoRadical {
+                                +Foco: Anti-Representacionalismo
+                                +Compromiso: Mente Básica Sin Contenido
+                                +Debate: Extensión Constitutiva
+                            }
+
+                            EnactivismoAutopoietico --|> TEM : Deriva de
+                            EnactivismoSensorimotor --|> TEM : Deriva de
+                            EnactivismoRadical --|> TEM : Deriva de
+                    </div>
+                </section>
+
+                <!-- Sección 4: El Árbol Genealógico del Enactivismo -->
+                <section id="genealogia" class="glassmorphism section" data-animate>
+                    <h2>4. Cartografía Conceptual: Árbol Genealógico del Enactivismo</h2>
+                    <p>La siguiente visualización esquematiza las principales influencias, las ramificaciones del enfoque enactivo (TEM) y los debates clave que definen las variedades modernas, mostrando cómo los conceptos se bifurcan desde la fuente principal.</p>
+
+                    <div class="mermaid">
+                        graph TD
+                            subgraph "Orígenes (Siglo XX: Anti-Cognitivismo)"
+                                P[Fenomenología <br> (Merleau-Ponty, Heidegger)]
+                                B[Biología Sistémica <br> (Maturana, Varela)]
+                                DS[Sistemas Dinámicos / Conex.]
+                                E[Psicología Ecológica <br> (Gibson)]
+                                R[Robótica Situada <br> (Brooks)]
+                            end
+
+                            P --> TEM
+                            B --> TEM
+                            DS --> TEM
+                            E --> TEM
+                            R --> TEM
+
+                            subgraph "El Manifiesto"
+                                TEM[TEM: The Embodied Mind <br> Varela, Thompson, Rosch 1991]
+                            end
+
+                            TEM --> AUTO
+                            TEM --> SM
+                            TEM --> RAD
+                            
+                            subgraph "Variedades Modernas"
+                                AUTO[Enactivismo Autopoiético <br> (Thompson, Di Paolo, Barandiaran)]
+                                SM[Enactivismo Sensorimotor <br> (O'Regan, Noë, Hurley)]
+                                RAD[Enactivismo Radical (REC) <br> (Hutto, Myin)]
+                            end
+                            
+                            AUTO -- Fundamento: Continuidad Vida/Mente --> Sense[Sense-making / Teleología]
+                            AUTO -- Extensión: --> Affect[Afectividad Enactiva <br> (Colombetti)]
+                            AUTO -- Debate: Normatividad --> Jon[Normatividad Prescriptiva <br>(Jonas/Barrett)]
+                            
+                            SM -- Fundamento: Percepción/Acción --> SMC[Contingencias Sensorimotoras <br> (SMCs)]
+                            SM -- Debate Interno: --> Knowledge[Conocimiento Implícito vs. No Repres.]
+                            
+                            RAD -- Principio Clave: Purgar Representación --> SinContent[Mente Básica SIN Contenido]
+                            RAD -- Debate: Extensión --> REC_EXT[REC como Enactivismo Extensivo]
+                            RAD -- Enriquecimiento: --> Social[Andamiaje Sociocultural <br> (Cognición Rica)]
+
+                            style TEM fill:#818cf8,stroke:#000,stroke-width:3px
+                            style AUTO fill:#34d399,stroke:#333,stroke-width:2px
+                            style SM fill:#fbbf24,stroke:#333,stroke-width:2px
+                            style RAD fill:#f472b6,stroke:#333,stroke-width:2px
+                            style P fill:#e5e7eb,stroke:#333,stroke-width:1px
+                            style B fill:#e5e7eb,stroke:#333,stroke-width:1px
+                            style DS fill:#e5e7eb,stroke:#333,stroke-width:1px
+                            style E fill:#e5e7eb,stroke:#333,stroke-width:1px
+                            style R fill:#e5e7eb,stroke:#333,stroke-width:1px
+                    </div>
+                </section>
+
+                <!-- Sección 5: Conclusión y Desafíos Futuros -->
+                <section id="conclusion" class="glassmorphism section" data-animate>
+                    <h2>5. Conclusión y Desafíos Futuros</h2>
+                    <p>El Enactivismo, en sus diversas formas, representa una desviación fundamental del <span class="concept1">computacionalismo</span>, uniendo la mente con la vida, el cuerpo y la interacción ambiental. Su misión, desde TEM, es fomentar un diálogo recíproco entre la ciencia cognitiva y la experiencia humana vivida, reconociendo que la mente es un fenómeno **emergente, encarnado y comprometido**.</p>
+                    <p>Los principales desafíos teóricos que enfrenta el campo radican en resolver las disputas internas:</p>
+                    <ul class="list-disc list-inside space-y-2 mt-4 ml-4">
+                        <li>**La Disputa de la Continuidad:** ¿La cognición está estrictamente **fundamentada** en la dinámica de la vida (Autopoiesis), o la cognición es solo una **capacidad de interacción** (Sensorimotor) que puede ser instanciada en sistemas no biológicos?</li>
+                        <li>**El Problema del Contenido:** ¿Se puede dar cuenta de la intencionalidad humana rica (creencias, juicios) sin recurrir a representaciones internas (el desafío del REC)?</li>
+                        <li>**El Límite de la Mente:** ¿Qué tan lejos se extiende el sistema cognitivo? ¿El límite biológico autopoiético restringe la mente, o la cognición relacional permite una <span class="concept2">extensión constitutiva</span> en el entorno?</li>
+                    </ul>
+                    <p>A pesar de las diferencias, todas las variedades comparten un compromiso común: la comprensión de la cognición debe estar arraigada en nuestras **vidas corporales y activas**. El camino a seguir implica explorar las formas en que estas dinámicas interactivas dan lugar a la afectividad, el lenguaje y las formas ricas de conciencia humana. Además, la integración con campos emergentes como la IA encarnada y la neurofenomenología promete avanzar el programa enactivista.</p>
+                </section>
+
+                <!-- Sección 6: Referencias Clave -->
+                <section id="referencias" class="glassmorphism section" data-animate>
+                    <h2>6. Referencias Clave</h2>
+                    <p>Esta sección lista las obras y autores fundamentales que moldearon el pensamiento enactivo y las variedades discutidas en este artículo, sirviendo como mapa bibliográfico para profundizar en cada corriente.</p>
+                    <ul class="list-disc list-inside space-y-3 mt-4 text-sm md:text-base">
+                        <li><span class="person">Varela, F. J., Thompson, E., & Rosch, E.</span> (1991). <i>The Embodied Mind: Cognitive Science and Human Experience.</i> MIT Press. (El Manifiesto fundacional).</li>
+                        <li><span class="person">Di Paolo, E. A.</span> (2005). Autopoiesis, adaptivity, teleology, agency. <i>Phenomenol Cogn Sci</i>, 4(4), 429-452. (Clave para el Enactivismo Autopoiético y Adaptividad).</li>
+                        <li><span class="person">O'Regan, J. K., & Noë, A.</span> (2001). A sensorimotor account of visual consciousness. <i>Behavior Brain Sci</i>, 24(5), 939-1031. (Fundamento del Enactivismo Sensorimotor).</li>
+                        <li><span class="person">Hutto, D., & Myin, E.</span> (2013). <i>Radicalizing Enactivism: Basic Minds without Content.</i> MIT Press. (Definición del Enactivismo Radical).</li>
+                        <li><span class="person">Gibson, J. J.</span> (1979). <i>The Ecological Approach to Visual Perception.</i> Houghton Mifflin. (Base de la Percepción Activa/Ecológica).</li>
+                        <li><span class="person">Merleau-Ponty, M.</span> (1945/2012). <i>Phenomenology of Perception.</i> Routledge. (Raíz Filosófica del Cuerpo Vivido).</li>
+                        <li><span class="person">Brooks, R. A.</span> (1991). Intelligence without representation. <i>Artif Intell</i>, 47(1), 139-159. (Robótica Situada).</li>
+                        <li><span class="person">Clark, A., & Chalmers, D. J.</span> (1998). The extended mind. <i>Analysis</i>, 58(1), 7-19. (Cognición Extendida, punto de controversia).</li>
+                        <li><span class="person">Jonas, H.</span> (1966). <i>The phenomenon of life: toward a philosophical biology.</i> Northwestern University Press. (Inspiración para la continuidad vida/mente).</li>
+                        <li><span class="person">Colombetti, G.</span> (2014). <i>The Feeling Body: Affective Science Meets the Enactive Mind.</i> MIT Press. (Afectividad Enactiva).</li>
+                        <li><span class="person">Weber, A., & Varela, F. J.</span> (2002). Life after Kant: Natural purposes and the autopoietic foundations of biological individuality. <i>Phenomenol Cogn Sci</i>, 1(2), 97-125.</li>
+                        <li><span class="person">Thompson, E.</span> (2007). <i>Mind in Life: Biology, Phenomenology, and the Sciences of Mind.</i> Harvard University Press.</li>
+                        <li><span class="person">Hutto, D. D., & Myin, E.</span> (2017). <i>Evolving Enactivism: Basic Minds Meet Content.</i> MIT Press.</li>
+                        <li><span class="person">Noë, A.</span> (2004). <i>Action in Perception.</i> MIT Press.</li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+        <footer class="footer" id="contacto">
+            <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo sobre la mente, el cuerpo y el mundo.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | O.C.V.M. 2025</p>
+        </footer>
+    </div>
+    <script>
+        // Inicia el código del Canvas
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicialización de Three.js Background
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+            } else {
+                console.error("Three.js no cargado. El fondo animado no funcionará.");
+            }
+
+            setupNavigation();
+            setupScrollAnimations();
+            
+            // Renderizado de diagramas Mermaid
+            mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
+                'primaryColor': '#000000',
+                'primaryTextColor': '#e5e7eb',
+                'lineColor': '#818cf8',
+                'nodeBorder': '#818cf8',
+                'mainBkg': '#111827',
+                'textColor': '#e5e7eb'
+            } });
+        });
+
+        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                const canvas = document.getElementById("bg-canvas");
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: canvas,
+                    alpha: true,
+                    antialias: true // Añadir antialias para mejor calidad
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 300; // Un poco más de puntos
+                const positions = new Float32Array(pointCount * 3);
+                const colors = new Float32Array(pointCount * 3);
+
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 400; // Mayor dispersión
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 400;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 400;
+                    
+                    // Colores mezclados entre primary y secondary glow
+                    const color = new THREE.Color();
+                    color.set(Math.random() > 0.5 ? 0x818cf8 : 0x22d3ee); 
+                    colors[i * 3] = color.r;
+                    colors[i * 3 + 1] = color.g;
+                    colors[i * 3 + 2] = color.b;
+                }
+                
+                const pointGeo = new THREE.BufferGeometry();
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                pointGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+
+                const pointMaterial = new THREE.PointsMaterial({ 
+                    size: 1.5, 
+                    vertexColors: true, 
+                    transparent: true, 
+                    opacity: 0.8,
+                    sizeAttenuation: true
+                });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error al inicializar Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            // Movimiento más suave y menos sensible
+            mouseX = (event.clientX - window.innerWidth / 2) / 150;
+            mouseY = (event.clientY - window.innerHeight / 2) / 150;
+        }
+
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+
+            if(scene && camera && renderer && points) {
+                // Rotación continua más lenta
+                points.rotation.y += 0.00015;
+                points.rotation.x += 0.0001;
+
+                // Suavizar el movimiento de la cámara
+                camera.position.x += (mouseX - camera.position.x) * 0.03;
+                camera.position.y += (-mouseY - camera.position.y) * 0.03;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- CÓDIGO DE NAVEGACIÓN ---
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.body.classList.toggle('menu-open');
+            });
+
+            navMenu.addEventListener('click', (e) => {
+                // Si se hace clic en un enlace y estamos en móvil, cierra el menú
+                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                   document.body.classList.remove('menu-open');
+                }
+            });
+             
+            // Cierre del menú al hacer clic fuera en móvil
+            document.addEventListener('click', (e) => {
+                if(document.body.classList.contains('menu-open') && 
+                   !navMenu.contains(e.target) && 
+                   !menuToggleBtn.contains(e.target)) {
+                    document.body.classList.remove('menu-open');
+                }
+            });
+        }
+
+        // --- CÓDIGO DE ANIMACIÓN POR SCROLL (Aparición) ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        
+                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid, ul, .authors, li');
+                        elementsToAnimate.forEach((el, index) => {
+                           // Aplicar un retraso progresivo para un efecto "typewriter"
+                           el.style.transitionDelay = `${index * 120}ms`;
+                        });
+                        
+                        // No desobservamos, permitimos que reaparezca si el usuario scrollea rápido
+                        // observer.unobserve(entry.target); 
+                    } else {
+                        // Opcional: remover la clase si sale del viewport (para re-animación)
+                        // entry.target.classList.remove('is-visible');
+                    }
+                });
+            }, { threshold: 0.1 }); // Se activa cuando el 10% de la sección es visible
+
+            animatedSections.forEach(section => observer.observe(section));
+        }
+    </script>
+</body>
+</html>
+```
