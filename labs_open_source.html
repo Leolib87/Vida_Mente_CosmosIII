@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informe: Automatización de Laboratorio Open Source | O.C.V.M.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Variables de CSS para colores y fuentes */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;   /* Rosa para nombres de personas */
+        }
+
+        /* Estilos generales para el cuerpo de la página */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+        p { text-align: justify; }
+
+        /* Canvas de fondo con animación Three.js */
+        #bg-canvas {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1; cursor: crosshair;
+        }
+
+        /* Estilo de glassmorphism para secciones y navegación */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000; display: flex; justify-content: center; align-items: center;
+            padding: 0 5%; pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex; justify-content: space-between;
+            align-items: center; width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em; font-weight: 700; color: #fff;
+            text-decoration: none; text-shadow: 0 0 8px var(--primary-glow);
+            display: flex; align-items: center; gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 0.5rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.85em, 1vw, 1em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 0.8rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+
+        /* Sección del héroe o cabecera principal */
+        .hero {
+            min-height: 60vh; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative; padding: 1rem; margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 6vw, 4rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Contenedor principal para el contenido */
+        .main-container { 
+            width: 100%; max-width: 100%;
+            margin: 0 auto; padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content, .modal-content { pointer-events: auto; }
+        main p, .footer p { user-select: text; cursor: default; }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem); border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        /* Animación de aparición para las secciones con scroll */
+        .section > * {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .section.is-visible > * { opacity: 1; transform: translateY(0); }
+        
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem; text-align: left;
+        }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; text-align: left;}
+        h4 { font-size: clamp(1.1rem, 3vw, 1.3rem); color: var(--secondary-glow); margin: 2rem 0 1rem 0; text-align: left;}
+
+        /* Clases para colorear palabras y conceptos */
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .concept2 { color: var(--concept-color-2); font-weight: 500; }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+
+        /* Pie de página */
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+        
+        /* Estilos para filtros y formularios */
+        .filter-input {
+            background-color: rgba(0,0,0,0.3); border: 1px solid var(--primary);
+            border-radius: 6px; color: var(--primary-text);
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .filter-input:focus {
+            outline: none; border-color: var(--primary-dark);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+        .filter-checkbox {
+            color: var(--primary);
+        }
+        .filter-checkbox:checked {
+            background-color: var(--primary);
+        }
+        
+        /* Estilo para tabla */
+        .styled-table { min-width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9em;}
+        .styled-table th, .styled-table td {
+            padding: 12px 15px; border: 1px solid rgba(129, 140, 248, 0.2);
+        }
+        .styled-table th {
+            background-color: rgba(129, 140, 248, 0.1); font-weight: 600;
+            color: var(--primary);
+        }
+        .styled-table td {
+             vertical-align: top;
+        }
+
+        /* Modal */
+        .modal-backdrop { transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s ease; }
+
+
+        /* Media queries para dispositivos móviles */
+        @media (max-width: 768px) {
+            .nav-container {
+                position: fixed; top: var(--nav-height); left: 0;
+                width: 100%; height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column; justify-content: center; align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto; padding: 2rem;
+            }
+            body.menu-open .nav-container { transform: translateY(0); }
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out; border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo con animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+    <!-- Barra de Navegación -->
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=🔬" alt="Logo Laboratorio" class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>Lab Abierto</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#introduccion">Introducción</a></li>
+                <li><a href="#arquitecturas">Arquitecturas</a></li>
+                <li><a href="#catalogo-detallado">Catálogo Detallado</a></li>
+                <li><a href="#catalogo-interactivo">Catálogo Interactivo</a></li>
+                <li><a href="#automatizacion">Automatización</a></li>
+                <li><a href="#ecosistema-apoyo">Ecosistema</a></li>
+                <li><a href="#conclusion">Conclusión</a></li>
+                <li><a href="#fuentes">Fuentes</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Sección Hero -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>El Laboratorio de Código Abierto: Un Informe Exhaustivo</h1>
+                <p>Equipos DIY y Automatización en las Ciencias de la Vida.</p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                
+                <section id="introduccion" class="section glassmorphism" data-animate>
+                    <h2>El Auge del Código Abierto en la Investigación Científica</h2>
+                    <p>La investigación científica se encuentra en medio de una transformación paradigmática, impulsada por un movimiento que prioriza la colaboración, la accesibilidad y la transparencia. En el centro de este cambio se encuentra la filosofía del código abierto, que, habiendo revolucionado el desarrollo de software, ahora está remodelando fundamentalmente la forma en que se diseñan, construyen y utilizan las herramientas de laboratorio. Este informe explora el ecosistema del hardware de laboratorio de código abierto (Open Source Hardware, OSH) y las plataformas de automatización, centrándose en sus aplicaciones en química, bioquímica, biología celular y molecular, e histología.</p>
+                    <h3>La Filosofía Central</h3>
+                    <p>La ciencia abierta y el hardware de código abierto se basan en el principio de compartir libremente el conocimiento y las herramientas. A diferencia de los equipos comerciales patentados, que a menudo funcionan como "cajas negras", el OSH requiere que todos los planos de diseño (archivos CAD), el software, las listas de materiales (Bill of Materials, BOM) y las instrucciones de ensamblaje estén disponibles públicamente. Esta filosofía fomenta un entorno donde los científicos no son meros consumidores de tecnología, sino participantes activos en su desarrollo.</p>
+                    <h3>Motivaciones e Impulsores</h3>
+                    <p>Las motivaciones para adoptar el OSH en el laboratorio son multifacéticas. El impulsor más inmediato y evidente es la <span class="concept1">drástica reducción de costos</span>. Proyectos como la bomba de jeringa de código abierto o el termociclador OpenPCR demuestran que se puede construir hardware funcional con un rendimiento comparable al de los equipos comerciales por una fracción de su precio. Sin embargo, las motivaciones se extienden mucho más allá de la economía. El OSH empodera a los investigadores para crear instrumentos <span class="concept2">altamente personalizados</span> y adaptados a necesidades experimentales específicas.</p>
+                    <h3>Tecnologías Habilitadoras</h3>
+                    <p>El crecimiento exponencial del movimiento OSH no habría sido posible sin la convergencia de tres avances tecnológicos clave: la <span class="person">fabricación digital asequible</span> (impresoras 3D), <span class="person">microcontroladores accesibles</span> (Arduino, Raspberry Pi) y <span class="person">plataformas colaborativas</span> (GitHub, GitLab).</p>
+                </section>
+                
+                <section id="arquitecturas" class="section glassmorphism" data-animate>
+                    <h2>Arquitecturas de Hardware de Control Críticas</h2>
+                    <h3>El Dilema Arquitectónico: MCU vs. SBC en el Laboratorio</h3>
+                    <p>La elección de la arquitectura de control depende del requisito de <span class="concept1">tiempo real</span>. Los sistemas de lazo cerrado demandan un comportamiento <span class="concept2">determinístico</span>. La arquitectura se divide en dos categorías: <strong class="person">Microcontroladores (MCU)</strong>, ideales para tareas determinísticas y de baja latencia; y <strong class="person">Computadoras de Placa Única (SBC)</strong>, excelentes para orquestación de alto nivel, HMI y gestión de datos. Un sistema OSLA robusto debe utilizar una arquitectura heterogénea que combine ambas.</p>
+                    <h3>SBCs Orientadas al Control: El Ecosistema BeagleBone</h3>
+                    <p>Mientras que Raspberry Pi es popular, su kernel no es determinístico. El <span class="concept1">BeagleBone Black (BBB)</span> se distingue por su orientación al control industrial. Su diferenciador clave es la <span class="concept2">Unidad de Tiempo Real Programable (PRU)</span>, un sistema de microcontrolador de doble núcleo que opera independientemente de Linux, permitiendo el control de E/S de alta velocidad sin jitter, capacidad inalcanzable para un RPi.</p>
+                    <h3>Microcontroladores Avanzados: El Poder del STM32</h3>
+                    <p>Para la capa más baja de control, los MCUs de la serie <span class="concept1">STM32</span> ofrecen una plataforma robusta. Dispositivos basados en núcleos <span class="person">Arm Cortex-M4F/M7F</span> están equipados con instrucciones DSP, permitiendo la implementación de algoritmos complejos como controladores PID, esenciales para mantener variables de proceso con alta precisión.</p>
+                </section>
+
+                <section id="catalogo-detallado" class="section glassmorphism" data-animate>
+                    <h2>Catálogo Detallado de Instrumentos de Laboratorio OSH</h2>
+                    <h3>Análisis Molecular y Bioquímico Central</h3>
+                    <div class="overflow-x-auto">
+                        <table class="styled-table">
+                            <thead><tr><th>Nombre del Proyecto</th><th>Descripción</th><th>Página Web</th></tr></thead>
+                            <tbody>
+                                <tr><td>OpenPCR</td><td>Un termociclador de bajo costo (±0.5°C) que el usuario ensambla. 100% de código abierto y controlado a través de una GUI.</td><td><a href="http://openpcr.org/" class="text-secondary hover:underline" target="_blank">openpcr.org</a></td></tr>
+                                <tr><td>PocketPCR</td><td>Un termociclador ultraportátil y de muy bajo costo (desde 99 €) alimentado por USB, con capacidad para 5 tubos.</td><td><a href="https://gaudi.ch/PocketPCR/" class="text-secondary hover:underline" target="_blank">gaudi.ch/PocketPCR</a></td></tr>
+                                <tr><td>DIY Gel Electrophoresis</td><td>Proyecto de la comunidad DIYBio para construir una cámara de electroforesis en gel, tecnología clave en genética.</td><td><a href="https://biohackacademy.github.io/" class="text-secondary hover:underline" target="_blank">biohackacademy.github.io</a></td></tr>
+                                <tr><td>Hard-disc Centrifuge</td><td>Un proyecto DIY que reutiliza un disco duro antiguo para crear una centrífuga de sobremesa de costo extremadamente bajo.</td><td><a href="https://wlu18www30.webland.ch/wiki/Collection_of_DIY_Biology,_Open_Source_Art_Projects" class="text-secondary hover:underline" target="_blank">wlu18www30.webland.ch</a></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <h3 class="mt-8">Microscopía e Imagenología Avanzada</h3>
+                     <div class="overflow-x-auto">
+                        <table class="styled-table">
+                            <thead><tr><th>Nombre del Proyecto</th><th>Descripción</th><th>Página Web</th></tr></thead>
+                            <tbody>
+                                <tr><td>OpenFlexure Microscope</td><td>Un microscopio óptico de código abierto, impreso en 3D y de alto rendimiento con posicionamiento <100 nm.</td><td><a href="https://openflexure.org/" class="text-secondary hover:underline" target="_blank">openflexure.org</a></td></tr>
+                                <tr><td>DVD Laser Scanning Microscope</td><td>Un microscopio de barrido láser súper compacto y de bajo costo construido a partir de dos cabezales de lectura de DVD.</td><td><a href="http://www.gaudi.ch/GaudiLabs/?page_id=19" class="text-secondary hover:underline" target="_blank">gaudi.ch</a></td></tr>
+                                <tr><td>Open Fiber Spectrometer</td><td>Un espectrómetro funcional impreso en 3D con fibra óptica que utiliza una cámara de laptop reciclada.</td><td><a href="http://www.gaudi.ch/GaudiLabs/?page_id=19" class="text-secondary hover:underline" target="_blank">gaudi.ch</a></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                     <h3 class="mt-8">Manejo de Fluidos de Precisión y Microfluídica</h3>
+                     <div class="overflow-x-auto">
+                        <table class="styled-table">
+                            <thead><tr><th>Nombre del Proyecto</th><th>Descripción</th><th>Página Web</th></tr></thead>
+                            <tbody>
+                                <tr><td>Open-Source Syringe Pump</td><td>Una bomba de jeringa de laboratorio de código abierto para la dosificación controlada de reactivos.</td><td><a href="https://www.vienna-scientific.com/open-hardware/syringe-pump/" class="text-secondary hover:underline" target="_blank">vienna-scientific.com</a></td></tr>
+                                <tr><td>Micro Dispenser ("Openspritzer")</td><td>Sistema de eyección de presión para la entrega fiable de volúmenes de picolitros y nanolitros.</td><td><a href="https://www.vienna-scientific.com/open-hardware/microinjection-dispenser/" class="text-secondary hover:underline" target="_blank">vienna-scientific.com</a></td></tr>
+                                <tr><td>OpenDrop</td><td>Plataforma de microfluídica digital que utiliza "electro-wetting" para controlar y manipular pequeñas gotas de líquido.</td><td><a href="https://www.gaudi.ch/OpenDrop/" class="text-secondary hover:underline" target="_blank">gaudi.ch/OpenDrop</a></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+                
+                <section id="catalogo-interactivo" class="section glassmorphism" data-animate>
+                    <h2>Catálogo Interactivo de Proyectos</h2>
+                    <p class="mb-8">Explora una selección curada de proyectos de automatización de laboratorio de código abierto. Utiliza los filtros para refinar tu búsqueda y haz clic en "Ver Detalles" para obtener más información sobre cada proyecto.</p>
+                    
+                    <!-- KPIs -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                        <div class="glassmorphism p-6 rounded-lg text-center border-none">
+                            <h3 class="text-sm font-medium text-gray-400">Total de Proyectos</h3>
+                            <p id="kpi-total" class="mt-1 text-3xl font-semibold tracking-tight text-white">0</p>
+                        </div>
+                        <div class="glassmorphism p-6 rounded-lg text-center border-none">
+                            <h3 class="text-sm font-medium text-gray-400">Proyectos Activos (Últ. 2 años)</h3>
+                            <p id="kpi-active" class="mt-1 text-3xl font-semibold tracking-tight text-white">0</p>
+                        </div>
+                        <div class="glassmorphism p-6 rounded-lg text-center border-none">
+                            <h3 class="text-sm font-medium text-gray-400">Certificados OSHWA</h3>
+                            <p id="kpi-oshwa" class="mt-1 text-3xl font-semibold tracking-tight text-white">0</p>
+                        </div>
+                        <div class="glassmorphism p-6 rounded-lg text-center border-none">
+                            <h3 class="text-sm font-medium text-gray-400">Con Soporte SiLA 2</h3>
+                            <p id="kpi-sila" class="mt-1 text-3xl font-semibold tracking-tight text-white">0</p>
+                        </div>
+                    </div>
+
+                    <div class="lg:grid lg:grid-cols-12 lg:gap-8">
+                        <!-- Filtros -->
+                        <aside class="lg:col-span-3">
+                            <div class="sticky top-24 glassmorphism p-6 rounded-lg border-none">
+                                <h3 class="text-lg font-semibold mb-4 text-white text-left">Filtros</h3>
+                                <div class="space-y-6">
+                                    <div>
+                                        <label for="search" class="block text-sm font-medium text-gray-300">Buscar por nombre</label>
+                                        <input type="text" id="search" placeholder="Ej: Opentrons..." class="mt-1 block w-full p-2 filter-input">
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-gray-300 mb-2">Categoría Principal</h4>
+                                        <div id="category-filters" class="space-y-1"></div>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-gray-300 mb-2">Estado de Actividad</h4>
+                                        <div class="flex items-center space-x-4">
+                                            <div class="flex items-center">
+                                                <input id="activity-all" name="activity" type="radio" value="all" checked class="h-4 w-4 filter-checkbox focus:ring-primary-dark">
+                                                <label for="activity-all" class="ml-2 block text-sm text-gray-200">Todos</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input id="activity-active" name="activity" type="radio" value="active" class="h-4 w-4 filter-checkbox focus:ring-primary-dark">
+                                                <label for="activity-active" class="ml-2 block text-sm text-gray-200">Activo</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-gray-300 mb-2">Interoperabilidad</h4>
+                                        <div id="interoperability-filters" class="space-y-1"></div>
+                                    </div>
+                                    <button id="reset-filters" class="w-full text-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-dark bg-primary/20 hover:bg-primary/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                                        Limpiar Filtros
+                                    </button>
+                                </div>
+                            </div>
+                        </aside>
+
+                        <!-- Área de Contenido -->
+                        <div class="lg:col-span-9 mt-8 lg:mt-0">
+                            <!-- Gráficos -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                                <div class="glassmorphism p-6 rounded-lg border-none">
+                                    <h4 class="text-lg font-semibold text-center mb-4 text-white">Proyectos por Categoría</h4>
+                                    <div class="relative h-72"><canvas id="categoryChart"></canvas></div>
+                                </div>
+                                <div class="glassmorphism p-6 rounded-lg border-none">
+                                    <h4 class="text-lg font-semibold text-center mb-4 text-white">Licencias de Hardware</h4>
+                                    <div class="relative h-72"><canvas id="licenseChart"></canvas></div>
+                                </div>
+                            </div>
+
+                            <!-- Grilla de Proyectos -->
+                            <div class="flex justify-between items-center mb-4">
+                                <p id="results-count" class="text-sm text-gray-400">Mostrando 0 proyectos.</p>
+                            </div>
+                            <div id="project-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                <!-- Project cards will be injected here -->
+                            </div>
+                            <p id="no-results" class="hidden text-center text-gray-500 mt-8">No se encontraron proyectos que coincidan con los filtros seleccionados.</p>
+                        </div>
+                    </div>
+                </section>
+
+                 <section id="automatizacion" class="section glassmorphism" data-animate>
+                    <h2>El Laboratorio Automatizado: Plataformas Abiertas y Sistemas Integrados</h2>
+                    <h3>Manipuladores de Líquidos Robóticos y Estaciones de Trabajo Accesibles</h3>
+                    <p>El pipeteo manual es una de las tareas más tediosas y propensas a errores. La automatización de este proceso es clave para aumentar el rendimiento y la reproducibilidad. Plataformas como <span class="person">Opentrons Flex</span>, <span class="person">OTTO Liquid Handler</span> y <span class="person">Automata LINQ</span> están haciendo que la preparación de muestras automatizada y el cribado de alto rendimiento sean accesibles para laboratorios de todos los tamaños.</p>
+                    <h3>El Ecosistema de Software: Control, Integración y el Advenimiento de la IA</h3>
+                    <p>La característica más transformadora de las plataformas de automatización modernas es la provisión de una <span class="concept1">Interfaz de Programación de Aplicaciones (API)</span> abierta, típicamente basada en Python. Una API abierta permite a los usuarios tomar el control total del instrumento, desbloqueando un potencial ilimitado para la personalización y la integración con otros equipos. Este enfoque crea una "economía de plataforma", donde una comunidad global de usuarios construye sobre el hardware, compartiendo protocolos y flujos de trabajo validados.</p>
+                     <p>La tendencia más vanguardista es la integración de la <span class="concept2">inteligencia artificial (IA)</span> con estas plataformas abiertas. Este es el paso final hacia el concepto de un "laboratorio autodirigido", donde un algoritmo de IA puede diseñar, ejecutar y analizar experimentos con una mínima intervención humana, prometiendo acelerar el ritmo del descubrimiento científico en órdenes de magnitud.</p>
+                </section>
+                
+                <section id="ecosistema-apoyo" class="section glassmorphism" data-animate>
+                    <h2>El Ecosistema de Apoyo: Comunidades, Educación y Difusión</h2>
+                    <h3>Iniciativas Educativas y Comunidades Globales de DIYBio</h3>
+                    <p>El conocimiento se transmite a través de una red global de programas educativos y comunidades. La <span class="person">BioHack Academy</span>, un curso intensivo de 10 semanas, enseña a los participantes a construir su propio equipo de laboratorio DIY. Centros de desarrollo como <span class="person">GaudiLabs</span> y la red global de <span class="concept1">DIYBio.org</span> son vitales para la colaboración y el aprendizaje entre pares.</p>
+                    <h3>Repositorios, Revistas Revisadas por Pares y Esfuerzos de Estandarización</h3>
+                    <p>Para que el OSH sea adoptado en la investigación rigurosa, debe haber mecanismos para la validación. El <span class="concept2">Journal of Open Hardware</span> y colecciones como el "Open Source Toolkit" de <span class="person">PLOS</span> proporcionan la revisión por pares necesaria para validar los diseños. Este proceso se centra en la calidad de la documentación, la precisión de la Lista de Materiales (BOM) y la replicabilidad de las instrucciones, proporcionando una garantía de calidad esencial.</p>
+                </section>
+
+                <section id="conclusion" class="section glassmorphism" data-animate>
+                    <h2>Síntesis y Trayectoria Futura</h2>
+                    <h3>Resumen de Tendencias Clave</h3>
+                    <p>El análisis revela una clara <span class="concept1">maduración del movimiento</span>, que ha pasado de centrarse en la reducción de costos a convertirse en un motor de innovación. El campo está avanzando desde la construcción de instrumentos individuales hacia el desarrollo de <span class="concept2">plataformas de automatización integradas</span>. El software, y en particular las APIs abiertas basadas en Python, se ha convertido en el tejido conectivo que desbloquea la flexibilidad y mejora la reproducibilidad científica.</p>
+                    <h3>Abordando los Desafíos</h3>
+                    <p>A pesar de su rápido crecimiento, la adopción generalizada del OSH enfrenta desafíos persistentes. La <span class="person">validación y calibración</span> rigurosas son necesarias para aplicaciones críticas. El <span class="person">soporte al usuario</span>, que a menudo depende de foros comunitarios, sigue siendo un obstáculo. Además, es imperativo que la comunidad continúe promoviendo una cultura de práctica responsable en <span class="person">seguridad y bioseguridad</span>.</p>
+                    <h3>Perspectiva Futura</h3>
+                    <p>La trayectoria del laboratorio de código abierto apunta hacia un futuro en el que la investigación científica será más automatizada, descentralizada y colaborativa. La convergencia de la automatización de código abierto, la inteligencia artificial y la biología sintética está a punto de crear una nueva era de descubrimiento. Los "laboratorios autodirigidos" pasarán de ser un concepto teórico a una realidad práctica, acelerando enormemente la investigación. El bajo costo y la accesibilidad del OSH tienen el potencial de democratizar la ciencia a escala global, empoderando a los investigadores en entornos con recursos limitados.</p>
+                </section>
+
+                <section id="fuentes" class="section glassmorphism" data-animate>
+                    <h2>Fuentes</h2>
+                    <ul class="list-disc list-inside space-y-2 text-sm">
+                        <li>[1][2] CheapStat: An Open-Source, “Do-It-Yourself” Potentiostat... PLOS One</li>
+                        <li>[3][4] Open-Source Potentiostats for Electrochemical Detection | Lab On The Cheap</li>
+                        <li>[5][16][21][33][34][35][36][49] Welcome to » Open Source Hardware Projects | gaudi.ch</li>
+                        <li>[6] Desktop Spectrometry Starter Kit - SciStarter</li>
+                        <li>[7][22][27][48][55] Generic Lab Equipment - Hackteria Wiki</li>
+                        <li>[8] OpenTitrator an Open Source Titrator for everyone - GitHub</li>
+                        <li>[9] Open-Source Digitally Replicable Lab-Grade Scales - MDPI</li>
+                        <li>[10] BioCloneBot: A Low Cost, Open Source, Automated Liquid Handler... Concordia University</li>
+                        <li>[11][12][28] Open-source personal pipetting robots... Nature Communications</li>
+                        <li>[13][14][15] DropBot | microfluidics.utoronto.ca</li>
+                        <li>[17][18] GitHub - manimino/OpenSyringePump</li>
+                        <li>[19][50][51] $6 Printed Mini Centrifuge | Lab On The Cheap</li>
+                        <li>[20] Digital pipette: open hardware for liquid transfer... pubs.rsc.org</li>
+                        <li>[23] Feature Articles, page 6 | eLife</li>
+                        <li>[24] Bioreactors - AMYBO</li>
+                        <li>[25][26][29] Open Source Bioreactor – Open Bioeconomy Lab</li>
+                        <li>[30][31] openspim - open source selective plane illumination microscopy (PDF)</li>
+                        <li>[32] Altair-LSFM: A High-Resolution, Easy-to-Build Light-Sheet... - bioRxiv</li>
+                        <li>[37][38][39][41] OpenSPIM | openspim.org</li>
+                        <li>[40] Open-source microscope add-on for structured illumination... - PMC</li>
+                        <li>[42][43][44][45][46] The rapid-tome, a 3D-printed microtome... Plant Methods</li>
+                        <li>[47] TMA-Mate: An open-source modular toolkit for constructing tissue microarrays... Consensus</li>
+                        <li>[52][53][54] DIY laboratory shaker - Make:</li>
+                    </ul>
+                </section>
+            </main>
+        </div>
+        <footer class="footer" id="contacto">
+            <p style="text-align:center;">Un inventario dinámico del ecosistema de automatización de laboratorio abierto.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">Datos actualizados a 2025</p>
+        </footer>
+    </div>
+
+    <!-- Modal de Detalles del Proyecto -->
+    <div id="project-modal" class="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4 hidden opacity-0 modal-backdrop">
+        <div class="glassmorphism rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col transform scale-95 modal-content">
+            <div class="flex items-center justify-between p-4 border-b border-white/10">
+                <h3 id="modal-name" class="text-xl font-bold text-white"></h3>
+                <button id="modal-close" class="text-gray-300 hover:text-white text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto" id="modal-body">
+                <!-- Contenido del modal inyectado aquí -->
+            </div>
+            <div class="p-4 border-t border-white/10 flex justify-end">
+                <button id="modal-close-footer" class="px-4 py-2 bg-primary/20 text-primary-text rounded-md hover:bg-primary/40">Cerrar</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById("bg-canvas"),
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 250;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error initializing Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points) {
+                points.rotation.y += 0.0003;
+                points.rotation.x += 0.0002;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- CÓDIGO DE NAVEGACIÓN ---
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.body.classList.toggle('menu-open');
+            });
+
+            navMenu.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                   document.body.classList.remove('menu-open');
+                }
+            });
+        }
+
+        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        const elementsToAnimate = entry.target.children;
+                        for (let i = 0; i < elementsToAnimate.length; i++) {
+                            elementsToAnimate[i].style.transitionDelay = `${i * 100}ms`;
+                        }
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+
+        // --- CÓDIGO DE LA APLICACIÓN DE INVENTARIO ---
+        function inventoryApp() {
+            const mockData = [
+                // Proyectos Originales
+                { name: 'Opentrons OT-2', category: 'Hardware', subcategory: 'Manejo de líquidos', description: 'Un manipulador de líquidos de grado comercial y alta precisión construido sobre una filosofía de código abierto.', primary_url: 'https://opentrons.com/products/ot-2-robot', repo_url: 'https://github.com/Opentrons/opentrons', docs_url: 'https://docs.opentrons.com/', license_sw: 'Apache-2.0', oshwa_id: 'US000102', trl: 9, activity_last_commit: '2025-09-15', stars: 800, forks: 450, cost_usd_range: '> 15000', interoperability: ['api', 'sila2'], language: 'Python', maintainer: 'Opentrons' },
+                { name: 'OpenFlexure Microscope', category: 'Hardware', subcategory: 'Microscopía', description: 'Un microscopio de alto rendimiento impreso en 3D que utiliza un novedoso mecanismo de flexión para un movimiento preciso.', primary_url: 'https://openflexure.org/projects/microscope/', repo_url: 'https://gitlab.com/openflexure', docs_url: 'https://openflexure.gitlab.io/openflexure-microscope-handbook/', license_hw: 'CERN-OHL-S-2.0', doi_evidence: '10.1098/rsob.180049', trl: 8, activity_last_commit: '2025-10-01', stars: 650, forks: 200, cost_usd_range: '< 500', interoperability: ['api'], language: 'Python', maintainer: 'OpenFlexure Community' },
+                { name: 'PyLabRobot', category: 'Software', subcategory: 'Orquestación y control', description: 'Una biblioteca de Python para controlar hardware de laboratorio. Su objetivo es proporcionar una interfaz unificada para robots de manejo de líquidos y otros dispositivos.', primary_url: 'https://pylabrobot.org', repo_url: 'https://github.com/pylabrobot/pylabrobot', docs_url: 'https://docs.pylabrobot.org', license_sw: 'MIT', doi_evidence: '10.1021/acs.jcim.3c00226', trl: 6, activity_last_commit: '2025-08-20', stars: 150, forks: 30, cost_usd_range: 'N/A', interoperability: ['sila2', 'api'], language: 'Python', maintainer: 'Rick Wiersema, Stefan T' },
+                { name: 'eLabFTW', category: 'Software', subcategory: 'ELN/LIMS', description: 'Un cuaderno de laboratorio electrónico de código abierto para la gestión de experimentos e inventario. Ampliamente utilizado en el ámbito académico.', primary_url: 'https://www.elabftw.net/', repo_url: 'https://github.com/elabftw/elabftw', docs_url: 'https://doc.elabftw.net/', license_sw: 'AGPL-3.0', trl: 9, activity_last_commit: '2025-10-10', stars: 3200, forks: 800, cost_usd_range: 'N/A', interoperability: ['api'], language: 'PHP', maintainer: 'Nicolas Carpi' },
+                { name: 'WELPCR', category: 'Hardware', subcategory: 'Termocicladores', description: 'Una evolución más reciente y autónoma inspirada en OpenPCR, con un costo de materiales extremadamente bajo.', primary_url: 'https://github.com/WEL-Projects/WELPCR', repo_url: 'https://github.com/WEL-Projects/WELPCR', doi_evidence: '10.1101/2021.05.11.443699', trl: 7, activity_last_commit: '2024-08-15', stars: 50, forks: 15, cost_usd_range: '< 150', interoperability: [], language: 'C', maintainer: 'WEL-Projects' },
+                { name: 'OTTO Liquid Handler', category: 'Hardware', subcategory: 'Manejo de líquidos', description: 'Una verdadera alternativa DIY de bajo costo al OT-2, basada en Arduino Due.', primary_url: 'https://openliquidhandler.com/', repo_url: 'https://github.com/DrD-Flo/OTTO', license_sw: 'MIT', trl: 6, activity_last_commit: '2025-03-10', stars: 100, forks: 25, cost_usd_range: '~ 1500', interoperability: ['g-code'], language: 'Python/C++', maintainer: 'Vanderbilt University' },
+                { name: 'OpenPCR', category: 'Hardware', subcategory: 'Termocicladores', description: 'El proyecto fundacional en este espacio. Un termociclador de bajo costo ($499), autoensamblado.', primary_url: 'https://openpcr.org/', repo_url: 'https://github.com/jperfetto/OpenPCR', license_sw: 'GPLv3', trl: 8, activity_last_commit: '2019-03-01', stars: 300, forks: 150, cost_usd_range: '~ 500', interoperability: [], language: 'C++', maintainer: 'Chai Bio' },
+                { name: 'openUC2', category: 'Hardware', subcategory: 'Microscopía', description: 'Una caja de herramientas ópticas modular basada en cubos para crear microscopios y sistemas ópticos personalizados.', primary_url: 'https://openuc2.com/', repo_url: 'https://github.com/openUC2', docs_url: 'https://openuc2.github.io/Documentation/', license_hw: 'CERN-OHL-S-2.0', trl: 7, activity_last_commit: '2025-09-20', stars: 250, forks: 50, cost_usd_range: 'Variable', interoperability: [], language: 'Python', maintainer: 'openUC2 Community' },
+                { name: 'FlyPi', category: 'Hardware', subcategory: 'Microscopía', description: 'Una herramienta de imagen modular y asequible para microscopía, fluorescencia y experimentos de comportamiento.', primary_url: 'https://github.com/amchagas/Flypi', repo_url: 'https://github.com/amchagas/Flypi', doi_evidence: '10.1371/journal.pbio.2002702', trl: 7, activity_last_commit: '2023-11-20', stars: 200, forks: 60, cost_usd_range: '~ 100', interoperability: [], language: 'Python/C++', maintainer: 'Baden Lab' },
+                { name: 'Openspritzer', category: 'Hardware', subcategory: 'Manipulación de Muestras', description: 'Un sistema de eyección por presión de hardware abierto ("Picospritzer") para la administración de volúmenes de picolitros.', primary_url: 'https://github.com/BadenLab/Openspritzer', repo_url: 'https://github.com/BadenLab/Openspritzer', license_hw: 'CERN-OHL-v1.2', doi_evidence: '10.1038/s41598-017-15652-z', trl: 7, activity_last_commit: '2024-05-30', stars: 70, forks: 20, cost_usd_range: '~ 400', interoperability: ['TTL'], language: 'Arduino', maintainer: 'Baden Lab' },
+                { name: 'Open-source Plate Reader (OSP)', category: 'Hardware', subcategory: 'Espectrometría', description: 'Un lector de microplacas multimodo (absorbancia y fluorescencia) con todas las funciones.', primary_url: 'https://github.com/brianchowlab/OSP', repo_url: 'https://github.com/brianchowlab/OSP', doi_evidence: '10.1021/acs.biochem.6b01148', trl: 7, activity_last_commit: '2022-06-15', stars: 120, forks: 35, cost_usd_range: '~ 3500', interoperability: ['api'], language: 'Python/C++', maintainer: 'Chow Lab' },
+                { name: 'PocketPCR', category: 'Hardware', subcategory: 'Termocicladores', description: 'Un termociclador ultraportátil y de muy bajo costo (desde 99 €) alimentado por USB, con capacidad para 5 tubos.', primary_url: 'https://gaudi.ch/PocketPCR/', repo_url: '', docs_url: '', license_sw: 'Open Source', trl: 6, activity_last_commit: '2023-01-01', stars: 150, forks: 40, cost_usd_range: '< 150', interoperability: [], language: 'C', maintainer: 'GaudiLabs' },
+                { name: 'DIY Gel Electrophoresis Chamber', category: 'Hardware', subcategory: 'Electroforesis', description: 'Un proyecto de la comunidad DIYBio para construir una cámara de electroforesis en gel, tecnología clave en genética.', primary_url: 'https://biohackacademy.github.io/bha5/classes/', repo_url: '', docs_url: '', license_hw: 'Open Source', trl: 5, activity_last_commit: '2022-01-01', stars: 50, forks: 20, cost_usd_range: '< 50', interoperability: [], language: 'N/A', maintainer: 'BioHack Academy' },
+                { name: 'Hacked Hard-disc Centrifuge', category: 'Hardware', subcategory: 'Centrífugas', description: 'Un proyecto DIY que reutiliza un disco duro antiguo para crear una centrífuga de sobremesa de costo extremadamente bajo.', primary_url: 'https://wlu18www30.webland.ch/wiki/Collection_of_DIY_Biology,_Open_Source_Art_Projects', repo_url: '', docs_url: '', license_hw: 'Open Source', trl: 4, activity_last_commit: '2021-01-01', stars: 80, forks: 30, cost_usd_range: '< 20', interoperability: [], language: 'N/A', maintainer: 'DIYBio Community' },
+                { name: 'DVD Laser Scanning Microscope', category: 'Hardware', subcategory: 'Microscopía', description: 'Un microscopio de barrido láser súper compacto y de bajo costo construido a partir de dos cabezales de lectura de DVD.', primary_url: 'http://www.gaudi.ch/GaudiLabs/?page_id=19', repo_url: '', docs_url: '', license_hw: 'Open Source', trl: 5, activity_last_commit: '2022-05-01', stars: 120, forks: 25, cost_usd_range: '< 100', interoperability: [], language: 'N/A', maintainer: 'GaudiLabs' },
+                { name: 'Open Fiber Spectrometer', category: 'Hardware', subcategory: 'Espectrometría', description: 'Un espectrómetro funcional impreso en 3D con fibra óptica que utiliza una cámara de laptop reciclada.', primary_url: 'http://www.gaudi.ch/GaudiLabs/?page_id=19', repo_url: '', docs_url: '', license_hw: 'Open Source', trl: 6, activity_last_commit: '2023-02-01', stars: 90, forks: 15, cost_usd_range: '< 100', interoperability: [], language: 'Python', maintainer: 'GaudiLabs' },
+                { name: 'Open-Source Syringe Pump', category: 'Hardware', subcategory: 'Manejo de líquidos', description: 'Una bomba de jeringa de laboratorio de código abierto para la dosificación controlada de reactivos.', primary_url: 'https://www.vienna-scientific.com/open-hardware/syringe-pump/', repo_url: 'https://github.com/manimino/OpenSyringePump', docs_url: '', license_hw: 'Open Source', trl: 7, activity_last_commit: '2024-01-01', stars: 200, forks: 80, cost_usd_range: '~ 250', interoperability: [], language: 'Arduino', maintainer: 'Wijnen et al.' },
+                { name: 'OpenDrop Platform', category: 'Hardware', subcategory: 'Microfluídica', description: 'Plataforma de microfluídica digital que utiliza "electro-wetting" para controlar y manipular pequeñas gotas de líquido.', primary_url: 'https://www.gaudi.ch/OpenDrop/', repo_url: '', docs_url: '', license_hw: 'Open Source', trl: 7, activity_last_commit: '2024-03-01', stars: 180, forks: 30, cost_usd_range: 'Variable', interoperability: [], language: 'Python', maintainer: 'GaudiLabs' },
+                { name: 'Open Ephys Platform', category: 'Hardware', subcategory: 'Electrofisiología', description: 'Un ecosistema completo de hardware y software de código abierto para electrofisiología extracelular.', primary_url: 'https://open-ephys.org/', repo_url: '', docs_url: '', license_hw: 'Open Source', trl: 8, activity_last_commit: '2025-01-01', stars: 400, forks: 150, cost_usd_range: 'Variable', interoperability: [], language: 'C++/Python', maintainer: 'Open Ephys' },
+                { name: 'Opentrons Flex', category: 'Hardware', subcategory: 'Manejo de líquidos', description: 'Un robot de pipeteo y una plataforma de automatización de laboratorio flexible y accesible.', primary_url: 'https://opentrons.com/', repo_url: 'https://github.com/Opentrons/opentrons', docs_url: 'https://docs.opentrons.com/', license_sw: 'Apache-2.0', trl: 9, activity_last_commit: '2025-09-15', stars: 800, forks: 450, cost_usd_range: '> 20000', interoperability: ['api', 'sila2'], language: 'Python', maintainer: 'Opentrons' },
+                { name: 'Automata LINQ Platform', category: 'Hardware', subcategory: 'Automatización integral', description: 'Una plataforma de automatización de laboratorio totalmente integrada y configurable con software abierto (LINQ).', primary_url: 'https://automata.tech/', repo_url: '', docs_url: '', license_sw: 'Open Source SDK', trl: 9, activity_last_commit: '2025-08-01', stars: 100, forks: 20, cost_usd_range: 'Variable', interoperability: ['api'], language: 'Python', maintainer: 'Automata' },
+                { name: 'BioHack Academy', category: 'Software', subcategory: 'Educación', description: 'Un curso intensivo de 10 semanas que enseña a los participantes a construir su propio equipo de laboratorio DIY.', primary_url: 'https://waag.org/en/project/biohack-academy/', repo_url: '', docs_url: '', license_sw: 'N/A', trl: 9, activity_last_commit: '2025-01-01', stars: 300, forks: 100, cost_usd_range: 'N/A', interoperability: [], language: 'N/A', maintainer: 'Waag' },
+                { name: 'DIYBio.org', category: 'Software', subcategory: 'Comunidad', description: 'El movimiento de Biología "Hazlo Tú Mismo" (DIY Biology) que se organiza a través de una red global de grupos locales y foros en línea.', primary_url: 'https://diybio.org/', repo_url: '', docs_url: '', license_sw: 'N/A', trl: 9, activity_last_commit: '2025-01-01', stars: 500, forks: 200, cost_usd_range: 'N/A', interoperability: [], language: 'N/A', maintainer: 'DIYBio Community' },
+                
+                // Nuevos Proyectos Añadidos
+                { name: 'Gel Electrophoresis (Virtual)', category: 'Software', subcategory: 'Educación', description: 'Una simulación de laboratorio virtual de LabXchange que introduce la electroforesis en gel, una técnica utilizada para separar macromoléculas como el ADN.', primary_url: 'https://about.labxchange.org/featured/virtual-lab-simulations', repo_url: '', docs_url: '', license_sw: 'Gratuito', trl: 9, activity_last_commit: '2025-01-01', stars: 0, forks: 0, cost_usd_range: 'N/A', interoperability: [], language: 'N/A', maintainer: 'LabXchange' },
+                { name: 'DIY Low-Cost Spectrometer', category: 'Hardware', subcategory: 'Espectrometría', description: 'Un espectrómetro casero construido con cartón, una webcam y un trozo de un DVD como rejilla de difracción. Incluye software en Python.', primary_url: 'https://www.instructables.com/DIY-Low-Cost-Spectrometer/', repo_url: '', docs_url: '', license_hw: 'Open Source', trl: 5, activity_last_commit: '2022-01-01', stars: 100, forks: 50, cost_usd_range: '< 50', interoperability: [], language: 'Python', maintainer: 'Instructables Community' },
+                { name: 'Using a Spectrophotometer (Virtual)', category: 'Software', subcategory: 'Educación', description: 'Una simulación de laboratorio virtual de LabXchange que enseña cómo se utiliza un espectrofotómetro para determinar la concentración de un soluto.', primary_url: 'https://about.labxchange.org/featured/virtual-lab-simulations', repo_url: '', docs_url: '', license_sw: 'Gratuito', trl: 9, activity_last_commit: '2025-01-01', stars: 0, forks: 0, cost_usd_range: 'N/A', interoperability: [], language: 'N/A', maintainer: 'LabXchange' },
+                { name: 'Plant PhenoBox', category: 'Hardware', subcategory: 'Fenotipado de plantas', description: 'Un sistema de fenotipado de código abierto para la obtención de imágenes de brotes de plantas. Captura y procesa imágenes de forma autónoma.', primary_url: 'https://www.vienna-scientific.com/products/shoot-phenobox/', repo_url: '', docs_url: '', license_hw: 'Open Source', trl: 7, activity_last_commit: '2024-06-01', stars: 60, forks: 10, cost_usd_range: 'Variable', interoperability: [], language: 'N/A', maintainer: 'Vienna Scientific' },
+                { name: 'RoPods', category: 'Hardware', subcategory: 'Microscopía de raíces', description: 'Cámaras de microscopía de raíces de código abierto, diseñadas para el estudio no invasivo de las raíces de Arabidopsis y otros procesos radiculares.', primary_url: 'https://www.vienna-scientific.com/open-hardware/ropod-root-chamber/', repo_url: '', docs_url: '', license_hw: 'Open Source', trl: 6, activity_last_commit: '2023-12-01', stars: 40, forks: 5, cost_usd_range: 'Variable', interoperability: [], language: 'N/A', maintainer: 'Vienna Scientific' },
+                { name: 'ROBucket', category: 'Hardware', subcategory: 'Comportamiento animal', description: 'Una cámara operante de código abierto para estudios de comportamiento en roedores. Basada en la plataforma Arduino.', primary_url: 'https://www.vienna-scientific.com/open-hardware/robucket/', repo_url: '', docs_url: '', license_hw: 'Open Source', trl: 6, activity_last_commit: '2023-10-01', stars: 30, forks: 8, cost_usd_range: 'Variable', interoperability: [], language: 'Arduino', maintainer: 'Vienna Scientific' },
+                 { name: 'IO Rodeo Tools', category: 'Hardware', subcategory: 'Espectrometría', description: 'Ofrece una gama de herramientas de código abierto como colorímetros, turbidímetros y espectrofotómetros para mediciones científicas asequibles.', primary_url: 'https://iorodeo.com/', repo_url: 'https://github.com/iorodeo', docs_url: 'https://www.iorodeo.com/products', license_hw: 'CC-BY-SA-4.0', oshwa_id: 'US000003', trl: 7, activity_last_commit: '2024-07-15', stars: 90, forks: 50, cost_usd_range: '50-200', interoperability: ['api'], language: 'Arduino/Python', maintainer: 'IO Rodeo' },
+                { name: 'GaudiLabs Projects', category: 'Hardware', subcategory: 'General DIY', description: 'Un laboratorio abierto que desarrolla una amplia variedad de herramientas de bricolaje (DIY), desde termocicladores (PocketPCR) hasta centrífugas y microscopios.', primary_url: 'https://gaudilabs.ch/', repo_url: 'http://www.gaudi.ch/GaudiLabs/?page_id=19', docs_url: 'https://github.com/GaudiLabs', license_hw: 'Open Source', trl: 6, activity_last_commit: '2024-08-01', stars: 200, forks: 70, cost_usd_range: 'Variable', interoperability: [], language: 'Varios', maintainer: 'Urs Gaudenz' },
+                { name: 'Echo Revolver', category: 'Hardware', subcategory: 'Termocicladores', description: 'Un termociclador de código abierto para realizar reacciones en cadena de la polimerasa (PCR). Diseñado para ser robusto y fácil de construir y reparar.', primary_url: 'https://github.com/pachterlab/revolver', repo_url: 'https://github.com/pachterlab/revolver', docs_url: 'https://github.com/pachterlab/revolver', license_sw: 'BSD-3-Clause', trl: 6, activity_last_commit: '2023-09-01', stars: 50, forks: 10, cost_usd_range: 'Variable', interoperability: [], language: 'Python', maintainer: 'Pachter Lab' },
+                { name: 'pyControl', category: 'Software', subcategory: 'Control de experimentos', description: 'Un sistema basado en Python y microcontroladores para controlar experimentos de comportamiento animal. Flexible y de bajo costo.', primary_url: 'https://pycontrol.readthedocs.io/', repo_url: 'https://github.com/pyControl/pyControl', docs_url: 'https://pycontrol.readthedocs.io/', license_sw: 'GPL-3.0', trl: 7, activity_last_commit: '2024-10-01', stars: 150, forks: 60, cost_usd_range: 'N/A', interoperability: ['api'], language: 'Python', maintainer: 'pyControl Community' },
+                { name: 'Minion (Oxford Nanopore)', category: 'Software', subcategory: 'Secuenciación', description: 'El secuenciador de ADN/ARN portátil de Oxford Nanopore. Aunque el hardware es comercial, gran parte del software de análisis es de código abierto.', primary_url: 'https://nanoporetech.com/', repo_url: 'https://github.com/nanoporetech', docs_url: 'https://community.nanoporetech.com/', license_sw: 'MPL-2.0', trl: 9, activity_last_commit: '2025-05-01', stars: 1000, forks: 300, cost_usd_range: '> 1000', interoperability: ['api'], language: 'Python', maintainer: 'Oxford Nanopore' },
+                { name: 'simple-spectro', category: 'Hardware', subcategory: 'Espectrometría', description: 'Un espectrofotómetro de absorbancia de 3 colores (RGB), económico y alimentado por batería, desarrollado en el espacio de bio-DIY Hackuarium.', primary_url: 'https://hackuarium.github.io/simple-spectro/', repo_url: 'https://github.com/Hackuarium/simple-spectro', docs_url: '', license_hw: 'Open Source', trl: 5, activity_last_commit: '2023-05-10', stars: 40, forks: 10, cost_usd_range: '< 100', interoperability: [], language: 'Arduino', maintainer: 'Hackuarium' },
+                { name: 'OPENLUX', category: 'Hardware', subcategory: 'Lector de Placas', description: 'Un lector de microplacas de absorbancia de código abierto y DIY desarrollado por un equipo de iGEM, basado en un microcontrolador ESP32.', primary_url: 'https://github.com/Sheffield-iGEM/OPENLUX', repo_url: 'https://github.com/Sheffield-iGEM/OPENLUX', docs_url: 'https://2019.igem.org/Team:Sheffield/Hardware', license_sw: 'Open Source', trl: 5, activity_last_commit: '2019-10-01', stars: 30, forks: 5, cost_usd_range: 'Variable', interoperability: [], language: 'C++', maintainer: 'iGEM Sheffield' },
+                { name: 'BioBlocks', category: 'Software', subcategory: 'Diseño de Flujos', description: 'Un entorno de programación visual para bioprotocolos complejos. Permite diseñar flujos de trabajo de automatización de forma gráfica.', primary_url: 'https://github.com/bioblocks/bioblocks', repo_url: 'https://github.com/bioblocks/bioblocks', license_sw: 'Apache-2.0', trl: 5, activity_last_commit: '2025-01-15', stars: 90, cost_usd_range: 'N/A', interoperability: ['api'], language: 'TypeScript', maintainer: 'BioBlocks Community' },
+                { name: 'Aquarium', category: 'Software', subcategory: 'ELN/LIMS', description: 'Un software de LIMS y gestión de flujos de trabajo de laboratorio desarrollado en la Universidad de Washington.', primary_url: 'https://github.com/aquariumbio/aquarium', repo_url: 'https://github.com/aquariumbio/aquarium', license_sw: 'MIT', trl: 7, activity_last_commit: '2025-06-05', stars: 220, cost_usd_range: 'N/A', interoperability: ['api'], language: 'Ruby', maintainer: 'University of Washington' }
+            ];
+
+            let categoryChart, licenseChart;
+
+            const allCategories = [...new Set(mockData.map(p => p.category))];
+            const allInteroperability = [...new Set(mockData.flatMap(p => p.interoperability))];
+
+            const categoryFiltersContainer = document.getElementById('category-filters');
+            const interoperabilityFiltersContainer = document.getElementById('interoperability-filters');
+            const searchInput = document.getElementById('search');
+            const projectGrid = document.getElementById('project-grid');
+            const resultsCount = document.getElementById('results-count');
+            const noResults = document.getElementById('no-results');
+            const resetFiltersBtn = document.getElementById('reset-filters');
+            
+            function init() {
+                createFilters();
+                renderProjects(mockData);
+                updateKPIs(mockData);
+                createCharts(mockData);
+                setupEventListeners();
+            }
+
+            function createFilters() {
+                allCategories.forEach(cat => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center';
+                    div.innerHTML = `
+                        <input id="cat-${cat}" name="category" type="checkbox" value="${cat}" class="h-4 w-4 rounded filter-checkbox focus:ring-primary-dark">
+                        <label for="cat-${cat}" class="ml-2 block text-sm text-gray-200">${cat}</label>
+                    `;
+                    categoryFiltersContainer.appendChild(div);
+                });
+
+                allInteroperability.forEach(interop => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center';
+                    div.innerHTML = `
+                        <input id="interop-${interop}" name="interoperability" type="checkbox" value="${interop}" class="h-4 w-4 rounded filter-checkbox focus:ring-primary-dark">
+                        <label for="interop-${interop}" class="ml-2 block text-sm text-gray-200">${interop.toUpperCase()}</label>
+                    `;
+                    interoperabilityFiltersContainer.appendChild(div);
+                });
+            }
+
+            function setupEventListeners() {
+                searchInput.addEventListener('input', applyFilters);
+                document.querySelectorAll('input[name="category"], input[name="interoperability"], input[name="activity"]').forEach(input => {
+                    input.addEventListener('change', applyFilters);
+                });
+                resetFiltersBtn.addEventListener('click', resetFilters);
+                projectGrid.addEventListener('click', handleGridClick);
+                
+                const modal = document.getElementById('project-modal');
+                modal.addEventListener('click', (e) => {
+                    if (e.target.id === 'project-modal' || e.target.id === 'modal-close' || e.target.id === 'modal-close-footer' || e.target.parentElement.id === 'modal-close') {
+                       closeModal();
+                    }
+                });
+            }
+            
+            function handleGridClick(e) {
+                const button = e.target.closest('.details-btn');
+                if (button) {
+                    const projectName = button.dataset.name;
+                    const project = mockData.find(p => p.name === projectName);
+                    if (project) openModal(project);
+                }
+            }
+            
+            function openModal(project) {
+                const modal = document.getElementById('project-modal');
+                document.getElementById('modal-name').textContent = project.name;
+                const body = document.getElementById('modal-body');
+                
+                body.innerHTML = `
+                    <p class="text-gray-300 mb-4">${project.description}</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div class="bg-black/20 p-3 rounded-md"><strong class="text-gray-100 block">Categoría:</strong> ${project.category} (${project.subcategory})</div>
+                        <div class="bg-black/20 p-3 rounded-md"><strong class="text-gray-100 block">Madurez (TRL):</strong> ${project.trl || 'N/A'}</div>
+                        <div class="bg-black/20 p-3 rounded-md"><strong class="text-gray-100 block">Licencia SW:</strong> ${project.license_sw || 'N/A'}</div>
+                        <div class="bg-black/20 p-3 rounded-md"><strong class="text-gray-100 block">Licencia HW:</strong> ${project.license_hw || 'N/A'}</div>
+                        <div class="bg-black/20 p-3 rounded-md"><strong class="text-gray-100 block">Último Commit:</strong> ${new Date(project.activity_last_commit).toLocaleDateString()}</div>
+                        <div class="bg-black/20 p-3 rounded-md"><strong class="text-gray-100 block">Costo Estimado (USD):</strong> ${project.cost_usd_range}</div>
+                        <div class="bg-black/20 p-3 rounded-md col-span-1 md:col-span-2"><strong class="text-gray-100 block">Interoperabilidad:</strong> ${project.interoperability.join(', ').toUpperCase() || 'Ninguna especificada'}</div>
+                    </div>
+                    <div class="mt-6 flex flex-wrap gap-2">
+                        ${project.primary_url ? `<a href="${project.primary_url}" target="_blank" class="px-3 py-1.5 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary-dark">Página Principal</a>` : ''}
+                        ${project.repo_url ? `<a href="${project.repo_url}" target="_blank" class="px-3 py-1.5 bg-gray-700 text-white text-sm font-medium rounded-md hover:bg-gray-600">Repositorio</a>` : ''}
+                        ${project.docs_url ? `<a href="${project.docs_url}" target="_blank" class="px-3 py-1.5 bg-secondary/80 text-white text-sm font-medium rounded-md hover:bg-secondary">Documentación</a>` : ''}
+                        ${project.doi_evidence ? `<a href="https://doi.org/${project.doi_evidence}" target="_blank" class="px-3 py-1.5 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700">Publicación (DOI)</a>` : ''}
+                    </div>
+                `;
+
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modal.querySelector('.modal-content').classList.remove('scale-95');
+                }, 10);
+            }
+
+            function closeModal() {
+                const modal = document.getElementById('project-modal');
+                modal.classList.add('opacity-0');
+                modal.querySelector('.modal-content').classList.add('scale-95');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+
+            function applyFilters() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const selectedCategories = [...document.querySelectorAll('input[name="category"]:checked')].map(cb => cb.value);
+                const selectedInterops = [...document.querySelectorAll('input[name="interoperability"]:checked')].map(cb => cb.value);
+                const selectedActivity = document.querySelector('input[name="activity"]:checked').value;
+                const twoYearsAgo = new Date();
+                twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+
+                const filteredData = mockData.filter(p => {
+                    const nameMatch = p.name.toLowerCase().includes(searchTerm) || p.description.toLowerCase().includes(searchTerm);
+                    const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(p.category);
+                    const interopMatch = selectedInterops.length === 0 || selectedInterops.every(interop => p.interoperability.includes(interop));
+                    const activityMatch = selectedActivity === 'all' || new Date(p.activity_last_commit) > twoYearsAgo;
+                    return nameMatch && categoryMatch && interopMatch && activityMatch;
+                });
+
+                renderProjects(filteredData);
+                updateCharts(filteredData);
+            }
+
+            function resetFilters() {
+                searchInput.value = '';
+                document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+                document.getElementById('activity-all').checked = true;
+                applyFilters();
+            }
+
+            function renderProjects(projects) {
+                projectGrid.innerHTML = '';
+                projects.forEach(project => {
+                    const card = document.createElement('div');
+                    card.className = 'glassmorphism rounded-lg overflow-hidden flex flex-col transition-all hover:scale-105 hover:shadow-2xl hover:shadow-primary/20 duration-300 border-none details-btn';
+                    card.dataset.name = project.name;
+                    const lastCommitDate = new Date(project.activity_last_commit);
+                    const twoYearsAgo = new Date();
+                    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+                    const isActive = lastCommitDate > twoYearsAgo;
+                    
+                    card.innerHTML = `
+                        <div class="p-6 flex-grow">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full ${project.category === 'Hardware' ? 'bg-sky-500/20 text-sky-300' : 'bg-fuchsia-500/20 text-fuchsia-300'}">${project.category}</span>
+                                <div class="flex items-center text-sm text-gray-300">
+                                    <span class="font-bold mr-1">${project.stars || 0}</span>
+                                    <span class="text-yellow-400">★</span>
+                                </div>
+                            </div>
+                            <h3 class="text-lg font-bold text-white">${project.name}</h3>
+                            <p class="text-sm text-gray-400 mt-2 h-20 overflow-hidden">${project.description}</p>
+                        </div>
+                        <div class="px-6 pb-4 border-t border-white/10 bg-black/20">
+                            <div class="flex items-center justify-between text-xs text-gray-400 pt-3">
+                                <div>
+                                    <span class="font-medium">Últ. commit:</span> ${lastCommitDate.toLocaleDateString()}
+                                    <span class="ml-1 inline-block h-2 w-2 rounded-full ${isActive ? 'bg-green-500' : 'bg-red-500'}"></span>
+                                </div>
+                                <span class="font-semibold text-primary">Ver Detalles &rarr;</span>
+                            </div>
+                        </div>
+                    `;
+                    projectGrid.appendChild(card);
+                });
+                
+                resultsCount.textContent = `Mostrando ${projects.length} de ${mockData.length} proyectos.`;
+                noResults.classList.toggle('hidden', projects.length > 0);
+            }
+            
+            function updateKPIs(data) {
+                const twoYearsAgo = new Date();
+                twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+                
+                document.getElementById('kpi-total').textContent = data.length;
+                document.getElementById('kpi-active').textContent = data.filter(p => new Date(p.activity_last_commit) > twoYearsAgo).length;
+                document.getElementById('kpi-oshwa').textContent = data.filter(p => p.oshwa_id).length;
+                document.getElementById('kpi-sila').textContent = data.filter(p => p.interoperability.includes('sila2')).length;
+            }
+
+            function createCharts(initialData) {
+                Chart.defaults.color = 'rgba(229, 231, 235, 0.7)';
+                Chart.defaults.borderColor = 'rgba(129, 140, 248, 0.2)';
+                
+                const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+                const licenseCtx = document.getElementById('licenseChart').getContext('2d');
+
+                const chartOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 15, boxWidth: 12 } },
+                        tooltip: {
+                            backgroundColor: '#111827', titleFont: { weight: 'bold' },
+                            bodyFont: { size: 12 }, padding: 10, cornerRadius: 4
+                        }
+                    }
+                };
+                
+                const barOptions = { ...chartOptions, indexAxis: 'y', scales: { x: { grid: { color: 'rgba(129, 140, 248, 0.2)' } }, y: { grid: { display: false } } }};
+
+                categoryChart = new Chart(categoryCtx, { type: 'bar', data: getCategoryChartData(initialData), options: barOptions });
+                licenseChart = new Chart(licenseCtx, { type: 'doughnut', data: getLicenseChartData(initialData), options: chartOptions });
+            }
+            
+            function updateCharts(filteredData) {
+                categoryChart.data = getCategoryChartData(filteredData);
+                categoryChart.update();
+                licenseChart.data = getLicenseChartData(filteredData);
+                licenseChart.update();
+            }
+            
+            function getCategoryChartData(data) {
+                const categoryCounts = data.reduce((acc, p) => { acc[p.category] = (acc[p.category] || 0) + 1; return acc; }, {});
+                return {
+                    labels: Object.keys(categoryCounts),
+                    datasets: [{
+                        label: 'Nº de Proyectos', data: Object.values(categoryCounts),
+                        backgroundColor: 'rgba(129, 140, 248, 0.6)', borderColor: 'rgba(129, 140, 248, 1)', borderWidth: 1
+                    }]
+                };
+            }
+
+            function getLicenseChartData(data) {
+                const licenseCounts = data.filter(p => p.category === 'Hardware' && p.license_hw)
+                    .reduce((acc, p) => { acc[p.license_hw] = (acc[p.license_hw] || 0) + 1; return acc; }, {});
+                return {
+                    labels: Object.keys(licenseCounts),
+                    datasets: [{
+                        data: Object.values(licenseCounts),
+                        backgroundColor: ['#818cf8', '#6366f1', '#a78bfa', '#c4b5fd', '#60a5fa', '#3b82f6'],
+                        hoverOffset: 4, borderWidth: 0
+                    }]
+                };
+            }
+            
+            init();
+        }
+
+        // --- INICIALIZACIÓN GENERAL ---
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof THREE !== 'undefined') initThreeJS();
+            setupNavigation();
+            setupScrollAnimations();
+            if (typeof Chart !== 'undefined') inventoryApp();
+        });
+    </script>
+</body>
+</html>
+
