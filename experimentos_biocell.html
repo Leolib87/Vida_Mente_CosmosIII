@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Biología | Versión Final v2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Bioluminescent (Deep Navy, Aqua, Glowing Green) -->
+    <!-- Application Structure Plan: Diseño a pantalla completa con una cabecera horizontal superior para filtros. La estructura de contenido (KPIs, gráficos, cuadrícula) se mantiene. El modal utiliza un sistema de pestañas para organizar la información pedagógica. La iconografía SVG se integra en KPIs, tarjetas y pestañas del modal para mejorar la usabilidad y el atractivo visual. -->
+    <!-- Visualization & Content Choices: Se utiliza "glassmorphism" para las tarjetas y el modal. Los KPIs están enriquecidos con iconos SVG representativos. Los gráficos de Chart.js (barra horizontal y dona) mantienen la paleta bioluminiscente. El modal con pestañas iconizadas segmenta la información en secciones manejables: 'General', 'Resultados/Problemas', y 'Evaluación'. No se usa SVG para gráficos ni Mermaid JS. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { background-color: #0c1427; color: #e0e0e0; font-family: 'Inter', sans-serif; }
+        .glass-card { 
+            background: rgba(18, 29, 51, 0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(45, 212, 191, 0.1);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .glass-card:hover { 
+            border-color: rgba(45, 212, 191, 0.4);
+            box-shadow: 0 0 20px rgba(45, 212, 191, 0.1);
+        }
+        .modal-content {
+            background: rgba(18, 29, 51, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(45, 212, 191, 0.2);
+        }
+        .custom-input, .custom-select {
+            background-color: rgba(18, 29, 51, 0.8);
+            border: 1px solid rgba(45, 212, 191, 0.2);
+            color: #e0e0e0;
+        }
+        .custom-input:focus, .custom-select:focus {
+            outline: none;
+            border-color: rgba(45, 212, 191, 0.8);
+            box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.3);
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-button.active {
+            color: #2dd4bf; /* teal-400 */
+            border-bottom-color: #2dd4bf;
+        }
+        .custom-select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            padding-right: 2.5rem; /* Space for arrow */
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%235eead4' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+        }
+        .troubleshooting-table { width: 100%; border-collapse: collapse; margin-top: 1rem;}
+        .troubleshooting-table th, .troubleshooting-table td { text-align: left; padding: 8px 12px; border-bottom: 1px solid rgba(45, 212, 191, 0.1); }
+        .troubleshooting-table th { color: #e0e0e0; font-weight: 600; }
+        .troubleshooting-table td { color: #bdbdbd; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div id="app" class="min-h-screen w-full">
+        <!-- Header / Control Bar -->
+        <header class="p-4 sticky top-0 z-40 glass-card">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-4">
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <div class="p-2 bg-teal-500/10 rounded-lg">
+                        <svg class="h-6 w-6 text-teal-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" /></svg>
+                    </div>
+                    <h1 class="text-xl font-bold text-white">BioLab Dashboard</h1>
+                </div>
+                <div class="flex-grow flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                    <div class="relative w-full sm:w-auto flex-grow">
+                        <input type="text" id="search" placeholder="Buscar experimento..." class="custom-input rounded-md w-full px-3 py-2 pl-10 text-sm">
+                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                        </div>
+                    </div>
+                    <select id="categoria" class="custom-select rounded-md w-full sm:w-auto px-3 py-2 text-sm"><option value="todas">Todas las categorías</option></select>
+                    <select id="nivel" class="custom-select rounded-md w-full sm:w-auto px-3 py-2 text-sm"><option value="todos">Todos los niveles</option></select>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+            <!-- Introduction Section -->
+            <section class="mb-10 text-gray-300 space-y-6">
+                <h2 class="text-3xl font-bold text-white mb-4">El Mundo Viviente en Tus Manos</h2>
+                <div class="glass-card p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold text-white mb-3">La Célula Accesible</h3>
+                    <p class="text-gray-400 leading-relaxed">Este compendio democratiza la biología celular a través de experimentos de bajo costo, inspirados en el movimiento de ciencia ciudadana DIYbio. Aquí encontrarás protocolos accesibles, desde la observación celular hasta la ingeniería genética, todos enmarcados en prácticas de seguridad esenciales para transformar cualquier aula o espacio en un laboratorio de descubrimiento.</p>
+                </div>
+                <div class="glass-card p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold text-white mb-3">Prácticas de Laboratorio Esenciales</h3>
+                    <ul class="list-disc list-inside text-gray-400 ml-4 space-y-2">
+                        <li>**Higiene:** Mantén el área de trabajo limpia y lávate las manos antes y después. No comas ni bebas en el área.</li>
+                        <li>**Químicos:** Maneja los reactivos con cuidado, evita inhalar vapores y nunca mezcles al azar. Al diluir, siempre añade ácido al agua.</li>
+                        <li>**Material Biológico:** Trata todas las muestras como potencialmente contaminadas. Desinfecta superficies y elimina residuos de forma segura (ej. con lejía).</li>
+                        <li>**Conducta:** Lee las instrucciones antes de empezar, trabaja con calma y reporta cualquier incidente.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Stats Cards -->
+            <div id="kpi-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
+                <div class="lg:col-span-3 glass-card p-4 rounded-lg">
+                    <h3 class="font-semibold text-white text-sm mb-2">Top Conceptos Clave</h3>
+                    <div class="relative h-64 md:h-80"><canvas id="conceptsChart"></canvas></div>
+                </div>
+                <div class="lg:col-span-2 glass-card p-4 rounded-lg">
+                    <h3 class="font-semibold text-white text-sm mb-2">Distribución por Nivel</h3>
+                    <div class="relative h-64 md:h-80"><canvas id="levelChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Experiments Grid -->
+            <h2 class="text-2xl font-bold text-white mb-4">Catálogo de Experimentos</h2>
+            <div id="experiments-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+        </main>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div id="modal-content" class="rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300"></div>
+    </div>
+
+    <script type="module">
+        const experimentsData = [
+            { "id": 1, "nombre": "Observación de Ciclosis en Elodea", "categoria": "Biología Celular", "nivel_educativo": ["media", "universidad"], "conceptos_clave": ["microscopía", "citoesqueleto", "cloroplastos"], "descripcion_tecnica": "Observa el movimiento del citoplasma y cloroplastos en células vivas de Elodea, demostrando la dinámica interna celular.", "costo_aprox_USD": {"bajo": 5, "alto": 15}, "link_protocolo": "https://www.carolina.com/teacher-resources/Interactive-learning/observing-cytoplasmic-streaming/tr10697.tr", "expected_result_media": "https://www.carolina.com/images/products/detail/2021/176012_0.jpg", "troubleshooting_tips": [{"problema": "No se observa ciclosis.", "causa_probable": "Temperatura baja o luz insuficiente.", "solucion": "Aumentar la temperatura y la luz. Usar una muestra fresca."}], "pedagogical_module": {"nombre": "La Célula Revelada", "justificacion": "Demuestra la dinámica interna de las células vegetales vivas."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Qué función cumple la ciclosis?", "respuesta": "Facilita la distribución de nutrientes y orgánulos."}, {"tipo": "post-lab", "pregunta": "¿Qué orgánulos se mueven con la ciclosis?", "respuesta": "Principalmente los cloroplastos."}] },
+            { "id": 3, "nombre": "Electroforesis en Gel (DIY)", "categoria": "Biología Molecular", "nivel_educativo": ["media", "universidad"], "conceptos_clave": ["ADN", "electroforesis", "biotecnología"], "descripcion_tecnica": "Construye una cámara casera para separar colorantes en un gel, aprendiendo los principios de la electroforesis.", "costo_aprox_USD": {"bajo": 15, "alto": 40}, "link_protocolo": "https://www.instructables.com/Gel-Electrophoresis-at-Home/", "expected_result_media": "https://www.yourgenome.org/sites/default/files/styles/banner/public/images/illustrations/dna-electrophoresis-gel_yourgenome.png", "troubleshooting_tips": [{"problema": "Los colorantes no se separan.", "causa_probable": "Concentración de gel, voltaje incorrecto o pozos dañados.", "solucion": "Verificar concentración. Ajustar voltaje. Cargar con cuidado."}], "pedagogical_module": {"nombre": "Del Gen a la Proteína", "justificacion": "Visualiza la separación de moléculas por tamaño y carga."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Cómo afecta el tamaño a la migración en el gel?", "respuesta": "Las moléculas más pequeñas migran más rápido."}, {"tipo": "post-lab", "pregunta": "¿Por qué se necesita un buffer?", "respuesta": "Conduce la electricidad y mantiene el pH estable."}] },
+            { "id": 4, "nombre": "Transformación Bacteriana con pGLO ⚠️", "categoria": "Biotecnología", "nivel_educativo": ["media", "universidad"], "conceptos_clave": ["transformación", "plásmidos", "expresión génica", "GFP"], "descripcion_tecnica": "Introduce el plásmido pGLO en E. coli para que produzcan Proteína Verde Fluorescente (GFP) y brillen bajo luz UV.", "costo_aprox_USD": {"bajo": 100, "alto": 200}, "link_protocolo": "https://www.bio-rad.com/webroot/web/pdf/lse/literature/1660403EDU.pdf", "expected_result_media": "https://www.biorad.com/webroot/web/images/lse/products/education/pglo_transformation_kits/1660403EDU_pglo_transformation_results.jpg", "troubleshooting_tips": [{"problema": "No crecen colonias.", "causa_probable": "Choque térmico ineficaz o plásmido degradado.", "solucion": "Controlar el tiempo del choque térmico (42°C, 50s). Usar plásmido viable."}, {"problema": "Las colonias no brillan.", "causa_probable": "Falta del inductor (arabinosa) en la placa.", "solucion": "Verificar que las placas contengan arabinosa."}], "pedagogical_module": {"nombre": "Del Gen a la Proteína", "justificacion": "Visualiza el dogma central: ADN a proteína funcional."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Para qué sirve la ampicilina?", "respuesta": "Como agente de selección para bacterias transformadas."}, {"tipo": "post-lab", "pregunta": "¿Por qué es necesaria la arabinosa?", "respuesta": "Activa la expresión del gen GFP."}] },
+            { "id": 5, "nombre": "PCR del gen del sabor amargo (PTC)", "categoria": "Biología Molecular", "nivel_educativo": ["universidad"], "conceptos_clave": ["PCR", "genotipado", "polimorfismo"], "descripcion_tecnica": "Extrae ADN de tus células bucales y amplifica por PCR un gen para determinar tu genotipo del sabor amargo (PTC).", "costo_aprox_USD": {"bajo": 200, "alto": 400}, "link_protocolo": "https://dnalc.cshl.edu/resources/learning-center/ptc/", "expected_result_media": "https://dnalc.cshl.edu/images/alu_gel_positive.gif", "troubleshooting_tips": [{"problema": "No se observan bandas en el gel.", "causa_probable": "ADN de mala calidad o error en la mezcla de PCR.", "solucion": "Verificar calidad de ADN. Repipetear la mezcla de PCR."}, {"problema": "Bandas muy débiles.", "causa_probable": "Pocos ciclos de PCR o T° de anillamiento subóptima.", "solucion": "Aumentar a 35 ciclos. Optimizar la T° de anillamiento."}], "pedagogical_module": {"nombre": "Del Gen a la Proteína", "justificacion": "Aplica la PCR al genotipado de un rasgo humano."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Qué es la Taq polimerasa?", "respuesta": "Una ADN polimerasa termoestable que sintetiza ADN."}, {"tipo": "post-lab", "pregunta": "¿Por qué se usan dos cebadores?", "respuesta": "Para flanquear y definir la región de ADN a amplificar."}] },
+            { "id": 6, "nombre": "Cultivo y tinción de levaduras", "categoria": "Microbiología", "nivel_educativo": ["media", "universidad"], "conceptos_clave": ["microscopía", "cultivo celular", "célula eucariota"], "descripcion_tecnica": "Cultiva levaduras (S. cerevisiae) y tiñe con azul de metileno para diferenciar células vivas (incoloras) de muertas (azules).", "costo_aprox_USD": {"bajo": 20, "alto": 50}, "link_protocolo": "https://www.nuffieldfoundation.org/resource/observing-yeast-cells", "expected_result_media": "https://www.nuffieldfoundation.org/sites/default/files/images/article/nuffield-logo-image.png", "troubleshooting_tips": [{"problema": "No hay crecimiento.", "causa_probable": "Temperatura incorrecta o levadura inactiva.", "solucion": "Usar agua tibia y levadura fresca."}, {"problema": "Todas las células están azules.", "causa_probable": "Levaduras muertas antes de la tinción.", "solucion": "Usar levaduras frescas y no calentar en exceso."}], "pedagogical_module": {"nombre": "Energía y el Reino Invisible", "justificacion": "Estudio de un microorganismo eucariota simple y su viabilidad."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Qué indica la tinción azul?", "respuesta": "Indica que la célula está muerta."}, {"tipo": "post-lab", "pregunta": "¿Qué son las levaduras?", "respuesta": "Son hongos unicelulares."}] },
+            { "id": 8, "nombre": "Edición génica CRISPR ⚠️", "categoria": "Biotecnología", "nivel_educativo": ["universidad"], "conceptos_clave": ["CRISPR", "edición génica", "reparación de ADN"], "descripcion_tecnica": "Usa el sistema CRISPR-Cas9 para editar un gen en E. coli y observar un cambio de fenotipo, demostrando esta tecnología.", "costo_aprox_USD": {"bajo": 200, "alto": 350}, "link_protocolo": "https://www.the-odin.com/crispr-bacterial-guide-rna-cas9-plasmid-kit/", "expected_result_media": "https://cdn.shopify.com/s/files/1/0214/3534/products/Crispr_Bacterial_Genetic_Engineering_Kit_480x480.jpg?v=1571268305", "troubleshooting_tips": [{"problema": "No se observa el fenotipo editado.", "causa_probable": "Baja eficiencia de edición o error en el sgRNA.", "solucion": "Optimizar transformación. Verificar el sgRNA."}, {"problema": "Crecen colonias no editadas.", "causa_probable": "Selección incompleta.", "solucion": "Asegurar la concentración correcta de antibiótico."}], "pedagogical_module": {"nombre": "Biología Sintética en Acción", "justificacion": "Introduce una tecnología revolucionaria de ingeniería genética."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Qué es el sgRNA?", "respuesta": "Un ARN guía que dirige a Cas9 a una secuencia de ADN."}, {"tipo": "post-lab", "pregunta": "¿Qué mecanismos de reparación de ADN usa CRISPR?", "respuesta": "NHEJ (unión de extremos no homólogos) y HDR (reparación dirigida por homología)."}] },
+            { "id": 10, "nombre": "Observación de Mitosis en Raíz de Cebolla", "categoria": "Biología Celular", "nivel_educativo": ["media", "universidad"], "conceptos_clave": ["mitosis", "ciclo celular", "microscopía", "cromosomas"], "descripcion_tecnica": "Prepara un frotis de punta de raíz de cebolla para teñir y observar las fases de la mitosis (división celular) al microscopio.", "costo_aprox_USD": {"bajo": 20, "alto": 50}, "link_protocolo": "https://www.mclibre.org/otros/daniel_tomas/laboratorio/Mitosis/mitosis.html", "expected_result_media": "https://www.microscopemaster.com/images/onion-root-tip-mitosis.jpg", "troubleshooting_tips": [{"problema": "No se ven fases de mitosis.", "causa_probable": "Raíces no en crecimiento o mal frotis.", "solucion": "Usar raíces nuevas. Aplastar adecuadamente."}, {"problema": "Células mal teñidas.", "causa_probable": "Concentración de tinte o calentamiento incorrecto.", "solucion": "Ajustar tinte y calentar suavemente."}], "pedagogical_module": {"nombre": "La Célula Revelada", "justificacion": "Observación directa de la división celular."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿En qué fase se duplica el ADN?", "respuesta": "En la fase S de la interfase."}, {"tipo": "post-lab", "pregunta": "¿Diferencia entre metafase y anafase?", "respuesta": "Metafase: cromosomas alineados en el ecuador. Anafase: cromátidas se separan a los polos."}] },
+            { "id": 11, "nombre": "Ósmosis en Células de Papa", "categoria": "Biología Celular", "nivel_educativo": ["media"], "conceptos_clave": ["ósmosis", "membranas", "transporte pasivo"], "descripcion_tecnica": "Mide los cambios de masa y turgencia en trozos de papa sumergidos en soluciones salinas para observar la ósmosis.", "costo_aprox_USD": {"bajo": 1, "alto": 10}, "link_protocolo": "https://www.sciencebuddies.org/science-fair-projects/project-ideas/Bio_p033/biotechnology-techniques/the-effect-of-osmosis-on-potatoes", "expected_result_media": "https://www.sciencebuddies.org/Files/3194/7/bio-p033-osmosis-potato-experiment.jpg", "troubleshooting_tips": [{"problema": "No hay cambio de peso.", "causa_probable": "Poca diferencia de concentración.", "solucion": "Usar soluciones más concentradas o agua destilada."}, {"problema": "Papa se degrada.", "causa_probable": "Tiempo de inmersión excesivo.", "solucion": "Limitar el tiempo de inmersión."}], "pedagogical_module": {"nombre": "La Célula Revelada", "justificacion": "Demuestra un proceso de transporte fundamental en células vegetales."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Por qué las células vegetales no estallan en agua?", "respuesta": "Por su rígida pared celular."}, {"tipo": "post-lab", "pregunta": "¿Cómo sabes si la papa ganó o perdió agua?", "respuesta": "Midiendo el cambio en su masa."}] },
+            { "id": 12, "nombre": "Extracción de ARN de levaduras", "categoria": "Biología Molecular", "nivel_educativo": ["universidad"], "conceptos_clave": ["ARN", "expresión génica", "transcriptoma"], "descripcion_tecnica": "Aísla ARN total de levaduras. Requiere condiciones libres de RNasas para estudiar la expresión génica.", "costo_aprox_USD": {"bajo": 150, "alto": 300}, "link_protocolo": "https://www.protocols.io/view/hot-acidic-phenol-method-for-total-rna-extraction-bp2l6b2w", "expected_result_media": "https://www.protocols.io/static/images/hero-protocol/preview/bxyipxpe_hero_v3.png", "troubleshooting_tips": [{"problema": "ARN degradado.", "causa_probable": "Contaminación con RNasas.", "solucion": "Trabajar en ambiente libre de RNasas."}, {"problema": "Bajo rendimiento.", "causa_probable": "Lisis incompleta.", "solucion": "Aumentar tiempo de lisis."}], "pedagogical_module": {"nombre": "La Maquinaria de la Vida", "justificacion": "Técnica avanzada para estudiar la expresión génica."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Por qué es crucial un ambiente libre de RNasas?", "respuesta": "Las RNasas degradan el ARN muy rápido."}, {"tipo": "post-lab", "pregunta": "¿Cómo verificas la calidad del ARN?", "respuesta": "Electroforesis en gel o espectrofotometría."}] },
+            { "id": 13, "nombre": "Tinción de Gram de bacterias", "categoria": "Microbiología", "nivel_educativo": ["universidad"], "conceptos_clave": ["bacterias", "pared celular", "microscopía", "tinción diferencial"], "descripcion_tecnica": "Clasifica bacterias en Gram-positivas (violeta) y Gram-negativas (rosa) según su pared celular. Técnica fundamental de identificación.", "costo_aprox_USD": {"bajo": 50, "alto": 100}, "link_protocolo": "https://asm.org/getattachment/25943533-1463-482a-9860-848e93959d3c/gram-stain-protocol-2886.pdf", "expected_result_media": "https://assets.asm.org/binaries/content/gallery/asm/microbe/journal-pages/microbe-nov-dec-2015-gram-stain-large.jpg", "troubleshooting_tips": [{"problema": "Todas se ven rosas.", "causa_probable": "Decoloración excesiva.", "solucion": "Reducir tiempo de exposición al alcohol."}, {"problema": "Todas se ven violetas.", "causa_probable": "Decoloración insuficiente.", "solucion": "Aumentar tiempo de decoloración."}], "pedagogical_module": {"nombre": "Energía y el Reino Invisible", "justificacion": "Técnica fundamental de clasificación bacteriana."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Diferencia en la pared de Gram+ y Gram-?", "respuesta": "Gram+ tiene una pared gruesa de peptidoglicano; Gram- tiene una fina entre dos membranas."}, {"tipo": "post-lab", "pregunta": "¿Por qué el cristal violeta tiñe ambas al inicio?", "respuesta": "Se une a componentes ácidos de las células."}] },
+            { "id": 14, "nombre": "Sensibilidad a antibióticos", "categoria": "Microbiología", "nivel_educativo": ["universidad"], "conceptos_clave": ["antibióticos", "resistencia bacteriana", "microbiología clínica"], "descripcion_tecnica": "Mide los halos de inhibición para determinar la sensibilidad de una bacteria a diferentes antibióticos (método Kirby-Bauer).", "costo_aprox_USD": {"bajo": 80, "alto": 150}, "link_protocolo": "https://bio.libretexts.org/Learning_Objects/Laboratory_Experiments/Microbiology_Labs/Microbiology_Labs_I/19%3A_Antimicrobial_Susceptibility_Test_(Kirby-Bauer)", "expected_result_media": "https://bio.libretexts.org/@api/deki/files/10695/Figure_1._Antibiotic_sensitivity_testing_by_the_Kirby-Bauer_disk_diffusion_method..png", "troubleshooting_tips": [{"problema": "Sin halo de inhibición.", "causa_probable": "Contaminación, incubación incorrecta, cepa resistente.", "solucion": "Revisar técnica aséptica, condiciones. Usar cepas control."}, {"problema": "Crecimiento no uniforme.", "causa_probable": "Inoculación incorrecta.", "solucion": "Asegurar siembra uniforme."}], "pedagogical_module": {"nombre": "Energía y el Reino Invisible", "justificacion": "Estudia la interacción bacteria-antibiótico, de gran relevancia clínica."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Cómo se mide la sensibilidad?", "respuesta": "Por el diámetro del halo de inhibición."}, {"tipo": "post-lab", "pregunta": "¿Qué significa 'resistente'?", "respuesta": "Que el antibiótico no inhibe su crecimiento."}] },
+            { "id": 15, "nombre": "Espectrofotómetro DIY", "categoria": "Biotecnología", "nivel_educativo": ["universidad"], "conceptos_clave": ["espectrofotometría", "bioinstrumentación", "ley de Beer-Lambert"], "descripcion_tecnica": "Construye un espectrofotómetro de bajo costo con un smartphone para medir la absorbancia de soluciones coloreadas.", "costo_aprox_USD": {"bajo": 10, "alto": 30}, "link_protocolo": "https://publiclab.org/wiki/spectrometer", "expected_result_media": "https://publiclab.org/system/images/photos/000/017/632/original/Screen_Shot_2016-08-01_at_12.19.16_PM.png", "troubleshooting_tips": [{"problema": "Lecturas inconsistentes.", "causa_probable": "Mala alineación o luz ambiental.", "solucion": "Asegurar componentes fijos. Medir en oscuridad."}, {"problema": "No detecta espectro.", "causa_probable": "Configuración del software o poca luz.", "solucion": "Verificar configuración. Ajustar intensidad del LED."}], "pedagogical_module": {"nombre": "La Referencia del Biólogo DIY", "justificacion": "Construcción de una herramienta analítica, integrando óptica y electrónica."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Principio de la espectrofotometría?", "respuesta": "La absorción de luz por una sustancia a una longitud de onda específica."}, {"tipo": "post-lab", "pregunta": "¿Cómo se usa la Ley de Beer-Lambert?", "respuesta": "Relaciona la absorbancia con la concentración del soluto."}] },
+            { "id": 16, "nombre": "Puerta Lógica AND ⚠️", "categoria": "Biología Sintética", "nivel_educativo": ["universidad"], "conceptos_clave": ["Biología Sintética", "circuitos génicos", "operón"], "descripcion_tecnica": "Construye un circuito genético en E. coli donde la expresión de GFP requiere la presencia de dos inductores (Arabinosa y aTc).", "costo_aprox_USD": {"bajo": 250, "alto": 450}, "link_protocolo": "https://www.addgene.org/static/cms/files/e-coli-logic-gates-guide.pdf", "expected_result_media": "https://media.springernature.com/full/springer-static/image/art%3A10.1038%2Fnchembio.2007.6/MediaObjects/41589_2007_Article_BFnchembio20076_Fig2_HTML.jpg", "troubleshooting_tips": [{"problema": "Expresión 'leaky'.", "causa_probable": "Promotores no 100% específicos.", "solucion": "Bajar la concentración de inductores."}, {"problema": "No hay expresión.", "causa_probable": "Error en plásmido o concentración incorrecta.", "solucion": "Secuenciar plásmido. Titular inductores."}], "pedagogical_module": {"nombre": "Biología Sintética en Acción", "justificacion": "Introduce el concepto de programar células con lógica booleana."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Qué es un promotor inducible?", "respuesta": "Un promotor cuya actividad es controlada por una molécula específica."}, {"tipo": "post-lab", "pregunta": "Dibuja un diagrama del circuito.", "respuesta": "El diagrama debe mostrar dos promotores controlando reguladores que convergen en un tercero."}] },
+            { "id": 17, "nombre": "Biosensor DIY de Arsénico ⚠️", "categoria": "Biología Sintética", "nivel_educativo": ["universidad"], "conceptos_clave": ["Biología Sintética", "biosensores", "expresión génica"], "descripcion_tecnica": "Usa E. coli modificada con el operón arsR acoplado a un gen reportero para detectar arsénico mediante un cambio de color.", "costo_aprox_USD": {"bajo": 150, "alto": 300}, "link_protocolo": "http://parts.igem.org/Part:BBa_J33201", "expected_result_media": "https://2014.igem.org/wiki/images/6/6f/Arsenic_biosensor_overview.png", "troubleshooting_tips": [{"problema": "Baja sensibilidad.", "causa_probable": "Expresión débil del reportero.", "solucion": "Usar un reportero con mayor señal (luciferasa)."}, {"problema": "Falsos positivos.", "causa_probable": "Promotor 'leaky'.", "solucion": "Añadir regulación más estricta."}], "pedagogical_module": {"nombre": "Biología Sintética en Acción", "justificacion": "Aplica ingeniería genética para resolver un problema real."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Cómo funciona el represor ArsR?", "respuesta": "El arsénico se une a ArsR, liberando el promotor."}, {"tipo": "post-lab", "pregunta": "¿Qué otros analitos podrías detectar?", "respuesta": "Cualquier sustancia con un sistema de detección celular natural."}] },
+            { "id": 18, "nombre": "Síntesis de Proteínas Cell-Free", "categoria": "Biotecnología", "nivel_educativo": ["media", "universidad"], "conceptos_clave": ["cell-free", "expresión génica", "transcripción", "traducción"], "descripcion_tecnica": "Sintetiza proteína GFP in vitro usando un extracto celular de E. coli, sin necesidad de células vivas.", "costo_aprox_USD": {"bajo": 80, "alto": 200}, "link_protocolo": "https://www.protocols.io/view/preparation-of-e-coli-cell-extract-for-in-vitro-bxyipxpe", "expected_result_media": "https://www.biomotion-service.de/wp-content/uploads/2021/03/E-Coli-Lysat-Vergleich.jpg", "troubleshooting_tips": [{"problema": "Baja fluorescencia.", "causa_probable": "Extracto inactivo o ADN subóptimo.", "solucion": "Preparar extracto fresco. Titular el ADN."}, {"problema": "Reacción se detiene.", "causa_probable": "Agotamiento de energía (ATP/GTP).", "solucion": "Usar un sistema de regeneración de energía."}], "pedagogical_module": {"nombre": "La Fábrica Celular", "justificacion": "Demuestra que la maquinaria celular puede funcionar fuera de la célula."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Componentes de un sistema cell-free?", "respuesta": "Ribosomas, polimerasas, tRNAs, aminoácidos, nucleótidos y energía."}, {"tipo": "post-lab", "pregunta": "¿Ventajas de un sistema cell-free?", "respuesta": "Rapidez, producción de proteínas tóxicas, y control directo."}] },
+            { "id": 19, "nombre": "Purificación de Proteína His-Tag", "categoria": "Biología Molecular", "nivel_educativo": ["universidad"], "conceptos_clave": ["purificación de proteínas", "cromatografía", "afinidad"], "descripcion_tecnica": "Aísla una proteína con cola de histidina (His-tag) de un lisado bacteriano mediante cromatografía de afinidad en una columna de Níquel-NTA.", "costo_aprox_USD": {"bajo": 150, "alto": 350}, "link_protocolo": "https://www.protocols.io/view/purification-of-his-tagged-proteins-261v3dx", "expected_result_media": "https://www.goldbio.com/ori-articles/images/Purification-of-his-tagged-proteins-from-E-coli/his-tag-purification-gel.jpg", "troubleshooting_tips": [{"problema": "La proteína no se une.", "causa_probable": "His-tag no accesible o columna mal equilibrada.", "solucion": "Añadir desnaturalizante suave. Verificar pH."}, {"problema": "Contaminación.", "causa_probable": "Lavado insuficiente.", "solucion": "Aumentar número de lavados e imidazol."}] , "pedagogical_module": {"nombre": "La Fábrica Celular", "justificacion": "Enseña el estándar de oro para purificar proteínas recombinantes."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Principio de la cromatografía Ni-NTA?", "respuesta": "Las histidinas del His-tag tienen alta afinidad por los iones de níquel."}, {"tipo": "post-lab", "pregunta": "¿Cómo se eluye la proteína?", "respuesta": "Añadiendo imidazol, que compite con el His-tag por la unión al níquel."}] },
+            { "id": 20, "nombre": "Actividad de la Enzima Catalasa", "categoria": "Biología Celular", "nivel_educativo": ["media", "universidad"], "conceptos_clave": ["enzimas", "cinética enzimática", "catálisis", "desnaturalización"], "descripcion_tecnica": "Mide la producción de oxígeno por la enzima catalasa (de papa o levadura) al descomponer peróxido de hidrógeno. Demuestra la desnaturalización por calor.", "costo_aprox_USD": {"bajo": 10, "alto": 40}, "link_protocolo": "https://www.nuffieldfoundation.org/resource/measuring-rate-reaction-catalase", "expected_result_media": "https://www.researchgate.net/profile/Francisco-Vergara-10/publication/280590897/figure/fig1/AS:614347717652488@1523483321952/Figura-1-Cinetica-de-la-actividad-enzimatica-de-la-catalasa-de-papa-Solanum-tuberosum.png", "troubleshooting_tips": [{"problema": "Reacción lenta o nula.", "causa_probable": "Enzima desnaturalizada o sustrato degradado.", "solucion": "Usar extracto fresco y H2O2 nuevo."}, {"problema": "Resultados inconsistentes.", "causa_probable": "Medición imprecisa o temperatura variable.", "solucion": "Estandarizar medición. Controlar la temperatura."}], "pedagogical_module": {"nombre": "La Fábrica Celular", "justificacion": "Introduce conceptos de función enzimática y desnaturalización."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "Escribe la reacción de la catalasa.", "respuesta": "2 H2O2 -> 2 H2O + O2"}, {"tipo": "post-lab", "pregunta": "¿Por qué el tejido hervido no reacciona?", "respuesta": "El calor desnaturaliza la enzima, destruyendo su función."}] },
+            { "id": 21, "nombre": "Modelo Celular con Huevo", "categoria": "Biología Celular", "nivel_educativo": ["media"], "conceptos_clave": ["membrana", "citoplasma", "núcleo", "modelo celular"], "descripcion_tecnica": "Usa un huevo de gallina como modelo macroscópico para identificar análogos de la membrana, citoplasma y núcleo de una célula animal.", "costo_aprox_USD": {"bajo": 1, "alto": 5}, "link_protocolo": "https://www.youtube.com/watch?v=CJFwVC_GcGE", "expected_result_media": "https://i.ytimg.com/vi/CJFwVC_GcGE/maxresdefault.jpg", "troubleshooting_tips": [{"problema": "Yema rota.", "causa_probable": "Manipulación brusca.", "solucion": "Romper el huevo con cuidado sobre una superficie plana."}, {"problema": "No se ve el disco germinal.", "causa_probable": "Tamaño pequeño.", "solucion": "Mover suavemente la yema para buscarlo."}], "pedagogical_module": {"nombre": "La Célula Revelada", "justificacion": "Introduce los componentes básicos de una célula con un modelo accesible."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Qué analogías existen entre el huevo y una célula?", "respuesta": "Membrana vitelina-membrana plasmática, yema-citoplasma, disco germinal-núcleo."}, {"tipo": "post-lab", "pregunta": "¿Qué propiedades de la membrana representa la yema?", "respuesta": "Su elasticidad y capacidad de contención."}] },
+            { "id": 22, "nombre": "Ósmosis en Huevo (\"Huevo Saltarin\")", "categoria": "Biología Celular", "nivel_educativo": ["media", "universidad"], "conceptos_clave": ["ósmosis", "membranas", "transporte pasivo", "hipotónico", "hipertónico"], "descripcion_tecnica": "Disuelve la cáscara de un huevo en vinagre y lo sumerge en soluciones para observar el movimiento del agua a través de su membrana.", "costo_aprox_USD": {"bajo": 5, "alto": 15}, "link_protocolo": "http://www.cursosinea.conevyt.org.mx/cursos/cnaturales_v2/interface/main/recursos/experimentos/cnexp_20.htm", "expected_result_media": "https://www.sciencebuddies.org/Files/3184/8/eggsperiment-osmosis-science-project-egg-in-vinegar.jpg", "troubleshooting_tips": [{"problema": "Cáscara no se disuelve.", "causa_probable": "Poco vinagre o tiempo insuficiente.", "solucion": "Asegurar que el huevo esté cubierto de vinagre por 2-3 días."}, {"problema": "Huevo se rompe.", "causa_probable": "Demasiado tiempo en agua pura.", "solucion": "Observar el huevo cada pocas horas y retirarlo."}], "pedagogical_module": {"nombre": "La Célula Revelada", "justificacion": "Demuestra la ósmosis en una célula animal modelo de forma visual."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Define ósmosis?", "respuesta": "Movimiento pasivo de agua a través de una membrana semipermeable."}, {"tipo": "post-lab", "pregunta": "¿Por qué el huevo se encogió en el sirope?", "respuesta": "El sirope es una solución hipertónica, causando la salida de agua del huevo."}] },
+            { "id": 23, "nombre": "Ósmosis en Patata", "categoria": "Biología Celular", "nivel_educativo": ["media"], "conceptos_clave": ["ósmosis", "membranas", "turgencia", "célula vegetal"], "descripcion_tecnica": "Usa una patata con una cavidad para demostrar el movimiento del agua hacia una zona con alta concentración de solutos (azúcar o sal).", "costo_aprox_USD": {"bajo": 1, "alto": 10}, "link_protocolo": "https://es.scribd.com/document/600590364/5-Experimentos-de-Biologia-para-Secundaria", "expected_result_media": "https://i.ytimg.com/vi/bX_oXG8v8_Y/maxresdefault.jpg", "troubleshooting_tips": [{"problema": "No se acumula líquido.", "causa_probable": "Cavidad perforada o poca agua externa.", "solucion": "Asegurar que la cavidad no tenga fugas y que haya agua en el plato."}, {"problema": "La patata se ablanda.", "causa_probable": "Tiempo de reposo excesivo.", "solucion": "Observar a las 2-3 horas."}], "pedagogical_module": {"nombre": "La Célula Revelada", "justificacion": "Demuestra el potencial hídrico en tejidos vegetales."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Cómo influye la pared celular en la ósmosis?", "respuesta": "Impide la lisis y contribuye a la turgencia."}, {"tipo": "post-lab", "pregunta": "¿Por qué se acumuló líquido en la cavidad?", "respuesta": "El azúcar creó un ambiente hipertónico, atrayendo agua por ósmosis."}] },
+            { "id": 24, "nombre": "Extracción de ADN de Frutas", "categoria": "Biología Molecular", "nivel_educativo": ["media", "universidad"], "conceptos_clave": ["ADN", "extracción", "lisis celular", "precipitación"], "descripcion_tecnica": "Extrae y visualiza ADN de frutas usando detergente, sal y alcohol frío. Un experimento impactante y accesible.", "costo_aprox_USD": {"bajo": 1, "alto": 5}, "link_protocolo": "https://www.cibnor.gob.mx/images/stories/pace/pace2024/BD/Manual_de_experimentos_cientificos.pdf", "expected_result_media": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Strawberry_DNA.jpg/640px-Strawberry_DNA.jpg", "troubleshooting_tips": [{"problema": "No se ve ADN.", "causa_probable": "Mala trituración, alcohol no frío, o poco detergente.", "solucion": "Triturar bien. Usar alcohol muy frío."}, {"problema": "ADN contaminado.", "causa_probable": "Filtración incompleta.", "solucion": "Filtrar con una malla más fina."}], "pedagogical_module": {"nombre": "La Maquinaria de la Vida", "justificacion": "Demuestra la omnipresencia del ADN de manera tangible."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Para qué sirve el detergente?", "respuesta": "Para disolver las membranas celulares y liberar el ADN."}, {"tipo": "post-lab", "pregunta": "¿Por qué el ADN es visible en el alcohol?", "respuesta": "El ADN es insoluble en alcohol frío, lo que causa su precipitación."}] },
+            { "id": 25, "nombre": "Extracción de ADN de Saliva", "categoria": "Biología Molecular", "nivel_educativo": ["media", "universidad"], "conceptos_clave": ["ADN", "extracción", "lisis celular", "células epiteliales"], "descripcion_tecnica": "Aísla y visualiza tu propio ADN a partir de células de la boca usando sal, detergente y alcohol.", "costo_aprox_USD": {"bajo": 1, "alto": 5}, "link_protocolo": "https://www.youtube.com/watch?v=TvLCcANElEw", "expected_result_media": "https://i.ytimg.com/vi/TvLCcANElEw/maxresdefault.jpg", "troubleshooting_tips": [{"problema": "Poco ADN visible.", "causa_probable": "Pocas células recolectadas.", "solucion": "Enjuagar la boca vigorosamente durante un minuto."}, {"problema": "Mucha espuma.", "causa_probable": "Mezcla demasiado vigorosa.", "solucion": "Mezclar suavemente."}], "pedagogical_module": {"nombre": "La Maquinaria de la Vida", "justificacion": "Conecta el concepto de ADN con la identidad individual."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Qué células se usan?", "respuesta": "Células epiteliales de la boca."}, {"tipo": "post-lab", "pregunta": "¿Por qué usar alcohol frío?", "respuesta": "Mejora la precipitación del ADN."}] },
+            { "id": 26, "nombre": "Detección de Almidón con Yodo", "categoria": "Biología Celular", "nivel_educativo": ["media"], "conceptos_clave": ["almidón", "polisacáridos", "yodo", "detección"], "descripcion_tecnica": "Usa una solución de yodo para identificar la presencia de almidón en alimentos, observando un cambio de color a azul oscuro/negro.", "costo_aprox_USD": {"bajo": 1, "alto": 5}, "link_protocolo": "https://www.areaciencias.com/ciencias-divertidas/proyectos-de-ciencias/", "expected_result_media": "https://cdn.shopify.com/s/files/1/0550/7895/8762/articles/Starch_Test.jpg?v=1649931758", "troubleshooting_tips": [{"problema": "No hay cambio de color.", "causa_probable": "Solución de yodo degradada.", "solucion": "Usar yodo fresco y concentrado."}, {"problema": "Coloración débil.", "causa_probable": "Poco almidón en la muestra.", "solucion": "Usar muestras con alto contenido de almidón."}], "pedagogical_module": {"nombre": "La Maquinaria de la Vida", "justificacion": "Demuestra la presencia de una biomolécula de almacenamiento de energía."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Para qué sirve el almidón en las plantas?", "respuesta": "Como principal forma de almacenamiento de energía."}, {"tipo": "post-lab", "pregunta": "¿Qué indica el color azul oscuro?", "respuesta": "La presencia de almidón."}] },
+            { "id": 27, "nombre": "Demostración de la Fotosíntesis", "categoria": "Biología Celular", "nivel_educativo": ["media"], "conceptos_clave": ["fotosíntesis", "oxígeno", "cloroplastos", "dióxido de carbono"], "descripcion_tecnica": "Observa la producción de burbujas de oxígeno por una planta acuática (Elodea) bajo la luz. Se añade bicarbonato como fuente de CO2.", "costo_aprox_USD": {"bajo": 5, "alto": 20}, "link_protocolo": "https://elbibliote.com/resources/Temas/html/1120.php", "expected_result_media": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Photosynthesis_experiment.JPG/640px-Photosynthesis_experiment.JPG", "troubleshooting_tips": [{"problema": "No se ven burbujas.", "causa_probable": "Poca luz, poco CO2, o planta inactiva.", "solucion": "Aumentar la luz. Asegurar bicarbonato disuelto. Usar planta fresca."}, {"problema": "Producción lenta.", "causa_probable": "Agua muy fría.", "solucion": "Aumentar la temperatura del agua."}], "pedagogical_module": {"nombre": "Energía y el Reino Invisible", "justificacion": "Demuestra la conversión de luz en energía química."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Qué gas se produce en la fotosíntesis?", "respuesta": "Oxígeno."}, {"tipo": "post-lab", "pregunta": "¿Cómo medirías la tasa de fotosíntesis?", "respuesta": "Contando las burbujas por minuto."}] },
+            { "id": 28, "nombre": "Fermentación de Levaduras", "categoria": "Microbiología", "nivel_educativo": ["media"], "conceptos_clave": ["fermentación", "levaduras", "respiración celular", "dióxido de carbono"], "descripcion_tecnica": "Mide la producción de CO2 por levaduras al consumir azúcar en un ambiente anaeróbico, inflando un globo.", "costo_aprox_USD": {"bajo": 1, "alto": 5}, "link_protocolo": "https://www.cibnor.gob.mx/images/stories/pace/pace2024/BD/Manual_de_experimentos_cientificos.pdf", "expected_result_media": "https://i.ytimg.com/vi/Q2-FqS7bUoU/maxresdefault.jpg", "troubleshooting_tips": [{"problema": "Globo no se infla.", "causa_probable": "Agua muy caliente/fría, levadura inactiva o poco azúcar.", "solucion": "Usar agua tibia y levadura fresca. Asegurar suficiente azúcar."}, {"problema": "Globo se desinfla.", "causa_probable": "Fugas en el sellado.", "solucion": "Asegurar un ajuste hermético."}], "pedagogical_module": {"nombre": "Energía y el Reino Invisible", "justificacion": "Ilustra un proceso metabólico clave de los microorganismos."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Qué tipo de respiración es la fermentación?", "respuesta": "Anaeróbica."}, {"tipo": "post-lab", "pregunta": "¿Qué gas infla el globo?", "respuesta": "Dióxido de carbono (CO2)."}] },
+            { "id": 29, "nombre": "Cultivo de Microorganismos Casero", "categoria": "Microbiología", "nivel_educativo": ["media"], "conceptos_clave": ["microorganismos", "cultivo", "colonias", "higiene"], "descripcion_tecnica": "Cultiva colonias de bacterias y mohos de superficies cotidianas en un medio de cultivo a base de gelatina.", "costo_aprox_USD": {"bajo": 5, "alto": 15}, "link_protocolo": "https://biologia.uc.cl/media/2020/04/Ciencia-Abierta-Convierte-tu-casa-en-un-laboratorio.pdf", "expected_result_media": "https://i.ytimg.com/vi/bX_oXG8v8_Y/maxresdefault.jpg", "troubleshooting_tips": [{"problema": "No crece nada.", "causa_probable": "Medio no nutritivo o siembra ineficaz.", "solucion": "Asegurar nutrientes. Frotar el hisopo con presión."}, {"problema": "Crecimiento de un solo tipo de hongo.", "causa_probable": "Contaminación ambiental.", "solucion": "Trabajar lo más asépticamente posible."}], "pedagogical_module": {"nombre": "Energía y el Reino Invisible", "justificacion": "Revela la omnipresencia de los microorganismos."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Por qué no se deben abrir los recipientes?", "respuesta": "Para evitar la liberación de posibles patógenos."}, {"tipo": "post-lab", "pregunta": "¿Qué precauciones de higiene son importantes?", "respuesta": "Uso de guantes, lavado de manos, desinfección de superficies."}] },
+            { "id": 30, "nombre": "Microscopio Casero", "categoria": "Biotecnología", "nivel_educativo": ["media", "universidad"], "conceptos_clave": ["microscopía", "óptica", "aumento", "DIY"], "descripcion_tecnica": "Ensambla un microscopio funcional de bajo costo usando una gota de agua o una lente simple, un soporte y una fuente de luz.", "costo_aprox_USD": {"bajo": 10, "alto": 40}, "link_protocolo": "https://www.youtube.com/watch?v=L2QKFN1ypDU", "expected_result_media": "https://i.ytimg.com/vi/L2QKFN1ypDU/maxresdefault.jpg", "troubleshooting_tips": [{"problema": "Imagen borrosa.", "causa_probable": "Distancia incorrecta entre lente y muestra.", "solucion": "Ajustar el enfoque con precisión."}, {"problema": "Campo oscuro.", "causa_probable": "Iluminación insuficiente.", "solucion": "Asegurar que la luz esté directamente debajo de la muestra."}], "pedagogical_module": {"nombre": "La Referencia del Biólogo DIY", "justificacion": "Fomenta la construcción de herramientas científicas."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Componente más importante del microscopio?", "respuesta": "La lente, porque genera el aumento."}, {"tipo": "post-lab", "pregunta": "¿Cómo una gota de agua aumenta la imagen?", "respuesta": "La tensión superficial forma una lente biconvexa que refracta la luz."}] },
+            { "id": 31, "nombre": "Desmineralización de Huesos", "categoria": "Biología Celular", "nivel_educativo": ["media"], "conceptos_clave": ["calcio", "estructura ósea", "desmineralización"], "descripcion_tecnica": "Sumerge un hueso de pollo en vinagre para disolver los minerales de calcio, dejándolo flexible y demostrando su papel en la rigidez ósea.", "costo_aprox_USD": {"bajo": 1, "alto": 5}, "link_protocolo": "https://biologia.uc.cl/media/2020/04/Ciencia-Abierta-Convierte-tu-casa-en-un-laboratorio.pdf", "expected_result_media": "https://i.ytimg.com/vi/yX3b2D9R71M/maxresdefault.jpg", "troubleshooting_tips": [{"problema": "Hueso no se vuelve flexible.", "causa_probable": "Poco tiempo en vinagre o hueso muy grande.", "solucion": "Dejar el hueso en vinagre varios días. Usar huesos pequeños."}, {"problema": "Hueso se rompe.", "causa_probable": "Desmineralización incompleta.", "solucion": "Asegurar la desmineralización completa."}], "pedagogical_module": {"nombre": "La Célula Revelada", "justificacion": "Ilustra la composición y propiedades de los tejidos biológicos."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Qué componente del hueso reacciona con el vinagre?", "respuesta": "Los minerales, principalmente el fosfato de calcio."}, {"tipo": "post-lab", "pregunta": "¿Qué indica la flexibilidad del hueso?", "respuesta": "Que los minerales proporcionan rigidez, y el colágeno, flexibilidad."}] },
+            { "id": 32, "nombre": "Leche Mágica (Surfactantes)", "categoria": "Biología Celular", "nivel_educativo": ["media"], "conceptos_clave": ["tensión superficial", "lípidos", "surfactantes", "membranas"], "descripcion_tecnica": "Demuestra cómo el jabón (surfactante) rompe la tensión superficial y disuelve las grasas de la leche, análogo a cómo rompe las membranas celulares.", "costo_aprox_USD": {"bajo": 1, "alto": 5}, "link_protocolo": "https://biologia.uc.cl/media/2020/04/Ciencia-Abierta-Convierte-tu-casa-en-un-laboratorio.pdf", "expected_result_media": "https://i.ytimg.com/vi/A5XGk-m72wE/maxresdefault.jpg", "troubleshooting_tips": [{"problema": "Poco movimiento de colores.", "causa_probable": "Leche baja en grasa.", "solucion": "Usar leche entera."}, {"problema": "Colores se mezclan rápido.", "causa_probable": "Demasiado jabón o agitación.", "solucion": "Añadir solo una gota de jabón."}], "pedagogical_module": {"nombre": "La Célula Revelada", "justificacion": "Ilustra la interacción de lípidos y surfactantes."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Qué son los surfactantes?", "respuesta": "Moléculas que reducen la tensión superficial de un líquido."}, {"tipo": "post-lab", "pregunta": "¿Cómo se relaciona con las membranas celulares?", "respuesta": "El jabón disuelve las grasas, de forma similar a cómo los detergentes lisan las membranas lipídicas."}] },
+            { "id": 33, "nombre": "Biosensor Cell-Free", "categoria": "Biología Sintética", "nivel_educativo": ["universidad"], "conceptos_clave": ["Biología Sintética", "biosensores", "cell-free"], "descripcion_tecnica": "Mezcla un extracto libre de células con un plásmido biosensor y un inductor para medir una respuesta fluorescente sin células vivas.", "costo_aprox_USD": {"bajo": 15, "alto": 25}, "link_protocolo": "#", "expected_result_media": "https://placehold.co/600x400/121d33/e0e0e0?text=Biosensor+Cell-Free", "troubleshooting_tips": [{"problema": "Sensibilidad baja", "causa_probable": "Ligando débil", "solucion": "Aumentar concentración"}, {"problema": "Falsos positivos", "causa_probable": "Contaminación", "solucion": "Usar controles estériles"}], "pedagogical_module": {"nombre": "Biología Sintética en Acción", "justificacion": "Aplicación rápida y segura de biosensores sin cultivos celulares."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Ventaja de usar un sistema cell-free para un biosensor?", "respuesta": "Rapidez y no requiere manejo de organismos vivos."}, {"tipo": "post-lab", "pregunta": "¿Qué tipo de señal se mide en este biosensor?", "respuesta": "Fluorescencia."}] },
+            { "id": 34, "nombre": "Cinética Enzimática con Glucómetro", "categoria": "Ensayos Funcionales", "nivel_educativo": ["universidad"], "conceptos_clave": ["enzimas", "cinética enzimática", "invertasa", "glucómetro"], "descripcion_tecnica": "Mide la actividad de la enzima invertasa de levadura sobre sacarosa, cuantificando la glucosa producida con un glucómetro comercial.", "costo_aprox_USD": {"bajo": 15, "alto": 25}, "link_protocolo": "#", "expected_result_media": "https://placehold.co/600x400/121d33/e0e0e0?text=Cinética+con+Glucómetro", "troubleshooting_tips": [{"problema": "Velocidad baja", "causa_probable": "Enzima inactiva", "solucion": "Usar levadura fresca"}, {"problema": "Lecturas erráticas", "causa_probable": "Glucómetro sucio", "solucion": "Limpiar el dispositivo"}], "pedagogical_module": {"nombre": "La Fábrica Celular", "justificacion": "Introduce la cinética de Michaelis-Menten de forma cuantitativa y accesible."}, "assessment_questions": [{"tipo": "pre-lab", "pregunta": "¿Qué reacción cataliza la invertasa?", "respuesta": "La hidrólisis de sacarosa en glucosa y fructosa."}, {"tipo": "post-lab", "pregunta": "¿Qué representa la Vmax en este experimento?", "respuesta": "La velocidad máxima de la reacción cuando la enzima está saturada de sustrato."}] }
+        ];
+        
+        const categoryColors = {
+            "Biología Celular": "border-blue-500",
+            "Biología Molecular": "border-indigo-500",
+            "Microbiología": "border-rose-500",
+            "Biotecnología": "border-amber-500",
+            "Biología Sintética": "border-teal-500",
+            "Ensayos Funcionales": "border-yellow-500"
+        };
+
+        const app = {
+            elements: {},
+            filters: { search: '', categoria: 'todas', nivel: 'todos' },
+            charts: { concepts: null, level: null },
+
+            init() {
+                this.elements = {
+                    grid: document.getElementById('experiments-grid'),
+                    search: document.getElementById('search'),
+                    categoria: document.getElementById('categoria'),
+                    nivel: document.getElementById('nivel'),
+                    modal: document.getElementById('modal'),
+                    modalContent: document.getElementById('modal-content'),
+                    kpiGrid: document.getElementById('kpi-grid'),
+                    conceptsChartCanvas: document.getElementById('conceptsChart'),
+                    levelChartCanvas: document.getElementById('levelChart'),
+                };
+                this.populateFilters();
+                this.renderUI();
+                this.addEventListeners();
+            },
+            
+            addEventListeners() {
+                ['input', 'change'].forEach(evt => {
+                    this.elements.search.addEventListener(evt, () => this.updateFilter('search', this.elements.search.value));
+                    this.elements.categoria.addEventListener(evt, () => this.updateFilter('categoria', this.elements.categoria.value));
+                    this.elements.nivel.addEventListener(evt, () => this.updateFilter('nivel', this.elements.nivel.value));
+                });
+                this.elements.grid.addEventListener('click', e => e.target.closest('.glass-card') && this.showModal(parseInt(e.target.closest('.glass-card').dataset.id)));
+                this.elements.modal.addEventListener('click', e => {
+                    if (e.target === this.elements.modal) this.hideModal();
+                });
+            },
+            
+            populateFilters() {
+                const categories = [...new Set(experimentsData.map(exp => exp.categoria))];
+                categories.sort().forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat.toLowerCase();
+                    option.textContent = cat;
+                    this.elements.categoria.appendChild(option);
+                });
+                
+                const levels = [...new Set(experimentsData.flatMap(exp => exp.nivel_educativo))];
+                 levels.forEach(level => {
+                    const option = document.createElement('option');
+                    option.value = level;
+                    option.textContent = level === 'media' ? 'Enseñanza Media' : 'Universidad';
+                    this.elements.nivel.appendChild(option);
+                });
+            },
+
+            updateFilter(key, value) {
+                this.filters[key] = typeof value === 'string' ? value.toLowerCase() : value;
+                this.renderUI();
+            },
+
+            getFilteredData: () => experimentsData.filter(exp =>
+                (exp.nombre.toLowerCase().includes(app.filters.search) || exp.descripcion_tecnica.toLowerCase().includes(app.filters.search)) &&
+                (app.filters.categoria === 'todas' || exp.categoria.toLowerCase() === app.filters.categoria) &&
+                (app.filters.nivel === 'todos' || exp.nivel_educativo.includes(app.filters.nivel))
+            ),
+            
+            renderUI() {
+                const data = this.getFilteredData();
+                this.renderStats(data);
+                this.renderGrid(data);
+                this.updateCharts(data);
+            },
+
+            renderStats(data) {
+                const kpis = {
+                    "Total Experimentos": data.length,
+                    "B. Celular": data.filter(e => e.categoria === 'Biología Celular').length,
+                    "B. Molecular": data.filter(e => e.categoria === 'Biología Molecular').length,
+                    "Micro/Biotec/Sintética": data.filter(e => ['Microbiología', 'Biotecnología', 'Biología Sintética', 'Ensayos Funcionales'].includes(e.categoria)).length,
+                };
+                this.elements.kpiGrid.innerHTML = Object.entries(kpis).map(([label, value]) => `
+                    <div class="glass-card p-4 rounded-lg flex items-center gap-4">
+                         ${this.getKpiIcon(label)}
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-400">${label}</h4>
+                            <p class="text-2xl font-bold text-white">${value}</p>
+                        </div>
+                    </div>
+                `).join('');
+            },
+            
+            getKpiIcon(label) {
+                const iconClasses = "w-8 h-8 text-teal-400 flex-shrink-0";
+                switch (label) {
+                    case "Total Experimentos": return `<svg class="${iconClasses}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9v-2h2v2zm0-4H9V7h2v5zm4 4h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>`;
+                    case "B. Celular": return `<svg class="${iconClasses}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>`;
+                    case "B. Molecular": return `<svg class="${iconClasses}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12c-1.93 0-3.5 1.57-3.5 3.5s1.57 3.5 3.5 3.5 3.5-1.57 3.5-3.5-1.57-3.5-3.5-3.5zm-9 0C5.57 12 4 13.57 4 15.5S5.57 19 7.5 19s3.5-1.57 3.5-3.5S9.43 12 7.5 12zm9-9c-1.93 0-3.5 1.57-3.5 3.5S14.57 10 16.5 10s3.5-1.57 3.5-3.5S18.43 3 16.5 3zm-9 0C5.57 3 4 4.57 4 6.5S5.57 10 7.5 10s3.5-1.57 3.5-3.5S9.43 3 7.5 3zM13 12.5c0-.28-.22-.5-.5-.5s-.5.22-.5.5v2c0 .28.22.5.5.5s.5-.22.5-.5v-2zm-5 0c0-.28-.22-.5-.5-.5s-.5.22-.5.5v2c0 .28.22.5.5.5s.5-.22.5-.5v-2z"/></svg>`;
+                    case "Micro/Biotec/Sintética": return `<svg class="${iconClasses}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 14h-2v-4H9V7h2v4h2v6zm4-1h-2v-2h2v2zm0-4h-2v-2h2v2z"/></svg>`;
+                    default: return '';
+                }
+            },
+
+            renderGrid: data => app.elements.grid.innerHTML = data.length ? data.map(app.createCard).join('') : `<div class="glass-card rounded-lg p-10 col-span-full text-center text-gray-400">No se encontraron experimentos con los filtros actuales.</div>`,
+
+            createCard(exp) {
+                return `
+                    <div class="glass-card rounded-lg flex flex-col cursor-pointer p-5" data-id="${exp.id}">
+                        <h3 class="font-bold text-lg text-teal-300 mb-2">${exp.nombre}</h3>
+                        <p class="text-sm text-gray-400 flex-grow mb-4">${exp.descripcion_tecnica}</p>
+                        <div class="mt-auto pt-4 border-t border-white/10 text-sm text-gray-400 flex justify-between items-center">
+                            <span class="flex items-center gap-1.5">${exp.costo_aprox_USD && exp.costo_aprox_USD.alto > 0 ? `<svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> $${exp.costo_aprox_USD.alto}` : 'Costo: N/A'}</span>
+                            <div class="flex gap-2">${exp.nivel_educativo.map(n => `<span class="tag ${n === 'media' ? 'bg-green-500/20 text-green-300' : 'bg-sky-500/20 text-sky-300'}">${n === 'media' ? 'Media' : 'U'}</span>`).join('')}</div>
+                        </div>
+                    </div>`;
+            },
+            
+            updateCharts(data) {
+                Chart.defaults.color = '#9ca3af'; Chart.defaults.borderColor = 'rgba(255,255,255,0.1)';
+                const conceptCounts = data.flatMap(e => e.conceptos_clave).reduce((acc, c) => ({...acc, [c]: (acc[c] || 0) + 1 }), {});
+                const sortedConcepts = Object.entries(conceptCounts).sort((a,b) => b[1] - a[1]).slice(0, 7).reverse();
+                if (this.charts.concepts) this.charts.concepts.destroy();
+                const conceptsCtx = this.elements.conceptsChartCanvas.getContext('2d');
+                this.charts.concepts = new Chart(conceptsCtx, { type: 'bar', data: { labels: sortedConcepts.map(c => c[0].charAt(0).toUpperCase() + c[0].slice(1)), datasets: [{ label: '# Experimentos', data: sortedConcepts.map(c => c[1]), backgroundColor: 'rgba(45, 212, 191, 0.4)', borderColor: 'rgba(45, 212, 191, 1)', borderWidth: 1, borderRadius: 4 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { stepSize: 1 }}}, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#0c1427', titleFont: { weight: 'bold' }, bodyFont: { size: 14 }, displayColors: false } } } });
+                const levelCounts = data.flatMap(e => e.nivel_educativo).reduce((acc, l) => ({...acc, [l]: (acc[l] || 0) + 1}), {});
+                if(this.charts.level) this.charts.level.destroy();
+                this.charts.level = new Chart(this.elements.levelChartCanvas, { type: 'doughnut', data: { labels: Object.keys(levelCounts).map(l => l === 'media' ? 'E. Media' : 'Universidad'), datasets: [{ data: Object.values(levelCounts), backgroundColor: ['rgba(34, 211, 238, 0.7)', 'rgba(167, 139, 250, 0.7)'], borderColor: '#121d33', borderWidth: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 20 } }, tooltip: { backgroundColor: '#0c1427', titleFont: { weight: 'bold' }, bodyFont: { size: 14 }, displayColors: true } } } });
+            },
+
+            showModal(id) {
+                const exp = experimentsData.find(e => e.id === id);
+                if (!exp) return;
+
+                const isBiologyExperiment = true; 
+
+                this.elements.modalContent.innerHTML = `
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <span class="tag text-sm mb-2 bg-teal-500/20 text-teal-300">${exp.categoria}</span>
+                                <h2 class="text-2xl font-bold text-white">${exp.nombre}</h2>
+                            </div>
+                            <button onclick="app.hideModal()" class="text-gray-400 hover:text-white text-4xl leading-none">&times;</button>
+                        </div>
+                        
+                        <div class="border-b border-white/10 mb-4">
+                            <nav id="modal-tabs" class="-mb-px flex space-x-6" aria-label="Tabs">
+                                <button class="tab-button active flex items-center gap-2 whitespace-nowrap py-3 px-1 font-medium text-sm" data-tab="tab-overview"><svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>General</button>
+                                <button class="tab-button flex items-center gap-2 whitespace-nowrap py-3 px-1 font-medium text-sm text-gray-400 hover:text-white" data-tab="tab-results"><svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 100 15 7.5 7.5 0 000-15zM21 21l-5.69-5.69" /></svg>Resultados y Problemas</button>
+                                <button class="tab-button flex items-center gap-2 whitespace-nowrap py-3 px-1 font-medium text-sm text-gray-400 hover:text-white" data-tab="tab-assessment"><svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>Evaluación</button>
+                            </nav>
+                        </div>
+
+                        <div id="tab-overview" class="tab-content space-y-4">
+                            <p class="text-gray-300">${exp.descripcion_tecnica}</p>
+                            ${exp.pedagogical_module && exp.pedagogical_module.nombre ? `
+                                <div class="p-4 bg-black/20 rounded-lg">
+                                    <h4 class="font-semibold text-white mb-2">Módulo Pedagógico: <span class="text-indigo-400">${exp.pedagogical_module.nombre}</span></h4>
+                                    <p class="text-sm text-gray-400">${exp.pedagogical_module.justificacion}</p>
+                                </div>
+                            ` : ''}
+                            ${exp.costo_aprox_USD && exp.costo_aprox_USD.alto > 0 ? `
+                                <div class="p-4 bg-black/20 rounded-lg text-sm text-gray-400 flex justify-between items-center">
+                                    <span>Costo Estimado:</span> <span class="font-semibold text-gray-200">$${exp.costo_aprox_USD.alto} USD</span>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <div id="tab-results" class="tab-content hidden space-y-6">
+                             <div>
+                                <h3 class="font-bold text-lg text-white mb-2">Resultado Esperado</h3>
+                                ${exp.expected_result_media ? `<img src="${exp.expected_result_media}" alt="Resultado esperado" class="rounded-lg w-full max-w-md mx-auto" onerror="this.src='https://placehold.co/600x400/121d33/e0e0e0?text=Imagen+no+disponible'">` : '<p class="text-gray-400">No hay imagen disponible para este experimento.</p>'}
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-white mb-2">Solución de Problemas</h3>
+                                <div class="overflow-x-auto">
+                                <table class="troubleshooting-table text-sm">
+                                    <thead><tr><th>Problema</th><th>Causa</th><th>Solución</th></tr></thead>
+                                    <tbody>${exp.troubleshooting_tips.map(tip => `<tr><td>${tip.problema}</td><td>${tip.causa_probable}</td><td>${tip.solucion}</td></tr>`).join('')}</tbody>
+                                </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tab-assessment" class="tab-content hidden space-y-3">
+                            <h3 class="font-bold text-lg text-white">Banco de Preguntas</h3>
+                            ${exp.assessment_questions.map((q, i) => `
+                                <div class="bg-black/20 p-3 rounded-lg text-sm">
+                                    <p class="font-semibold text-gray-300">${q.tipo === 'pre-lab' ? 'Pre-Lab:' : 'Post-Lab:'} ${q.pregunta}</p>
+                                    <p class="text-teal-400 mt-2 hidden" id="answer-${exp.id}-${i}">${q.respuesta}</p>
+                                    <button onclick="document.getElementById('answer-${exp.id}-${i}').classList.toggle('hidden')" class="text-xs text-indigo-400 hover:underline mt-2">Mostrar Respuesta</button>
+                                </div>`).join('')}
+                        </div>
+                        
+                         <div class="mt-6 text-center">
+                            <a href="${exp.link_protocolo}" target="_blank" class="inline-block bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-6 rounded-md transition-colors">Ver Recurso</a>
+                        </div>
+                    </div>`;
+                this.elements.modal.classList.remove('hidden');
+                setTimeout(() => {
+                    this.elements.modal.classList.remove('opacity-0');
+                    this.elements.modal.querySelector('#modal-content').classList.remove('scale-95');
+                }, 10);
+                
+                // Add tab switching logic
+                const tabs = this.elements.modal.querySelectorAll('.tab-button');
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        tabs.forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        const contents = this.elements.modal.querySelectorAll('.tab-content');
+                        contents.forEach(c => c.classList.add('hidden'));
+                        this.elements.modal.querySelector('#' + tab.dataset.tab).classList.remove('hidden');
+                    });
+                });
+            },
+            hideModal: () => {
+                app.elements.modal.classList.add('opacity-0');
+                app.elements.modal.querySelector('#modal-content').classList.add('scale-95');
+                setTimeout(() => app.elements.modal.classList.add('hidden'), 300);
+            },
+        };
+
+        document.addEventListener('DOMContentLoaded', () => app.init());
+        window.app = app;
+    </script>
+</body>
+</html>
