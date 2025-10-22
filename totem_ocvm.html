@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎸 Canciones & Mapas Conceptuales 🗺️ | O.C.V.M.</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
     <style>
         /* Variables de CSS para colores y fuentes de la plantilla O.C.V.M. */
         :root {
@@ -195,6 +197,21 @@
         }
         h2 { font-size: clamp(1.5rem, 5vw, 2.2rem); }
         h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); border-bottom: none; margin: 2.5rem 0 1.5rem 0; }
+        
+        /* Centrado de recuadros de imágenes */
+        figure { display: flex; justify-content: center; align-items: center; }
+        figure img { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+
+        /* Centrar frases entrecomilladas bajo la imagen */
+        figure + blockquote { text-align: center; margin-left: auto; margin-right: auto; }
+
+        /* Aumentar tamaño visual de diagramas Mermaid */
+        .mermaid { font-size: 1.75rem; }
+        .mermaid svg { width: 100% !important; height: auto; }
+
+        /* Centrar letra de las canciones (solo en el bloque de letras) */
+        .lyrics { text-align: center; }
+        .lyrics p { text-align: center; }
         
         /* Clases para colorear palabras y conceptos */
         .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
@@ -1798,6 +1815,11 @@ graph TD
     <script>
         // Inicia el código del Canvas
         document.addEventListener('DOMContentLoaded', () => {
+            // Optimización de carga de imágenes
+            document.querySelectorAll('img').forEach(img => {
+                if (!img.hasAttribute('loading')) img.setAttribute('loading', 'lazy');
+                if (!img.hasAttribute('decoding')) img.setAttribute('decoding', 'async');
+            });
             // Inicialización de Three.js Background
             if (typeof THREE !== 'undefined') {
                 initThreeJS();
@@ -1816,12 +1838,13 @@ graph TD
                 'nodeBorder': '#818cf8',
                 'mainBkg': '#111827',
                 'textColor': '#e5e7eb',
-                'background': '#000000'
+                'background': '#000000',
+                'fontSize': '28px'
             } });
         });
 
         // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
-        let scene, camera, renderer, points;
+        let scene, camera, renderer, points, isAnimating = false;
         
         function initThreeJS() {
             try {
@@ -1833,9 +1856,10 @@ graph TD
                     canvas: document.getElementById("bg-canvas"),
                     alpha: true
                 });
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
                 renderer.setSize(window.innerWidth, window.innerHeight);
 
-                const pointCount = 250;
+                const pointCount = (window.innerWidth <= 768) ? 120 : 250;
                 const positions = new Float32Array(pointCount * 3);
                 const pointGeo = new THREE.BufferGeometry();
                 for (let i = 0; i < pointCount; i++) {
@@ -1851,6 +1875,15 @@ graph TD
 
                 window.addEventListener("resize", onWindowResize, false);
                 document.addEventListener('mousemove', onMouseMove, false);
+
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) {
+                        isAnimating = false;
+                    } else if (!isAnimating) {
+                        animate();
+                    }
+                });
+
                 animate();
             } catch (error) {
                 console.error('Error initializing Three.js:', error);
