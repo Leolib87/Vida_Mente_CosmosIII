@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapas de Redes Onomásticas | O.C.V.M. Plantilla</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        /* Variables de CSS para colores y fuentes */
+        :root {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary: #22d3ee;
+            --primary-text: #e5e7eb;
+            --primary-glow: #818cf8;
+            --secondary-glow: #22d3ee;
+            --font-main: 'Inter', sans-serif;
+            --nav-height: 70px;
+            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
+            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
+            --person-color: #f472b6;    /* Rosa para nombres de personas */
+        }
+
+        /* Estilos generales para el cuerpo de la página */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #000000;
+            color: var(--primary-text);
+            font-family: var(--font-main);
+            line-height: 1.8;
+            overflow-x: hidden;
+            text-align: justify;
+        }
+        p {
+            text-align: justify;
+            margin-bottom: 1.25rem; /* Añadido para mejor espaciado */
+        }
+
+        /* Canvas de fondo con animación Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            cursor: crosshair;
+        }
+
+        /* Estilo de glassmorphism para secciones y navegación */
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para el menú de navegación en móviles */
+        body.menu-open { overflow: hidden; }
+        
+        nav {
+            position: fixed; top: 0; width: 100%; height: var(--nav-height);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 5%;
+            pointer-events: auto;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .nav-logo a {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 0 8px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
+        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
+        nav .nav-container > li > a {
+            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.0em); font-weight: 500;
+            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 0.75rem; display: flex; align-items: center; gap: 8px;
+        }
+        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
+        
+        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
+
+        /* Sección del héroe o cabecera principal */
+        .hero {
+            min-height: 60vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; position: relative;
+            padding: 1rem;
+            margin-top: var(--nav-height);
+        }
+        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
+        .hero h1 {
+            font-size: clamp(2rem, 6vw, 4.0rem); font-weight: 700; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Contenedor principal para el contenido */
+        .main-container { 
+            width: 100%;
+            max-width: 100%; /* El contenedor usa todo el ancho */
+            margin: 0 auto; 
+            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
+            pointer-events: none;
+        }
+        
+        main, .footer, .section, .hero-content {
+            pointer-events: auto;
+        }
+
+        main p, .footer p {
+            user-select: text;
+            cursor: default;
+        }
+
+        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        
+        .section {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border-radius: 12px; margin-bottom: 2rem; position: relative;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
+        
+        /* Animación de aparición para las secciones con scroll */
+        .section h2, .section h3, .section p, .mermaid, .section ul, .section .authors, .section ol {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .mermaid, .section.is-visible ul, .section.is-visible .authors, .section.is-visible ol {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        h2 {
+            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
+            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+        }
+        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
+        
+        /* Clases para colorear palabras y conceptos */
+        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+        .concept2 { color: var(--concept-color-2); font-weight: 500; }
+        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+        .authors { color: var(--primary-text); margin-top: 1.5rem; font-style: italic; font-size: 0.9em; }
+
+        /* Estilos para listas */
+        ul, ol {
+            list-style-position: inside;
+            margin-left: 1rem;
+            margin-bottom: 1.25rem;
+        }
+        ul { list-style-type: disc; }
+        ol { list-style-type: decimal; }
+        li { margin-bottom: 0.5rem; }
+
+        /* Pie de página */
+        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
+
+        /* Estilo para los diagramas de Mermaid */
+        .mermaid {
+            margin: 2rem auto;
+            display: flex; /* Usar flexbox para centrar */
+            justify-content: center; /* Centrar horizontalmente */
+            align-items: center; /* Centrar verticalmente */
+            width: 100%;
+            max-width: 900px; 
+            background: rgba(0,0,0,0.2);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        
+        /* Media queries para dispositivos móviles */
+        @media (max-width: 768px) {
+            .nav-container {
+                position: fixed;
+                top: var(--nav-height);
+                left: 0;
+                width: 100%;
+                height: calc(100vh - var(--nav-height));
+                background: rgba(17, 24, 39, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                transform: translateY(-110%);
+                overflow-y: auto;
+                padding: 2rem;
+                gap: 0; /* Reset gap for column layout */
+            }
+            body.menu-open .nav-container {
+                transform: translateY(0);
+            }
+
+            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
+            nav .nav-container > li > a { padding: 1.25rem; width: 100%; font-size: 1.5em; justify-content: center;}
+            
+            .menu-toggle {
+                display: block; position: relative; z-index: 1001;
+                width: 30px; height: 22px;
+                background: none; border: none; cursor: pointer;
+            }
+            .icon-bar {
+                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
+                margin: 6px 0; transition: all 0.3s ease-in-out;
+                border-radius: 2px;
+            }
+
+            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
+            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+        @media (min-width: 769px) {
+            .menu-toggle { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas de fondo con animación Three.js -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    
+    <!-- Barra de Navegación -->
+    <nav class="glassmorphism">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <a href="#inicio">
+                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
+                    <span>O.C.V.M.</span>
+                </a>
+            </div>
+            <ul class="nav-container" id="nav-menu">
+                <li><a href="#inicio">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                    Inicio</a></li>
+                <li><a href="#seccion1">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                    Introducción</a></li>
+                <li><a href="#seccion2">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21M9 17.25v-1.007a3 3 0 00-.879-2.122L7.5 15M9 17.25H7.5m1.5 0H12m0 0v1.007a3 3 0 01-.879 2.122L10.5 21m1.5-3.75v-1.007a3 3 0 00-.879-2.122L10.5 15m1.5 0H12m0 0H9.75m1.5 0H15m0 0v1.007a3 3 0 01-.879 2.122L13.5 21m1.5-3.75v-1.007a3 3 0 00-.879-2.122L13.5 15m1.5 0H15m0 0h-1.5m1.5 0H18m0 0v1.007a3 3 0 01-.879 2.122L16.5 21m1.5-3.75v-1.007a3 3 0 00-.879-2.122L16.5 15m1.5 0H18M9.75 15h4.5M9.75 15H7.5M9.75 15H12M9.75 15H13.5M9.75 15H10.5M17.25 9.75l-7.5-7.5-7.5 7.5" /></svg>
+                    Protocolo</a></li>
+                <li><a href="#seccion3">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12A2.25 2.25 0 0020.25 14.25V3M3.75 20.25h16.5M3.75 12h16.5m-16.5 4.5h16.5m-16.5-8.25h16.5" /></svg>
+                    Caso de Estudio</a></li>
+                <li><a href="#seccion4">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" /></svg>
+                    Conclusión</a></li>
+                <li><a href="#referencias">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                    Referencias</a></li>
+            </ul>
+            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container" id="inicio">
+        <!-- Sección Hero -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Mapeo de Redes Sociales en Libros Usando Índices Onomásticos</h1>
+                <p>Explorando la metodología propuesta por <span class="person">Rafael Repiso</span> et al. y su aplicación en el caso de estudio "El Infinito en un Junco" de <span class="person">Irene Vallejo</span>.</p>
+                <p class="authors">Basado en el paper "Creating Onomastic Social Network Maps of Books Using Their Indexes. Case Study: 'Papyrus: The Invention of Books in the Ancient World'" (Repiso, Ortiz-Díaz, Martinez-Camacho, & Peña-Landeros, 2025).</p>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <main class="content">
+                
+                <!-- Sección 1: Introducción -->
+                <section id="seccion1" class="glassmorphism section" data-animate>
+                    <h2>El Desafío de Analizar Libros</h2>
+                    <p>Históricamente, las técnicas sociométricas y bibliométricas se han centrado casi exclusivamente en artículos científicos. Herramientas como <span class="concept2">VOSviewer</span> o <span class="concept2">Scimat</span> facilitan la creación de redes de autores y términos, pero se limitan a campos de identificación claros como títulos, resúmenes, palabras clave y referencias. Esto ha dejado de lado a los libros, especialmente en las Humanidades.</p>
+                    <p>Los libros han sido marginados de este tipo de análisis por varias razones: a menudo no están digitalizados, las bases de datos académicas apenas comienzan a incluirlos y, tradicionalmente, son el objeto de estudio de campos con una tradición más cualitativa, lejanos al <span class="concept1">Análisis de Redes Sociales (SNA)</span>.</p>
+                    <p>Aquí es donde surge la propuesta de <span class="person">Rafael Repiso</span> y sus colegas: utilizar un componente estructurado que los libros *sí* poseen: los <span class="concept1">índices onomásticos</span> (índices de nombres). Estos índices son un recurso valioso porque ya están estandarizados (ISO 999:1996), lo que permite identificar menciones y desambiguar significados sin necesidad de complejas herramientas de Procesamiento de Lenguaje Natural (NLP).</p>
+                    
+                    <div class="mermaid">
+                        graph LR
+                            A[Artículos Científicos] -- Campos Estructurados --> B(VOSviewer/Scimat);
+                            B --> C[Redes de Palabras Clave/Citas];
+                            
+                            D["Libros (Humanidades)"] -- Texto Completo --> E{Dificultad de Procesamiento};
+                            E --> F[Análisis Tradicional Cualitativo];
+                            
+                            G(Índices Onomásticos) -- Estandarizado --> H[Propuesta de Repiso];
+                            H --> I[Redes de Co-presencia en Página];
+
+                            style A fill:#34d399,stroke:#333,stroke-width:2px
+                            style D fill:#34d399,stroke:#333,stroke-width:2px
+                            style G fill:#fbbf24,stroke:#333,stroke-width:4px
+                            style B fill:#22d3ee,stroke:#333,stroke-width:2px
+                            style H fill:#818cf8,stroke:#333,stroke-width:4px
+                            style E fill:#f472b6,stroke:#333,stroke-width:2px
+                    </div>
+
+                    <h3>La "Lectura Distante" y el SNA</h3>
+                    <p>Esta metodología se enmarca en el <span class="concept1">Análisis de Redes Sociales (SNA)</span>, que <span class="person">Luis Sanz Menéndez</span> (2003) describe como un enfoque intelectual para identificar estructuras sociales. En el campo de las humanidades, pioneros como <span class="person">Franco Moretti</span> (2011) con su concepto de <span class="concept2">"lectura distante"</span>, y <span class="person">Matthew Jockers</span> (2013), han utilizado el SNA para analizar grandes volúmenes de datos textuales, identificando patrones y relaciones entre palabras y conceptos que no son evidentes en una lectura tradicional.</p>
+                </section>
+
+                <!-- Sección 2: Protocolo Detallado -->
+                <section id="seccion2" class="glassmorphism section" data-animate>
+                    <h2>Protocolo Detallado de Extracción y Análisis</h2>
+                    <p>El núcleo de este *paper* es su protocolo, diseñado para ser simple y replicable por investigadores de las humanidades sin necesidad de herramientas computacionales complejas. El principio fundamental es la <span class="concept1">co-presencia (o co-ocurrencia)</span>: si dos nombres aparecen en la misma página, se considera que tienen una relación. Cuantas más páginas compartan, más fuerte será esa relación.</p>
+
+                    <h3>Fase 1: Extracción de Datos (El Paso Crítico)</h3>
+                    <p>Este es el paso inicial y el más importante. Consiste en convertir el índice onomástico impreso del libro en un formato tabular (como una hoja de Excel) con dos columnas: `Página` y `Término`.</p>
+                    <p>La <span class="concept1">Regla de Oro</span> es que cada fila debe corresponder a una *única* aparición en una *única* página. Por ejemplo, si el índice muestra:</p>
+                    <p><code>Amiano Marcelino, 63, 223, 389</code><br>
+                       <code>Aníbal, 256, 257</code></p>
+                    <p>Debe transformarse en *cinco* filas separadas:</p>
+                    <ol>
+                        <li>Fila 1: <code>63</code> | <code>Amiano Marcelino</code></li>
+                        <li>Fila 2: <code>223</code> | <code>Amiano Marcelino</code></li>
+                        <li>Fila 3: <code>389</code> | <code>Amiano Marcelino</code></li>
+                        <li>Fila 4: <code>256</code> | <code>Aníbal</code></li>
+                        <li>Fila 5: <code>257</code> | <code>Aníbal</code></li>
+                    </ol>
+                    <p>Este proceso se puede facilitar con macros de Microsoft Word y Excel. La gran ventaja es que, al ser términos de un índice, ya están normalizados y desambiguados por un profesional (a veces el propio autor).</p>
+
+                    <div class="mermaid">
+                        graph TD
+                            A[Índice del Libro<br/>'Platón, 65-66, 70'<br/>'Aristóteles, 66, 70, 72'] --> B(Procesamiento Manual o Macro);
+                            B --> C["Tabla de Co-presencia<br/>(Col A: Página, Col B: Término)"];
+                            C --> D["Fila 1: 65 | Platón"];
+                            C --> E["Fila 2: 66 | Platón"];
+                            C --> F["Fila 3: 66 | Aristóteles"];
+                            C --> G["Fila 4: 70 | Platón"];
+                            C --> H["Fila 5: 70 | Aristóteles"];
+                            C --> I["Fila 6: 72 | Aristóteles"];
+                            
+                            subgraph "Análisis de Red"
+                                J("Relación: Platón-Aristóteles<br/>Fuerza: 2")
+                            end
+
+                            E -- Página 66 --> F;
+                            G -- Página 70 --> H;
+                            F -- Co-ocurrencia --> J;
+                            H -- Co-ocurrencia --> J;
+
+                            style A fill:#818cf8,stroke:#333,stroke-width:2px
+                            style B fill:#22d3ee,stroke:#333,stroke-width:2px
+                            style C fill:#34d399,stroke:#333,stroke-width:2px
+                            style J fill:#fbbf24,stroke:#333,stroke-width:4px
+                    </div>
+
+                    <h3>Fase 2: Generación de la Red con BibExcel</h3>
+                    <p>Una vez que se tiene la tabla de datos, el *paper* sugiere usar la herramienta <span class="concept2">BibExcel</span> (aunque otras podrían funcionar) para convertirla en un archivo de red.</p>
+                    <ol>
+                        <li>Se importa la tabla de dos columnas (Página, Término).</li>
+                        <li>Se genera un conteo de frecuencias de cada término (Generate Frequencies / Whole String).</li>
+                        <li>Se calculan las co-ocurrencias (Analyse / Co-occurrences / Make pairs via listbox). Esto crea los pares de nombres que aparecen en las mismas páginas y cuenta la frecuencia de dicha co-ocurrencia.</li>
+                        <li>Finalmente, se exporta el archivo en formato <code>.net</code> (Mapping and Create NET files...).</li>
+                    </ol>
+
+                    <h3>Fase 3: Visualización y Reducción</h3>
+                    <p>El archivo <code>.net</code> resultante se puede importar en software de visualización de redes como <span class="concept2">Pajek</span> (usado en el *paper*) o <span class="concept2">VOSviewer</span>.</p>
+                    <p>Para la visualización, se recomiendan algoritmos de "dirección de fuerza" (force-based), específicamente el algoritmo <span class="concept1">Kamada-Kawai</span> (1989), que está diseñado para redes no dirigidas y distribuye los nodos de manera clara.</p>
+                    <p>Si la red es demasiado grande y "ruidosa", se pueden aplicar técnicas de reducción o "poda" (pruning), como el algoritmo <span class="concept2">Pathfinder</span>, para mostrar solo las conexiones más fuertes y estructuralmente más importantes.</p>
+                </section>
+
+                <!-- Sección 3: Caso de Estudio -->
+                <section id="seccion3" class="glassmorphism section" data-animate>
+                    <h2>Caso de Estudio: "El Infinito en un Junco"</h2>
+                    <p>Para probar la metodología, los autores aplicaron este protocolo al aclamado ensayo <span class="concept1">"El Infinito en un Junco: La Invención de los Libros en el Mundo Antiguo"</span> (2019) de la autora española <span class="person">Irene Vallejo</span>. Este libro es un objeto de estudio ideal debido a su éxito internacional y su denso índice onomástico, centrado en figuras de la antigüedad clásica.</p>
+                    
+                    <h3>Hallazgos Principales del Análisis</h3>
+                    <p>El análisis del índice onomástico de "El Infinito en un Junco" generó una red con <span class="concept1">274 actores</span> (nodos o personas) conectados a través de <span class="concept1">2411 relaciones</span> (links o co-presencias en páginas).</p>
+                    <p>Las relaciones más fuertes (con más co-presencias) revelan los ejes temáticos centrales del libro:</p>
+                    <ul>
+                        <li><span class="person">Eurípides</span> y <span class="person">Platón</span> (8 co-presencias)</li>
+                        <li><span class="person">Platón</span> y <span class="person">Aristóteles</span> (7 co-presencias)</li>
+                        <li><span class="person">Aristóteles</span> y <span class="person">Alejandro Magno</span> (7 co-presencias)</li>
+                        <li><span class="person">Marcial</span> y <span class="person">Ovidio</span> (5 co-presencias)</li>
+                        <li><span class="person">Platón</span> y <span class="person">Sócrates</span> (5 co-presencias)</li>
+                    </ul>
+
+                    <h3>Los Personajes Más Importantes</h3>
+                    <p>Las métricas de centralidad identificaron a los protagonistas de la narrativa de <span class="person">Vallejo</span>. Curiosamente, aunque <span class="person">Alejandro Magno</span> es el personaje con mayor *presencia* (aparece en 37 páginas), <span class="person">Homero</span> es el más central en la red, con el mayor *grado* (conectado a 75 personajes diferentes) y la mayor *cercanía* al centro de la red.</p>
+                    <p>El Top 10 de figuras más prominentes está dominado por figuras grecorromanas, lo cual es coherente con el tema del libro. Sin embargo, la presencia de autores modernos en posiciones altas revela las influencias contemporáneas de la autora:</p>
+                    <ul>
+                        <li><b>Figuras Clásicas Clave:</b> <span class="person">Homero</span>, <span class="person">Alejandro Magno</span>, <span class="person">Ovidio</span>, <span class="person">Cicerón</span>, <span class="person">Aristóteles</span>, <span class="person">Platón</span>, <span class="person">Plutarco</span>, <span class="person">Safo</span>, <span class="person">Heródoto</span>, <span class="person">Virgilio</span>.</li>
+                        <li><b>Influencias Modernas Notables:</b> <span class="person">Jorge Luis Borges</span>, <span class="person">Georges Perec</span>, <span class="person">León Tolstoi</span>, <span class="person">William Shakespeare</span>, <span class="person">Juan Carlos Onetti</span>, <span class="person">Gabriel García Márquez</span>.</li>
+                    </ul>
+                    <p>El resultado es un verdadero <span class="concept1">"mapa de conocimiento"</span> que refleja visualmente la estructura narrativa y el método de composición que <span class="person">Irene Vallejo</span> utilizó para escribir su obra.</p>
+                </section>
+
+                <!-- Sección 4: Discusión y Conclusiones -->
+                <section id="seccion4" class="glassmorphism section" data-animate>
+                    <h2>Discusión y Conclusiones</h2>
+                    <p>La propuesta de <span class="person">Repiso</span> et al. demuestra ser una técnica valiosa por varias razones clave. Su <span class="concept1">fortaleza principal es la simplicidad</span> y la facilidad de implementación. Permite a los estudiantes e investigadores de humanidades, que quizás no tengan formación en minería de textos o NLP, realizar análisis sociométricos robustos utilizando únicamente el índice del libro y herramientas de software accesibles.</p>
+                    
+                    <h3>Precisión y Nuevas Posibilidades</h3>
+                    <p>Esta técnica es notablemente más <span class="concept2">precisa</span> que los análisis de co-citación de artículos. La co-citación en un artículo vincula a todos los autores de la bibliografía (a lo largo de, quizás, 20 páginas), mientras que este método opera a <span class="concept1">nivel de página</span>, ofreciendo relaciones de similitud mucho más fiables y granulares.</p>
+                    <p>Esto abre nuevas líneas de investigación:</p>
+                    <ul>
+                        <li><b>Análisis Evolutivo:</b> Se pueden generar sub-redes basadas en los capítulos del libro para visualizar la evolución de los personajes y temas a lo largo de la narrativa.</li>
+                        <li><b>Agregación de Redes:</b> Sería posible combinar las redes de diferentes libros que exploran un tema común (p.ej., varios libros sobre la Revolución Francesa) para obtener una perspectiva temática global.</li>
+                        <li><b>Sistemas de Recomendación:</b> Los catálogos de bibliotecas o librerías podrían generar automáticamente estas redes como una forma de exploración visual, permitiendo a los usuarios descubrir libros basándose en las redes de contenido y no solo en palabras clave.</li>
+                    </ul>
+
+                    <h3>Limitaciones y Consideraciones</h3>
+                    <p>La principal limitación señalada es que los resultados pueden verse ligeramente afectados por el <span class="concept2">formato y la edición</span> del libro. Una edición de bolsillo tendrá más páginas y, por lo tanto, diferentes saltos de página que una edición de tapa dura. Esto podría alterar ligeramente las co-presencias. Sin embargo, los autores señalan que la redundancia de datos (personajes que aparecen juntos en múltiples ocasiones) ayuda a mitigar este problema.</p>
+                </section>
+
+                <!-- Sección 5: Referencias -->
+                <section id="referencias" class="glassmorphism section" data-animate>
+                    <h2>Referencias Clave del Paper</h2>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li><span class="person">Repiso, R., Ortiz-Díaz, E. M., Martinez-Camacho, H., & Peña-Landeros, J. A.</span> (2025). Creating Onomastic Social Network Maps of Books Using Their Indexes. Case Study: 'Papyrus: The Invention of Books in the Ancient World'. <i>Learned Publishing, 38</i>, e2029.</li>
+                        <li><span class="person">Moretti, F.</span> (2011). Network Theory. Plot Analysis. <i>Literary Lab Pamphlet 2</i>.</li>
+                        <li><span class="person">Jockers, M. L.</span> (2013). <i>Macroanalysis: Digital Methods and Literary History</i>. University of Illinois Press.</li>
+                        <li><span class="person">Vallejo, I.</span> (2019). <i>El Infinito en un Junco: La Invención de los Libros en el Mundo Antiguo</i>. Siruela.</li>
+                        <li><span class="person">Kamada, T., & Kawai, S.</span> (1989). An Algorithm for Drawing General Undirected Graphs. <i>Information Processing Letters, 31</i>(1), 7-15.</li>
+                        <li><span class="person">Blondel, V. D., Guillaume, J. L., Lambiotte, R., & Lefebvre, E.</span> (2008). Fast Unfolding of Communities in Large Networks. <i>Journal of Statistical Mechanics: Theory and Experiment, 2008</i>(10).</li>
+                        <li><span class="person">International Standard Organization (ISO)</span>. (1996). <i>Information and Documentation Guidelines for the content, organization and presentation of indexes (ISO 999:1996)</i>.</li>
+                    </ul>
+                </section>
+
+            </main>
+        </div>
+        
+        <!-- Footer -->
+        <footer class="footer" id="contacto">
+            <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo.</p>
+            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+        </footer>
+    </div>
+
+    <!-- Scripts de la Plantilla -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicialización de Three.js Background
+            if (typeof THREE !== 'undefined') {
+                initThreeJS();
+            } else {
+                console.error("Three.js not loaded");
+            }
+
+            // Configuración de Navegación Móvil
+            setupNavigation();
+            
+            // Configuración de Animaciones de Scroll
+            setupScrollAnimations();
+            
+            // Renderizado de diagramas Mermaid
+            try {
+                mermaid.initialize({ 
+                    startOnLoad: true, 
+                    theme: 'dark', 
+                    themeVariables: {
+                        'primary': '#000000',
+                        'primaryColor': '#000000',
+                        'primaryTextColor': '#e5e7eb',
+                        'lineColor': '#818cf8',
+                        'nodeBorder': '#818cf8',
+                        'mainBkg': '#111827', // Fondo de los nodos
+                        'textColor': '#e5e7eb'
+                    } 
+                });
+                mermaid.run();
+            } catch (e) {
+                console.error("Error initializing Mermaid:", e);
+            }
+        });
+
+        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
+        let scene, camera, renderer, points;
+        
+        function initThreeJS() {
+            try {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+                camera.position.z = 50;
+
+                renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById("bg-canvas"),
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const pointCount = 250;
+                const positions = new Float32Array(pointCount * 3);
+                const pointGeo = new THREE.BufferGeometry();
+                for (let i = 0; i < pointCount; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
+                }
+                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
+                points = new THREE.Points(pointGeo, pointMaterial);
+                scene.add(points);
+
+                window.addEventListener("resize", onWindowResize, false);
+                document.addEventListener('mousemove', onMouseMove, false);
+                animate();
+            } catch (error) {
+                console.error('Error initializing Three.js:', error);
+            }
+        }
+
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+
+        let mouseX = 0, mouseY = 0;
+        function onMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) / 100;
+            mouseY = (event.clientY - window.innerHeight / 2) / 100;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(scene && camera && renderer && points) {
+                points.rotation.y += 0.0003;
+                points.rotation.x += 0.0002;
+                camera.position.x += (mouseX - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+        }
+
+        // --- CÓDIGO DE NAVEGACIÓN ---
+        function setupNavigation() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            if (menuToggleBtn) {
+                menuToggleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    document.body.classList.toggle('menu-open');
+                });
+            }
+
+            if (navMenu) {
+                navMenu.addEventListener('click', (e) => {
+                    if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+                        document.body.classList.remove('menu-open');
+                    }
+                });
+            }
+        }
+
+        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
+        function setupScrollAnimations() {
+            const animatedSections = document.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        
+                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid, ul, ol, .authors');
+                        elementsToAnimate.forEach((el, index) => {
+                           el.style.transitionDelay = `${index * 100}ms`;
+                        });
+
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15 });
+            animatedSections.forEach(section => observer.observe(section));
+        }
+    </script>
+</body>
+</html>
