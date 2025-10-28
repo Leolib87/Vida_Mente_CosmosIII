@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard: Pedagogías en Ciencias 2025</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js DataLabels Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <!-- Fuente Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1f2937;
+        }
+        .filter-btn {
+            transition: all 0.3s ease;
+        }
+        .filter-btn.active {
+            background-color: #1A3C6D;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+        }
+        @media (min-width: 640px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        /* ENCABEZADO DE TABLA */
+        #data-table th {
+            @apply px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider bg-blue-900 whitespace-nowrap cursor-pointer hover:bg-blue-800 transition;
+        }
+        #data-table td {
+            @apply px-4 py-3 text-sm text-gray-200 truncate max-w-xs;
+        }
+        #data-table tr:hover {
+            @apply bg-gray-600 transition;
+        }
+        .sort-icon {
+            margin-left: 6px;
+            font-weight: bold;
+            color: #60A5FA;
+            display: inline-block;
+            width: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Encabezado -->
+    <header class="bg-gray-700 shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <h1 class="text-2xl font-bold text-gray-100">Dashboard: Pedagogías en Ciencias 2025</h1>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- Filtros por Disciplina -->
+        <div class="mb-6">
+            <h2 class="text-lg font-semibold text-gray-200 mb-3">Filtrar por Disciplina</h2>
+            <div id="filters" class="flex flex-wrap gap-2">
+                <button class="filter-btn active bg-white text-gray-700 px-4 py-2 rounded-full shadow-sm border border-gray-300 hover:bg-gray-50" data-filter="Todos">Todos</button>
+                <button class="filter-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-full shadow-sm border border-gray-500 hover:bg-gray-500" data-filter="Biología">Biología</button>
+                <button class="filter-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-full shadow-sm border border-gray-500 hover:bg-gray-500" data-filter="Física">Física</button>
+                <button class="filter-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-full shadow-sm border border-gray-500 hover:bg-gray-500" data-filter="Química">Química</button>
+                <button class="filter-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-full shadow-sm border border-gray-500 hover:bg-gray-500" data-filter="Mención">Ciencias (Mención)</button>
+                <button class="filter-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-full shadow-sm border border-gray-500 hover:bg-gray-500" data-filter="Biología y Química">Biología y Química</button>
+                <button class="filter-btn bg-gray-600 text-gray-200 px-4 py-2 rounded-full shadow-sm border border-gray-500 hover:bg-gray-500" data-filter="Física y Matemática">Física y Matemática</button>
+            </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-gray-700 p-6 rounded-xl shadow-lg border border-gray-600">
+                <h3 class="text-sm font-medium text-gray-400">Total Programas</h3>
+                <p id="kpi-programas" class="mt-1 text-3xl font-semibold text-gray-100">0</p>
+            </div>
+            <div class="bg-gray-700 p-6 rounded-xl shadow-lg border border-gray-600">
+                <h3 class="text-sm font-medium text-gray-400">Arancel Promedio</h3>
+                <p id="kpi-arancel" class="mt-1 text-3xl font-semibold text-gray-100">$0</p>
+            </div>
+            <div class="bg-gray-700 p-6 rounded-xl shadow-lg border border-gray-600">
+                <h3 class="text-sm font-medium text-gray-400">Matrícula Total 2024</h3>
+                <p id="kpi-matricula" class="mt-1 text-3xl font-semibold text-gray-100">0</p>
+            </div>
+            <div class="bg-gray-700 p-6 rounded-xl shadow-lg border border-gray-600">
+                <h3 class="text-sm font-medium text-gray-400">Vacantes Totales</h3>
+                <p id="kpi-vacantes" class="mt-1 text-3xl font-semibold text-gray-100">0</p>
+            </div>
+        </div>
+
+        <!-- Grilla de Gráficos -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-gray-700 p-6 rounded-xl shadow-lg border border-gray-600">
+                <h3 class="text-xl font-semibold text-gray-100 mb-4">Matrícula Total 2024 por Universidad</h3>
+                <div class="chart-container"><canvas id="matriculaTotalChart"></canvas></div>
+            </div>
+            <div class="bg-gray-700 p-6 rounded-xl shadow-lg border border-gray-600">
+                <h3 class="text-xl font-semibold text-gray-100 mb-4">Matrícula 1er Año 2024 por Universidad</h3>
+                <div class="chart-container"><canvas id="matriculaPrimerAnoChart"></canvas></div>
+            </div>
+            <div class="bg-gray-700 p-6 rounded-xl shadow-lg border border-gray-600">
+                <h3 class="text-xl font-semibold text-gray-100 mb-4">Arancel Anual 2025 por Universidad</h3>
+                <div class="chart-container"><canvas id="arancelChart"></canvas></div>
+            </div>
+            <div class="bg-gray-700 p-6 rounded-xl shadow-lg border border-gray-600">
+                <h3 class="text-xl font-semibold text-gray-100 mb-4">Vacantes 1er Semestre por Universidad</h3>
+                <div class="chart-container"><canvas id="vacantesChart"></canvas></div>
+            </div>
+            <div class="bg-gray-700 p-6 rounded-xl shadow-lg border border-gray-600">
+                <h3 class="text-xl font-semibold text-gray-100 mb-4">Distribución de Programas por Región</h3>
+                <div class="chart-container" style="height: 400px;"><canvas id="regionChart"></canvas></div>
+            </div>
+            <div class="bg-gray-700 p-6 rounded-xl shadow-lg border border-gray-600">
+                <h3 class="text-xl font-semibold text-gray-100 mb-4">Promedio PAES 1er Año 2024 (donde aplica)</h3>
+                <div class="chart-container"><canvas id="paesChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Tabla de Datos -->
+        <div class="bg-gray-700 p-6 rounded-xl shadow-lg border border-gray-600">
+            <h3 class="text-xl font-semibold text-gray-100 mb-4">Tabla de Datos Generales</h3>
+
+            <!-- Controles -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                <input 
+                    type="text" 
+                    id="search" 
+                    placeholder="Buscar por universidad, carrera, región, siglas..." 
+                    class="w-full sm:w-80 px-4 py-2 border border-gray-500 bg-gray-600 text-gray-100 placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A3C6D] transition"
+                    onkeyup="filterAndPaginate()">
+                
+                <div class="flex items-center gap-2 text-sm text-gray-300">
+                    <span>Mostrar:</span>
+                    <select id="pageSize" onchange="filterAndPaginate()" class="bg-gray-600 text-gray-100 border border-gray-500 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#1A3C6D]">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="9999">Todos</option>
+                    </select>
+                    <span id="pagination-info" class="ml-2"></span>
+                </div>
+            </div>
+
+            <!-- Tabla -->
+            <div class="overflow-x-auto rounded-lg border border-gray-600">
+                <table id="data-table" class="min-w-full divide-y divide-gray-600">
+                    <thead class="bg-blue-900 sticky top-0 z-10">
+                        <tr>
+                            <th onclick="sortTable(0)">Universidad <span class="sort-icon" id="sort-0"></span></th>
+                            <th onclick="sortTable(1)">Carrera <span class="sort-icon" id="sort-1"></span></th>
+                            <th onclick="sortTable(2)">Región <span class="sort-icon" id="sort-2"></span></th>
+                            <th onclick="sortTable(3)">Sede <span class="sort-icon" id="sort-3"></span></th>
+                            <th class="text-right" onclick="sortTable(4)">Arancel <span class="sort-icon" id="sort-4"></span></th>
+                            <th class="text-right" onclick="sortTable(5)">Mat. Total <span class="sort-icon" id="sort-5"></span></th>
+                            <th class="text-right" onclick="sortTable(6)">Mat. 1er Año <span class="sort-icon" id="sort-6"></span></th>
+                            <th class="text-right" onclick="sortTable(7)">PAES <span class="sort-icon" id="sort-7"></span></th>
+                            <th class="text-right" onclick="sortTable(8)">Vacantes <span class="sort-icon" id="sort-8"></span></th>
+                            <th class="text-center">Web</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="bg-gray-700 divide-y divide-gray-600 text-sm"></tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            <div class="flex justify-between items-center mt-4 text-sm text-gray-300">
+                <button id="prev-page" onclick="changePage(-1)" class="px-3 py-1 bg-gray-600 rounded hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Anterior</button>
+                <span id="page-info"></span>
+                <button id="next-page" onclick="changePage(1)" class="px-3 py-1 bg-gray-600 rounded hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed">Siguiente</button>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="text-center py-6 mt-8">
+        <p class="text-sm text-gray-400">Dashboard elaborado a partir de los datos de <a href="#" class="text-blue-400 hover:underline">Pedagogías en Ciencias</a>.</p>
+    </footer>
+
+    <script>
+        // --- BASE DE DATOS (con nuevo programa) ---
+        const rawData = [
+            ["Universidad Metropolitana de Ciencias de la Educación", "Pedagogía en Biología con Mención", "Metropolitana", "Casa Central (Santiago)", "$3.517.000", "179", "16", "s/i", "50", "https://pregrado.umce.cl/index.php/pedagogia-en-biologia-con-menciones"],
+            ["Universidad de Playa Ancha de Ciencias de la Educación", "Pedagogía en Biología y Ciencias", "Valparaíso", "Casa Central (Valparaíso)", "$3.520.000", "51", "9", "s/i", "15", "https://www.upla.cl/admision/carreras-profesionales/facultad-de-ciencias-naturales-y-exactas/pedagogia-en-biologia-y-ciencias/"],
+            ["Pontificia Universidad Católica de Valparaíso", "Pedagogía en Biología y Ciencias Naturales", "Valparaíso", "Valparaíso", "$4.707.000", "0", "10", "s/i", "20", "https://www.pucv.cl/pucv/pregrado/pedagogia-en-biologia-y-ciencias-naturales"],
+            ["Universidad de La Serena", "Pedagogía en Biología y Ciencias Naturales", "La Serena", "La Serena", "$3.160.000", "97", "30", "636.5", "25", "http://admision.userena.cl/carreras/pedagogia-en-biologia-y-cs-naturales"],
+            ["Universidad de Antofagasta", "Pedagogía en Biología y Ciencias Naturales", "Antofagasta", "Sede Campus Coloso", "$3.588.000", "35", "11", "s/i", "15", "https://www.uantof.cl/carreras/pedagogia-en-biologia-y-ciencias-naturales/"],
+            ["Universidad Alberto Hurtado", "Pedagogía en Biología y Ciencias Naturales en Educación Media", "Santiago", "Casa Central (Santiago)", "$4.276.140", "51", "7", "s/i", "10", "https://admision.uahurtado.cl/facultades/pedagogia-en-biologia-y-ciencias-naturales/"],
+            ["Universidad de La Frontera", "Pedagogía en Ciencias Mención Biología, Química o Física", "Temuco", "Casa Central (Temuco)", "$2.769.000", "148", "29", "647.6", "25", "https://admision.ufro.cl/pedagogia-en-ciencias-mencion-biologia-quimica-o-fisica/"],
+            ["Universidad Católica del Maule", "Pedagogía en Ciencias Mención en Biología, Física, Química", "Maule", "Casa Central", "$4.339.000", "106", "27", "631.9", "30", "https://portal.ucm.cl/carreras/pedagogia-en-ciencias"],
+            ["Universidad de Concepción", "Pedagogía en Ciencias Naturales y Biología", "Concepción", "Casa Central", "$4.713.812", "110", "23", "s/i", "25", "https://admision.udec.cl/pedagogia-en-ciencias-naturales-y-biologia/"],
+            ["Universidad de Concepción", "Pedagogía en Ciencias Naturales y Biología", "Los Ángeles", "Sede Los Ángeles", "$4.713.812", "78", "22", "s/i", "20", "https://admision.udec.cl/pedagogia-en-ciencias-naturales-y-biologia/"],
+            ["Universidad del Bío-Bío", "Pedagogía en Ciencias Naturales Mención Biología o Física o Química", "Chillán", "Sede Chillán", "$3.244.000", "143", "38", "593", "40", "https://www.ubiobio.cl/admision/Todas_las_Carreras/28/Pedagogia_en_Ciencias_Naturales_mencion_Biologia_o_Fisica_o_Quimica/"],
+            ["Universidad de O’Higgins", "Pedagogía en Ciencias Naturales con Menciones", "Rancagua", "Sede Rancagua", "$3.741.000", "86", "30", "607.7", "30", "https://www.uoh.cl/escuela-de-educacion/carreras/pedagogia-en-ciencias-naturales/"],
+            ["Universidad Católica de la Santísima Concepción", "Pedagogía en Educación Media en Biología y Ciencias Naturales", "Concepción", "Casa Central (Concepción)", "$4.329.000", "104", "24", "s/i", "30", "https://educacion.ucsc.cl/carreras/pedagogia-educacion-media-en-biologia-y-ciencias-naturales/"],
+            ["Universidad de Chile", "Pedagogía en Educación Media en Biología y Química", "Santiago", "Santiago", "$5.450.400", "168", "26", "689", "40", "https://ciencias.uchile.cl/carreras/105693/pedagogia-en-educacion-media-en-biologia-y-quimica"],
+            ["Universidad de Talca", "Pedagogía en Educación Media en Biología y Química", "Linares", "Campus Linares", "$4.243.259", "37", "12", "s/i", "20", "https://admision.utalca.cl/carreras/pedagogia-en-ed-media-en-biologia-y-quimica/"],
+            ["Pontificia Universidad Católica de Chile", "Pedagogía en Educación Media en Ciencias Naturales y Biología", "Metropolitana", "Campus San Joaquín", "$6.006.000", "54", "36", "726.6", "0", "https://admision.uc.cl/carreras/pedagogia-en-educacion-media-en-ciencias-naturales-y-biologia/"],
+            ["Universidad de Santiago de Chile", "Pedagogía en Química y Biología / Licenciatura en Educación en Química y Biología", "Metropolitana", "Casa Central (Santiago)", "$4.693.000", "0", "12", "s/i", "400", "https://www.admision.usach.cl/carreras/pedagogia-en-quimica-y-biologia"],
+            ["Universidad de Concepción", "Pedagogía en Ciencias Naturales y Física", "Biobío", "Casa Central", "$4.713.812", "55", "7", "s/i", "20", "-"],
+            ["Pontificia Universidad Católica de Chile", "Pedagogía en Educación Media en Física", "Metropolitana", "Campus San Joaquín", "$6.006.000", "18", "11", "s/i", "10", "-"],
+            ["Universidad de Talca", "Pedagogía en Educación Media en Matemática y Física", "Maule", "Campus Linares", "$4.243.259", "60", "11", "s/i", "20", "-"],
+            ["Universidad de Chile", "Pedagogía en Educación Media en Matemáticas y Física", "Metropolitana", "Santiago", "$5.450.400", "291", "51", "766.3", "45", "-"],
+            ["Universidad de Playa Ancha de Ciencias de la Educación", "Pedagogía en Física", "Valparaíso", "Casa Central (Valparaíso)", "$3.520.000", "20", "3", "s/i", "10", "-"],
+            ["Universidad Metropolitana de Ciencias de la Educación", "Pedagogía en Física con Mención", "Metropolitana", "Casa Central (Santiago)", "$3.517.000", "94", "5", "s/i", "30", "-"],
+            ["Pontificia Universidad Católica de Valparaíso", "Pedagogía en Física y Ciencias Naturales", "Valparaíso", "Valparaíso", "$4.707.000", "3", "3", "s/i", "20", "-"],
+            ["Universidad de Tarapacá", "Pedagogía en Física y Matemática", "Arica y Parinacota", "Casa Central (Arica)", "$4.700.000", "27", "7", "s/i", "10", "-"],
+            ["Universidad de Santiago de Chile", "Pedagogía en Física y Matemática / Licenciatura en Educación de Física y Matemática", "Metropolitana", "Casa Central (Santiago)", "$4.693.000", "156", "25", "732.0", "22", "-"],
+            ["Universidad Arturo Prat", "Pedagogía en Matemáticas y Física", "Tarapacá", "Casa Central (Iquique)", "$4.013.000", "58", "10", "s/i", "12", "-"],
+            ["Universidad de La Serena", "Pedagogía en Matemáticas y Física", "Coquimbo", "La Serena", "$3.160.000", "93", "14", "s/i", "25", "-"],
+            ["Universidad de Concepción", "Pedagogía en Ciencias Naturales y Química", "Biobío", "Casa Central", "$4.713.812", "63", "11", "s/i", "20", "-"],
+            ["Universidad Metropolitana de Ciencias de la Educación", "Pedagogía en Química con Mención", "Metropolitana", "Casa Central (Santiago)", "$3.517.000", "76", "5", "s/i", "50", "-"],
+            ["Pontificia Universidad Católica de Chile", "Pedagogía en Educación Media en Química", "Metropolitana", "Campus San Joaquín", "$6.006.000", "37", "21", "s/i", "20", "-"],
+            ["Universidad de Santiago de Chile", "Pedagogía en Química y Biología / Licenciatura en Educación en Química y Biología", "Metropolitana", "Casa Central (Santiago)", "$4.693.000", "0", "0", "s/i", "25", "-"],
+            ["Universidad de Playa Ancha de Ciencias de la Educación", "Pedagogía en Química y Ciencias", "Valparaíso", "Casa Central (Valparaíso)", "$3.520.000", "14", "4", "s/i", "10", "-"],
+            ["Pontificia Universidad Católica de Valparaíso", "Pedagogía en Química y Ciencias Naturales", "Valparaíso", "Valparaíso", "$4.707.000", "5", "0", "s/i", "20", "-"]
+        ];
+
+        // --- VARIABLES GLOBALES ---
+        let programData = [];
+        let filteredData = [];
+        let charts = {};
+        let currentSort = { col: -1, dir: '' };
+        let currentPage = 1;
+        let pageSize = 10;
+
+        const universitySiglaMap = {
+            "Universidad Metropolitana de Ciencias de la Educación": "UMCE",
+            "Universidad de Playa Ancha de Ciencias de la Educación": "UPLA",
+            "Pontificia Universidad Católica de Valparaíso": "PUCV",
+            "Universidad de La Serena": "ULS",
+            "Universidad de Antofagasta": "UA",
+            "Universidad Alberto Hurtado": "UAH",
+            "Universidad de La Frontera": "UFRO",
+            "Universidad Católica del Maule": "UCM",
+            "Universidad de Concepción": "UdeC",
+            "Universidad del Bío-Bío": "UBB",
+            "Universidad de O’Higgins": "UOH",
+            "Universidad Católica de la Santísima Concepción": "UCSC",
+            "Universidad de Chile": "UChile",
+            "Universidad de Talca": "UTalca",
+            "Pontificia Universidad Católica de Chile": "PUC",
+            "Universidad de Santiago de Chile": "USACH",
+            "Universidad de Tarapacá": "UTA",
+            "Universidad Arturo Prat": "UNAP"
+        };
+
+        const disciplineColors = {
+            'Biología': 'rgba(75, 192, 192, 0.7)',
+            'Física': 'rgba(255, 99, 132, 0.7)',
+            'Química': 'rgba(54, 162, 235, 0.7)',
+            'Mención': 'rgba(255, 206, 86, 0.7)',
+            'Biología y Química': 'rgba(153, 102, 255, 0.7)',
+            'Física y Matemática': 'rgba(255, 159, 64, 0.7)'
+        };
+
+        // --- AYUDA ---
+        function parseNumber(str) {
+            if (!str || str === 's/i' || str === '-') return null;
+            return parseFloat(str.replace(/[$.]/g, '').replace(',', '.')) || null;
+        }
+
+        function formatCurrency(num) {
+            if (num === null) return '$0';
+            return '$' + Math.round(num).toLocaleString('es-CL');
+        }
+
+        function getDiscipline(name) {
+            const lower = name.toLowerCase();
+            if (lower.includes('mención')) return 'Mención';
+            if (lower.includes('biología') && lower.includes('química')) return 'Biología y Química';
+            if (lower.includes('física') && lower.includes('matemática')) return 'Física y Matemática';
+            if (lower.includes('biología')) return 'Biología';
+            if (lower.includes('física')) return 'Física';
+            if (lower.includes('química')) return 'Química';
+            return 'Otra';
+        }
+
+        function processData() {
+            programData = rawData.map(row => ({
+                universidad: row[0],
+                sigla: universitySiglaMap[row[0]] || row[0].substring(0, 4).toUpperCase(),
+                carrera: row[1],
+                region: row[2],
+                sede: row[3],
+                arancel: parseNumber(row[4]),
+                matriculaTotal: parseNumber(row[5]),
+                matricula1er: parseNumber(row[6]),
+                paes: parseNumber(row[7]),
+                vacantes: parseNumber(row[8]),
+                web: row[9],
+                disciplina: getDiscipline(row[1])
+            }));
+            filteredData = [...programData];
+            renderTable();
+        }
+
+        // --- ORDENAMIENTO (FLECHAS REALES) ---
+        function sortTable(colIndex) {
+            const numericColumns = [4, 5, 6, 7, 8];
+            const isNumeric = numericColumns.includes(colIndex);
+
+            let dir;
+            if (currentSort.col === colIndex) {
+                dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+            } else {
+                dir = isNumeric ? 'desc' : 'asc';
+            }
+            currentSort = { col: colIndex, dir };
+
+            document.querySelectorAll('.sort-icon').forEach(icon => icon.textContent = '');
+            const icon = document.getElementById(`sort-${colIndex}`);
+            icon.textContent = dir === 'asc' ? 'up arrow' : 'down arrow';
+
+            filteredData.sort((a, b) => {
+                let valA, valB;
+
+                switch (colIndex) {
+                    case 0: valA = a.universidad; valB = b.universidad; break;
+                    case 1: valA = a.carrera; valB = b.carrera; break;
+                    case 2: valA = a.region; valB = b.region; break;
+                    case 3: valA = a.sede; valB = b.sede; break;
+                    case 4: valA = a.arancel; valB = b.arancel; break;
+                    case 5: valA = a.matriculaTotal; valB = b.matriculaTotal; break;
+                    case 6: valA = a.matricula1er; valB = b.matricula1er; break;
+                    case 7: valA = a.paes; valB = b.paes; break;
+                    case 8: valA = a.vacantes; valB = b.vacantes; break;
+                    default: return 0;
+                }
+
+                if (valA === null || valA === 's/i') valA = isNumeric ? (dir === 'asc' ? -Infinity : Infinity) : '';
+                if (valB === null || valB === 's/i') valB = isNumeric ? (dir === 'asc' ? -Infinity : Infinity) : '';
+
+                if (isNumeric) {
+                    return dir === 'asc' ? valA - valB : valB - valA;
+                } else {
+                    return dir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                }
+            });
+
+            currentPage = 1;
+            renderTable();
+        }
+
+        // --- RENDER TABLA ---
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const pageData = filteredData.slice(start, end);
+
+            pageData.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-600 transition text-gray-200';
+                row.innerHTML = `
+                    <td class="px-4 py-3 font-medium">${item.universidad} <span class="text-xs text-gray-400 font-mono">(${item.sigla})</span></td>
+                    <td class="px-4 py-3">${item.carrera}</td>
+                    <td class="px-4 py-3">${item.region}</td>
+                    <td class="px-4 py-3 text-gray-300">${item.sede}</td>
+                    <td class="px-4 py-3 text-right font-medium ${item.arancel ? 'text-green-400' : 'text-gray-500'}">${formatCurrency(item.arancel)}</td>
+                    <td class="px-4 py-3 text-right ${item.matriculaTotal ? 'font-semibold' : 'text-gray-500'}">${item.matriculaTotal ?? 's/i'}</td>
+                    <td class="px-4 py-3 text-right ${item.matricula1er ? 'text-blue-400' : 'text-gray-500'}">${item.matricula1er ?? 's/i'}</td>
+                    <td class="px-4 py-3 text-right ${item.paes ? 'text-purple-400 font-medium' : 'text-gray-500'}">${item.paes ?? 's/i'}</td>
+                    <td class="px-4 py-3 text-right ${item.vacantes ? 'text-orange-400' : 'text-gray-500'}">${item.vacantes ?? 's/i'}</td>
+                    <td class="px-4 py-3 text-center">
+                        ${item.web === '-' ? '<span class="text-gray-500">-</span>' : `<a href="${item.web}" target="_blank" class="text-blue-400 hover:text-blue-300 font-medium">Sitio</a>`}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            updatePagination();
+        }
+
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredData.length / pageSize);
+            document.getElementById('prev-page').disabled = currentPage === 1;
+            document.getElementById('next-page').disabled = currentPage === totalPages || totalPages === 0;
+            document.getElementById('page-info').textContent = `Página ${currentPage} de ${totalPages || 1}`;
+            document.getElementById('pagination-info').textContent = `(${filteredData.length} resultados)`;
+        }
+
+        function changePage(delta) {
+            const totalPages = Math.ceil(filteredData.length / pageSize);
+            const newPage = currentPage + delta;
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderTable();
+            }
+        }
+
+        function filterAndPaginate() {
+            const query = document.getElementById('search').value.trim().toLowerCase();
+            pageSize = parseInt(document.getElementById('pageSize').value);
+
+            filteredData = programData.filter(item => {
+                if (!query) return true;
+                const searchText = `${item.universidad} ${item.carrera} ${item.region} ${item.sede} ${item.sigla}`.toLowerCase();
+                return searchText.includes(query);
+            });
+
+            currentPage = 1;
+            if (currentSort.col !== -1) {
+                sortTable(currentSort.col);
+            } else {
+                renderTable();
+            }
+        }
+
+        window.filterAndPaginate = filterAndPaginate;
+        window.changePage = changePage;
+        window.sortTable = sortTable;
+
+        // --- GRÁFICOS ---
+        function initCharts() {
+            const chartTextColor = '#E5E7EB';
+            const chartGridColor = 'rgba(229, 231, 235, 0.2)';
+            Chart.register(ChartDataLabels);
+
+            const chartConfigs = [
+                { id: 'matriculaTotalChart', key: 'matriculaTotal', showLabels: true },
+                { id: 'matriculaPrimerAnoChart', key: 'matricula1er', showLabels: true },
+                { id: 'arancelChart', key: 'arancel', showLabels: false },
+                { id: 'vacantesChart', key: 'vacantes', showLabels: true },
+                { id: 'paesChart', key: 'paes', showLabels: false },
+                { id: 'regionChart', type: 'doughnut' }
+            ];
+
+            chartConfigs.forEach(config => {
+                const ctx = document.getElementById(config.id).getContext('2d');
+                if (config.type === 'doughnut') {
+                    const regionCounts = programData.reduce((acc, p) => { acc[p.region] = (acc[p.region] || 0) + 1; return acc; }, {});
+                    charts[config.id] = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: Object.keys(regionCounts),
+                            datasets: [{ data: Object.values(regionCounts), backgroundColor: Object.keys(regionCounts).map((_, i) => `hsl(${i * 360 / Object.keys(regionCounts).length}, 70%, 60%)`) }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: chartTextColor } }, datalabels: { display: false } } }
+                    });
+                } else {
+                    charts[config.id] = new Chart(ctx, {
+                        type: 'bar',
+                        data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: { y: { beginAtZero: true, ticks: { color: chartTextColor }, grid: { color: chartGridColor } }, x: { ticks: { color: chartTextColor, maxRotation: 45, minRotation: 45 }, grid: { color: 'transparent' } } },
+                            plugins: { legend: { display: false }, datalabels: { display: config.showLabels, anchor: 'end', align: 'top', color: '#fff', font: { weight: 'bold', size: 11 }, formatter: v => v > 0 ? v : '' } }
+                        },
+                        plugins: config.showLabels ? [ChartDataLabels] : []
+                    });
+                }
+            });
+        }
+
+        // --- ACTUALIZACIÓN ---
+        function updateDashboard(discipline = 'Todos') {
+            const filtered = discipline === 'Todos' ? programData : programData.filter(p => p.disciplina === discipline);
+            const totalProgramas = filtered.length;
+            const aranceles = filtered.map(p => p.arancel).filter(v => v !== null);
+            const arancelPromedio = aranceles.length ? aranceles.reduce((a, b) => a + b, 0) / aranceles.length : 0;
+            const matriculaTotal = filtered.map(p => p.matriculaTotal).filter(v => v !== null).reduce((a, b) => a + b, 0);
+            const vacantesTotal = filtered.map(p => p.vacantes).filter(v => v !== null).reduce((a, b) => a + b, 0);
+
+            document.getElementById('kpi-programas').textContent = totalProgramas;
+            document.getElementById('kpi-arancel').textContent = formatCurrency(arancelPromedio);
+            document.getElementById('kpi-matricula').textContent = matriculaTotal.toLocaleString('es-CL');
+            document.getElementById('kpi-vacantes').textContent = vacantesTotal.toLocaleString('es-CL');
+
+            const dataByUni = filtered.reduce((acc, p) => {
+                if (!acc[p.sigla]) acc[p.sigla] = { matriculaTotal: 0, matricula1er: 0, arancel: 0, arancelCount: 0, vacantes: 0, paes: 0, paesCount: 0, disciplina: p.disciplina };
+                if (p.matriculaTotal !== null) acc[p.sigla].matriculaTotal += p.matriculaTotal;
+                if (p.matricula1er !== null) acc[p.sigla].matricula1er += p.matricula1er;
+                if (p.arancel !== null) { acc[p.sigla].arancel += p.arancel; acc[p.sigla].arancelCount++; }
+                if (p.vacantes !== null) acc[p.sigla].vacantes += p.vacantes;
+                if (p.paes !== null) { acc[p.sigla].paes += p.paes; acc[p.sigla].paesCount++; }
+                return acc;
+            }, {});
+
+            Object.values(dataByUni).forEach(uni => {
+                uni.arancel = uni.arancelCount > 0 ? uni.arancel / uni.arancelCount : null;
+                uni.paes = uni.paesCount > 0 ? uni.paes / uni.paesCount : null;
+            });
+
+            const dataArray = Object.entries(dataByUni).map(([sigla, v]) => ({ sigla, ...v }));
+
+            const chartKeys = ['matriculaTotal', 'matricula1er', 'arancel', 'vacantes', 'paes'];
+            const chartIds = ['matriculaTotalChart', 'matriculaPrimerAnoChart', 'arancelChart', 'vacantesChart', 'paesChart'];
+
+            chartKeys.forEach((key, i) => {
+                const id = chartIds[i];
+                const sorted = [...dataArray].sort((a, b) => {
+                    const valA = a[key] ?? 0;
+                    const valB = b[key] ?? 0;
+                    return valB - valA;
+                });
+
+                const chart = charts[id];
+                chart.data.labels = sorted.map(d => d.sigla);
+                chart.data.datasets[0].data = sorted.map(d => d[key] ?? 0);
+                chart.data.datasets[0].backgroundColor = discipline === 'Todos' 
+                    ? sorted.map(d => disciplineColors[d.disciplina] || 'rgba(100,100,100,0.6)')
+                    : disciplineColors[discipline] || 'rgba(43,108,176,0.6)';
+                chart.update();
+            });
+
+            filteredData = [...filtered];
+            currentPage = 1;
+            if (currentSort.col !== -1) sortTable(currentSort.col);
+            else renderTable();
+        }
+
+        // CORREGIDO: classList en lugar de classUp
+        document.getElementById('filters').addEventListener('click', e => {
+            if (e.target.tagName === 'BUTTON') {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                updateDashboard(e.target.dataset.filter);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            processData();
+            initCharts();
+            updateDashboard('Todos');
+        });
+    </script>
+</body>
+</html>
