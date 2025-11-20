@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Maestro: El Sistema Digestivo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .option-card {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .option-card:hover:not(.disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .option-card.selected {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .option-card.correct {
+            border-color: #22c55e;
+            background-color: #f0fdf4;
+            color: #15803d;
+        }
+
+        .option-card.incorrect {
+            border-color: #ef4444;
+            background-color: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .option-card.disabled {
+            cursor: default;
+            opacity: 0.7;
+        }
+
+        .progress-bar-fill {
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Scrollbar personalizado */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-slate-900 text-white p-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-notes-medical text-emerald-400 text-2xl"></i>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">Anatomía Digestiva</h1>
+                    <p class="text-xs text-slate-400">Basado en el Capítulo 24</p>
+                </div>
+            </div>
+            <div class="text-right hidden sm:block">
+                <div class="text-sm font-semibold text-emerald-400" id="score-counter">Puntos: 0</div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow p-4 md:p-6">
+        <div class="max-w-4xl mx-auto">
+            
+            <!-- Barra de Progreso -->
+            <div class="mb-6 bg-white rounded-full h-4 shadow-sm overflow-hidden border border-slate-200">
+                <div id="progress-bar" class="progress-bar-fill h-full bg-gradient-to-r from-blue-500 to-emerald-400 w-0"></div>
+            </div>
+
+            <!-- Quiz Container -->
+            <div id="quiz-container" class="glass-panel rounded-2xl shadow-xl p-6 md:p-8 min-h-[500px] relative flex flex-col">
+                
+                <!-- Loading State -->
+                <div id="loading" class="absolute inset-0 flex items-center justify-center bg-white z-10 rounded-2xl">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                </div>
+
+                <!-- Question Header -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-end mb-2">
+                        <span class="text-sm font-bold text-blue-600 tracking-wider uppercase">Pregunta <span id="current-q-num">1</span>/75</span>
+                        <span class="text-xs text-slate-400 font-mono" id="category-tag">GENERALIDADES</span>
+                    </div>
+                    <h2 id="question-text" class="text-xl md:text-2xl font-bold text-slate-800 leading-snug">
+                        <!-- La pregunta va aquí -->
+                    </h2>
+                </div>
+
+                <!-- Options Area -->
+                <div id="options-list" class="grid gap-3 mb-6">
+                    <!-- Las opciones se generan dinámicamente -->
+                </div>
+
+                <!-- Feedback Area -->
+                <div id="feedback-area" class="hidden mb-6 p-4 rounded-xl border-l-4 bg-slate-50 fade-in">
+                    <div class="flex items-start gap-3">
+                        <div id="feedback-icon" class="mt-1 text-lg"></div>
+                        <div>
+                            <h4 id="feedback-title" class="font-bold text-sm mb-1"></h4>
+                            <p id="feedback-text" class="text-sm text-slate-600 leading-relaxed"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Footer -->
+                <div class="mt-auto pt-6 border-t border-slate-100 flex justify-between items-center">
+                    <button id="btn-prev" onclick="app.prevQuestion()" class="px-6 py-2 rounded-lg bg-slate-200 text-slate-600 font-semibold hover:bg-slate-300 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                        <i class="fas fa-arrow-left"></i> Anterior
+                    </button>
+                    
+                    <button id="btn-next" onclick="app.nextQuestion()" class="px-6 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition shadow-lg shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                        Siguiente <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Screen (Hidden by default) -->
+            <div id="results-screen" class="hidden glass-panel rounded-2xl shadow-xl p-8 text-center fade-in">
+                <div class="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-trophy text-4xl text-emerald-500"></i>
+                </div>
+                <h2 class="text-3xl font-bold text-slate-800 mb-2">¡Test Completado!</h2>
+                <p class="text-slate-500 mb-8">Aquí tienes el resumen de tu rendimiento</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div class="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                        <div class="text-3xl font-bold text-blue-600" id="final-score">0</div>
+                        <div class="text-sm text-blue-400 font-semibold">PUNTUACIÓN</div>
+                    </div>
+                    <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                        <div class="text-3xl font-bold text-emerald-600" id="final-correct">0</div>
+                        <div class="text-sm text-emerald-400 font-semibold">CORRECTAS</div>
+                    </div>
+                    <div class="p-4 bg-rose-50 rounded-xl border border-rose-100">
+                        <div class="text-3xl font-bold text-rose-600" id="final-incorrect">0</div>
+                        <div class="text-sm text-rose-400 font-semibold">INCORRECTAS</div>
+                    </div>
+                </div>
+
+                <div class="flex justify-center gap-4">
+                    <button onclick="location.reload()" class="px-8 py-3 rounded-xl bg-emerald-500 text-white font-bold hover:bg-emerald-600 transition shadow-lg transform hover:scale-105">
+                        <i class="fas fa-redo mr-2"></i> Intentar de Nuevo
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="text-center p-6 text-slate-400 text-sm">
+        &copy; 2023 Anatomía y Fisiología - Test Interactivo
+    </footer>
+
+<script>
+const questionBank = [
+    // GENERALIDADES
+    {
+        c: "GENERALIDADES",
+        q: "¿Cuáles son los dos grupos de órganos principales que componen el aparato digestivo?",
+        opts: ["Tracto gastrointestinal y órganos digestivos accesorios", "Estómago e intestino", "Vísceras sólidas y huecas", "Sistema superior e inferior"],
+        a: 0,
+        exp: "El aparato digestivo se divide en el tracto gastrointestinal (tubo continuo boca-ano) y los órganos digestivos accesorios (dientes, lengua, glándulas, etc.)."
+    },
+    {
+        c: "GENERALIDADES",
+        q: "¿Cuál es la longitud aproximada del tracto gastrointestinal en una persona viva con tono muscular?",
+        opts: ["9-11 metros", "5-7 metros", "2-3 metros", "10-12 metros"],
+        a: 1,
+        exp: "En una persona viva, debido al tono muscular, mide unos 5-7 metros. En un cadáver es más largo (7-9m) por la pérdida de tono."
+    },
+    {
+        c: "GENERALIDADES",
+        q: "¿Cuál de los siguientes NO es uno de los 6 procesos básicos del aparato digestivo?",
+        opts: ["Ingestión", "Filtración", "Secreción", "Mezcla y propulsión"],
+        a: 1,
+        exp: "Los 6 procesos son: Ingestión, Secreción, Mezcla/Propulsión, Digestión, Absorción y Defecación. La filtración es renal."
+    },
+    // CAPAS DEL TUBO
+    {
+        c: "HISTOLOGÍA",
+        q: "¿Cuál es la secuencia correcta de las capas del tubo digestivo desde la profundidad a la superficie?",
+        opts: ["Serosa, Muscular, Submucosa, Mucosa", "Mucosa, Submucosa, Muscular, Serosa", "Mucosa, Muscular, Submucosa, Serosa", "Submucosa, Mucosa, Serosa, Muscular"],
+        a: 1,
+        exp: "El orden desde la luz hacia afuera es: Mucosa (epitelio, lámina propia, muscularis mucosae), Submucosa, Muscular y Serosa/Adventicia."
+    },
+    {
+        c: "HISTOLOGÍA",
+        q: "¿Qué es el MALT y dónde se localiza principalmente?",
+        opts: ["Músculo de absorción en la submucosa", "Tejido Linfático Asociado a la Mucosa, en la lámina propia", "Mucosa Alveolar, en la boca", "Membrana de transporte, en la serosa"],
+        a: 1,
+        exp: "El MALT (Tejido Linfático Asociado a la Mucosa) contiene células inmunitarias y está en la lámina propia de la mucosa."
+    },
+    {
+        c: "INERVACIÓN",
+        q: "¿Dónde se localiza el Plexo de Meissner y qué regula?",
+        opts: ["En la muscular; regula la motilidad", "En la submucosa; regula la secreción", "En la serosa; regula el dolor", "En la mucosa; regula la absorción"],
+        a: 1,
+        exp: "El plexo submucoso o de Meissner se encuentra en la submucosa y regula principalmente las secreciones gastrointestinales."
+    },
+    {
+        c: "INERVACIÓN",
+        q: "¿Dónde se localiza el Plexo Mientérico o de Auerbach?",
+        opts: ["En la submucosa", "Entre las capas longitudinal y circular de la muscular", "En la serosa", "En la lámina propia"],
+        a: 1,
+        exp: "El plexo mientérico se localiza entre las capas de músculo liso circular y longitudinal y controla la motilidad (frecuencia y fuerza)."
+    },
+    // PERITONEO
+    {
+        c: "PERITONEO",
+        q: "¿Qué órganos se consideran retroperitoneales?",
+        opts: ["Estómago e Hígado", "Yeyuno e Íleon", "Riñones y Páncreas", "Colon transverso y sigmoides"],
+        a: 2,
+        exp: "Los riñones y el páncreas (junto con el colon ascendente/descendente y duodeno) se localizan en la pared posterior y son retroperitoneales."
+    },
+    {
+        c: "PERITONEO",
+        q: "¿Qué repliegue peritoneal cuelga sobre el colon transverso y el intestino delgado como un 'delantal adiposo'?",
+        opts: ["Epiplón menor", "Mesenterio", "Epiplón mayor", "Ligamento falciforme"],
+        a: 2,
+        exp: "El epiplón mayor es la hoja más grande del peritoneo, contiene mucho tejido adiposo y ganglios linfáticos."
+    },
+    {
+        c: "PERITONEO",
+        q: "¿Qué repliegue une el hígado a la pared abdominal anterior?",
+        opts: ["Mesocolon", "Ligamento falciforme", "Epiplón menor", "Mesenterio"],
+        a: 1,
+        exp: "El ligamento falciforme une el hígado a la pared abdominal anterior y al diafragma."
+    },
+    {
+        c: "PERITONEO",
+        q: "¿Qué estructura une el intestino delgado a la pared abdominal posterior?",
+        opts: ["Mesenterio", "Mesocolon", "Epiplón mayor", "Ligamento redondo"],
+        a: 0,
+        exp: "El mesenterio es el repliegue en forma de abanico que fija el yeyuno y el íleon a la pared posterior."
+    },
+    // BOCA
+    {
+        c: "BOCA",
+        q: "¿Qué enzima contenida en la saliva inicia la digestión del almidón?",
+        opts: ["Lipasa lingual", "Pepsina", "Amilasa salival", "Tripsina"],
+        a: 2,
+        exp: "La amilasa salival inicia la degradación del almidón en maltosa, maltotriosa o a-dextrinas en la boca."
+    },
+    {
+        c: "BOCA",
+        q: "¿Qué glándula salival vierte su secreción a través del conducto de Stenon (parotídeo) frente al segundo molar superior?",
+        opts: ["Glándula Parótida", "Glándula Submaxilar", "Glándula Sublingual", "Glándulas bucales"],
+        a: 0,
+        exp: "La parótida secreta saliva serosa rica en amilasa a través del conducto parotídeo hacia el vestíbulo."
+    },
+    {
+        c: "BOCA",
+        q: "¿Cuál es la sustancia más dura del cuerpo humano?",
+        opts: ["Hueso compacto", "Dentina", "Esmalte dental", "Cemento"],
+        a: 2,
+        exp: "El esmalte consiste en 95% de sales de calcio (fosfato y carbonato) y es la sustancia más dura."
+    },
+    {
+        c: "BOCA",
+        q: "¿Cuántos dientes tiene la dentición permanente completa?",
+        opts: ["20", "28", "32", "36"],
+        a: 2,
+        exp: "La dentición permanente consta de 32 dientes (8 incisivos, 4 caninos, 8 premolares y 12 molares)."
+    },
+    {
+        c: "BOCA",
+        q: "¿Qué función cumple la úvula durante la deglución?",
+        opts: ["Triturar alimentos", "Cerrar la nasofaringe", "Secretar saliva", "Detectar sabores"],
+        a: 1,
+        exp: "El paladar blando y la úvula se elevan para ocluir la nasofaringe y evitar que los alimentos entren en la cavidad nasal."
+    },
+    // ESÓFAGO Y DEGLUCIÓN
+    {
+        c: "ESÓFAGO",
+        q: "¿Qué tipo de músculo se encuentra en el tercio superior del esófago?",
+        opts: ["Músculo liso exclusivamente", "Músculo esquelético", "Mezcla de liso y esquelético", "Cartílago"],
+        a: 1,
+        exp: "El tercio superior es músculo esquelético, el medio es mixto, y el inferior es músculo liso."
+    },
+    {
+        c: "DEGLUCIÓN",
+        q: "¿En qué fase de la deglución el bolo pasa involuntariamente hacia el esófago mientras se cierra la epiglotis?",
+        opts: ["Fase voluntaria", "Fase faríngea", "Fase esofágica", "Fase gástrica"],
+        a: 1,
+        exp: "La fase faríngea es involuntaria; el paladar blando sube, la epiglotis baja y el bolo pasa a través de la faringe."
+    },
+    {
+        c: "ESÓFAGO",
+        q: "¿Qué esfínter falla en la Enfermedad por Reflujo Gastroesofágico (ERGE)?",
+        opts: ["Esfínter esofágico superior", "Esfínter pilórico", "Esfínter de Oddi", "Esfínter esofágico inferior"],
+        a: 3,
+        exp: "Si el esfínter esofágico inferior no se cierra adecuadamente, el contenido ácido del estómago refluye al esófago."
+    },
+    // ESTÓMAGO
+    {
+        c: "ESTÓMAGO",
+        q: "¿Cuáles son las cuatro regiones principales del estómago?",
+        opts: ["Cardias, Fundus, Cuerpo, Píloro", "Cabeza, Cuello, Cuerpo, Cola", "Ascendente, Transverso, Descendente, Sigmoides", "Duodeno, Yeyuno, Íleon, Ciego"],
+        a: 0,
+        exp: "El estómago se divide en Cardias (entrada), Fundus (cúpula), Cuerpo (central) y Píloro (salida)."
+    },
+    {
+        c: "ESTÓMAGO",
+        q: "¿Qué célula gástrica secreta el Factor Intrínseco y por qué es vital?",
+        opts: ["Célula principal; para digerir proteínas", "Célula G; para secretar gastrina", "Célula parietal; para absorber vitamina B12", "Célula mucosa; para proteger la pared"],
+        a: 2,
+        exp: "Las células parietales secretan HCl y Factor Intrínseco. Este último es indispensable para la absorción de vitamina B12 en el íleon."
+    },
+    {
+        c: "ESTÓMAGO",
+        q: "¿Qué secretan las células principales (cimógenas)?",
+        opts: ["Ácido clorhídrico", "Pepsinógeno y lipasa gástrica", "Gastrina", "Moco alcalino"],
+        a: 1,
+        exp: "Secretan pepsinógeno (inactivo) y lipasa gástrica. El pepsinógeno se activa a pepsina con el ácido."
+    },
+    {
+        c: "ESTÓMAGO",
+        q: "¿Cómo se genera el Ácido Clorhídrico (HCl) en el estómago?",
+        opts: ["Se secreta como HCl directo desde el núcleo", "La bomba de protones H+/K+ secreta H+ y el Cl- sale por difusión", "Las células mucosas lo filtran de la sangre", "Lo producen las bacterias"],
+        a: 1,
+        exp: "Las células parietales secretan H+ y Cl- por separado a la luz gástrica. La bomba H+/K+ ATPasa es clave en este proceso."
+    },
+    {
+        c: "ESTÓMAGO",
+        q: "¿Qué hormona estimula la secreción de jugo gástrico, la motilidad y relaja el esfínter pilórico?",
+        opts: ["Secretina", "CCK", "Gastrina", "Somatostatina"],
+        a: 2,
+        exp: "La Gastrina, secretada por las células G, estimula la actividad gástrica general (secreción de HCl y pepsinógeno, motilidad)."
+    },
+    {
+        c: "ESTÓMAGO",
+        q: "¿Qué es el quimo?",
+        opts: ["El bolo alimenticio en la boca", "El líquido viscoso y ácido resultante de la mezcla en el estómago", "Las heces en el colon", "La bilis concentrada"],
+        a: 1,
+        exp: "El quimo es el resultado de la maceración de los alimentos mezclados con las secreciones gástricas."
+    },
+    {
+        c: "ESTÓMAGO",
+        q: "¿Qué enzima gástrica es importante para la digestión de la leche en los lactantes?",
+        opts: ["Pepsina", "Amilasa", "Lipasa gástrica", "Tripsina"],
+        a: 2,
+        exp: "La lipasa gástrica desdobla triglicéridos de cadena corta (comunes en la leche) y opera mejor a pH 5-6."
+    },
+    // PÁNCREAS
+    {
+        c: "PÁNCREAS",
+        q: "¿Qué porcentaje del páncreas tiene función exocrina (ácinos) vs endocrina (islotes)?",
+        opts: ["50% exocrina, 50% endocrina", "1% exocrina, 99% endocrina", "99% exocrina (ácinos), 1% endocrina (islotes)", "100% exocrina"],
+        a: 2,
+        exp: "El 99% del páncreas son ácinos que secretan jugo pancreático; solo el 1% son islotes de Langerhans (insulina/glucagón)."
+    },
+    {
+        c: "PÁNCREAS",
+        q: "¿Cuál es la función principal del bicarbonato de sodio en el jugo pancreático?",
+        opts: ["Digerir carbohidratos", "Amortiguar el ácido gástrico del quimo", "Emulsionar grasas", "Activar el pepsinógeno"],
+        a: 1,
+        exp: "El bicarbonato neutraliza la acidez del quimo que llega del estómago, creando un pH alcalino óptimo para las enzimas pancreáticas."
+    },
+    {
+        c: "PÁNCREAS",
+        q: "¿Qué enzima del intestino activa al Tripsinógeno convirtiéndolo en Tripsina?",
+        opts: ["Pepsina", "Enterocinasa", "Amilasa", "Lipasa"],
+        a: 1,
+        exp: "La enterocinasa, una enzima del ribete en cepillo, activa el tripsinógeno. La tripsina luego activa a otras enzimas precursoras."
+    },
+    {
+        c: "PÁNCREAS",
+        q: "¿Dónde desembocan el conducto colédoco y el conducto pancreático principal?",
+        opts: ["En el yeyuno", "En la Ampolla de Vater (Hepatopancreática) en el duodeno", "En el píloro", "En el conducto cístico"],
+        a: 1,
+        exp: "Se unen en la ampolla hepatopancreática y desembocan en la papila duodenal mayor, regulados por el esfínter de Oddi."
+    },
+    // HÍGADO Y BILIS
+    {
+        c: "HÍGADO",
+        q: "¿Cuál es la unidad funcional hexagonal clásica del hígado?",
+        opts: ["Ácino hepático", "Lóbulo portal", "Lobulillo hepático", "Célula de Kupffer"],
+        a: 2,
+        exp: "El lobulillo hepático tiene forma hexagonal con una vena central y tríadas portales en los vértices."
+    },
+    {
+        c: "HÍGADO",
+        q: "¿Qué tres estructuras componen la Tríada Portal?",
+        opts: ["Arteria hepática, Vena cava, Conducto linfático", "Rama de arteria hepática, Rama de vena porta, Conducto biliar", "Vena central, Sinusoide, Hepatocito", "Vena hepática, Arteria aorta, Nervio vago"],
+        a: 1,
+        exp: "La tríada portal consta de una rama de la arteria hepática, una rama de la vena porta y un conducto biliar."
+    },
+    {
+        c: "HÍGADO",
+        q: "¿Qué función tienen las células de Kupffer (reticuloendoteliales estrelladas)?",
+        opts: ["Producir bilis", "Almacenar vitamina A", "Fagocitar bacterias y eritrocitos viejos", "Producir insulina"],
+        a: 2,
+        exp: "Son macrófagos fijos localizados en los sinusoides hepáticos encargados de la defensa y limpieza de la sangre."
+    },
+    {
+        c: "HÍGADO",
+        q: "¿Cuál es la función principal de las sales biliares?",
+        opts: ["Digestión enzimática de proteínas", "Emulsificación de lípidos", "Neutralización del ácido", "Absorción de agua"],
+        a: 1,
+        exp: "Las sales biliares emulsionan grandes gotas de grasa en micelas pequeñas, facilitando la acción de la lipasa pancreática."
+    },
+    {
+        c: "HÍGADO",
+        q: "¿Qué pigmento biliar se deriva de la degradación del grupo hemo de los eritrocitos?",
+        opts: ["Bilirrubina", "Colesterol", "Lecitina", "Sales biliares"],
+        a: 0,
+        exp: "La bilirrubina es el principal pigmento biliar, producto del metabolismo del hemo. Su producto, la estercobilina, colorea las heces."
+    },
+    {
+        c: "HÍGADO",
+        q: "¿De dónde recibe el hígado la mayor parte de su aporte sanguíneo (sangre rica en nutrientes)?",
+        opts: ["De la Arteria Hepática", "De la Vena Porta Hepática", "De la Vena Cava Inferior", "De la Vena Suprahepática"],
+        a: 1,
+        exp: "La Vena Porta trae sangre desoxigenada pero rica en nutrientes absorbidos del tracto gastrointestinal."
+    },
+    // INTESTINO DELGADO
+    {
+        c: "INTESTINO DELGADO",
+        q: "¿Cuáles son las tres regiones del intestino delgado en orden?",
+        opts: ["Duodeno, Yeyuno, Íleon", "Íleon, Duodeno, Yeyuno", "Yeyuno, Íleon, Ciego", "Duodeno, Colon, Recto"],
+        a: 0,
+        exp: "El orden es Duodeno (corto, retroperitoneal), Yeyuno (vacío a la muerte) e Íleon (largo, conecta con ciego)."
+    },
+    {
+        c: "INTESTINO DELGADO",
+        q: "¿Qué estructuras aumentan enormemente la superficie de absorción del intestino delgado?",
+        opts: ["Haustras", "Pliegues circulares, vellosidades y microvellosidades", "Rugosidades gástricas", "Tenias"],
+        a: 1,
+        exp: "Estas tres adaptaciones estructurales aumentan la superficie cientos de veces para maximizar la absorción."
+    },
+    {
+        c: "INTESTINO DELGADO",
+        q: "¿Qué contiene el núcleo de una vellosidad intestinal?",
+        opts: ["Solo capilares sanguíneos", "Una arteriola, una vénula, capilares y un vaso quilífero", "Glándulas mucosas", "Nervios motores"],
+        a: 1,
+        exp: "Cada vellosidad tiene una red capilar para absorber nutrientes hidrosolubles y un quilífero (linfático) para los lípidos."
+    },
+    {
+        c: "INTESTINO DELGADO",
+        q: "¿Qué secretan las células de Paneth?",
+        opts: ["Moco", "Hormonas", "Lisozima y son fagocíticas", "Bicarbonato"],
+        a: 2,
+        exp: "Las células de Paneth regulan la población bacteriana secretando lisozima (bactericida) y realizando fagocitosis."
+    },
+    {
+        c: "INTESTINO DELGADO",
+        q: "¿Qué glándulas de la submucosa duodenal secretan moco alcalino?",
+        opts: ["Glándulas de Brunner", "Criptas de Lieberkühn", "Glándulas gástricas", "Placas de Peyer"],
+        a: 0,
+        exp: "Las glándulas de Brunner (duodenales) secretan moco alcalino para neutralizar el ácido gástrico que entra al duodeno."
+    },
+    {
+        c: "INTESTINO DELGADO",
+        q: "¿Qué es el 'borde en cepillo'?",
+        opts: ["Las vellosidades visibles a simple vista", "Las microvellosidades en la membrana apical de las células absortivas", "Los pliegues circulares", "El músculo liso"],
+        a: 1,
+        exp: "El borde en cepillo está formado por miles de microvellosidades en cada célula absortiva, donde se encuentran las enzimas digestivas finales."
+    },
+    {
+        c: "DIGESTIÓN QUÍMICA",
+        q: "¿Qué enzimas del borde en cepillo digieren carbohidratos?",
+        opts: ["Pepsina y Tripsina", "Amilasa y Lipasa", "Maltasa, Sacarasa, Lactasa y a-dextrinasa", "Nucleasas"],
+        a: 2,
+        exp: "Estas enzimas desdoblan disacáridos (maltosa, sacarosa, lactosa) en monosacáridos absorbibles."
+    },
+    {
+        c: "ABSORCIÓN",
+        q: "¿Cómo se absorben la glucosa y la galactosa?",
+        opts: ["Difusión simple", "Transporte activo secundario acoplado a Na+", "Difusión facilitada", "Ósmosis"],
+        a: 1,
+        exp: "Entran a la célula por simportadores Na+-Glucosa (SGLT-1), un proceso de transporte activo secundario."
+    },
+    {
+        c: "ABSORCIÓN",
+        q: "¿Cómo se transportan los lípidos de cadena larga una vez dentro de la célula absortiva?",
+        opts: ["Pasan directamente a la sangre", "Se reforman en triglicéridos, forman quilomicrones y entran al vaso quilífero", "Se disuelven en agua", "Se excretan"],
+        a: 1,
+        exp: "Se re-empaquetan en quilomicrones (lipoproteínas) y entran a la linfa (vaso quilífero) porque son demasiado grandes para los capilares."
+    },
+    {
+        c: "ABSORCIÓN",
+        q: "¿Qué enzima degrada los triglicéridos de los quilomicrones en la sangre?",
+        opts: ["Lipoproteína lipasa", "Amilasa pancreática", "Pepsina", "Bilis"],
+        a: 0,
+        exp: "La lipoproteína lipasa del endotelio capilar desdobla los triglicéridos de los quilomicrones en ácidos grasos y glicerol."
+    },
+    // INTESTINO GRUESO
+    {
+        c: "INTESTINO GRUESO",
+        q: "¿Cuáles son las regiones del intestino grueso?",
+        opts: ["Duodeno, yeyuno, íleon", "Ciego, colon, recto, conducto anal", "Estómago, píloro, ciego", "Hígado, vesícula, colon"],
+        a: 1,
+        exp: "Se extiende desde el esfínter ileocecal e incluye el ciego (con apéndice), colon (ascendente, transverso, descendente, sigmoides), recto y ano."
+    },
+    {
+        c: "INTESTINO GRUESO",
+        q: "¿Qué son las tenias del colon?",
+        opts: ["Parásitos intestinales", "Tres bandas longitudinales de músculo liso engrosado", "Glándulas secretoras", "Pliegues de la mucosa"],
+        a: 1,
+        exp: "Son 3 bandas de la capa muscular longitudinal. Su contracción tónica forma las haustras (bolsas)."
+    },
+    {
+        c: "INTESTINO GRUESO",
+        q: "¿Qué función principal cumplen las bacterias en el colon?",
+        opts: ["Digerir lípidos", "Fermentar carbohidratos, producir vitaminas B y K, descomponer proteínas", "Absorber nutrientes vitales", "Secretar ácido clorhídrico"],
+        a: 1,
+        exp: "La microbiota fermenta restos no digeridos, produce gases y sintetiza vitaminas importantes como la K y algunas B."
+    },
+    {
+        c: "INTESTINO GRUESO",
+        q: "¿Qué movimiento es característico del intestino grueso y propulsa el contenido hacia el recto?",
+        opts: ["Segmentación", "Peristaltismo en masa", "Complejo motor migrante", "Deglución"],
+        a: 1,
+        exp: "El peristaltismo en masa es una onda fuerte que ocurre 3-4 veces al día, generalmente post-comida (reflejo gastrocólico)."
+    },
+    {
+        c: "INTESTINO GRUESO",
+        q: "¿Qué esfínter anal es voluntario?",
+        opts: ["Esfínter anal interno (músculo liso)", "Esfínter anal externo (músculo esquelético)", "Esfínter de Oddi", "Esfínter pilórico"],
+        a: 1,
+        exp: "El esfínter externo es músculo esquelético y está bajo control voluntario, permitiendo posponer la defecación."
+    },
+    // FASES DE LA DIGESTIÓN
+    {
+        c: "FISIOLOGÍA",
+        q: "¿Qué desencadena la fase cefálica de la digestión?",
+        opts: ["La comida en el estómago", "El olor, vista, pensamiento o sabor de la comida", "El quimo en el duodeno", "La defecación"],
+        a: 1,
+        exp: "Esta fase prepara la boca y el estómago para recibir alimento, mediada por el nervio vago."
+    },
+    {
+        c: "FISIOLOGÍA",
+        q: "¿Qué ocurre durante la fase gástrica?",
+        opts: ["Se inhibe el estómago", "La distensión y el pH alto estimulan la secreción de gastrina y motilidad", "Se libera secretina", "Ocurre la deglución"],
+        a: 1,
+        exp: "La llegada de comida distiende el estómago y neutraliza el ácido, activando reflejos y liberando gastrina para aumentar la digestión."
+    },
+    {
+        c: "FISIOLOGÍA",
+        q: "¿Qué hormonas median la fase intestinal inhibiendo el estómago?",
+        opts: ["Gastrina y Acetilcolina", "CCK y Secretina", "Insulina y Glucagón", "Pepsina y Renina"],
+        a: 1,
+        exp: "La Secretina (por acidez) y la CCK (por grasas/proteínas) inhiben el vaciamiento gástrico y estimulan páncreas/vesícula."
+    },
+    {
+        c: "FISIOLOGÍA",
+        q: "¿Qué hace la Secretina?",
+        opts: ["Estimula jugo pancreático rico en bicarbonato", "Estimula jugo rico en enzimas", "Contrae la vesícula", "Aumenta ácido gástrico"],
+        a: 0,
+        exp: "La secretina responde al quimo ácido y estimula al páncreas a liberar bicarbonato para neutralizarlo."
+    },
+    {
+        c: "FISIOLOGÍA",
+        q: "¿Qué hace la Colecistocinina (CCK)?",
+        opts: ["Estimula producción de HCl", "Contrae la vesícula biliar y relaja el esfínter de Oddi", "Inhibe el páncreas", "Produce hambre"],
+        a: 1,
+        exp: "La CCK responde a grasas y proteínas, causando la liberación de bilis y enzimas pancreáticas, e induciendo saciedad."
+    },
+    // DETALLES ADICIONALES
+    {
+        c: "ANATOMÍA",
+        q: "¿Qué es el vestíbulo bucal?",
+        opts: ["El espacio entre los labios/mejillas y los dientes/encías", "La parte posterior de la garganta", "El espacio bajo la lengua", "La entrada al esófago"],
+        a: 0,
+        exp: "Es el espacio limitado externamente por mejillas/labios e internamente por dientes/encías."
+    },
+    {
+        c: "HISTOLOGÍA",
+        q: "¿Qué tipo de epitelio reviste la boca, faringe y esófago?",
+        opts: ["Cilíndrico simple", "Pavimentoso estratificado no queratinizado", "Cúbico simple", "Transicional"],
+        a: 1,
+        exp: "Este epitelio protege contra la abrasión y el desgaste mecánico de los alimentos."
+    },
+    {
+        c: "HISTOLOGÍA",
+        q: "¿Qué capa del tubo digestivo contiene el tejido conectivo areolar, vasos sanguíneos y el plexo de Meissner?",
+        opts: ["Mucosa", "Submucosa", "Muscular", "Serosa"],
+        a: 1,
+        exp: "La submucosa une la mucosa a la muscular y es muy vascularizada."
+    },
+    {
+        c: "ANATOMÍA DENTAL",
+        q: "¿Qué porción del diente es visible sobre la encía?",
+        opts: ["Raíz", "Cuello", "Corona", "Pulpa"],
+        a: 2,
+        exp: "La corona es la parte visible y está cubierta de esmalte."
+    },
+    {
+        c: "DIGESTIÓN",
+        q: "¿Qué es el peristaltismo?",
+        opts: ["Contracciones de segmentación", "Ondas de contracción y relajación muscular que propulsan el contenido", "Masticación", "Absorción pasiva"],
+        a: 1,
+        exp: "Es el mecanismo principal de propulsión a lo largo del tubo digestivo."
+    },
+    {
+        c: "ANATOMÍA",
+        q: "¿Qué estructura evita que el alimento entre en la laringe?",
+        opts: ["Úvula", "Epiglotis", "Esfínter esofágico", "Lengua"],
+        a: 1,
+        exp: "La epiglotis baja como una tapa sobre la glotis durante la fase faríngea de la deglución."
+    },
+    {
+        c: "ESTÓMAGO",
+        q: "¿Qué capa muscular adicional tiene el estómago?",
+        opts: ["Circular externa", "Oblicua interna", "Longitudinal media", "Transversal"],
+        a: 1,
+        exp: "El estómago tiene una capa oblicua interna (además de circular y longitudinal) para mejorar la mezcla mecánica."
+    },
+    {
+        c: "ESTÓMAGO",
+        q: "¿Qué es la 'marea alcalina'?",
+        opts: ["El flujo de bilis", "El ingreso de HCO3- a la sangre tras la secreción de H+ al estómago", "El vómito", "La diarrea"],
+        a: 1,
+        exp: "Al secretar H+ al estómago, la célula parietal envía HCO3- a la sangre, elevando ligeramente el pH sanguíneo post-prandial."
+    },
+    {
+        c: "HÍGADO",
+        q: "¿Qué ligamento es un vestigio de la vena umbilical fetal?",
+        opts: ["Ligamento falciforme", "Ligamento redondo", "Ligamento coronario", "Omento menor"],
+        a: 1,
+        exp: "El ligamento redondo, en el borde libre del falciforme, es el remanente fibroso de la vena umbilical."
+    },
+    {
+        c: "PÁNCREAS",
+        q: "¿Qué es el conducto de Santorini?",
+        opts: ["El conducto biliar principal", "El conducto pancreático accesorio", "El conducto parotídeo", "El conducto cístico"],
+        a: 1,
+        exp: "Es el conducto pancreático accesorio que desemboca en la papila duodenal menor."
+    },
+    {
+        c: "INTESTINO DELGADO",
+        q: "¿Qué son las placas de Peyer?",
+        opts: ["Glándulas mucosas", "Folículos linfáticos agregados en el íleon", "Células musculares", "Enzimas digestivas"],
+        a: 1,
+        exp: "Son grupos de tejido linfoide (MALT) prominentes en el íleon para defensa inmunitaria."
+    },
+    {
+        c: "ABSORCIÓN",
+        q: "¿Qué es la circulación enterohepática?",
+        opts: ["Sangre del corazón al hígado", "El reciclaje de sales biliares desde el íleon al hígado", "El flujo de linfa", "El paso de glucosa al cerebro"],
+        a: 1,
+        exp: "El 90-95% de las sales biliares se reabsorben en el íleon y vuelven al hígado por la porta para ser reutilizadas."
+    },
+    {
+        c: "DESARROLLO",
+        q: "¿De qué capa germinal deriva el epitelio del tubo digestivo?",
+        opts: ["Ectodermo", "Mesodermo", "Endodermo", "Neurodermo"],
+        a: 2,
+        exp: "El endodermo forma el revestimiento epitelial y las glándulas; el mesodermo forma el músculo y tejido conectivo."
+    },
+    {
+        c: "ENVEJECIMIENTO",
+        q: "¿Cuál es un cambio común en el sistema digestivo con el envejecimiento?",
+        opts: ["Aumento de secreciones", "Disminución de la motilidad y tono muscular", "Mayor absorción", "Engrosamiento del esmalte"],
+        a: 1,
+        exp: "El envejecimiento conlleva menor motilidad (estreñimiento), menor secreción y atrofia muscular."
+    },
+    {
+        c: "PATOLOGÍA",
+        q: "¿Qué es la acalasia?",
+        opts: ["Exceso de ácido", "Fallo del esfínter esofágico inferior para relajarse", "Inflamación del hígado", "Cálculos biliares"],
+        a: 1,
+        exp: "Es una condición donde el EEI no se relaja, dificultando el paso del alimento al estómago."
+    },
+    {
+        c: "PATOLOGÍA",
+        q: "¿Qué causa la ictericia?",
+        opts: ["Exceso de hierro", "Acumulación de bilirrubina en sangre", "Falta de oxígeno", "Exceso de vitamina A"],
+        a: 1,
+        exp: "La ictericia (color amarillo) se debe a niveles elevados de bilirrubina por fallo hepático u obstrucción biliar."
+    },
+    {
+        c: "NUTRICIÓN",
+        q: "¿Qué vitamina requiere Factor Intrínseco para su absorción?",
+        opts: ["Vitamina C", "Vitamina D", "Vitamina B12", "Vitamina K"],
+        a: 2,
+        exp: "Sin factor intrínseco (estómago), la B12 no puede absorberse en el íleon, causando anemia perniciosa."
+    },
+    {
+        c: "DIGESTIÓN",
+        q: "¿Dónde comienza la digestión química de las proteínas?",
+        opts: ["Boca", "Estómago", "Intestino Delgado", "Esófago"],
+        a: 1,
+        exp: "Comienza en el estómago por acción de la pepsina."
+    },
+    {
+        c: "DIGESTIÓN",
+        q: "¿Dónde comienza la digestión química de los lípidos?",
+        opts: ["Boca (lipasa lingual)", "Estómago", "Duodeno", "Páncreas"],
+        a: 0,
+        exp: "Aunque es menor, la lipasa lingual secretada en la boca inicia la digestión (se activa en el estómago)."
+    },
+    {
+        c: "ANATOMÍA",
+        q: "¿Qué es el hiato esofágico?",
+        opts: ["La entrada al estómago", "El orificio en el diafragma por donde pasa el esófago", "Una úlcera", "Un esfínter"],
+        a: 1,
+        exp: "Es la abertura en el diafragma. Si se debilita, puede causar una hernia hiatal."
+    },
+    {
+        c: "INTESTINO GRUESO",
+        q: "¿Qué apéndice cuelga del ciego?",
+        opts: ["Apéndice epiploico", "Apéndice vermiforme", "Apéndice xifoides", "Divertículo"],
+        a: 1,
+        exp: "El apéndice vermiforme es un tubo enrollado rico en tejido linfoide unido al ciego."
+    },
+    {
+        c: "INTESTINO GRUESO",
+        q: "¿Qué son las haustras?",
+        opts: ["Glándulas", "Bolsas formadas por la contracción de las tenias", "Bacterias", "Vasos sanguíneos"],
+        a: 1,
+        exp: "Son las abolladuras o saculaciones características del colon."
+    },
+    {
+        c: "REFLEJOS",
+        q: "¿Qué reflejo estimula la evacuación del colon tras comer?",
+        opts: ["Reflejo enterogástrico", "Reflejo gastrocólico", "Reflejo de deglución", "Reflejo del vómito"],
+        a: 1,
+        exp: "El reflejo gastrocólico intensifica el peristaltismo en masa en el colon después de llenar el estómago."
+    },
+    {
+        c: "HÍGADO",
+        q: "¿Qué vaso lleva sangre oxigenada al hígado?",
+        opts: ["Vena Porta", "Arteria Hepática", "Vena Hepática", "Vena Cava"],
+        a: 1,
+        exp: "La Arteria Hepática propia provee sangre oxigenada (aprox. 25% del flujo)."
+    },
+    {
+        c: "PÁNCREAS",
+        q: "¿Qué enzima pancreática digiere almidón?",
+        opts: ["Amilasa pancreática", "Tripsina", "Lipasa", "Ribonucleasa"],
+        a: 0,
+        exp: "La amilasa pancreática continúa la digestión de carbohidratos en el intestino delgado."
+    },
+];
+
+// Completar hasta 75 con variaciones si es necesario, el código manejará cualquier longitud.
+// Añadir más preguntas para asegurar cobertura total
+const extraQuestions = [
+    {c: "GENERALIDADES", q: "¿Qué serosa recubre la pared abdominal?", opts: ["Peritoneo visceral", "Peritoneo parietal", "Mesenterio", "Adventicia"], a: 1, exp: "El peritoneo parietal reviste la pared de la cavidad abdominal."},
+    {c: "BOCA", q: "¿Qué músculo forma principalmente los labios?", opts: ["Buccinador", "Orbicular de los labios", "Masetero", "Risorio"], a: 1, exp: "El orbicular de los labios permite cerrar y protruir los labios."},
+    {c: "BOCA", q: "¿Qué conecta la lengua al piso de la boca?", opts: ["Frenillo labial", "Frenillo lingual", "Paladar blando", "Arco palatogloso"], a: 1, exp: "El frenillo lingual limita el movimiento posterior de la lengua."},
+    {c: "DIENTES", q: "¿Qué es la dentina?", opts: ["Tejido conectivo calcificado que da forma al diente", "Capa externa dura", "Tejido blando con nervios", "Hueso alveolar"], a: 0, exp: "La dentina forma la mayor parte del diente, es más dura que el hueso."},
+    {c: "ESTÓMAGO", q: "¿Qué pliegues permiten la distensión gástrica?", opts: ["Vellosidades", "Rugosidades (rugae)", "Haustras", "Pliegues circulares"], a: 1, exp: "Las rugosidades son pliegues de la mucosa que se aplanan cuando el estómago se llena."},
+    {c: "INTESTINO DELGADO", q: "¿Qué movimiento mezcla el quimo sin propulsarlo mucho?", opts: ["Peristalsis", "Segmentación", "Deglución", "Defecación"], a: 1, exp: "La segmentación son contracciones localizadas que mezclan el quimo con los jugos."},
+];
+
+// Unir arrays
+const finalQuizData = [...questionBank, ...extraQuestions];
+
+// Estado de la App
+const app = {
+    currentQ: 0,
+    score: 0,
+    answers: new Array(finalQuizData.length).fill(null), // Guarda índices de respuestas
+    
+    init() {
+        this.renderProgressBar();
+        this.loadQuestion();
+        this.updateNavButtons();
+        document.getElementById('loading').style.display = 'none';
+    },
+
+    loadQuestion() {
+        const q = finalQuizData[this.currentQ];
+        const qNum = this.currentQ + 1;
+        
+        // Update UI Text
+        document.getElementById('current-q-num').textContent = qNum;
+        document.getElementById('category-tag').textContent = q.c;
+        document.getElementById('question-text').textContent = q.q;
+        
+        // Update Options
+        const optsContainer = document.getElementById('options-list');
+        optsContainer.innerHTML = '';
+        
+        q.opts.forEach((opt, index) => {
+            const btn = document.createElement('button');
+            btn.className = `option-card w-full text-left p-4 rounded-xl border-2 border-slate-100 bg-white font-medium text-slate-700 flex items-center gap-3 ${this.answers[this.currentQ] !== null ? 'disabled' : ''}`;
+            
+            // Estado previo (si ya respondió)
+            if (this.answers[this.currentQ] !== null) {
+                const userAns = this.answers[this.currentQ];
+                if (index === q.a) {
+                    btn.classList.add('correct');
+                    btn.innerHTML = `<i class="fas fa-check-circle"></i> ${opt}`;
+                } else if (index === userAns) {
+                    btn.classList.add('incorrect');
+                    btn.innerHTML = `<i class="fas fa-times-circle"></i> ${opt}`;
+                } else {
+                    btn.innerHTML = `<i class="far fa-circle"></i> ${opt}`;
+                }
+                btn.disabled = true;
+            } else {
+                btn.innerHTML = `<div class="w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center group-hover:border-blue-400"><div class="w-3 h-3 rounded-full bg-blue-500 transform scale-0 transition"></div></div> ${opt}`;
+                btn.onclick = () => this.selectAnswer(index);
+            }
+            
+            optsContainer.appendChild(btn);
+        });
+
+        // Update Feedback visibility
+        this.toggleFeedback(this.answers[this.currentQ] !== null);
+    },
+
+    selectAnswer(index) {
+        if (this.answers[this.currentQ] !== null) return; // Ya respondido
+
+        this.answers[this.currentQ] = index;
+        const q = finalQuizData[this.currentQ];
+
+        if (index === q.a) {
+            this.score++;
+            this.updateScore();
+        }
+
+        this.renderProgressBar();
+        this.loadQuestion(); // Recargar para mostrar estados
+    },
+
+    toggleFeedback(show) {
+        const area = document.getElementById('feedback-area');
+        const icon = document.getElementById('feedback-icon');
+        const title = document.getElementById('feedback-title');
+        const text = document.getElementById('feedback-text');
+        const q = finalQuizData[this.currentQ];
+        const userAns = this.answers[this.currentQ];
+
+        if (show && userAns !== null) {
+            area.classList.remove('hidden');
+            area.classList.remove('bg-emerald-50', 'border-emerald-400', 'text-emerald-800', 'bg-rose-50', 'border-rose-400', 'text-rose-800');
+            
+            if (userAns === q.a) {
+                area.classList.add('bg-emerald-50', 'border-emerald-500', 'text-emerald-900');
+                icon.innerHTML = '<i class="fas fa-check-circle text-emerald-500"></i>';
+                title.textContent = "¡Correcto!";
+            } else {
+                area.classList.add('bg-rose-50', 'border-rose-500', 'text-rose-900');
+                icon.innerHTML = '<i class="fas fa-times-circle text-rose-500"></i>';
+                title.textContent = "Incorrecto";
+            }
+            text.textContent = q.exp;
+        } else {
+            area.classList.add('hidden');
+        }
+    },
+
+    nextQuestion() {
+        if (this.currentQ < finalQuizData.length - 1) {
+            this.currentQ++;
+            this.initQuestionView();
+        } else {
+            this.showResults();
+        }
+    },
+
+    prevQuestion() {
+        if (this.currentQ > 0) {
+            this.currentQ--;
+            this.initQuestionView();
+        }
+    },
+
+    initQuestionView() {
+        // Pequeña animación al cambiar
+        const container = document.getElementById('quiz-container');
+        container.classList.remove('fade-in');
+        void container.offsetWidth; // trigger reflow
+        container.classList.add('fade-in');
+        
+        this.loadQuestion();
+        this.updateNavButtons();
+    },
+
+    updateNavButtons() {
+        const prev = document.getElementById('btn-prev');
+        const next = document.getElementById('btn-next');
+        
+        prev.disabled = this.currentQ === 0;
+        
+        if (this.currentQ === finalQuizData.length - 1) {
+            next.innerHTML = 'Finalizar <i class="fas fa-flag-checkered"></i>';
+            next.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            next.classList.add('bg-emerald-500', 'hover:bg-emerald-600');
+        } else {
+            next.innerHTML = 'Siguiente <i class="fas fa-arrow-right"></i>';
+            next.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            next.classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
+        }
+    },
+
+    renderProgressBar() {
+        const total = finalQuizData.length;
+        const answered = this.answers.filter(a => a !== null).length;
+        const percent = (answered / total) * 100;
+        document.getElementById('progress-bar').style.width = `${percent}%`;
+    },
+
+    updateScore() {
+        document.getElementById('score-counter').textContent = `Puntos: ${this.score}`;
+    },
+
+    showResults() {
+        document.getElementById('quiz-container').style.display = 'none';
+        const results = document.getElementById('results-screen');
+        results.classList.remove('hidden');
+        results.style.display = 'block'; // Forzar display
+        
+        document.getElementById('final-score').textContent = `${Math.round((this.score / finalQuizData.length) * 100)}%`;
+        document.getElementById('final-correct').textContent = this.score;
+        document.getElementById('final-incorrect').textContent = finalQuizData.length - this.score;
+    }
+};
+
+// Iniciar app
+app.init();
+</script>
+</body>
+</html>
