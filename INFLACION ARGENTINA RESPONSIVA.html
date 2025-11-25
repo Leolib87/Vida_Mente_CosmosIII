@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="">
+<html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,69 +8,116 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            transition: background-color 0.3s, color 0.3s;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: color 0.3s;
+            overflow-x: hidden;
         }
-        .theme-switch-wrapper { display: flex; align-items: center; }
-        .theme-switch { display: inline-block; height: 24px; position: relative; width: 48px; }
-        .theme-switch input { display:none; }
-        .slider { background-color: #ccc; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; }
-        .slider:before { background-color: #fff; bottom: 4px; content: ""; height: 16px; left: 4px; position: absolute; transition: .4s; width: 16px; }
-        input:checked + .slider { background-color: #1d4ed8; }
-        input:checked + .slider:before { transform: translateX(24px); }
-        .slider.round { border-radius: 34px; }
-        .slider.round:before { border-radius: 50%; }
-        .country-btn.active {
-            background-color: #1d4ed8;
-            color: white;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        
+        /* Canvas de fondo para Three.js */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            transition: background-color 0.5s ease;
         }
-        html.dark .country-btn.active { background-color: #3b82f6; }
 
-        /* Estilos para los íconos de sol y luna */
-        .slider svg {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            transition: opacity 0.3s ease;
-            pointer-events: none;
+        /* Utilidades Glassmorphism mejoradas */
+        .glass {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
-        .sun-icon {
-            left: 5px;
-            opacity: 1;
+        .dark .glass {
+            background: rgba(15, 23, 42, 0.6); /* Slate-900 con transparencia */
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
         }
-        .moon-icon {
-            right: 5px;
-            opacity: 0;
+
+        /* Scrollbar personalizado */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
         }
-        input:checked + .slider .sun-icon {
-            opacity: 0;
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
         }
-        input:checked + .slider .moon-icon {
-            opacity: 1;
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(156, 163, 175, 0.5);
+            border-radius: 20px;
+        }
+        
+        /* Interruptor de Tema */
+        .theme-switch-wrapper { display: flex; align-items: center; }
+        .theme-switch { display: inline-block; height: 28px; position: relative; width: 56px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: #e2e8f0; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; border-radius: 34px; border: 1px solid #cbd5e1; }
+        .slider:before { background-color: #fff; bottom: 3px; content: ""; height: 20px; left: 3px; position: absolute; transition: .4s; width: 20px; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        
+        input:checked + .slider { background-color: #1e293b; border-color: #475569; }
+        input:checked + .slider:before { transform: translateX(28px); background-color: #3b82f6; }
+        
+        /* Iconos en el slider */
+        .slider svg { position: absolute; top: 50%; transform: translateY(-50%); transition: opacity 0.3s ease; pointer-events: none; width: 14px; height: 14px; }
+        .sun-icon { left: 6px; opacity: 1; color: #f59e0b; }
+        .moon-icon { right: 6px; opacity: 0; color: #94a3b8; }
+        
+        input:checked + .slider .sun-icon { opacity: 0; }
+        input:checked + .slider .moon-icon { opacity: 1; color: #e2e8f0; }
+
+        /* Estilos del Selector de Países */
+        .country-btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .country-btn.active {
+            background-color: #2563eb;
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        html.dark .country-btn.active {
+            background-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
         }
     </style>
     <script>
         tailwind.config = { darkMode: 'class' }
     </script>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 antialiased">
+<body class="text-gray-800 dark:text-gray-200 antialiased selection:bg-blue-100 dark:selection:bg-blue-900/50">
 
-    <div class="container mx-auto p-4 md:p-8">
-        <header class="relative text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Inflación Mensual en Sudamérica</h1>
-            <p class="text-gray-600 dark:text-gray-400 mt-2">Visualizador de datos de 2019 a 2025</p>
-            <div class="absolute top-0 right-0 theme-switch-wrapper">
+    <!-- Fondo Three.js -->
+    <div id="bg-canvas"></div>
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl relative z-10">
+        <!-- Encabezado -->
+        <header class="relative flex flex-col md:flex-row justify-between items-center mb-10 gap-4 glass rounded-3xl p-6 shadow-2xl border-t border-white/20 dark:border-white/5">
+            <div class="text-center md:text-left">
+                <!-- Título con color sólido -->
+                <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight drop-shadow-sm">
+                    Inflación Sudamérica
+                </h1>
+                <p class="text-gray-600 dark:text-gray-300 mt-1 font-medium tracking-wide text-sm uppercase opacity-80">Análisis de precios 2019 - 2025</p>
+            </div>
+            
+            <!-- Botón Modo Oscuro -->
+            <div class="theme-switch-wrapper">
                 <label class="theme-switch" for="checkbox">
-                    <input type="checkbox" id="checkbox" />
-                    <div class="slider round">
-                        <!-- Icono Sol -->
-                        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-                        <!-- Icono Luna -->
-                        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f1f5f9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                    <input type="checkbox" id="checkbox" checked />
+                    <div class="slider">
+                        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                     </div>
                 </label>
             </div>
@@ -78,61 +125,293 @@
 
         <main>
             <!-- Selector de País -->
-            <div class="flex justify-center flex-wrap gap-2 md:gap-4 mb-8" id="country-selector">
-                <button class="country-btn active px-4 py-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition-all duration-300" data-country="Argentina">Argentina</button>
-                <button class="country-btn px-4 py-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition-all duration-300" data-country="Chile">Chile</button>
-                <button class="country-btn px-4 py-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition-all duration-300" data-country="Peru">Perú</button>
-                <button class="country-btn px-4 py-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition-all duration-300" data-country="Colombia">Colombia</button>
-                <button class="country-btn px-4 py-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition-all duration-300" data-country="Brasil">Brasil</button>
+            <div class="glass p-2 rounded-2xl shadow-lg mb-8 overflow-x-auto border-t border-white/20 dark:border-white/5">
+                <div class="flex justify-between md:justify-center min-w-max md:min-w-0 gap-2" id="country-selector">
+                    <button class="country-btn active flex-1 px-5 py-3 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50 transition-all duration-200 whitespace-nowrap" data-country="Argentina">Argentina</button>
+                    <button class="country-btn flex-1 px-5 py-3 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50 transition-all duration-200 whitespace-nowrap" data-country="Chile">Chile</button>
+                    <button class="country-btn flex-1 px-5 py-3 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50 transition-all duration-200 whitespace-nowrap" data-country="Peru">Perú</button>
+                    <button class="country-btn flex-1 px-5 py-3 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50 transition-all duration-200 whitespace-nowrap" data-country="Colombia">Colombia</button>
+                    <button class="country-btn flex-1 px-5 py-3 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50 transition-all duration-200 whitespace-nowrap" data-country="Brasil">Brasil</button>
+                </div>
             </div>
             
             <!-- Tarjetas de Resumen -->
-            <div id="summary-cards" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg text-center">
-                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Inflación Anual (Año en Foco)</h3>
-                    <p id="annual-inflation" class="text-2xl font-bold text-gray-900 dark:text-white mt-1">- %</p>
+            <div id="summary-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- Card 1 -->
+                <div class="glass p-6 rounded-2xl shadow-lg transition-all hover:-translate-y-1 duration-300 group border-t-4 border-blue-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Inflación Anual</h3>
+                        <div class="p-2 bg-blue-50 dark:bg-blue-500/20 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        </div>
+                    </div>
+                    <p id="annual-inflation" class="text-3xl font-black text-gray-900 dark:text-white">- %</p>
+                    <p class="text-xs text-gray-400 mt-2 font-medium">Calculado al pasar el cursor</p>
                 </div>
-                 <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg text-center">
-                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Pico de Inflación</h3>
-                    <p id="peak-inflation" class="text-2xl font-bold text-red-500 dark:text-red-400 mt-1">- %</p>
+                
+                <!-- Card 2 -->
+                <div class="glass p-6 rounded-2xl shadow-lg transition-all hover:-translate-y-1 duration-300 group border-t-4 border-red-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Pico Máximo</h3>
+                        <div class="p-2 bg-red-50 dark:bg-red-500/20 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                        </div>
+                    </div>
+                    <p id="peak-inflation" class="text-3xl font-black text-gray-900 dark:text-white">- %</p>
+                    <p class="text-xs text-red-500 mt-2 font-bold">Registro más alto</p>
                 </div>
-                 <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg text-center">
-                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Mínimo de Inflación</h3>
-                    <p id="min-inflation" class="text-2xl font-bold text-green-500 dark:text-green-400 mt-1">- %</p>
+                
+                <!-- Card 3 -->
+                <div class="glass p-6 rounded-2xl shadow-lg transition-all hover:-translate-y-1 duration-300 group border-t-4 border-green-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Punto Mínimo</h3>
+                        <div class="p-2 bg-green-50 dark:bg-green-500/20 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-down"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>
+                        </div>
+                    </div>
+                    <p id="min-inflation" class="text-3xl font-black text-gray-900 dark:text-white">- %</p>
+                    <p class="text-xs text-green-500 mt-2 font-bold">Registro más bajo</p>
                 </div>
             </div>
 
             <!-- Contenedor del Gráfico -->
-            <div class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-lg mb-8">
-                <canvas id="inflationChart" height="400"></canvas>
+            <div class="glass p-4 md:p-6 rounded-2xl shadow-xl mb-8 border-t border-white/20 dark:border-white/5">
+                <div class="relative h-[450px] w-full">
+                    <canvas id="inflationChart"></canvas>
+                </div>
             </div>
 
             <!-- Contenedor de la Tabla de Datos -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-                 <h2 id="table-title" class="text-xl font-bold text-gray-800 dark:text-white p-4 md:p-6 border-b border-gray-200 dark:border-gray-700">Datos Detallados</h2>
-                <div class="max-h-[500px] overflow-y-auto">
-                    <table class="w-full text-left">
-                        <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
+            <div class="glass rounded-2xl shadow-xl overflow-hidden border-t border-white/20 dark:border-white/5">
+                <div class="p-6 border-b border-gray-200/50 dark:border-gray-700/50 flex items-center gap-3 bg-gray-50/30 dark:bg-gray-800/30">
+                    <div class="p-2 bg-white/80 dark:bg-gray-700/80 rounded-lg shadow-sm backdrop-blur-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-700 dark:text-gray-200"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+                    </div>
+                    <h2 id="table-title" class="text-lg font-bold text-gray-900 dark:text-white">Datos Detallados</h2>
+                </div>
+                <div class="max-h-[500px] overflow-y-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-100/80 dark:bg-gray-800/80 sticky top-0 backdrop-blur-md z-10">
                             <tr>
-                                <th class="p-4 font-semibold text-sm text-gray-600 dark:text-gray-300">Año</th>
-                                <th class="p-4 font-semibold text-sm text-gray-600 dark:text-gray-300">Mes</th>
-                                <th class="p-4 font-semibold text-sm text-gray-600 dark:text-gray-300">Inflación (%)</th>
-                                <th class="p-4 font-semibold text-sm text-gray-600 dark:text-gray-300">Presidente</th>
+                                <th class="p-4 font-bold text-xs uppercase tracking-wider text-gray-600 dark:text-gray-300 border-b border-gray-200/50 dark:border-gray-700/50">Año</th>
+                                <th class="p-4 font-bold text-xs uppercase tracking-wider text-gray-600 dark:text-gray-300 border-b border-gray-200/50 dark:border-gray-700/50">Mes</th>
+                                <th class="p-4 font-bold text-xs uppercase tracking-wider text-gray-600 dark:text-gray-300 border-b border-gray-200/50 dark:border-gray-700/50 text-right">Inflación</th>
+                                <th class="p-4 font-bold text-xs uppercase tracking-wider text-gray-600 dark:text-gray-300 border-b border-gray-200/50 dark:border-gray-700/50 text-right">Presidente</th>
                             </tr>
                         </thead>
-                        <tbody id="data-table-body" class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <tbody id="data-table-body" class="divide-y divide-gray-100/50 dark:divide-gray-700/50">
                         </tbody>
                     </table>
                 </div>
             </div>
         </main>
         
-        <footer class="text-center mt-8 text-gray-500 dark:text-gray-400 text-sm">
-            <p>Datos recopilados de fuentes oficiales de cada país (INDEC, INE, INEI, DANE, IBGE).</p>
+        <footer class="text-center mt-12 pb-8 text-gray-500 dark:text-gray-400 text-sm font-medium glass p-4 rounded-xl mx-auto w-fit mb-8">
+            <p>Datos recopilados de fuentes oficiales (INDEC, INE, INEI, DANE, IBGE) | 2019 - 2025</p>
         </footer>
     </div>
 
     <script>
+        // --- THREE.JS BACKGROUND (EFECTO PLEXUS MEJORADO) ---
+        let scene, camera, renderer;
+        let nodes = [], lines;
+        let themeColor = 0x6366f1; // Default Indigo
+
+        function initThreeJS() {
+            const container = document.getElementById('bg-canvas');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            // --- SISTEMA DE PARTÍCULAS Y LÍNEAS (PLEXUS) ---
+            const nodeCount = 70; // Cantidad de nodos interactivos
+            const connectionDistance = 3.5; // Distancia para conectar
+            const nodesGeometry = new THREE.BufferGeometry();
+            const nodePositions = new Float32Array(nodeCount * 3);
+            const nodeVelocities = [];
+
+            // Crear posiciones iniciales y velocidades para nodos
+            for(let i = 0; i < nodeCount; i++) {
+                const x = (Math.random() - 0.5) * 25;
+                const y = (Math.random() - 0.5) * 15;
+                const z = (Math.random() - 0.5) * 10;
+                
+                nodePositions[i * 3] = x;
+                nodePositions[i * 3 + 1] = y;
+                nodePositions[i * 3 + 2] = z;
+
+                nodeVelocities.push({
+                    x: (Math.random() - 0.5) * 0.02,
+                    y: (Math.random() - 0.5) * 0.02,
+                    z: (Math.random() - 0.5) * 0.02
+                });
+            }
+            nodesGeometry.setAttribute('position', new THREE.BufferAttribute(nodePositions, 3));
+
+            // Material para los puntos (Nodos) - Textura generada por canvas para suavidad
+            const nodeMaterial = new THREE.PointsMaterial({
+                color: themeColor,
+                size: 0.15,
+                transparent: true,
+                opacity: 0.8,
+                map: getCircleTexture(),
+                alphaTest: 0.5
+            });
+
+            const nodesMesh = new THREE.Points(nodesGeometry, nodeMaterial);
+            scene.add(nodesMesh);
+
+            // Geometría para las líneas (se actualizará en cada frame)
+            const linesGeometry = new THREE.BufferGeometry();
+            const linesMaterial = new THREE.LineBasicMaterial({
+                color: themeColor,
+                transparent: true,
+                opacity: 0.15,
+                linewidth: 1
+            });
+            lines = new THREE.LineSegments(linesGeometry, linesMaterial);
+            scene.add(lines);
+
+            // --- SISTEMA DE POLVO (FONDO) ---
+            const dustCount = 300;
+            const dustGeometry = new THREE.BufferGeometry();
+            const dustPos = new Float32Array(dustCount * 3);
+            for(let i=0; i<dustCount*3; i++) {
+                dustPos[i] = (Math.random() - 0.5) * 40;
+            }
+            dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+            const dustMaterial = new THREE.PointsMaterial({
+                color: themeColor,
+                size: 0.05,
+                transparent: true,
+                opacity: 0.4,
+                map: getCircleTexture()
+            });
+            const dustMesh = new THREE.Points(dustGeometry, dustMaterial);
+            scene.add(dustMesh);
+
+            camera.position.z = 5;
+
+            // --- INTERACCIÓN MOUSE ---
+            let mouseX = 0;
+            let mouseY = 0;
+            let targetX = 0;
+            let targetY = 0;
+
+            document.addEventListener('mousemove', (event) => {
+                mouseX = (event.clientX - window.innerWidth / 2) * 0.001;
+                mouseY = (event.clientY - window.innerHeight / 2) * 0.001;
+            });
+
+            // --- REDIMENSIONAR ---
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // --- LOOP DE ANIMACIÓN ---
+            function animate() {
+                requestAnimationFrame(animate);
+
+                targetX = mouseX * 0.5;
+                targetY = mouseY * 0.5;
+
+                // Mover Nodos
+                const positions = nodesMesh.geometry.attributes.position.array;
+                for(let i = 0; i < nodeCount; i++) {
+                    // Actualizar posición
+                    positions[i*3] += nodeVelocities[i].x;
+                    positions[i*3+1] += nodeVelocities[i].y;
+                    positions[i*3+2] += nodeVelocities[i].z;
+
+                    // Rebote suave en límites
+                    if(positions[i*3] < -15 || positions[i*3] > 15) nodeVelocities[i].x *= -1;
+                    if(positions[i*3+1] < -10 || positions[i*3+1] > 10) nodeVelocities[i].y *= -1;
+                    if(positions[i*3+2] < -5 || positions[i*3+2] > 5) nodeVelocities[i].z *= -1;
+                }
+                nodesMesh.geometry.attributes.position.needsUpdate = true;
+
+                // Calcular Líneas (Plexus)
+                // Esto es O(N^2), pero con N=70 es muy rápido (~2500 comparaciones)
+                const linePositions = [];
+                // Conectar al mouse (opcional, efecto de atracción visual)
+                // Aquí solo conectamos nodos entre sí
+                for(let i = 0; i < nodeCount; i++) {
+                    for(let j = i + 1; j < nodeCount; j++) {
+                        const dx = positions[i*3] - positions[j*3];
+                        const dy = positions[i*3+1] - positions[j*3+1];
+                        const dz = positions[i*3+2] - positions[j*3+2];
+                        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+                        if(dist < connectionDistance) {
+                            linePositions.push(
+                                positions[i*3], positions[i*3+1], positions[i*3+2],
+                                positions[j*3], positions[j*3+1], positions[j*3+2]
+                            );
+                        }
+                    }
+                }
+                
+                lines.geometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+                
+                // Rotación sutil del grupo basada en mouse
+                scene.rotation.y += 0.001;
+                scene.rotation.x += (targetY - scene.rotation.x) * 0.05;
+                scene.rotation.y += (targetX - scene.rotation.y) * 0.05;
+
+                // Polvo flotando
+                dustMesh.rotation.y -= 0.0005;
+
+                renderer.render(scene, camera);
+            }
+
+            animate();
+
+            // Actualizar colores según tema
+            window.updateThreeTheme = (theme) => {
+                if (theme === 'dark') {
+                    renderer.setClearColor(0x020617, 1); // Slate-950 muy oscuro
+                    const darkColor = 0x6366f1; // Indigo-500
+                    nodesMesh.material.color.setHex(darkColor);
+                    lines.material.color.setHex(darkColor);
+                    lines.material.opacity = 0.15;
+                    dustMesh.material.color.setHex(0x3b82f6); // Blue-500
+                } else {
+                    renderer.setClearColor(0xf1f5f9, 1); // Slate-100
+                    const lightColor = 0x2563eb; // Blue-600
+                    nodesMesh.material.color.setHex(lightColor);
+                    lines.material.color.setHex(lightColor);
+                    lines.material.opacity = 0.1;
+                    dustMesh.material.color.setHex(0x64748b); // Slate-500
+                }
+            };
+        }
+
+        // Helper para crear textura circular
+        function getCircleTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+            
+            const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+            gradient.addColorStop(0, 'rgba(255,255,255,1)');
+            gradient.addColorStop(0.4, 'rgba(255,255,255,0.5)');
+            gradient.addColorStop(1, 'rgba(255,255,255,0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 32, 32);
+            
+            const texture = new THREE.Texture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
         // --- BASE DE DATOS ---
         const inflationData = {
             Argentina: [
@@ -143,6 +422,7 @@
                 { Año: 2023, Mes: 'Enero', Inflacion: 6.0, Presidente: 'Alberto Fernández' }, { Año: 2023, Mes: 'Febrero', Inflacion: 6.6, Presidente: 'Alberto Fernández' }, { Año: 2023, Mes: 'Marzo', Inflacion: 7.7, Presidente: 'Alberto Fernández' }, { Año: 2023, Mes: 'Abril', Inflacion: 8.4, Presidente: 'Alberto Fernández' }, { Año: 2023, Mes: 'Mayo', Inflacion: 7.8, Presidente: 'Alberto Fernández' }, { Año: 2023, Mes: 'Junio', Inflacion: 6.0, Presidente: 'Alberto Fernández' }, { Año: 2023, Mes: 'Julio', Inflacion: 6.3, Presidente: 'Alberto Fernández' }, { Año: 2023, Mes: 'Agosto', Inflacion: 12.4, Presidente: 'Alberto Fernández' }, { Año: 2023, Mes: 'Septiembre', Inflacion: 12.7, Presidente: 'Alberto Fernández' }, { Año: 2023, Mes: 'Octubre', Inflacion: 8.3, Presidente: 'Alberto Fernández' }, { Año: 2023, Mes: 'Noviembre', Inflacion: 12.8, Presidente: 'Alberto Fernández' }, { Año: 2023, Mes: 'Diciembre', Inflacion: 25.5, Presidente: 'Javier Milei' },
                 { Año: 2024, Mes: 'Enero', Inflacion: 20.6, Presidente: 'Javier Milei' }, { Año: 2024, Mes: 'Febrero', Inflacion: 13.2, Presidente: 'Javier Milei' }, { Año: 2024, Mes: 'Marzo', Inflacion: 11.0, Presidente: 'Javier Milei' }, { Año: 2024, Mes: 'Abril', Inflacion: 8.8, Presidente: 'Javier Milei' }, { Año: 2024, Mes: 'Mayo', Inflacion: 4.2, Presidente: 'Javier Milei' }, { Año: 2024, Mes: 'Junio', Inflacion: 6.0, Presidente: 'Javier Milei' }, { Año: 2024, Mes: 'Julio', Inflacion: 5.3, Presidente: 'Javier Milei' }, { Año: 2024, Mes: 'Agosto', Inflacion: 4.9, Presidente: 'Javier Milei' }, { Año: 2024, Mes: 'Septiembre', Inflacion: 3.9, Presidente: 'Javier Milei' }, { Año: 2024, Mes: 'Octubre', Inflacion: 3.1, Presidente: 'Javier Milei' }, { Año: 2024, Mes: 'Noviembre', Inflacion: 2.4, Presidente: 'Javier Milei' }, { Año: 2024, Mes: 'Diciembre', Inflacion: 2.7, Presidente: 'Javier Milei' },
                 { Año: 2025, Mes: 'Enero', Inflacion: 2.2, Presidente: 'Javier Milei' }, { Año: 2025, Mes: 'Febrero', Inflacion: 1.9, Presidente: 'Javier Milei' }, { Año: 2025, Mes: 'Marzo', Inflacion: 1.8, Presidente: 'Javier Milei' }, { Año: 2025, Mes: 'Abril', Inflacion: 1.7, Presidente: 'Javier Milei' }, { Año: 2025, Mes: 'Mayo', Inflacion: 1.5, Presidente: 'Javier Milei' }, { Año: 2025, Mes: 'Junio', Inflacion: 1.6, Presidente: 'Javier Milei' },
+                { Año: 2025, Mes: 'Julio', Inflacion: 1.9, Presidente: 'Javier Milei' }, { Año: 2025, Mes: 'Agosto', Inflacion: 1.9, Presidente: 'Javier Milei' }, { Año: 2025, Mes: 'Septiembre', Inflacion: 2.1, Presidente: 'Javier Milei' }, { Año: 2025, Mes: 'Octubre', Inflacion: 2.3, Presidente: 'Javier Milei' },
             ],
             Chile: [
                 { Año: 2019, Mes: 'Enero', Inflacion: 0.1, Presidente: 'Sebastián Piñera' }, { Año: 2019, Mes: 'Febrero', Inflacion: 0.0, Presidente: 'Sebastián Piñera' }, { Año: 2019, Mes: 'Marzo', Inflacion: 0.5, Presidente: 'Sebastián Piñera' }, { Año: 2019, Mes: 'Abril', Inflacion: 0.3, Presidente: 'Sebastián Piñera' }, { Año: 2019, Mes: 'Mayo', Inflacion: 0.6, Presidente: 'Sebastián Piñera' }, { Año: 2019, Mes: 'Junio', Inflacion: 0.0, Presidente: 'Sebastián Piñera' }, { Año: 2019, Mes: 'Julio', Inflacion: 0.2, Presidente: 'Sebastián Piñera' }, { Año: 2019, Mes: 'Agosto', Inflacion: 0.2, Presidente: 'Sebastián Piñera' }, { Año: 2019, Mes: 'Septiembre', Inflacion: 0.0, Presidente: 'Sebastián Piñera' }, { Año: 2019, Mes: 'Octubre', Inflacion: 0.8, Presidente: 'Sebastián Piñera' }, { Año: 2019, Mes: 'Noviembre', Inflacion: 0.1, Presidente: 'Sebastián Piñera' }, { Año: 2019, Mes: 'Diciembre', Inflacion: 0.1, Presidente: 'Sebastián Piñera' },
@@ -152,6 +432,7 @@
                 { Año: 2023, Mes: 'Enero', Inflacion: 0.8, Presidente: 'Gabriel Boric' }, { Año: 2023, Mes: 'Febrero', Inflacion: -0.1, Presidente: 'Gabriel Boric' }, { Año: 2023, Mes: 'Marzo', Inflacion: 1.1, Presidente: 'Gabriel Boric' }, { Año: 2023, Mes: 'Abril', Inflacion: 0.3, Presidente: 'Gabriel Boric' }, { Año: 2023, Mes: 'Mayo', Inflacion: 0.1, Presidente: 'Gabriel Boric' }, { Año: 2023, Mes: 'Junio', Inflacion: -0.2, Presidente: 'Gabriel Boric' }, { Año: 2023, Mes: 'Julio', Inflacion: 0.4, Presidente: 'Gabriel Boric' }, { Año: 2023, Mes: 'Agosto', Inflacion: 0.1, Presidente: 'Gabriel Boric' }, { Año: 2023, Mes: 'Septiembre', Inflacion: 0.7, Presidente: 'Gabriel Boric' }, { Año: 2023, Mes: 'Octubre', Inflacion: 0.4, Presidente: 'Gabriel Boric' }, { Año: 2023, Mes: 'Noviembre', Inflacion: 0.7, Presidente: 'Gabriel Boric' }, { Año: 2023, Mes: 'Diciembre', Inflacion: -0.5, Presidente: 'Gabriel Boric' },
                 { Año: 2024, Mes: 'Enero', Inflacion: 0.7, Presidente: 'Gabriel Boric' }, { Año: 2024, Mes: 'Febrero', Inflacion: 0.6, Presidente: 'Gabriel Boric' }, { Año: 2024, Mes: 'Marzo', Inflacion: 0.4, Presidente: 'Gabriel Boric' }, { Año: 2024, Mes: 'Abril', Inflacion: 0.5, Presidente: 'Gabriel Boric' }, { Año: 2024, Mes: 'Mayo', Inflacion: 0.3, Presidente: 'Gabriel Boric' }, { Año: 2024, Mes: 'Junio', Inflacion: 0.1, Presidente: 'Gabriel Boric' }, { Año: 2024, Mes: 'Julio', Inflacion: 0.2, Presidente: 'Gabriel Boric' }, { Año: 2024, Mes: 'Agosto', Inflacion: 0.1, Presidente: 'Gabriel Boric' }, { Año: 2024, Mes: 'Septiembre', Inflacion: 0.1, Presidente: 'Gabriel Boric' }, { Año: 2024, Mes: 'Octubre', Inflacion: 1.0, Presidente: 'Gabriel Boric' }, { Año: 2024, Mes: 'Noviembre', Inflacion: 0.3, Presidente: 'Gabriel Boric' }, { Año: 2024, Mes: 'Diciembre', Inflacion: -0.2, Presidente: 'Gabriel Boric' },
                 { Año: 2025, Mes: 'Enero', Inflacion: 1.1, Presidente: 'Gabriel Boric' }, { Año: 2025, Mes: 'Febrero', Inflacion: 0.4, Presidente: 'Gabriel Boric' }, { Año: 2025, Mes: 'Marzo', Inflacion: 0.5, Presidente: 'Gabriel Boric' }, { Año: 2025, Mes: 'Abril', Inflacion: 0.2, Presidente: 'Gabriel Boric' }, { Año: 2025, Mes: 'Mayo', Inflacion: 0.2, Presidente: 'Gabriel Boric' }, { Año: 2025, Mes: 'Junio', Inflacion: -0.4, Presidente: 'Gabriel Boric' },
+                { Año: 2025, Mes: 'Julio', Inflacion: 0.9, Presidente: 'Gabriel Boric' }, { Año: 2025, Mes: 'Agosto', Inflacion: 0.0, Presidente: 'Gabriel Boric' }, { Año: 2025, Mes: 'Septiembre', Inflacion: 0.4, Presidente: 'Gabriel Boric' }, { Año: 2025, Mes: 'Octubre', Inflacion: 0.0, Presidente: 'Gabriel Boric' },
             ],
             Peru: [
                 { Año: 2019, Mes: 'Enero', Inflacion: 0.05, Presidente: 'Martín Vizcarra' }, { Año: 2019, Mes: 'Febrero', Inflacion: 0.23, Presidente: 'Martín Vizcarra' }, { Año: 2019, Mes: 'Marzo', Inflacion: 0.73, Presidente: 'Martín Vizcarra' }, { Año: 2019, Mes: 'Abril', Inflacion: 0.05, Presidente: 'Martín Vizcarra' }, { Año: 2019, Mes: 'Mayo', Inflacion: -0.16, Presidente: 'Martín Vizcarra' }, { Año: 2019, Mes: 'Junio', Inflacion: 0.11, Presidente: 'Martín Vizcarra' }, { Año: 2019, Mes: 'Julio', Inflacion: 0.20, Presidente: 'Martín Vizcarra' }, { Año: 2019, Mes: 'Agosto', Inflacion: 0.03, Presidente: 'Martín Vizcarra' }, { Año: 2019, Mes: 'Septiembre', Inflacion: 0.01, Presidente: 'Martín Vizcarra' }, { Año: 2019, Mes: 'Octubre', Inflacion: 0.10, Presidente: 'Martín Vizcarra' }, { Año: 2019, Mes: 'Noviembre', Inflacion: 0.11, Presidente: 'Martín Vizcarra' }, { Año: 2019, Mes: 'Diciembre', Inflacion: 0.21, Presidente: 'Martín Vizcarra' },
@@ -161,6 +442,7 @@
                 { Año: 2023, Mes: 'Enero', Inflacion: 0.23, Presidente: 'Dina Boluarte' }, { Año: 2023, Mes: 'Febrero', Inflacion: 0.29, Presidente: 'Dina Boluarte' }, { Año: 2023, Mes: 'Marzo', Inflacion: 1.25, Presidente: 'Dina Boluarte' }, { Año: 2023, Mes: 'Abril', Inflacion: -0.30, Presidente: 'Dina Boluarte' }, { Año: 2023, Mes: 'Mayo', Inflacion: -0.13, Presidente: 'Dina Boluarte' }, { Año: 2023, Mes: 'Junio', Inflacion: 0.14, Presidente: 'Dina Boluarte' }, { Año: 2023, Mes: 'Julio', Inflacion: 0.39, Presidente: 'Dina Boluarte' }, { Año: 2023, Mes: 'Agosto', Inflacion: 0.38, Presidente: 'Dina Boluarte' }, { Año: 2023, Mes: 'Septiembre', Inflacion: 0.02, Presidente: 'Dina Boluarte' }, { Año: 2023, Mes: 'Octubre', Inflacion: 0.32, Presidente: 'Dina Boluarte' }, { Año: 2023, Mes: 'Noviembre', Inflacion: 0.16, Presidente: 'Dina Boluarte' }, { Año: 2023, Mes: 'Diciembre', Inflacion: 0.41, Presidente: 'Dina Boluarte' },
                 { Año: 2024, Mes: 'Marzo', Inflacion: 0.94, Presidente: 'Dina Boluarte' }, { Año: 2024, Mes: 'Junio', Inflacion: 0.07, Presidente: 'Dina Boluarte' }, { Año: 2024, Mes: 'Agosto', Inflacion: 0.31, Presidente: 'Dina Boluarte' }, { Año: 2024, Mes: 'Noviembre', Inflacion: 0.07, Presidente: 'Dina Boluarte' }, { Año: 2024, Mes: 'Diciembre', Inflacion: 0.14, Presidente: 'Dina Boluarte' },
                 { Año: 2025, Mes: 'Marzo', Inflacion: 0.76, Presidente: 'Dina Boluarte' }, { Año: 2025, Mes: 'Abril', Inflacion: 0.32, Presidente: 'Dina Boluarte' }, { Año: 2025, Mes: 'Mayo', Inflacion: -0.06, Presidente: 'Dina Boluarte' }, { Año: 2025, Mes: 'Junio', Inflacion: 0.08, Presidente: 'Dina Boluarte' },
+                { Año: 2025, Mes: 'Julio', Inflacion: 0.18, Presidente: 'Dina Boluarte' }, { Año: 2025, Mes: 'Agosto', Inflacion: -0.20, Presidente: 'Dina Boluarte' }, { Año: 2025, Mes: 'Septiembre', Inflacion: 0.04, Presidente: 'Dina Boluarte' },
             ],
             Colombia: [
                 { Año: 2019, Mes: 'Enero', Inflacion: 0.60, Presidente: 'Iván Duque' }, { Año: 2019, Mes: 'Febrero', Inflacion: 0.57, Presidente: 'Iván Duque' }, { Año: 2019, Mes: 'Marzo', Inflacion: 0.49, Presidente: 'Iván Duque' }, { Año: 2019, Mes: 'Abril', Inflacion: 0.50, Presidente: 'Iván Duque' }, { Año: 2019, Mes: 'Mayo', Inflacion: 0.31, Presidente: 'Iván Duque' }, { Año: 2019, Mes: 'Junio', Inflacion: 0.27, Presidente: 'Iván Duque' }, { Año: 2019, Mes: 'Julio', Inflacion: 0.22, Presidente: 'Iván Duque' }, { Año: 2019, Mes: 'Agosto', Inflacion: 0.13, Presidente: 'Iván Duque' }, { Año: 2019, Mes: 'Septiembre', Inflacion: 0.23, Presidente: 'Iván Duque' }, { Año: 2019, Mes: 'Octubre', Inflacion: 0.10, Presidente: 'Iván Duque' }, { Año: 2019, Mes: 'Noviembre', Inflacion: 0.10, Presidente: 'Iván Duque' }, { Año: 2019, Mes: 'Diciembre', Inflacion: 0.26, Presidente: 'Iván Duque' },
@@ -170,6 +452,7 @@
                 { Año: 2023, Mes: 'Enero', Inflacion: 1.78, Presidente: 'Gustavo Petro' }, { Año: 2023, Mes: 'Febrero', Inflacion: 1.66, Presidente: 'Gustavo Petro' }, { Año: 2023, Mes: 'Marzo', Inflacion: 1.05, Presidente: 'Gustavo Petro' }, { Año: 2023, Mes: 'Abril', Inflacion: 0.78, Presidente: 'Gustavo Petro' }, { Año: 2023, Mes: 'Mayo', Inflacion: 0.43, Presidente: 'Gustavo Petro' }, { Año: 2023, Mes: 'Junio', Inflacion: 0.30, Presidente: 'Gustavo Petro' }, { Año: 2023, Mes: 'Julio', Inflacion: 0.50, Presidente: 'Gustavo Petro' }, { Año: 2023, Mes: 'Agosto', Inflacion: 0.70, Presidente: 'Gustavo Petro' }, { Año: 2023, Mes: 'Septiembre', Inflacion: 0.54, Presidente: 'Gustavo Petro' }, { Año: 2023, Mes: 'Octubre', Inflacion: 0.25, Presidente: 'Gustavo Petro' }, { Año: 2023, Mes: 'Noviembre', Inflacion: 0.47, Presidente: 'Gustavo Petro' }, { Año: 2023, Mes: 'Diciembre', Inflacion: 0.45, Presidente: 'Gustavo Petro' },
                 { Año: 2024, Mes: 'Enero', Inflacion: 0.92, Presidente: 'Gustavo Petro' }, { Año: 2024, Mes: 'Febrero', Inflacion: 1.09, Presidente: 'Gustavo Petro' }, { Año: 2024, Mes: 'Marzo', Inflacion: 0.70, Presidente: 'Gustavo Petro' }, { Año: 2024, Mes: 'Abril', Inflacion: 0.59, Presidente: 'Gustavo Petro' }, { Año: 2024, Mes: 'Mayo', Inflacion: 0.43, Presidente: 'Gustavo Petro' }, { Año: 2024, Mes: 'Junio', Inflacion: 0.24, Presidente: 'Gustavo Petro' }, { Año: 2024, Mes: 'Julio', Inflacion: 0.42, Presidente: 'Gustavo Petro' }, { Año: 2024, Mes: 'Agosto', Inflacion: 0.08, Presidente: 'Gustavo Petro' }, { Año: 2024, Mes: 'Septiembre', Inflacion: 0.32, Presidente: 'Gustavo Petro' }, { Año: 2024, Mes: 'Octubre', Inflacion: 0.31, Presidente: 'Gustavo Petro' }, { Año: 2024, Mes: 'Noviembre', Inflacion: 0.34, Presidente: 'Gustavo Petro' }, { Año: 2024, Mes: 'Diciembre', Inflacion: 0.71, Presidente: 'Gustavo Petro' },
                 { Año: 2025, Mes: 'Enero', Inflacion: 0.99, Presidente: 'Gustavo Petro' }, { Año: 2025, Mes: 'Febrero', Inflacion: 1.01, Presidente: 'Gustavo Petro' }, { Año: 2025, Mes: 'Marzo', Inflacion: 0.47, Presidente: 'Gustavo Petro' }, { Año: 2025, Mes: 'Abril', Inflacion: 0.51, Presidente: 'Gustavo Petro' }, { Año: 2025, Mes: 'Mayo', Inflacion: 0.20, Presidente: 'Gustavo Petro' }, { Año: 2025, Mes: 'Junio', Inflacion: 0.30, Presidente: 'Gustavo Petro' },
+                { Año: 2025, Mes: 'Julio', Inflacion: 0.40, Presidente: 'Gustavo Petro' }, { Año: 2025, Mes: 'Agosto', Inflacion: 0.25, Presidente: 'Gustavo Petro' }, { Año: 2025, Mes: 'Septiembre', Inflacion: 0.32, Presidente: 'Gustavo Petro' }, { Año: 2025, Mes: 'Octubre', Inflacion: 0.18, Presidente: 'Gustavo Petro' },
             ],
             Brasil: [
                 { Año: 2019, Mes: 'Enero', Inflacion: 0.32, Presidente: 'Jair Bolsonaro' }, { Año: 2019, Mes: 'Febrero', Inflacion: 0.43, Presidente: 'Jair Bolsonaro' }, { Año: 2019, Mes: 'Marzo', Inflacion: 0.75, Presidente: 'Jair Bolsonaro' }, { Año: 2019, Mes: 'Abril', Inflacion: 0.57, Presidente: 'Jair Bolsonaro' }, { Año: 2019, Mes: 'Mayo', Inflacion: 0.13, Presidente: 'Jair Bolsonaro' }, { Año: 2019, Mes: 'Junio', Inflacion: 0.01, Presidente: 'Jair Bolsonaro' }, { Año: 2019, Mes: 'Julio', Inflacion: 0.19, Presidente: 'Jair Bolsonaro' }, { Año: 2019, Mes: 'Agosto', Inflacion: 0.11, Presidente: 'Jair Bolsonaro' }, { Año: 2019, Mes: 'Septiembre', Inflacion: -0.04, Presidente: 'Jair Bolsonaro' }, { Año: 2019, Mes: 'Octubre', Inflacion: 0.10, Presidente: 'Jair Bolsonaro' }, { Año: 2019, Mes: 'Noviembre', Inflacion: 0.51, Presidente: 'Jair Bolsonaro' }, { Año: 2019, Mes: 'Diciembre', Inflacion: 1.15, Presidente: 'Jair Bolsonaro' },
@@ -179,28 +462,27 @@
                 { Año: 2023, Mes: 'Enero', Inflacion: 0.53, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2023, Mes: 'Febrero', Inflacion: 0.84, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2023, Mes: 'Marzo', Inflacion: 0.71, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2023, Mes: 'Abril', Inflacion: 0.61, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2023, Mes: 'Mayo', Inflacion: 0.23, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2023, Mes: 'Junio', Inflacion: -0.08, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2023, Mes: 'Julio', Inflacion: 0.12, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2023, Mes: 'Agosto', Inflacion: 0.23, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2023, Mes: 'Septiembre', Inflacion: 0.26, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2023, Mes: 'Octubre', Inflacion: 0.24, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2023, Mes: 'Noviembre', Inflacion: 0.28, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2023, Mes: 'Diciembre', Inflacion: 0.56, Presidente: 'Luiz Inácio Lula da Silva' },
                 { Año: 2024, Mes: 'Enero', Inflacion: 0.42, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2024, Mes: 'Febrero', Inflacion: 0.83, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2024, Mes: 'Marzo', Inflacion: 0.16, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2024, Mes: 'Abril', Inflacion: 0.38, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2024, Mes: 'Mayo', Inflacion: 0.46, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2024, Mes: 'Junio', Inflacion: 0.21, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2024, Mes: 'Julio', Inflacion: 0.38, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2024, Mes: 'Agosto', Inflacion: -0.02, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2024, Mes: 'Septiembre', Inflacion: 0.44, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2024, Mes: 'Octubre', Inflacion: 0.56, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2024, Mes: 'Noviembre', Inflacion: 0.39, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2024, Mes: 'Diciembre', Inflacion: 0.52, Presidente: 'Luiz Inácio Lula da Silva' },
                 { Año: 2025, Mes: 'Enero', Inflacion: 0.16, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2025, Mes: 'Febrero', Inflacion: 1.31, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2025, Mes: 'Marzo', Inflacion: 0.56, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2025, Mes: 'Abril', Inflacion: 0.43, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2025, Mes: 'Mayo', Inflacion: 0.26, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2025, Mes: 'Junio', Inflacion: 0.24, Presidente: 'Luiz Inácio Lula da Silva' },
+                { Año: 2025, Mes: 'Julio', Inflacion: 0.26, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2025, Mes: 'Agosto', Inflacion: -0.11, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2025, Mes: 'Septiembre', Inflacion: 0.48, Presidente: 'Luiz Inácio Lula da Silva' }, { Año: 2025, Mes: 'Octubre', Inflacion: 0.09, Presidente: 'Luiz Inácio Lula da Silva' },
             ],
         };
 
         // --- CONFIGURACIÓN DE COLORES ---
         const countryColors = {
-            Argentina: 'rgba(101, 179, 239, 1)',
-            Chile: 'rgba(220, 38, 38, 1)',
-            Peru: 'rgba(217, 70, 239, 1)',
-            Colombia: 'rgba(250, 204, 21, 1)',
-            Brasil: 'rgba(34, 197, 94, 1)'
+            Argentina: 'rgba(37, 99, 235, 1)', // Azul intenso
+            Chile: 'rgba(220, 38, 38, 1)', // Rojo
+            Peru: 'rgba(192, 38, 211, 1)', // Fucsia
+            Colombia: 'rgba(234, 179, 8, 1)', // Amarillo
+            Brasil: 'rgba(22, 163, 74, 1)' // Verde
         };
 
         // --- INICIALIZACIÓN ---
         let currentChart;
-        let currentCountry = 'Argentina'; // Mantener el estado del país actual
+        let currentCountry = 'Argentina'; 
         const ctx = document.getElementById('inflationChart').getContext('2d');
         const tableBody = document.getElementById('data-table-body');
         const tableTitle = document.getElementById('table-title');
         
-        // Registrar los plugins globalmente
         Chart.register(ChartDataLabels, Chart.registry.plugins.get('annotation'));
-
 
         // --- FUNCIONES AUXILIARES ---
         function calculateAnnualInflation(country, year) {
@@ -246,11 +528,13 @@
                         content: p.name,
                         display: true,
                         position: 'start',
-                        color: isDarkMode ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.3)',
+                        color: isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.4)',
                         font: {
-                            size: 10,
-                            weight: 'bold'
-                        }
+                            size: 11,
+                            weight: 'bold',
+                            family: "'Plus Jakarta Sans', sans-serif"
+                        },
+                        yAdjust: 10
                     }
                 };
             });
@@ -263,9 +547,9 @@
                             type: 'line',
                             xMin: i - 0.5,
                             xMax: i - 0.5,
-                            borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+                            borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
                             borderWidth: 1,
-                            borderDash: [6, 6],
+                            borderDash: [4, 4],
                         };
                     }
                     lastYear = d.Año;
@@ -275,7 +559,6 @@
             return annotations;
         }
 
-
         // --- FUNCIÓN PRINCIPAL DE ACTUALIZACIÓN ---
         function updateChartAndTable(country) {
             currentCountry = country;
@@ -283,17 +566,17 @@
             
             // Actualizar tabla
             tableBody.innerHTML = '';
-            data.forEach(row => {
+            data.forEach((row, index) => {
                 const tr = document.createElement('tr');
+                tr.className = index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50/50 dark:bg-gray-800/50';
                 tr.innerHTML = `
-                    <td class="p-4 text-sm">${row.Año}</td>
-                    <td class="p-4 text-sm">${row.Mes}</td>
-                    <td class="p-4 text-sm font-medium ${row.Inflacion >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}">${row.Inflacion.toFixed(2)}%</td>
-                    <td class="p-4 text-sm text-gray-500 dark:text-gray-400">${row.Presidente}</td>
+                    <td class="p-4 text-sm font-medium text-gray-900 dark:text-gray-200 border-b border-gray-100 dark:border-gray-800/50">${row.Año}</td>
+                    <td class="p-4 text-sm text-gray-600 dark:text-gray-400 border-b border-gray-100 dark:border-gray-800/50">${row.Mes}</td>
+                    <td class="p-4 text-sm font-bold text-right border-b border-gray-100 dark:border-gray-800/50 ${row.Inflacion >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}">${row.Inflacion.toFixed(2)}%</td>
+                    <td class="p-4 text-sm text-right text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-800/50">${row.Presidente}</td>
                 `;
                 tableBody.appendChild(tr);
             });
-            tableTitle.textContent = `Datos Detallados - ${country}`;
             
             // Actualizar tarjetas de resumen
             const peak = Math.max(...data.map(d => d.Inflacion));
@@ -301,7 +584,6 @@
             document.getElementById('peak-inflation').textContent = `${peak.toFixed(2)}%`;
             document.getElementById('min-inflation').textContent = `${min.toFixed(2)}%`;
             document.getElementById('annual-inflation').textContent = '- %';
-
 
             // Actualizar gráfico
             const labels = data.map(d => `${d.Mes.substring(0,3)} ${d.Año}`);
@@ -312,32 +594,50 @@
             }
             
             const isDarkMode = document.documentElement.classList.contains('dark');
-            const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-            const textColor = isDarkMode ? '#e5e7eb' : '#374151';
-            const datalabelColor = isDarkMode ? '#cbd5e1' : '#4b5563';
+            const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+            const textColor = isDarkMode ? '#9ca3af' : '#6b7280';
+            const datalabelColor = isDarkMode ? '#e5e7eb' : '#1f2937';
             const annotations = generateAnnotations(data, isDarkMode);
 
+            // Crear gradiente para el relleno
+            const gradientCtx = ctx.createLinearGradient(0, 0, 0, 400);
+            const baseColor = countryColors[country] || 'rgba(59, 130, 246, 1)';
+            // Extraer RGB del color base para crear el gradiente
+            const rgbMatch = baseColor.match(/\d+, \d+, \d+/);
+            const rgbValues = rgbMatch ? rgbMatch[0] : '59, 130, 246';
+            
+            gradientCtx.addColorStop(0, `rgba(${rgbValues}, 0.5)`);
+            gradientCtx.addColorStop(1, `rgba(${rgbValues}, 0.05)`);
 
             currentChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: `Inflación Mensual de ${country}`,
+                        label: `Inflación Mensual`,
                         data: chartData,
-                        borderColor: countryColors[country] || 'rgba(59, 130, 246, 1)',
-                        backgroundColor: (countryColors[country] || 'rgba(59, 130, 246, 1)').replace('1)', '0.1)'),
+                        borderColor: baseColor,
+                        backgroundColor: gradientCtx,
                         borderWidth: 2,
-                        pointBackgroundColor: countryColors[country] || 'rgba(59, 130, 246, 1)',
-                        pointRadius: 4,
-                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#fff', // Punto blanco
+                        pointBorderColor: baseColor, // Borde del color del país
+                        pointBorderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: baseColor,
+                        pointHoverBorderColor: '#fff',
                         fill: true,
-                        tension: 0.3
+                        tension: 0.4 // Curva suave
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    },
                     onHover: (event, chartElement) => {
                         if (chartElement.length > 0) {
                             const index = chartElement[0].index;
@@ -349,14 +649,21 @@
                     scales: {
                         y: {
                             beginAtZero: false,
-                            grid: { color: gridColor },
-                            ticks: { color: textColor },
-                            title: { display: true, text: 'Porcentaje de Inflación (%)', color: textColor }
+                            grid: { color: gridColor, borderDash: [4, 4] },
+                            ticks: { 
+                                color: textColor,
+                                font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 }
+                            },
+                            title: { display: true, text: 'Inflación (%)', color: textColor, font: { weight: '600' } }
                         },
                         x: {
-                             grid: { color: gridColor },
-                             ticks: { color: textColor },
-                             title: { display: true, text: 'Fecha (Mes y Año)', color: textColor }
+                             grid: { display: false },
+                             ticks: { 
+                                 color: textColor,
+                                 font: { family: "'Plus Jakarta Sans', sans-serif", size: 10 },
+                                 maxRotation: 45,
+                                 minRotation: 45
+                             }
                         }
                     },
                     plugins: {
@@ -366,21 +673,35 @@
                             anchor: 'end',
                             rotation: -45,
                             color: datalabelColor,
-                            font: { size: 8, weight: '600' },
-                            formatter: (value) => value.toFixed(2) + '%',
-                            offset: 8,
-                            display: 'auto'
+                            font: { size: 9, weight: '700', family: "'Plus Jakarta Sans', sans-serif" },
+                            formatter: (value) => value.toFixed(1) + '%',
+                            offset: 4,
+                            display: 'auto',
+                            backgroundColor: isDarkMode ? 'rgba(17, 24, 39, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                            borderRadius: 4,
+                            padding: 2
                         },
                         tooltip: {
+                            backgroundColor: isDarkMode ? 'rgba(17, 24, 39, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                            titleColor: isDarkMode ? '#fff' : '#1f2937',
+                            bodyColor: isDarkMode ? '#d1d5db' : '#4b5563',
+                            borderColor: isDarkMode ? '#374151' : '#e5e7eb',
+                            borderWidth: 1,
+                            padding: 10,
+                            titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 13 },
+                            bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12 },
+                            displayColors: false,
                             callbacks: {
                                 label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) { label += ': '; }
+                                    let label = '';
                                     if (context.parsed.y !== null) { label += `${context.parsed.y.toFixed(2)}%`; }
                                     return label;
                                 },
-                                afterLabel: function(context) {
-                                     const president = data[context.dataIndex].Presidente;
+                                title: function(context) {
+                                    return `${context[0].label}`;
+                                },
+                                afterBody: function(context) {
+                                     const president = data[context[0].dataIndex].Presidente;
                                      return `Presidente: ${president}`;
                                 }
                             }
@@ -394,17 +715,26 @@
         // --- LÓGICA MODO OSCURO ---
         const themeToggle = document.getElementById('checkbox');
         const applyTheme = (theme) => {
+            const html = document.documentElement;
             if (theme === 'dark') {
-                document.documentElement.classList.add('dark');
+                html.classList.add('dark');
                 themeToggle.checked = true;
             } else {
-                document.documentElement.classList.remove('dark');
+                html.classList.remove('dark');
                 themeToggle.checked = false;
             }
+            
+            // Trigger Three.js theme update if available
+            if (window.updateThreeTheme) {
+                window.updateThreeTheme(theme);
+            }
+
+            // Redraw Chart
             if (currentCountry) {
                 updateChartAndTable(currentCountry);
             }
         };
+        
         themeToggle.addEventListener('change', () => {
             const newTheme = themeToggle.checked ? 'dark' : 'light';
             localStorage.setItem('theme', newTheme);
@@ -428,7 +758,8 @@
 
         // --- CARGA INICIAL ---
         window.addEventListener('load', () => {
-            const savedTheme = localStorage.getItem('theme') || 'light';
+            initThreeJS();
+            const savedTheme = localStorage.getItem('theme') || 'dark'; // Default to dark as requested
             applyTheme(savedTheme);
         });
     </script>
