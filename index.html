@@ -1,37 +1,52 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Origen, Cosmos, Vida y Mente | Una Exploración Transdisciplinaria</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root {
-            --primary: #818cf8;
-            --primary-dark: #6366f1;
-            --secondary: #22d3ee;
-            --primary-text: #e5e7eb;
-            --primary-glow: #818cf8;
-            --secondary-glow: #22d3ee;
-            --font-main: 'Inter', sans-serif;
-            --nav-height: 70px;
+            --nav-height: 80px;
+            --amber: #f59e0b;
+            --amber-glow: rgba(245, 158, 11, 0.5);
+            --dark: #020617;
+            --slate-900: #0f172a;
+            --slate-800: #1e293b;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        html { scroll-behavior: smooth; }
 
         body {
-            background-color: #000000;
-            color: var(--primary-text);
-            font-family: var(--font-main);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--dark);
+            color: var(--slate-300);
             line-height: 1.8;
             overflow-x: hidden;
+            margin: 0;
+            padding: 0;
         }
-        
+
+        /* Scrollbar Personalizado */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--dark);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 5px;
+            border: 2px solid var(--dark);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--amber);
+        }
+
         #bg-canvas {
             position: fixed;
             top: 0;
@@ -39,372 +54,529 @@
             width: 100%;
             height: 100%;
             z-index: -1;
-            cursor: crosshair;
+            pointer-events: none;
         }
 
-        .glassmorphism {
-            background: rgba(17, 24, 39, 0.8);
+        .bg-gradient {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 30% 70%, rgba(245,158,11,0.05) 0%, transparent 40%),
+                        radial-gradient(circle at 70% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 40%),
+                        var(--dark);
+            z-index: -2;
+        }
+
+        /* Navegación */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--nav-height);
+            z-index: 110; 
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            /* AJUSTE: Padding derecho reducido (2rem) para mover el nav más a la derecha visualmente en PC */
+            padding: 0 2rem 0 clamp(1rem, 4vw, 4rem); 
+            background: rgba(2, 6, 23, 0.6);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            box-sizing: border-box;
         }
 
-        body.menu-open {
-            overflow: hidden;
-        }
-        
-        nav {
-            position: fixed; top: 0; width: 100%; height: var(--nav-height);
-            z-index: 1000;
-            display: flex; justify-content: center; align-items: center;
-            padding: 0 5%;
-            pointer-events: auto; /* Ensure nav is always clickable */
+        nav.scrolled {
+            background: rgba(2, 6, 23, 0.95);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            border-bottom: 1px solid rgba(245,158,11,0.1);
         }
 
         .nav-content {
+            /* AJUSTE: Aumentado max-width para permitir que el menú se expanda más a la derecha */
+            max-width: 1800px;
+            height: 100%;
+            margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            width: 100%;
-        }
-        
-        .nav-logo a {
-            font-size: 1.3em;
-            font-weight: 700;
-            color: #fff;
-            text-decoration: none;
-            text-shadow: 0 0 8px var(--primary-glow);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
         }
 
-        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 0.5rem;}
-        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
-        nav .nav-container > li > a {
-            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
-            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            height: 100%;
+            margin-left: 2rem;
         }
-        nav .nav-container > li > a:hover, nav .nav-container > li:hover > a { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
-        
-        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
-        
+
+        @media (min-width: 1024px) {
+            .nav-logo {
+                margin-left: 0;
+            }
+        }
+
+        .nav-logo a {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            text-decoration: none;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-logo a:hover {
+            transform: scale(1.02);
+        }
+
+        .nav-logo img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid rgba(245, 158, 11, 0.2);
+            box-shadow: 0 0 15px rgba(245,158,11,0.2);
+            object-fit: cover;
+        }
+
+        .nav-logo span {
+            font-weight: 900;
+            font-size: 1.5rem;
+            letter-spacing: 0.1em;
+            color: #fff;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        /* Desktop Menu */
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            height: 100%;
+            list-style: none; /* Ajuste para usar ul/li */
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-item {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .nav-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--slate-400);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            padding: 0.5rem 0;
+            text-decoration: none; /* Para los <a> que actúan como trigger */
+        }
+
+        .nav-trigger:hover, .nav-item:hover .nav-trigger {
+            color: var(--amber);
+            text-shadow: 0 0 10px var(--amber-glow);
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
+        }
+
+        /* Mega Menu Desktop */
         .mega-menu {
             position: fixed;
             top: var(--nav-height);
             left: 50%;
-            transform: translateX(-50%) scale(0.95);
-            border-radius: 10px; width: auto;
-            min-width: clamp(300px, 80vw, 950px); max-width: 95vw;
-            padding: 2rem; 
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 2rem; 
+            transform: translateX(-50%) translateY(10px);
+            width: min(95vw, 1400px);
+            max-height: calc(100vh - var(--nav-height) - 40px);
+            background: rgba(15, 23, 42, 0.98);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 0 0 1.5rem 1.5rem;
+            padding: 3rem;
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.3s ease, transform 0.3s ease, visibility 0s 0.3s;
-            transform-origin: top center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 3rem;
+            overflow-y: auto;
+            z-index: 40;
         }
         
-        .mega-menu.is-active { 
+        /* Class for user request compatibility */
+        .glassmorphism {
+             /* Already handled by mega-menu backdrop-filter */
+        }
+
+        .nav-item:hover .mega-menu {
             opacity: 1;
             visibility: visible;
-            transform: translateX(-50%) scale(1);
-            transition: opacity 0.3s ease, transform 0.3s ease, visibility 0s 0s;
+            transform: translateX(-50%) translateY(0);
         }
-        
+
         .mega-menu h3 {
-            color: var(--primary-glow); font-size: 1.1em; margin-bottom: 1rem;
-            text-shadow: 0 0 5px var(--primary-glow);
-            border-bottom: 1px solid rgba(129, 140, 248, 0.3);
+            color: var(--amber);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 0.15em;
+            margin-bottom: 1.5rem;
             padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(245, 158, 11, 0.3);
             display: flex;
             align-items: center;
             gap: 0.75rem;
         }
-        .mega-menu ul { display: flex; flex-direction: column; gap: 0.75rem; list-style: none; }
-        .mega-menu li { position: relative; }
+
+        .mega-menu ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
         .mega-menu a {
-            font-size: 0.9em; color: var(--primary-text); text-decoration: none;
-            transition: color 0.3s, padding-left 0.3s, background-color 0.3s;
-            padding: 0.5rem 0.75rem 0.5rem 2rem; border-radius: 4px;
+            color: var(--slate-400);
+            text-decoration: none;
+            font-size: 0.95rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
             display: block;
+            border-left: 2px solid transparent;
+        }
+
+        .mega-menu a:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 2px solid var(--amber);
+            padding-left: 1.2rem;
+        }
+
+        /* Mobile Menu Button */
+        .mobile-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--slate-300);
+            cursor: pointer;
+            padding: 0.5rem;
+            z-index: 101; 
             position: relative;
         }
-        .mega-menu a::before {
-            content: '›';
-            color: var(--primary-glow);
-            position: absolute;
-            left: 0.75rem;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 1.2em;
-            transition: color 0.3s;
-        }
-        .mega-menu a:hover { color: #000; background-color: var(--primary-glow); padding-left: 2.5rem; }
-        .mega-menu a:hover::before { color: #000; }
-        
-        .hero {
-            height: 100vh; min-height: 500px;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            text-align: center; position: relative;
-            padding: 1rem;
-        }
-        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
-        .hero h1 {
-            font-size: clamp(2.5rem, 8vw, 5.5rem); font-weight: 700; color: #fff;
-            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
-            animation: pulse-glow 3s infinite alternate;
-        }
-        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; text-align: justify; }
-        @keyframes pulse-glow {
-            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
-            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .main-container { 
+        .mobile-toggle:hover {
+            color: var(--amber);
+        }
+
+        .mobile-toggle svg {
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        /* Mobile Menu Container */
+        .mobile-menu {
+            position: fixed;
+            inset: 0;
+            background: var(--dark);
+            z-index: 100;
+            padding-top: var(--nav-height);
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+        }
+
+        .mobile-menu.open {
+            transform: translateX(0);
+        }
+
+        .mobile-menu-content {
+            padding: 2rem 1.5rem 6rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Mobile Accordion Styles */
+        .mobile-group {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .mobile-header {
             width: 100%;
-            margin: 0 auto; 
-            padding: var(--nav-height) clamp(1rem, 5vw, 4rem) 1rem;
-            pointer-events: none; /* Let clicks pass through to the canvas */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 0;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            background: none;
+            border: none;
+            text-align: left;
         }
         
-        main, .footer, .section, .hero-content {
-            pointer-events: auto; /* Re-enable pointer events for content */
+        .mobile-header span {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
 
-        main p, .footer p {
-            user-select: text; /* Allow text selection */
-            cursor: default; /* Use default cursor to avoid I-beam on click */
-            text-align: justify; /* Justify all main text */
+        /* Iconos en acordeón móvil */
+        .mobile-header span svg {
+            width: 24px;
+            height: 24px;
+            color: var(--amber);
+            flex-shrink: 0;
         }
 
-        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        .mobile-chevron {
+            transition: transform 0.3s ease;
+            width: 20px;
+            height: 20px;
+            color: var(--amber);
+        }
+
+        .mobile-group.active .mobile-chevron {
+            transform: rotate(180deg);
+        }
+
+        .mobile-links {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+            padding-left: 1rem;
+        }
         
+        .mobile-links-inner {
+            padding-bottom: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem; /* Space between categories */
+        }
+
+        .mobile-category h4 {
+            color: var(--amber);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .mobile-links a {
+            display: block;
+            color: var(--slate-400);
+            padding: 0.5rem 0 0.5rem 1rem;
+            text-decoration: none;
+            font-size: 1rem;
+            border-left: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .mobile-links a:hover {
+            color: #fff;
+            border-left-color: var(--amber);
+        }
+        
+        /* Contenido Principal */
+        .main-content {
+            padding-top: var(--nav-height);
+            position: relative;
+            z-index: 10;
+        }
+
+        .hero {
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 900;
+            line-height: 1.1;
+            background: linear-gradient(to bottom right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .hero p {
+            font-size: clamp(1.1rem, 3vw, 1.5rem);
+            color: var(--slate-400);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
         .section {
-            padding: clamp(1.5rem, 5vw, 2.5rem);
-            border-radius: 12px; margin-bottom: 2rem; position: relative;
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
-        }
-        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
-        
-        .section h2, .section h3, .section p, .section .visualization-container {
-             opacity: 0;
-             transform: translateY(20px);
-             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+            max-width: 1400px;
+            margin: 0 auto 6rem;
+            padding: clamp(2rem, 5vw, 4rem);
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(245, 158, 11, 0.1);
+            border-radius: 2rem;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
         }
 
-        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .visualization-container {
+        .section.visible {
             opacity: 1;
             transform: translateY(0);
         }
-        
-        h2 {
-            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
-            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+
+        .section h2 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            color: #fff;
+            margin-bottom: 1.5rem;
+            font-weight: 800;
         }
-        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2rem 0 1rem 0; }
-        .highlight { color: var(--primary-glow); font-weight: bold; }
-        
-        .visualization-container { 
-            width: 100%; 
-            height: clamp(400px, 60vh, 650px); 
-            margin: 2rem 0; 
-            border-radius: 8px; 
-            background: rgba(0,0,0,0.4); 
-            border: 1px solid rgba(129, 140, 248, 0.2);
+
+        .section p {
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            color: var(--slate-300);
+            max-width: 80ch;
+        }
+
+        .visualization-container {
+            width: 100%;
+            height: clamp(400px, 60vh, 700px);
+            background: rgba(2, 6, 23, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1rem;
+            margin-top: 3rem;
             overflow: hidden;
+            position: relative;
         }
-        .node circle { 
-            stroke: var(--primary-glow); 
-            stroke-width: 1.5px; 
-            fill: var(--primary-text); 
-            transition: all 0.3s ease; 
-            cursor: pointer; 
+
+        .footer {
+            padding: 6rem 2rem;
+            text-align: center;
+            background: rgba(2, 6, 23, 0.9);
+            border-top: 1px solid rgba(255,255,255,0.05);
         }
-        .node:hover circle { 
-            fill: #FFFFFF; 
-            r: 12; 
-            filter: drop-shadow(0 0 8px var(--primary-glow)); 
-        }
-        .node text { 
-            fill: var(--primary-glow); 
-            font-family: var(--font-main); 
-            text-shadow: 0 0 5px var(--secondary-glow); 
-            pointer-events: none; 
-            font-size: 0.8em;
-            transition: opacity 0.3s ease;
-        }
-        .link { 
-            stroke: var(--primary-text); 
-            stroke-opacity: 0.4; 
-            transition: stroke-opacity 0.3s ease;
+
+        /* SVG Graph Tweaks */
+        .nodes text {
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            fill: #ffffff; 
+            pointer-events: none;
+            text-shadow: 0 1px 2px #000;
         }
         
-        .footer { text-align: justify; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
-        
-        @media (min-width: 1025px) {
-            .menu-toggle { display: none; }
-            .nav-container { display: flex; }
-            .mega-menu {
-                max-height: calc(100vh - var(--nav-height) - 40px);
-                overflow-y: auto;
-            }
+        .nodes {
+            cursor: pointer;
+        }
+
+        .link {
+            stroke: #475569;
+            stroke-opacity: 0.4;
         }
 
         @media (max-width: 1024px) {
-            .nav-content { justify-content: space-between; }
-            .nav-container {
-                position: fixed;
-                top: var(--nav-height);
-                left: 0;
-                width: 100%;
-                height: calc(100vh - var(--nav-height));
-                background: rgba(17, 24, 39, 0.95);
-                backdrop-filter: blur(15px);
-                flex-direction: column;
-                justify-content: flex-start;
-                align-items: center;
-                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-                transform: translateY(-110%);
-                overflow-y: auto;
-                padding: 2rem;
-            }
-            body.menu-open .nav-container {
-                transform: translateY(0);
-            }
-
-            nav .nav-container > li { width: 100%; height: auto; flex-direction: column; align-items: center; text-align: center; }
-            nav .nav-container > li > a { padding: 1rem; width: 100%; font-size: 1.5em;}
-            
-            .mega-menu {
-                position: static; display: grid; opacity: 1; transform: none; visibility: visible; width: 100%; box-shadow: none; 
-                border: none; padding: 1rem 0 1.5rem 0; background: none; backdrop-filter: none;
-                grid-template-columns: 1fr; border-top: 1px solid rgba(129, 140, 248, 0.2); margin-top: 1rem;
-            }
-            
-            .mega-menu h3 { 
-                text-align: center; 
-                font-size: 1.8em;
-            }
-            .mega-menu ul { 
-                align-items: stretch;
-                text-align: left;
-                list-style: none;
-                padding-left: 0;
-            }
-            
-            .mega-menu a {
-                font-size: 1.5em;
-                padding: 0.8rem 1rem 0.8rem 2.5rem;
-                display: block;
-                text-align: left;
-                position: relative;
-            }
-
-            .mega-menu a::before {
-                content: '■';
-                color: var(--primary-glow);
-                position: absolute;
-                left: 0.5rem;
-                top: 50%;
-                transform: translateY(-50%) scale(0.6);
-                font-size: 1.5em;
-            }
-
-            .mega-menu a:hover {
-                padding-left: 2.5rem;
-                color: #000;
-                background-color: var(--primary-glow);
-            }
-            .mega-menu a:hover::before {
-                color: #000;
-            }
-            
-            .menu-toggle {
-                display: block; position: relative; z-index: 1001;
-                width: 30px; height: 22px;
-                background: none; border: none; cursor: pointer;
-            }
-            .icon-bar {
-                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
-                margin: 6px 0; transition: all 0.3s ease-in-out;
-                border-radius: 2px;
-            }
-
-            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
-            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
-            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+            .nav-menu { display: none; }
+            .mobile-toggle { display: block; }
         }
     </style>
 </head>
 <body>
+    <!-- Fondos -->
+    <div class="bg-gradient"></div>
     <canvas id="bg-canvas" aria-hidden="true"></canvas>
-    <nav class="glassmorphism">
+
+    <!-- Barra de Navegación -->
+    <nav id="navbar">
         <div class="nav-content">
             <div class="nav-logo">
                 <a href="#inicio">
-                    <img src="https://github.com/Leolib87/Vida_Mente_CosmosII/blob/main/logo_sin_fondo.png?raw=true" alt="Logo O.C.V.M." class="h-8 w-8 md:h-20 md:w-20 rounded-full">
+                    <img src="https://github.com/Leolib87/Vida_Mente_CosmosII/blob/main/logo_sin_fondo.png?raw=true" alt="Logo O.C.V.M." onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0NSIgZmlsbD0iIzAyMDYxNyIHN0cm9rZT0iI2Y1OWUwYiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iNTAiIHk9IjU1IiBmb250LXNpemU9IjMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZjU5ZTBiIj5PPC90ZXh0Pjwvc3ZnPg=='">
                     <span>O.C.V.M.</span>
                 </a>
             </div>
-            <ul class="nav-container" id="nav-menu">
-                <li><a href="#inicio">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
-                    Inicio</a></li>
-    
-                <li><a href="#">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
-                    Origen del Cosmos</a>
+
+            <!-- Menú Desktop Actualizado -->
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-trigger">
+                        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
+                        Origen del Cosmos
+                    </a>
                     <div class="mega-menu glassmorphism">
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" /></svg>Sistemas Complejos</h3>
+                        <div>
+                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" /></svg>Sistemas Complejos</h3>
                             <ul>
                                 <li><a href="GAME_OF_LIFE.HTML">Juego de la Vida (Conway)</a></li>
                                 <li><a href="GAME_OF_LIFE3D.HTML">Juego de la Vida (3D)</a></li>
-                                <li><a href="tiempo.html">El tiempo</a></li>                                
+                                <li><a href="tiempo.html">El tiempo</a></li>
                             </ul>
                         </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5" /></svg>Principios Fundamentales</h3>
+                        <div>
+                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5" /></svg>Principios Fundamentales</h3>
                             <ul>
                                 <li><a href="#">(Próximamente: Física)</a></li>
                                 <li><a href="#">(Próximamente: Cosmología)</a></li>
-                                <li><a href="mainlander.html">Philipp Mainlander</a></li>
-                                
+                                <li><a href="mainlander.html">Philipp Mainländer</a></li>
                             </ul>
                         </div>
                     </div>
                 </li>
-                
-                <li><a href="#">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V5.75A2.25 2.25 0 0018 3.5H6A2.25 2.25 0 003.75 5.75v12.5A2.25 2.25 0 006 20.25z" /></svg>
-                    Origen de la Vida</a>
+
+                <li class="nav-item">
+                    <a href="#" class="nav-trigger">
+                        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V5.75A2.25 2.25 0 0018 3.5H6A2.25 2.25 0 003.75 5.75v12.5A2.25 2.25 0 006 20.25z" /></svg>
+                        Origen de la Vida
+                    </a>
                     <div class="mega-menu glassmorphism">
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z" /></svg>Fundamentos de Biología</h3>
+                        <div>
+                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z" /></svg>Fundamentos de Biología</h3>
                             <ul>
                                 <li><a href="what_is_life.html">¿Què es la Vida?</a></li>
-                                <li><a href="MAQUINA_SERES_VIVOS.html">De Máquinas y Seres Vivos</a></li>                                
-                                <li><a href="organic_mars.html">Asociaciones Minerales y Orgánicas Impulsadas por Reacciones Redox en el Cráter Jezero, Marte</a></li>                    
+                                <li><a href="MAQUINA_SERES_VIVOS.html">De Máquinas y Seres Vivos</a></li>
+                                <li><a href="organic_mars.html">Asociaciones Minerales y Orgánicas Impulsadas por Reacciones Redox en el Cráter Jezero, Marte</a></li>
                                 <li><a href="#biologia-celular">Introducción a la Célula</a></li>
                                 <li><a href="experimentos_biocell.html">Experimentos low cost Biocell</a></li>
-                                <li><a href="DNA_extraction.html">Extracción de ADN</a></li>                                
+                                <li><a href="DNA_extraction.html">Extracción de ADN</a></li>
                                 <li><a href="origen_peptidos.html">Origen de los Péptidos</a></li>
-                                <li><a href="Protocolo_Western_Blot.html">Protocolo Western blot</a></li>                                
+                                <li><a href="Protocolo_Western_Blot.html">Protocolo Western blot</a></li>
                                 <li><a href="METAGENOMAS.html">Plan de Análisis de Metagenomas</a></li>
                                 <li><a href="labs_open_source.html">Laboratorios Open Source y automatizaciòn</a></li>
-                                <li><a href="linux_cheat_Sheet.html">Plan de Análisis de Metagenomas</a></li>                              
+                                <li><a href="linux_cheat_Sheet.html">Plan de Análisis de Metagenomas</a></li>
                                 <li><a href="NUMEROS_BIOLOGOS.HTML">Números Importantes en Biología Celular</a></li>
                                 <li><a href="CURSO_BIOLOGIA_CELULAR.HTML">Curso Biología Celular</a></li>
                                 <li><a href="HISTOLOGIA.html">Histología y Tejidos</a></li>
-                                <li><a href="https://leolib87.github.io/Histologia_Embriologia/">Guía Interactiva Histologia-Embriologia</a></li>                                 
+                                <li><a href="https://leolib87.github.io/Histologia_Embriologia/">Guía Interactiva Histologia-Embriologia</a></li>
                                 <li><a href="cuerpo humano completo plantilla Lt.html">Anatomía Humana</a></li>
                                 <li><a href="muerte_experiencia_transformadora.html">La Muerte La Experiencia Transformadora Definitiva- Evan Thompson</a></li>
-                                <li><a href="muerte.html">La Muerte</a></li>                           
+                                <li><a href="muerte.html">La Muerte</a></li>
                                 <li><a href="arquitectura_fisica_vida.html">Arquitectura Fisica de la Vida</a></li>
-                                                               
                             </ul>
                         </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.667 0l3.181-3.183m-4.991-2.691v4.992h4.992v-.001M2.985 19.644l3.181-3.182m0-4.992l-3.181 3.183a8.25 8.25 0 0011.667 0l3.181-3.183" /></svg>Autopoiesis y Sistemas Vivos</h3>
+                        <div>
+                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.667 0l3.181-3.183m-4.991-2.691v4.992h4.992v-.001M2.985 19.644l3.181-3.182m0-4.992l-3.181 3.183a8.25 8.25 0 0011.667 0l3.181-3.183" /></svg>Autopoiesis y Sistemas Vivos</h3>
                             <ul>
                                 <li><a href="AUTOPOIESIS.HTML">Simulación Autopoiesis</a></li>
                                 <li><a href="AUTOPOIESIS_3D.HTML">Simulación Autopoiesis (3D)</a></li>
@@ -412,10 +584,10 @@
                                 <li><a href="life_as_we_know_it.html">Life as We Know it - Karl Friston</a></li>
                                 <li><a href="Paper_Varela_1974.html">Paper de Varela (1974)</a></li>
                                 <li><a href="celula_IA.html">Cómo Construir la Célula Virtual con Inteligencia Artificial</a></li>
-                                
                             </ul>
                         </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>Herramientas de Investigación</h3>
+                        <div>
+                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>Herramientas de Investigación</h3>
                             <ul>
                                 <li><a href="herbario.html">Herbario Digital</a></li>
                                 <li><a href="WESTERNCHILE.HTML">Proveedores Western Blot</a></li>
@@ -423,42 +595,45 @@
                                 <li><a href="proveedores_biologia.html">Proveedores Biología</a></li>
                                 <li><a href="bioinformatic_tools.html">Herramientas de Bioinformatica</a></li>
                                 <li><a href="cursos_biologia.html">Cursos Biologia_Chile</a></li>
-                                <li><a href="fristonecuaciones.html">Cinco ecuaciones Fristonianas</a></li> 
+                                <li><a href="fristonecuaciones.html">Cinco ecuaciones Fristonianas</a></li>
                             </ul>
                         </div>
                     </div>
                 </li>
-                
-                <li><a href="#">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z" /></svg>
-                    Origen de la Mente</a>
+
+                <li class="nav-item">
+                    <a href="#" class="nav-trigger">
+                        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z" /></svg>
+                        Origen de la Mente
+                    </a>
                     <div class="mega-menu glassmorphism">
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>Filosofía y Cognición</h3>
+                        <div>
+                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>Filosofía y Cognición</h3>
                             <ul>
                                 <li><a href="filosofia_mente.html">Mente, Lenguaje y Realidad</a></li>
-                                <li><a href=" Ciencia_conciencia.html">Ciencia de la Conciencia</a></li>                                 
-                                <li><a href="chemero.html">Metodologias Corporizadas Radicales</a></li>                                
+                                <li><a href=" Ciencia_conciencia.html">Ciencia de la Conciencia</a></li>
+                                <li><a href="chemero.html">Metodologias Corporizadas Radicales</a></li>
                                 <li><a href="Intencionalidad_freeman.html">Intencionalidad- Walter Freeman</a></li>
                                 <li><a href="varela_mente_mente.html">El Problema Mente-Mente - Francisco Varela </a></li>
-                                <li><a href="mente_mente_info.html">El Problema Mente-Mente - Francisco Varela- Infografia</a></li> 
+                                <li><a href="mente_mente_info.html">El Problema Mente-Mente - Francisco Varela- Infografia</a></li>
                                 <li><a href="#ciencias-cognitivas">Mente Encarnada y Cognición</a></li>
                                 <li><a href="Feno_style.html">Aproximación Fenomenológica</a></li>
                                 <li><a href="#epistemologia">Epistemología del Conocer</a></li>
                                 <li><a href="conocer_fv.html">Conocer, FV</a></li>
-                                <li><a href="autopoiesis_vida_mente_cognicion.html">Autopoiesis, Vida, Mente y Cognición</a></li>                                
+                                <li><a href="autopoiesis_vida_mente_cognicion.html">Autopoiesis, Vida, Mente y Cognición</a></li>
                                 <li><a href="enactivism_revisionism.html">Enactivismo ¿Revisionismo o Revolucion?- Mario Villalobos (1974)</a></li>
                                 <li><a href="enactivismo_utopico.html">El Argumento Hegeliano y el Enactivismo- Mario Villalobos (1974)</a></li>
-                                <li><a href="teleologia_autopoiesis.html">Estabilidad Termodinámica en Desequilibrio: La Aparente Teleología de los Seres Vivos</a></li>                                
+                                <li><a href="teleologia_autopoiesis.html">Estabilidad Termodinámica en Desequilibrio: La Aparente Teleología de los Seres Vivos</a></li>
                                 <li><a href="Neurofenomenologia.html">Neurofenomenologia- Francisco Varela(1996)</a></li>
-                                <li><a href="4e_intencion_accion.html"> Cognicion 4e y Brecha  Intencion- Accion - Froese </a></li>
-                                <li><a href="Mentes_compartidas.html"> Mundos compartidos, Mentes compartidas </a></li>                           
+                                <li><a href="4e_intencion_accion.html"> Cognicion 4e y Brecha  Intencion- Accion - Froese </a></li>
+                                <li><a href="Mentes_compartidas.html"> Mundos compartidos, Mentes compartidas </a></li>
                                 <li><a href="conciencia_IA_manifiesto.html"> Conciencia en la IA: Un Manifiesto Centrista </a></li>
                                 <li><a href="https://loc.closertotruth.com"> paisajes de conciencia (web interesante) </a></li>
                                 <li><a href="https://www.riedlanna.com"> Anna Riedl - Mapa de las ciencias cognitivas </a></li>
                                 <li><a href="timeline_cognition.html"> Timeline Cognition</a></li>
                                 <li><a href=" map_ocvm.html"> Timeline Cognition_ocvm</a></li>
                                 <li><a href="experiencia_corporal_naturalizada.html"> Experiencia Vivida y la Naturalización de la Experiencia Corporal</a></li>
-                                <li><a href="radical_embodiment.html"> Encarnación Radical</a></li> 
+                                <li><a href="radical_embodiment.html"> Encarnación Radical</a></li>
                                 <li><a href="#inteligencia-artificial">IA y Sistemas Complejos</a></li>
                                 <li><a href="BORG_BORGES.HTML"> Borg or Borges? - Thompson </a></li>
                                 <li><a href="scz_medicamentos.html"> Alianza para Acelerar Medicamentos® en Esquizofrenia (AMP® SCZ)</a></li>
@@ -474,92 +649,98 @@
                                 <li><a href="indeterminismo_LLMs.html">Indeterminismo en Grandes Modelos de Lenguaje- Georgii Karelin, Tom Froese, et al.</a></li>
                                 <li><a href="enactivismo_demencia.html">Medición de la Experiencia Subjetiva en Demencia- Hanne De Jaegher.</a></li>
                                 <li><a href=" variedades_enactivismo.html">Las Variedades del Enactivismo- Dave Ward, David Silverman y Mario Villalobos.</a></li>
-                                <li><a href=" variedades_enactivismo2.html">Las Variedades del Enactivismo2- Dave Ward, David Silverman y Mario Villalobos.</a></li>                                                            
+                                <li><a href=" variedades_enactivismo2.html">Las Variedades del Enactivismo2- Dave Ward, David Silverman y Mario Villalobos.</a></li>
                             </ul>
                         </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>Autores y Referentes</h3>
+                        <div>
+                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>Autores y Referentes</h3>
                             <ul>
                                 <li><a href="PAPERS_VARELA.HTML">Publicaciones de Varela</a></li>
                                 <li><a href="schopenhauer.html">Arthur Schopenhauer</a></li>
-                                <li><a href="mainlander.html">Philipp Mainlander</a></li>
+                                <li><a href="mainlander.html">Philipp Mainländer</a></li>
                                 <li><a href="Wittgenstein.html">Ludwig Wittgeinstein</a></li>
-                                <li><a href="CITAS.HTML">Fragmentos de Mentes</a></li>                                
+                                <li><a href="CITAS.HTML">Fragmentos de Mentes</a></li>
                                 <li><a href="MAPEO_FILO_MENTE_CHILE.HTML">Mapeo Filosofía Mente (Chile)</a></li>
                                 <li><a href="Doug_Hofstadter.html">Douglas Hofstadter</a></li>
                                 <li><a href="walter_pitts.html">Walter Pitts</a></li>
                             </ul>
                         </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0l-1.07-1.07m15.482 0l1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07M12 6.873l-1.07 1.07m2.14 0l-1.07-1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07" /></svg>Reflexiones Culturales</h3>
+                        <div>
+                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0l-1.07-1.07m15.482 0l1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07M12 6.873l-1.07 1.07m2.14 0l-1.07-1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07" /></svg>Reflexiones Culturales</h3>
                             <ul>
-                               <li><a href="Intro_metafisica_heidegger.html">Metafisica y Tiempo - Heidegger - Introduccion a la Metafisica</a></li>                          
+                                <li><a href="Intro_metafisica_heidegger.html">Metafisica y Tiempo - Heidegger - Introduccion a la Metafisica</a></li>
                                 <li><a href="ambieguedades_mordernidad_peña.html">Las Ambiguedades de la Modernidad - Carlos Peña </a></li>
                                 <li><a href="camino-de-servidumbre.html">Hayek- Camino de Servidumbre - Carlos Peña y Alejandro Vigo</a></li>
                                 <li><a href="enemigos-de-la-realidad.html">Los Enemigos de la Realidad- Antonio Escohotado</a></li>
                                 <li><a href="por_que importan_humanidades.html">¿Por que importan las Humanidades?- Carlos Peña</a></li>
                                 <li><a href="peña_sociologia.html"> EL rol de la Sociologia - Carlos Peña</a></li>
-                                <li><a href="dilemas_aborto.html"> Los Dilemas del Aborto - Carlos Peña</a></li>                                
+                                <li><a href="dilemas_aborto.html"> Los Dilemas del Aborto - Carlos Peña</a></li>
                                 <li><a href="escohotado_peirano.html">Verdad y Propaganda- Escohotado y Peirano</a></li>
                                 <li><a href="Delirio Americano_Carlos_Granes _Carlos_Peña.html">Delirio Americano: Carlos Granes conversa con Carlos Peña</a></li>
                                 <li><a href="fundamentos_escuela_Austriaca.html">Fundamentos de la Escuela Austriaca- Martin Krause</a></li>
-                                <li><a href="Futuro_Universidad.html">El futuro de la Universidad - CEP</a></li> 
+                                <li><a href="Futuro_Universidad.html">El futuro de la Universidad - CEP</a></li>
                                 <li><a href="tensiones_universidad_moderna.html">Tensiones en la Universidad Moderna- Carlos Peña- CEP - CEP</a></li>
                                 <li><a href="Sueños_de_Carton.html">Sueños de Carton - Pablo Ortuzar</a></li>
                                 <li><a href="Writing_thinking.html">Escribir es pensar</a></li>
                                 <li><a href="IA_adopcion.html">Contra la Adopción Acrítica de Tecnologías 'IA' en la Academia</a></li>
                                 <li><a href="etica_desconocimiento.html">Etica del Desconocimiento- Pablo Razeto</a></li>
-                                <li><a href=" ml_ciencia.html">La Ciencia Inmortal del ML- Mel Andrews</a></li>                                                                                                        
+                                <li><a href=" ml_ciencia.html">La Ciencia Inmortal del ML- Mel Andrews</a></li>
                             </ul>
                         </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0l-1.07-1.07m15.482 0l1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07M12 6.873l-1.07 1.07m2.14 0l-1.07-1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07" /></svg>Reflexiones Musicales</h3>
+                        <div>
+                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0l-1.07-1.07m15.482 0l1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07m-1.07-1.07l-1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07M12 6.873l-1.07 1.07m2.14 0l-1.07-1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07" /></svg>Reflexiones Musicales</h3>
                             <ul>
                                 <li><a href="despues_de_muerto.html ">Despues de Muerto</a></li>
                                 <li><a href="totem_ocvm.html"> Totem - Pedro Piedra</a></li>
                                 <li><a href="MUSICA.HTML">Letras de Canciones</a></li>
                                 <li><a href="Dead_Flag.html">The Dead Flag Blues</a></li>
                                 <li><a href="el_horror.html">El Horror - Rafael Berrio </a></li>
-                               
-                         </ul>
-                         </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0l-1.07-1.07m15.482 0l1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07M12 6.873l-1.07 1.07m2.14 0l-1.07-1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07" /></svg>Reflexiones en el Cine</h3>
-                            <ul>                       
-                                <li><a href="CINE_TIEMPO.html">Linea de Tiempo Cine de Ciencia Ficciòn</a></li> 
-                                <li><a href="peliculas.html">Listado de Peliculas </a></li>                             
-                         </ul>
+                            </ul>
                         </div>
-                            <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0l-1.07-1.07m15.482 0l1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07M12 6.873l-1.07 1.07m2.14 0l-1.07-1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07" /></svg>Reflexiones en la literatura</h3>
-                            <ul>                       
-                            <li><a href="funes_el_memorioso.html">Funes el Memorioso- Jorge Luis Borges </a></li>
-                            <li><a href="Tlön_Uqbar_Orbis_Tertius.html">Tlön, Uqbar, Orbis Tertius- Jorge Luis Borges </a></li>
-                            <li><a href="despedida_Teillier.html">Despedida- Jorge Teillier</a></li>
-                            <li><a href="Notas_Cantar_CXVII.html">Notas para el Cantar CXVII- Ezra Pound</a></li>
-                            <li><a href="usted.html">Usted - Erick Polhammer</a></li>
-                            <li><a href="Derivas_de_la_pesada.html">Derivas de la Pesada -Roberto Bolaño</a></li>
-                            <li><a href="Balance_patriotico.html">Balance Patriotico -Vicente Huidobro</a></li>
-                                                               
-                         </ul>                              
+                        <div>
+                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0l-1.07-1.07m15.482 0l1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07M12 6.873l-1.07 1.07m2.14 0l-1.07-1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07" /></svg>Reflexiones en el Cine</h3>
+                            <ul>
+                                <li><a href="CINE_TIEMPO.html">Linea de Tiempo Cine de Ciencia Ficciòn</a></li>
+                                <li><a href="peliculas.html">Listado de Peliculas </a></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0l-1.07-1.07m15.482 0l1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07M12 6.873l-1.07 1.07m2.14 0l-1.07-1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07" /></svg>Reflexiones en la literatura</h3>
+                            <ul>
+                                <li><a href="funes_el_memorioso.html">Funes el Memorioso- Jorge Luis Borges </a></li>
+                                <li><a href="Tlön_Uqbar_Orbis_Tertius.html">Tlön, Uqbar, Orbis Tertius- Jorge Luis Borges </a></li>
+                                <li><a href="despedida_Teillier.html">Despedida- Jorge Teillier</a></li>
+                                <li><a href="Notas_Cantar_CXVII.html">Notas para el Cantar CXVII- Ezra Pound</a></li>
+                                <li><a href="usted.html">Usted - Erick Polhammer</a></li>
+                                <li><a href="Derivas_de_la_pesada.html">Derivas de la Pesada -Roberto Bolaño</a></li>
+                                <li><a href="Balance_patriotico.html">Balance Patriotico -Vicente Huidobro</a></li>
+                            </ul>
                         </div>
                     </div>
                 </li>
-    
-                <li><a href="#">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" /></svg>
-                    Cartografías del Saber</a>
+
+                <li class="nav-item">
+                    <a href="#" class="nav-trigger">
+                        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" /></svg>
+                        Cartografías del Saber
+                    </a>
                     <div class="mega-menu glassmorphism">
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12A2.25 2.25 0 0020.25 18V5.75A2.25 2.25 0 0018 3.5H6A2.25 2.25 0 003.75 5.75v12.5A2.25 2.25 0 006 20.25z" /></svg>Visualización de Datos</h3>
+                        <div>
+                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12A2.25 2.25 0 0020.25 18V5.75A2.25 2.25 0 0018 3.5H6A2.25 2.25 0 003.75 5.75v12.5A2.25 2.25 0 006 20.25z" /></svg>Visualización de Datos</h3>
                             <ul>
                                 <li><a href=" DIAGRAMACION.html">Herramientas de Diagramacion</a></li>
-                                <li><a href="https://www.rankless.org/">Rankless- Cesar Hidalgo </a></li>                                
-                                <li><a href=" graficando_filosofia.html">Graficando la Filosofia</a></li>                                
+                                <li><a href="https://www.rankless.org/">Rankless- Cesar Hidalgo </a></li>
+                                <li><a href=" graficando_filosofia.html">Graficando la Filosofia</a></li>
                                 <li><a href="Explorando la Visualización Filosófica.HTML">Visualización Filosófica</a></li>
                                 <li><a href="https://soarxiv.org/">SOARXIV.ORG</a></li>
                                 <li><a href="treemap_ias.html">Treemap de IAs</a></li>
                                 <li><a href="https://cartography-of-generative-ai.net">Cartografia de la IA generativa</a></li>
                                 <li><a href="dashboard_matriculas_2025.html">Matriculas 2025 Universidades Chilenas</a></li>
-                                 <li><a href=" pedagogias_ciencias2025.html">Pedagogias en CIencias</a></li>                               
-                                <li><a href="https://html.energy/html-day/2025/index.html">HTML DAY</a></li> 
-                                <li><a href="ottosr.html">Otto.SR</a></li>                                
+                                <li><a href=" pedagogias_ciencias2025.html">Pedagogias en CIencias</a></li>
+                                <li><a href="https://html.energy/html-day/2025/index.html">HTML DAY</a></li>
+                                <li><a href="ottosr.html">Otto.SR</a></li>
                                 <li><a href="#analisis-redes">Introducción a las Redes</a></li>
-                                <li><a href="Selección de Revistas Científicas.html">Selección de Revistas Científicas</a></li>                                
+                                <li><a href="Selección de Revistas Científicas.html">Selección de Revistas Científicas</a></li>
                                 <li><a href="#elementos-comunes">Mapa Conceptual General</a></li>
                                 <li><a href="RED POLITICOS.html">Red de Políticos</a></li>
                                 <li><a href="varios graficos.html">Colección de Gráficos</a></li>
@@ -567,17 +748,19 @@
                                 <li><a href="INFLACION ARGENTINA RESPONSIVA.html">INFLACION EN ARGENTINA</a></li>
                                 <li><a href="diagrama_open_acess.html">Open Access</a></li>
                                 <li><a href="Redes_Onomásticas.html">Redes Onomásticas</a></li>
-                                <li><a href=" onomastico.html">Redes Onomásticas 2</a></li>                                
+                                <li><a href=" onomastico.html">Redes Onomásticas 2</a></li>
                             </ul>
                         </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>Mapas Conceptuales</h3>
+                        <div>
+                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>Mapas Conceptuales</h3>
                             <ul>
                                 <li><a href="MAPA_MENTAL_TRABAJO.HTML">Mapa Mental "Trabajo"</a></li>
                                 <li><a href="VARELA_CARTOGRAFIA.HTML">Cartografía Varela (3D)</a></li>
                                 <li><a href="cartografia_varela_01.html">Cartografía Varela (2D)</a></li>
                             </ul>
                         </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>Herramientas Digitales y IA</h3>
+                        <div>
+                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>Herramientas Digitales y IA</h3>
                             <ul>
                                 <li><a href="Herramientas_Investigacion_definitiva.html">Guía de Herramientas</a></li>
                                 <li><a href="LLM_metodo_científico.html">LLMs y Método Cientifico</a></li>
@@ -587,7 +770,8 @@
                                 <li><a href="Paper_web.html">Plantilla Web para Papers</a></li>
                             </ul>
                         </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>Recursos y Proyectos</h3>
+                        <div>
+                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>Recursos y Proyectos</h3>
                             <ul>
                                 <li><a href="MI_BIBLIOTECA.HTML">Biblioteca Humanidades</a></li>
                                 <li><a href="BIBLIOTECA_CIENCIAS.HTML">Biblioteca Ciencias</a></li>
@@ -601,15 +785,17 @@
                                 <li><a href="QF.HTML">Química y Farmacia (Chile)</a></li>
                                 <li><a href="tiny_houses_web.html">Tiny Houses (Chile)</a></li>
                                 <li><a href="anatomofisio.html">Anatomofisio (Chile)</a></li>
-                                <li><a href="reino_vida.html">Coleccion de Plantas (Chile)</a></li>                                
+                                <li><a href="reino_vida.html">Coleccion de Plantas (Chile)</a></li>
                             </ul>
                         </div>
                     </div>
                 </li>
 
-                <li><a href="#">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h6M9 11.25h6m-6 4.5h6M6.75 21v-5.625a2.25 2.25 0 012.25-2.25h6a2.25 2.25 0 012.25 2.25V21M6.75 3v2.25A2.25 2.25 0 009 7.5h6a2.25 2.25 0 002.25-2.25V3" /></svg>
-                    Laboratorio</a>
+                <li class="nav-item">
+                    <a href="#" class="nav-trigger">
+                        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h6M9 11.25h6m-6 4.5h6M6.75 21v-5.625a2.25 2.25 0 012.25-2.25h6a2.25 2.25 0 012.25 2.25V21M6.75 3v2.25A2.25 2.25 0 009 7.5h6a2.25 2.25 0 002.25-2.25V3" /></svg>
+                        Laboratorio
+                    </a>
                     <div class="mega-menu glassmorphism">
                         <div>
                             <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9l-3.375-3.375A7.5 7.5 0 007.5 21l3.375-3.375m0-3.75L13.5 7.5" /></svg>Proyectos y Noticias</h3>
@@ -630,7 +816,7 @@
                             </ul>
                         </div>
                         <div>
-                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0l-1.07-1.07m15.482 0l1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07M12 6.873l-1.07 1.07m2.14 0l-1.07-1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07" /></svg>Académico y Docencia</h3>
+                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0l-1.07-1.07m15.482 0l1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07m-1.07-1.07l-1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07M12 6.873l-1.07 1.07m2.14 0l-1.07-1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07" /></svg>Académico y Docencia</h3>
                             <ul>
                                 <li><a href="horario_2025.html">Horario 2025</a></li>
                                 <li><a href="HORARIOS_LAB.HTML">Horarios Lab</a></li>
@@ -638,14 +824,14 @@
                                 <li><a href="red 2.html">Red Tesis Enseñanza Cs.</a></li>
                                 <li><a href="red3.html">Red Tesis Ejemplos</a></li>
                                 <li><a href="LAB1 BIOMOLECULAS.html">LAB I Biomoléculas</a></li>
-                                <li><a href="futuro_carreras_ciencias.html">El futuro de las carreras cientificas</a></li>                               
+                                <li><a href="futuro_carreras_ciencias.html">El futuro de las carreras cientificas</a></li>
                             </ul>
                         </div>
                         <div>
                             <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" /></svg>Desarrollo y Pruebas</h3>
                             <ul>
                                 <li><a href="n8n_looker.html">ANID N8N+LOOKERSTUDIO</a></li>
-                                <li><a href="fondosX2.html">Dashboard Fondos</a></li>                               
+                                <li><a href="fondosX2.html">Dashboard Fondos</a></li>
                                 <li><a href="web.moderna.html">Web Moderna (Test)</a></li>
                                 <li><a href="web.three.html">Web Three.js (Test)</a></li>
                                 <li><a href="totem.html">Totem 1</a></li>
@@ -658,366 +844,702 @@
                                 <li><a href="Análisis_Worldcoin.html">Analisis de Worldcoin</a></li>
                                 <li><a href="IDE_Explorer_Android.html">IDE explorer para Android</a></li>
                                 <li><a href="COLMENA.HTML">Colmena</a></li>
-                                <li><a href="seguros_catastroficos.html">Seguros Catastróficos Chile</a></li> 
+                                <li><a href="seguros_catastroficos.html">Seguros Catastróficos Chile</a></li>
                                 <li><a href="anatomofisio.html">Seguros Catastróficos Chile</a></li>
                                 <li><a href="qbism.html">Qbism</a></li>
                                 <li><a href="Digestivo.html">Digestivo</a></li>
-                                <li><a href="  MAC.HTML">Mecanismo de Aseguramiento de Calidad</a></li>
-
-                              
-                               
+                                <li><a href=" MAC.HTML">Mecanismo de Aseguramiento de Calidad</a></li>
                             </ul>
                         </div>
                     </div>
                 </li>
-                
-                <li><a href="#contacto">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
-                    Contacto</a></li>
+
+                <!-- Contacto -->
+                <li class="nav-item">
+                     <a href="#contacto" class="nav-trigger" style="text-decoration: none;">
+                        <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        Contacto
+                    </a>
+                </li>
             </ul>
-            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
-                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+
+            <!-- Botón Móvil -->
+            <button class="mobile-toggle" id="mobile-toggle" aria-label="Abrir menú">
+                <svg id="menu-icon" class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                <svg id="close-icon" class="w-8 h-8 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
     </nav>
 
-    <div class="main-container" id="inicio">
-        <div class="hero">
-            <div class="hero-content">
-                <h1>Origen, Cosmos, Vida y Mente</h1>
-                <p>Un viaje transdisciplinario a través del cosmos, la vida, la conciencia y las redes del saber.</p>
+    <!-- Menú Móvil Completo (Acordeones) -->
+    <div id="mobile-menu" class="mobile-menu">
+        <div class="mobile-menu-content">
+            <!-- Origen del Cosmos -->
+            <div class="mobile-group">
+                <button class="mobile-header">
+                    <span>
+                        <svg class="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                        Origen del Cosmos
+                    </span>
+                    <svg class="mobile-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="mobile-links">
+                    <div class="mobile-links-inner">
+                        <div class="mobile-category">
+                            <h4>Sistemas Complejos</h4>
+                            <a href="GAME_OF_LIFE.HTML">Juego de la Vida (Conway)</a>
+                            <a href="GAME_OF_LIFE3D.HTML">Juego de la Vida (3D)</a>
+                            <a href="tiempo.html">El tiempo</a>
+                        </div>
+                        <div class="mobile-category">
+                            <h4>Principios</h4>
+                            <a href="#">(Próximamente: Física)</a>
+                            <a href="#">(Próximamente: Cosmología)</a>
+                            <a href="mainlander.html">Philipp Mainländer</a>
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            <!-- Origen de la Vida -->
+            <div class="mobile-group">
+                <button class="mobile-header">
+                    <span>
+                        <svg class="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        Origen de la Vida
+                    </span>
+                    <svg class="mobile-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="mobile-links">
+                    <div class="mobile-links-inner">
+                        <div class="mobile-category">
+                            <h4>Fundamentos de Biología</h4>
+                            <a href="what_is_life.html">¿Què es la Vida?</a>
+                            <a href="MAQUINA_SERES_VIVOS.html">De Máquinas y Seres Vivos</a>
+                            <a href="organic_mars.html">Asociaciones Minerales y Orgánicas Impulsadas por Reacciones Redox en el Cráter Jezero, Marte</a>
+                            <a href="#biologia-celular">Introducción a la Célula</a>
+                            <a href="experimentos_biocell.html">Experimentos low cost Biocell</a>
+                            <a href="DNA_extraction.html">Extracción de ADN</a>
+                            <a href="origen_peptidos.html">Origen de los Péptidos</a>
+                            <a href="Protocolo_Western_Blot.html">Protocolo Western blot</a>
+                            <a href="METAGENOMAS.html">Plan de Análisis de Metagenomas</a>
+                            <a href="labs_open_source.html">Laboratorios Open Source y automatizaciòn</a>
+                            <a href="linux_cheat_Sheet.html">Plan de Análisis de Metagenomas</a>
+                            <a href="NUMEROS_BIOLOGOS.HTML">Números Importantes en Biología Celular</a>
+                            <a href="CURSO_BIOLOGIA_CELULAR.HTML">Curso Biología Celular</a>
+                            <a href="HISTOLOGIA.html">Histología y Tejidos</a>
+                            <a href="https://leolib87.github.io/Histologia_Embriologia/">Guía Interactiva Histologia-Embriologia</a>
+                            <a href="cuerpo humano completo plantilla Lt.html">Anatomía Humana</a>
+                            <a href="muerte_experiencia_transformadora.html">La Muerte La Experiencia Transformadora Definitiva- Evan Thompson</a>
+                            <a href="muerte.html">La Muerte</a>
+                            <a href="arquitectura_fisica_vida.html">Arquitectura Fisica de la Vida</a>
+                        </div>
+                        <div class="mobile-category">
+                            <h4>Autopoiesis y Sistemas Vivos</h4>
+                            <a href="AUTOPOIESIS.HTML">Simulación Autopoiesis</a>
+                            <a href="AUTOPOIESIS_3D.HTML">Simulación Autopoiesis (3D)</a>
+                            <a href="Autopoiesis_Fractal00.html">Simulación Autopoiesis (Fractal)</a>
+                            <a href="life_as_we_know_it.html">Life as We Know it - Karl Friston</a>
+                            <a href="Paper_Varela_1974.html">Paper de Varela (1974)</a>
+                            <a href="celula_IA.html">Cómo Construir la Célula Virtual con Inteligencia Artificial</a>
+                        </div>
+                        <div class="mobile-category">
+                            <h4>Herramientas de Investigación</h4>
+                            <a href="herbario.html">Herbario Digital</a>
+                            <a href="WESTERNCHILE.HTML">Proveedores Western Blot</a>
+                            <a href="histologychile.html">Proveedores Histología</a>
+                            <a href="proveedores_biologia.html">Proveedores Biología</a>
+                            <a href="bioinformatic_tools.html">Herramientas de Bioinformatica</a>
+                            <a href="cursos_biologia.html">Cursos Biologia_Chile</a>
+                            <a href="fristonecuaciones.html">Cinco ecuaciones Fristonianas</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Origen de la Mente -->
+            <div class="mobile-group">
+                <button class="mobile-header">
+                    <span>
+                        <svg class="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                        Origen de la Mente
+                    </span>
+                    <svg class="mobile-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="mobile-links">
+                    <div class="mobile-links-inner">
+                        <div class="mobile-category">
+                            <h4>Filosofía y Cognición</h4>
+                            <a href="filosofia_mente.html">Mente, Lenguaje y Realidad</a>
+                            <a href=" Ciencia_conciencia.html">Ciencia de la Conciencia</a>
+                            <a href="chemero.html">Metodologias Corporizadas Radicales</a>
+                            <a href="Intencionalidad_freeman.html">Intencionalidad- Walter Freeman</a>
+                            <a href="varela_mente_mente.html">El Problema Mente-Mente - Francisco Varela </a>
+                            <a href="mente_mente_info.html">El Problema Mente-Mente - Francisco Varela- Infografia</a>
+                            <a href="#ciencias-cognitivas">Mente Encarnada y Cognición</a>
+                            <a href="Feno_style.html">Aproximación Fenomenológica</a>
+                            <a href="#epistemologia">Epistemología del Conocer</a>
+                            <a href="conocer_fv.html">Conocer, FV</a>
+                            <a href="autopoiesis_vida_mente_cognicion.html">Autopoiesis, Vida, Mente y Cognición</a>
+                            <a href="enactivism_revisionism.html">Enactivismo ¿Revisionismo o Revolucion?- Mario Villalobos (1974)</a>
+                            <a href="enactivismo_utopico.html">El Argumento Hegeliano y el Enactivismo- Mario Villalobos (1974)</a>
+                            <a href="teleologia_autopoiesis.html">Estabilidad Termodinámica en Desequilibrio: La Aparente Teleología de los Seres Vivos</a>
+                            <a href="Neurofenomenologia.html">Neurofenomenologia- Francisco Varela(1996)</a>
+                            <a href="4e_intencion_accion.html"> Cognicion 4e y Brecha  Intencion- Accion - Froese </a>
+                            <a href="Mentes_compartidas.html"> Mundos compartidos, Mentes compartidas </a>
+                            <a href="conciencia_IA_manifiesto.html"> Conciencia en la IA: Un Manifiesto Centrista </a>
+                            <a href="https://loc.closertotruth.com"> paisajes de conciencia (web interesante) </a>
+                            <a href="https://www.riedlanna.com"> Anna Riedl - Mapa de las ciencias cognitivas </a>
+                            <a href="timeline_cognition.html"> Timeline Cognition</a>
+                            <a href=" map_ocvm.html"> Timeline Cognition_ocvm</a>
+                            <a href="experiencia_corporal_naturalizada.html"> Experiencia Vivida y la Naturalización de la Experiencia Corporal</a>
+                            <a href="radical_embodiment.html"> Encarnación Radical</a>
+                            <a href="#inteligencia-artificial">IA y Sistemas Complejos</a>
+                            <a href="BORG_BORGES.HTML"> Borg or Borges? - Thompson </a>
+                            <a href="scz_medicamentos.html"> Alianza para Acelerar Medicamentos® en Esquizofrenia (AMP® SCZ)</a>
+                            <a href="GEB.html"> GEB </a>
+                            <a href="life_precarious.html"> La vida es preciosa por ser precaria: individualidad, mortalidad y el significado </a>
+                            <a href="wrong_cell_heras.html"> La unica celula equivocada es la celula muerta- Manuel Heras-Escribano, Jason Noble y Manuel de Pinedo</a>
+                            <a href="irrupcion.html"> Teoria de la Irrupcion - Tom Froese </a>
+                            <a href="egbert_norms.html"> Simulación: Viabilidad y Agencia- Barandiaran y Egbert </a>
+                            <a href="enactivism_Hutto.html"> Enactivismo- Daniel Hutto </a>
+                            <a href="muerte_experiencia_transformadora.html">La Muerte La Experiencia Transformadora Definitiva- Evan Thompson</a>
+                            <a href="bioelectricidad_cognicion.html"> Bioelectricidad y Cognición </a>
+                            <a href="LLM_existencia.html">Transformando la Agencia: El Modo de Existencia de los LLMs</a>
+                            <a href="indeterminismo_LLMs.html">Indeterminismo en Grandes Modelos de Lenguaje- Georgii Karelin, Tom Froese, et al.</a>
+                            <a href="enactivismo_demencia.html">Medición de la Experiencia Subjetiva en Demencia- Hanne De Jaegher.</a>
+                            <a href=" variedades_enactivismo.html">Las Variedades del Enactivismo- Dave Ward, David Silverman y Mario Villalobos.</a>
+                            <a href=" variedades_enactivismo2.html">Las Variedades del Enactivismo2- Dave Ward, David Silverman y Mario Villalobos.</a>
+                        </div>
+                         <div class="mobile-category">
+                            <h4>Autores y Referentes</h4>
+                            <a href="PAPERS_VARELA.HTML">Publicaciones de Varela</a>
+                            <a href="schopenhauer.html">Arthur Schopenhauer</a>
+                            <a href="mainlander.html">Philipp Mainländer</a>
+                            <a href="Wittgenstein.html">Ludwig Wittgeinstein</a>
+                            <a href="CITAS.HTML">Fragmentos de Mentes</a>
+                            <a href="MAPEO_FILO_MENTE_CHILE.HTML">Mapeo Filosofía Mente (Chile)</a>
+                            <a href="Doug_Hofstadter.html">Douglas Hofstadter</a>
+                            <a href="walter_pitts.html">Walter Pitts</a>
+                        </div>
+                        <div class="mobile-category">
+                            <h4>Reflexiones Culturales</h4>
+                            <a href="Intro_metafisica_heidegger.html">Metafisica y Tiempo - Heidegger - Introduccion a la Metafisica</a>
+                            <a href="ambieguedades_mordernidad_peña.html">Las Ambiguedades de la Modernidad - Carlos Peña </a>
+                            <a href="camino-de-servidumbre.html">Hayek- Camino de Servidumbre - Carlos Peña y Alejandro Vigo</a>
+                            <a href="enemigos-de-la-realidad.html">Los Enemigos de la Realidad- Antonio Escohotado</a>
+                            <a href="por_que importan_humanidades.html">¿Por que importan las Humanidades?- Carlos Peña</a>
+                            <a href="peña_sociologia.html"> EL rol de la Sociologia - Carlos Peña</a>
+                            <a href="dilemas_aborto.html"> Los Dilemas del Aborto - Carlos Peña</a>
+                            <a href="escohotado_peirano.html">Verdad y Propaganda- Escohotado y Peirano</a>
+                            <a href="Delirio Americano_Carlos_Granes _Carlos_Peña.html">Delirio Americano: Carlos Granes conversa con Carlos Peña</a>
+                            <a href="fundamentos_escuela_Austriaca.html">Fundamentos de la Escuela Austriaca- Martin Krause</a>
+                            <a href="Futuro_Universidad.html">El futuro de la Universidad - CEP</a>
+                            <a href="tensiones_universidad_moderna.html">Tensiones en la Universidad Moderna- Carlos Peña- CEP - CEP</a>
+                            <a href="Sueños_de_Carton.html">Sueños de Carton - Pablo Ortuzar</a>
+                            <a href="Writing_thinking.html">Escribir es pensar</a>
+                            <a href="IA_adopcion.html">Contra la Adopción Acrítica de Tecnologías 'IA' en la Academia</a>
+                            <a href="etica_desconocimiento.html">Etica del Desconocimiento- Pablo Razeto</a>
+                            <a href=" ml_ciencia.html">La Ciencia Inmortal del ML- Mel Andrews</a>
+                        </div>
+                        <div class="mobile-category">
+                            <h4>Reflexiones Musicales</h4>
+                            <a href="despues_de_muerto.html ">Despues de Muerto</a>
+                            <a href="totem_ocvm.html"> Totem - Pedro Piedra</a>
+                            <a href="MUSICA.HTML">Letras de Canciones</a>
+                            <a href="Dead_Flag.html">The Dead Flag Blues</a>
+                            <a href="el_horror.html">El Horror - Rafael Berrio </a>
+                        </div>
+                        <div class="mobile-category">
+                            <h4>Reflexiones en el Cine</h4>
+                            <a href="CINE_TIEMPO.html">Linea de Tiempo Cine de Ciencia Ficciòn</a>
+                            <a href="peliculas.html">Listado de Peliculas </a>
+                        </div>
+                        <div class="mobile-category">
+                            <h4>Reflexiones en la literatura</h4>
+                            <a href="funes_el_memorioso.html">Funes el Memorioso- Jorge Luis Borges </a>
+                            <a href="Tlön_Uqbar_Orbis_Tertius.html">Tlön, Uqbar, Orbis Tertius- Jorge Luis Borges </a>
+                            <a href="despedida_Teillier.html">Despedida- Jorge Teillier</a>
+                            <a href="Notas_Cantar_CXVII.html">Notas para el Cantar CXVII- Ezra Pound</a>
+                            <a href="usted.html">Usted - Erick Polhammer</a>
+                            <a href="Derivas_de_la_pesada.html">Derivas de la Pesada -Roberto Bolaño</a>
+                            <a href="Balance_patriotico.html">Balance Patriotico -Vicente Huidobro</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cartografías -->
+            <div class="mobile-group">
+                <button class="mobile-header">
+                    <span>
+                         <svg class="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                        Cartografías del Saber
+                    </span>
+                    <svg class="mobile-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="mobile-links">
+                    <div class="mobile-links-inner">
+                        <div class="mobile-category">
+                            <h4>Visualización de Datos</h4>
+                            <a href=" DIAGRAMACION.html">Herramientas de Diagramacion</a>
+                            <a href="https://www.rankless.org/">Rankless- Cesar Hidalgo </a>
+                            <a href=" graficando_filosofia.html">Graficando la Filosofia</a>
+                            <a href="Explorando la Visualización Filosófica.HTML">Visualización Filosófica</a>
+                            <a href="https://soarxiv.org/">SOARXIV.ORG</a>
+                            <a href="treemap_ias.html">Treemap de IAs</a>
+                            <a href="https://cartography-of-generative-ai.net">Cartografia de la IA generativa</a>
+                            <a href="dashboard_matriculas_2025.html">Matriculas 2025 Universidades Chilenas</a>
+                            <a href=" pedagogias_ciencias2025.html">Pedagogias en CIencias</a>
+                            <a href="https://html.energy/html-day/2025/index.html">HTML DAY</a>
+                            <a href="ottosr.html">Otto.SR</a>
+                            <a href="#analisis-redes">Introducción a las Redes</a>
+                            <a href="Selección de Revistas Científicas.html">Selección de Revistas Científicas</a>
+                            <a href="#elementos-comunes">Mapa Conceptual General</a>
+                            <a href="RED POLITICOS.html">Red de Políticos</a>
+                            <a href="varios graficos.html">Colección de Gráficos</a>
+                            <a href="GRAFICO DE LINEAS Y TREEMAP.html">Líneas y Treemaps</a>
+                            <a href="INFLACION ARGENTINA RESPONSIVA.html">INFLACION EN ARGENTINA</a>
+                            <a href="diagrama_open_acess.html">Open Access</a>
+                            <a href="Redes_Onomásticas.html">Redes Onomásticas</a>
+                            <a href=" onomastico.html">Redes Onomásticas 2</a>
+                        </div>
+                        <div class="mobile-category">
+                            <h4>Mapas Conceptuales</h4>
+                            <a href="MAPA_MENTAL_TRABAJO.HTML">Mapa Mental "Trabajo"</a>
+                            <a href="VARELA_CARTOGRAFIA.HTML">Cartografía Varela (3D)</a>
+                            <a href="cartografia_varela_01.html">Cartografía Varela (2D)</a>
+                        </div>
+                        <div class="mobile-category">
+                            <h4>Herramientas Digitales y IA</h4>
+                            <a href="Herramientas_Investigacion_definitiva.html">Guía de Herramientas</a>
+                            <a href="LLM_metodo_científico.html">LLMs y Método Cientifico</a>
+                            <a href="IAS_BUSQUEDA.HTML">Buscador de IAs</a>
+                            <a href="googleias.html">IAs de Google</a>
+                            <a href="IAs.html">Red de IAs</a>
+                            <a href="Paper_web.html">Plantilla Web para Papers</a>
+                        </div>
+                        <div class="mobile-category">
+                            <h4>Recursos y Proyectos</h4>
+                            <a href="MI_BIBLIOTECA.HTML">Biblioteca Humanidades</a>
+                            <a href="BIBLIOTECA_CIENCIAS.HTML">Biblioteca Ciencias</a>
+                            <a href="BIBLIOTECA SHADOW.html">Bibliotecas Sombra</a>
+                            <a href="FUENTES_FINANCIAMIENTO.HTML">Fuentes de Financiamiento</a>
+                            <a href="FONDOS.HTML">DEEP Financiamiento</a>
+                            <a href="FONDECYT.HTML">Análisis Proyectos Fondecyt</a>
+                            <a href="Empleos_IES.html">Empleos en Educación Superior</a>
+                            <a href="analisis_laboral.html">Empleos en Educación Superior2</a>
+                            <a href="Pedagogia-Biologia.html">Pedagogías en Biología (Chile)</a>
+                            <a href="QF.HTML">Química y Farmacia (Chile)</a>
+                            <a href="tiny_houses_web.html">Tiny Houses (Chile)</a>
+                            <a href="anatomofisio.html">Anatomofisio (Chile)</a>
+                            <a href="reino_vida.html">Coleccion de Plantas (Chile)</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Laboratorio -->
+            <div class="mobile-group">
+                <button class="mobile-header">
+                    <span>
+                        <svg class="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9l-3.375-3.375A7.5 7.5 0 007.5 21l3.375-3.375m0-3.75L13.5 7.5"/></svg>
+                        Laboratorio
+                    </span>
+                    <svg class="mobile-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="mobile-links">
+                    <div class="mobile-links-inner">
+                         <div class="mobile-category">
+                            <h4>Proyectos y Noticias</h4>
+                            <a href="LEOLIB NEWS BLACK.HTML">Leolib News</a>
+                            <a href="CHAT_LEO.HTML">Chat Leo</a>
+                            <a href="vida mente cosmos web deepresearcheada.html">VIDA MENTE COSMOS DEEP</a>
+                        </div>
+                         <div class="mobile-category">
+                            <h4>Herramientas y Calculadoras</h4>
+                            <a href="CALCULADORA COMPRAS MOLECULAR RESPONSIVA.html">Calculadora Biología Molecular</a>
+                            <a href=" Histologia Calculadora.html">Calculadora Histología</a>
+                            <a href="CALCULADORA COMPRAS BLOT.HTML">Calculadora Western Blot</a>
+                            <a href="PLANTILLA CALCULADORA LABORATORIO.HTML">Plantilla Calculadora General</a>
+                            <a href="COTIZACION_yupielei.html">Cotización W-H-M</a>
+                        </div>
+                         <div class="mobile-category">
+                            <h4>Académico y Docencia</h4>
+                            <a href="horario_2025.html">Horario 2025</a>
+                            <a href="HORARIOS_LAB.HTML">Horarios Lab</a>
+                            <a href="INTEGRAL1_noq.HTML">Integral 1</a>
+                            <a href="red 2.html">Red Tesis Enseñanza Cs.</a>
+                            <a href="red3.html">Red Tesis Ejemplos</a>
+                            <a href="LAB1 BIOMOLECULAS.html">LAB I Biomoléculas</a>
+                            <a href="futuro_carreras_ciencias.html">El futuro de las carreras cientificas</a>
+                        </div>
+                        <div class="mobile-category">
+                            <h4>Desarrollo y Pruebas</h4>
+                            <a href="n8n_looker.html">ANID N8N+LOOKERSTUDIO</a>
+                            <a href="fondosX2.html">Dashboard Fondos</a>
+                            <a href="web.moderna.html">Web Moderna (Test)</a>
+                            <a href="web.three.html">Web Three.js (Test)</a>
+                            <a href="totem.html">Totem 1</a>
+                            <a href="totem2.html">Totem 2</a>
+                            <a href="PROBANDO.HTML">Probando 1</a>
+                            <a href="probando2gemini.html">Probando 2</a>
+                            <a href="web caos orden.html">Web Caos y Orden</a>
+                            <a href="AI- ESCRITURA- INCLUYE SHADOW FINAL.html">AI Escritura Incluye Shadow Final</a>
+                            <a href="experimento_proteina.html">Experimento Proteina</a>
+                            <a href="Análisis_Worldcoin.html">Analisis de Worldcoin</a>
+                            <a href="IDE_Explorer_Android.html">IDE explorer para Android</a>
+                            <a href="COLMENA.HTML">Colmena</a>
+                            <a href="seguros_catastroficos.html">Seguros Catastróficos Chile</a>
+                            <a href="anatomofisio.html">Seguros Catastróficos Chile</a>
+                            <a href="qbism.html">Qbism</a>
+                            <a href="Digestivo.html">Digestivo</a>
+                            <a href=" MAC.HTML">Mecanismo de Aseguramiento de Calidad</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="#contacto" class="mobile-header" style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <span>
+                     <svg class="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                     Contacto
+                </span>
+            </a>
+
+        </div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <div class="main-content" id="inicio">
+        <div class="hero">
+            <h1>Origen, Cosmos,<br>Vida y Mente</h1>
+            <p>Un viaje transdisciplinario a través del cosmos, la vida, la conciencia y las redes del saber.</p>
         </div>
 
-        <div class="layout-grid">
-            <main class="content">
-                <section id="trazado-vida" class="glassmorphism" data-animate>
+        <div class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+            <main>
+                <section id="trazado-vida" class="section">
                     <h2>El Punto de Partida</h2>
                     <p>Este viaje intelectual nace de una pregunta fundamental: ¿qué significa estar vivo? Mi formación en <span class="highlight">biología</span> me proporcionó las herramientas para explorar el origen de la existencia, pero cada respuesta abría una nueva puerta hacia la <span class="highlight">filosofía</span> y la complejidad de la <span class="highlight">conciencia</span>.</p>
                 </section>
 
-                <section id="filosofia-mente" class="glassmorphism" data-animate>
+                <section id="filosofia-mente" class="section">
                     <h2>Filosofía de la Mente, Lenguaje y Cognición</h2>
-                    <p>Aquí exploro la idea de que la mente no es una entidad aislada, sino un proceso encarnado y extendido. Inspirado en <span class="highlight">Wittgenstein</span> y <span class="highlight">Varela</span>, investigo cómo el <span class="highlight">lenguaje</span> construye nuestra realidad y cómo la <span class="highlight">cognición</span> emerge de la interacción dinámica entre el cerebro, el cuerpo y el entorno. Es el cruce donde la neurociencia se encuentra con la fenomenología.</p>
-                </section>
-                
-                <section id="biologia-celular" class="glassmorphism" data-animate>
-                    <h2>Biología Celular y Molecular</h2>
-                    <p>Para entender los sistemas complejos, debemos empezar por sus unidades fundamentales. Me sumerjo en el mundo de la <span class="highlight">biología celular y molecular</span> para desentrañar los mecanismos que gobiernan la vida. Desde la <span class="highlight">expresión génica</span> hasta la comunicación intercelular, cada proceso revela una danza de orden y caos que escala hasta definir organismos completos.</p>
+                    <p>Aquí exploro la idea de que la mente no es una entidad aislada, sino un proceso encarnado y extendido. Inspirado en <span class="highlight">Wittgenstein</span> y <span class="highlight">Varela</span>, investigo cómo el <span class="highlight">lenguaje</span> construye nuestra realidad y cómo la <span class="highlight">cognición</span> emerge de la interacción dinámica entre el cerebro, el cuerpo y el entorno.</p>
                 </section>
 
-                <section id="analisis-redes" class="glassmorphism" data-animate>
+                <section id="biologia-celular" class="section">
+                    <h2>Biología Celular y Molecular</h2>
+                    <p>Para entender los sistemas complejos, debemos empezar por sus unidades fundamentales. Me sumerjo en el mundo de la <span class="highlight">biología celular y molecular</span> para desentrañar los mecanismos que gobiernan la vida. Desde la <span class="highlight">expresión génica</span> hasta la comunicación intercelular, cada proceso revela una danza de orden y caos.</p>
+                </section>
+
+                <section id="analisis-redes" class="section">
                     <h2>Análisis de Redes y Visualización de Datos</h2>
-                    <p>Las conexiones lo son todo. A través del <span class="highlight">análisis de redes</span>, busco mapear y entender las relaciones ocultas en sistemas complejos, ya sean redes neuronales, interacciones sociales o la estructura de un texto. La <span class="highlight">visualización de datos</span> con herramientas como D3.js se convierte en un microscopio para observar patrones que de otro modo serían invisibles.</p>
-                    <h3 id="elementos-comunes">Mapa Conceptual General</h3>
+                    <p>Las conexiones lo son todo. A través del <span class="highlight">análisis de redes</span>, busco mapear y entender las relaciones ocultas en sistemas complejos. La <span class="highlight">visualización de datos</span> con herramientas como D3.js se convierte en un microscopio para observar patrones que de otro modo serían invisibles.</p>
+                    <h3 style="color: var(--amber); margin-top: 3rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">Mapa Conceptual General</h3>
                     <div id="visualization" class="visualization-container"></div>
-                    <h3 id="redes-palabras">Red de Palabras Clave</h3>
+                    <h3 style="color: var(--amber); margin-top: 3rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">Red de Palabras Clave</h3>
                     <div id="network-graph" class="visualization-container"></div>
                 </section>
-                
-                <section id="inteligencia-artificial" class="glassmorphism" data-animate>
-                    <h2>Inteligencia Artificial y Sistemas Complejos</h2>
-                    <p>La <span class="highlight">Inteligencia Artificial</span> no es solo una herramienta, sino un espejo que refleja nuestras propias nociones de inteligencia y conciencia. Investigo los modelos de IA, no solo por su capacidad predictiva, sino como <span class="highlight">sistemas complejos</span> que nos permiten simular y explorar las reglas de la emergencia, el aprendizaje y la auto-organización, conectando directamente con los principios de la autopoiesis.</p>
-                </section>
 
-                <div id="ciencias-cognitivas" style="display:none;"></div>
-                <div id="epistemologia" style="display:none;"></div>
+                <section id="inteligencia-artificial" class="section">
+                    <h2>Inteligencia Artificial y Sistemas Complejos</h2>
+                    <p>La <span class="highlight">Inteligencia Artificial</span> no es solo una herramienta, sino un espejo que refleja nuestras propias nociones de inteligencia y conciencia. Investigo los modelos de IA como <span class="highlight">sistemas complejos</span> que nos permiten simular y explorar las reglas de la emergencia y la auto-organización.</p>
+                </section>
             </main>
         </div>
+
         <footer class="footer" id="contacto">
             <h2>Contacto</h2>
-            <p>Este espacio es una cartografía personal y una invitación al diálogo.</p>
-            <p style="margin-top:1.5rem; font-size: 0.9em;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+            <p class="text-slate-400 mt-4">Este espacio es una cartografía personal y una invitación al diálogo.</p>
+            <p class="mt-8 text-lg font-light italic">"La vida es terriblemente bella cuando los jugadores juegan." | 2025</p>
         </footer>
     </div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Initialize Three.js Background
-            if (typeof THREE !== 'undefined') {
-                initThreeJS();
-            } else {
-                console.error("Three.js not loaded");
+        // ------------------------------------------------------------------
+        // THREE.JS - FONDO OPTIMIZADO
+        // ------------------------------------------------------------------
+        (function initThreeJS() {
+            const canvas = document.getElementById('bg-canvas');
+            if (!canvas) return;
+            
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Optimización DPI
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 30;
+
+            const particlesGeometry = new THREE.BufferGeometry();
+            const isMobile = window.innerWidth < 768;
+            const particlesCount = isMobile ? 800 : 2000; // Menos partículas en móvil
+            const posArray = new Float32Array(particlesCount * 3);
+
+            for (let i = 0; i < particlesCount * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 100;
             }
 
-            // Initialize D3 Graphs
-            if (typeof d3 !== 'undefined') {
-                drawAllGraphs();
-            } else {
-                console.error("D3.js not loaded");
+            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const particlesMaterial = new THREE.PointsMaterial({
+                size: isMobile ? 0.2 : 0.15,
+                color: 0xf59e0b, 
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending
+            });
+
+            const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+            scene.add(particlesMesh);
+
+            function animate() {
+                requestAnimationFrame(animate);
+                particlesMesh.rotation.y += 0.0003;
+                particlesMesh.rotation.x += 0.0001;
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        })();
+
+        // ------------------------------------------------------------------
+        // D3.JS - REDIMENSIONABLE Y ROBUSTO
+        // ------------------------------------------------------------------
+        (function initD3() {
+            // Datos simulados
+            const data1 = {
+                nodes: [
+                    { id: "Vida", group: 1, url: "https://es.wikipedia.org/wiki/Vida" }, 
+                    { id: "Mente", group: 1, url: "https://es.wikipedia.org/wiki/Mente" }, 
+                    { id: "Cosmos", group: 1, url: "https://es.wikipedia.org/wiki/Cosmos" },
+                    { id: "Biología", group: 2, url: "https://es.wikipedia.org/wiki/Biolog%C3%ADa" }, 
+                    { id: "Autopoiesis", group: 2, url: "https://es.wikipedia.org/wiki/Autopoiesis" },
+                    { id: "Filosofía", group: 3, url: "https://es.wikipedia.org/wiki/Filosof%C3%ADa" }, 
+                    { id: "Cognición", group: 3, url: "https://es.wikipedia.org/wiki/Cognici%C3%B3n" }, 
+                    { id: "Varela", group: 3, url: "https://es.wikipedia.org/wiki/Francisco_Varela" },
+                    { id: "IA", group: 4, url: "https://es.wikipedia.org/wiki/Inteligencia_artificial" }, 
+                    { id: "Complejidad", group: 4, url: "https://es.wikipedia.org/wiki/Complejidad" }, 
+                    { id: "Redes", group: 5, url: "https://es.wikipedia.org/wiki/Red" }
+                ],
+                links: [
+                    { source: "Vida", target: "Biología" }, { source: "Vida", target: "Autopoiesis" },
+                    { source: "Mente", target: "Filosofía" }, { source: "Mente", target: "Cognición" },
+                    { source: "Autopoiesis", target: "Varela" }, { source: "Cognición", target: "Varela" },
+                    { source: "IA", target: "Complejidad" }, { source: "Redes", target: "Complejidad" },
+                    { source: "Cosmos", target: "Complejidad" }, { source: "Biología", target: "Complejidad" },
+                    { source: "Vida", target: "Cosmos" }
+                ]
+            };
+
+            const data2 = {
+                nodes: [
+                    { id: "Datos", group: 1, url: "https://es.wikipedia.org/wiki/Dato" }, 
+                    { id: "Patrones", group: 1, url: "https://es.wikipedia.org/wiki/Patr%C3%B3n_(estructura)" },
+                    { id: "Algoritmos", group: 2, url: "https://es.wikipedia.org/wiki/Algoritmo" }, 
+                    { id: "Python", group: 2, url: "https://es.wikipedia.org/wiki/Python" },
+                    { id: "Visualización", group: 3, url: "https://es.wikipedia.org/wiki/Visualizaci%C3%B3n_de_datos" }, 
+                    { id: "D3.js", group: 3, url: "https://es.wikipedia.org/wiki/D3.js" },
+                    { id: "Estadística", group: 4, url: "https://es.wikipedia.org/wiki/Estad%C3%ADstica" }, 
+                    { id: "Investigación", group: 5, url: "https://es.wikipedia.org/wiki/Investigaci%C3%B3n" }
+                ],
+                links: [
+                    { source: "Datos", target: "Patrones" }, { source: "Algoritmos", target: "Datos" },
+                    { source: "Python", target: "Algoritmos" }, { source: "Visualización", target: "Datos" },
+                    { source: "D3.js", target: "Visualización" }, { source: "Estadística", target: "Patrones" },
+                    { source: "Investigación", target: "Datos" }
+                ]
+            };
+
+            function createForceGraph(selector, data, mainColor) {
+                const container = document.querySelector(selector);
+                if (!container) return;
+
+                // Limpiar SVG anterior
+                d3.select(selector).selectAll("*").remove();
+
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+
+                const svg = d3.select(selector)
+                    .append("svg")
+                    .attr("width", "100%")
+                    .attr("height", "100%")
+                    .attr("viewBox", [0, 0, width, height]);
+
+                // Copiar datos para no mutar los originales en redimensionamiento
+                const nodes = data.nodes.map(d => Object.create(d));
+                const links = data.links.map(d => Object.create(d));
+
+                const simulation = d3.forceSimulation(nodes)
+                    .force("link", d3.forceLink(links).id(d => d.id).distance(width > 600 ? 100 : 60)) // Links más cortos en móvil
+                    .force("charge", d3.forceManyBody().strength(width > 600 ? -300 : -150))
+                    .force("center", d3.forceCenter(width / 2, height / 2));
+
+                const link = svg.append("g")
+                    .attr("class", "links")
+                    .selectAll("line")
+                    .data(links)
+                    .join("line")
+                    .attr("class", "link")
+                    .attr("stroke-width", 1.5)
+                    .attr("stroke", "#475569");
+
+                const node = svg.append("g")
+                    .attr("class", "nodes")
+                    .selectAll("g")
+                    .data(nodes)
+                    .join("g")
+                    .call(drag(simulation))
+                    .on("click", (event, d) => window.open(d.url, "_blank"));
+
+                node.append("circle")
+                    .attr("r", width > 600 ? 8 : 6)
+                    .attr("fill", mainColor)
+                    .attr("stroke", "#fff")
+                    .attr("stroke-width", 1.5);
+
+                node.append("text")
+                    .attr("x", 12)
+                    .attr("y", 4)
+                    .style("font-size", width > 600 ? "12px" : "10px")
+                    .text(d => d.id);
+
+                simulation.on("tick", () => {
+                    link
+                        .attr("x1", d => d.source.x)
+                        .attr("y1", d => d.source.y)
+                        .attr("x2", d => d.target.x)
+                        .attr("y2", d => d.target.y);
+
+                    // Mantener nodos dentro del canvas
+                    node.attr("transform", d => {
+                        d.x = Math.max(8, Math.min(width - 8, d.x));
+                        d.y = Math.max(8, Math.min(height - 8, d.y));
+                        return `translate(${d.x},${d.y})`;
+                    });
+                });
+
+                function drag(simulation) {
+                    return d3.drag()
+                        .on("start", event => {
+                            if (!event.active) simulation.alphaTarget(0.3).restart();
+                            event.subject.fx = event.subject.x;
+                            event.subject.fy = event.subject.y;
+                        })
+                        .on("drag", event => {
+                            event.subject.fx = event.x;
+                            event.subject.fy = event.y;
+                        })
+                        .on("end", event => {
+                            if (!event.active) simulation.alphaTarget(0);
+                            event.subject.fx = null;
+                            event.subject.fy = null;
+                        });
+                }
             }
 
-            // Setup Navigation and other event listeners
-            setupNavigation();
-            setupScrollAnimations();
+            // Renderizado inicial
+            createForceGraph("#visualization", data1, "#f59e0b");
+            createForceGraph("#network-graph", data2, "#818cf8");
 
-            // Handle window resizing
+            // Redibujar en resize con debounce simple
             let resizeTimer;
             window.addEventListener('resize', () => {
                 clearTimeout(resizeTimer);
                 resizeTimer = setTimeout(() => {
-                    if (typeof d3 !== 'undefined') {
-                        drawAllGraphs();
-                    }
-                }, 250);
+                    createForceGraph("#visualization", data1, "#f59e0b");
+                    createForceGraph("#network-graph", data2, "#818cf8");
+                }, 200);
             });
-        });
+        })();
 
-        // --- THREE.JS BACKGROUND ---
-        let scene, camera, renderer, points, lines;
-        
-        function initThreeJS() {
-            try {
-                scene = new THREE.Scene();
-                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
-                camera.position.z = 50;
-
-                renderer = new THREE.WebGLRenderer({
-                    canvas: document.getElementById("bg-canvas"),
-                    alpha: true
-                });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-
-                const pointCount = 200;
-                const positions = new Float32Array(pointCount * 3);
-                const pointGeo = new THREE.BufferGeometry();
-                for (let i = 0; i < pointCount; i++) {
-                    positions[i * 3] = (Math.random() - 0.5) * 400;
-                    positions[i * 3 + 1] = (Math.random() - 0.5) * 400;
-                    positions[i * 3 + 2] = (Math.random() - 0.5) * 400;
-                }
-                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.5, transparent: true, opacity: 0.8 });
-                points = new THREE.Points(pointGeo, pointMaterial);
-                scene.add(points);
-
-                regenerateLines();
-
-                window.addEventListener("resize", onWindowResize, false);
-                document.addEventListener('mousemove', onMouseMove, false);
-                renderer.domElement.addEventListener('click', onCanvasClick, false);
-                animate();
-            } catch (error) {
-                console.error('Error initializing Three.js:', error);
-            }
-        }
-
-        function onWindowResize() {
-            if(camera && renderer) {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            }
-        }
-
-        let mouseX = 0, mouseY = 0;
-        function onMouseMove(event) {
-            mouseX = (event.clientX - window.innerWidth / 2) / 100;
-            mouseY = (event.clientY - window.innerHeight / 2) / 100;
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            if(scene && camera && renderer && points && lines) {
-                points.rotation.y += 0.0005;
-                lines.rotation.y += 0.0005;
-                camera.position.x += (mouseX - camera.position.x) * 0.05;
-                camera.position.y += (-mouseY - camera.position.y) * 0.05;
-                camera.lookAt(scene.position);
-                renderer.render(scene, camera);
-            }
-        }
-
-        function onCanvasClick(event) {
-            const mouse = new THREE.Vector2();
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            const vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
-            vector.unproject(camera);
-            const dir = vector.sub(camera.position).normalize();
-            const distance = -camera.position.z / dir.z;
-            const pos = camera.position.clone().add(dir.multiplyScalar(distance));
-            addPoint(pos);
-        }
-
-        function addPoint(position) {
-            const oldPositions = points.geometry.attributes.position.array;
-            const newPointCount = oldPositions.length / 3 + 1;
-            const newPositions = new Float32Array(newPointCount * 3);
-            newPositions.set(oldPositions);
-            newPositions[oldPositions.length] = position.x;
-            newPositions[oldPositions.length + 1] = position.y;
-            newPositions[oldPositions.length + 2] = position.z;
-            points.geometry.setAttribute('position', new THREE.BufferAttribute(newPositions, 3));
-            points.geometry.attributes.position.needsUpdate = true;
-            regenerateLines();
-        }
-
-        function regenerateLines() {
-            if (lines) scene.remove(lines);
-            const pointPositions = points.geometry.attributes.position.array;
-            const pointCount = pointPositions.length / 3;
-            const linePositions = [];
-            for (let i = 0; i < pointCount; i++) {
-                for (let j = i + 1; j < pointCount; j++) {
-                    const dx = pointPositions[i * 3] - pointPositions[j * 3];
-                    const dy = pointPositions[i * 3 + 1] - pointPositions[j * 3 + 1];
-                    const dz = pointPositions[i * 3 + 2] - pointPositions[j * 3 + 2];
-                    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                    if (dist < 50) {
-                        linePositions.push(pointPositions[i * 3], pointPositions[i * 3 + 1], pointPositions[i * 3 + 2]);
-                        linePositions.push(pointPositions[j * 3], pointPositions[j * 3 + 1], pointPositions[j * 3 + 2]);
-                    }
-                }
-            }
-            const lineGeo = new THREE.BufferGeometry();
-            lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
-            const lineMaterial = new THREE.LineBasicMaterial({ color: 0x22d3ee, opacity: 0.3, transparent: true });
-            lines = new THREE.LineSegments(lineGeo, lineMaterial);
-            scene.add(lines);
-        }
-
-        // --- NAVIGATION SCRIPTS ---
-        function setupNavigation() {
-            const menuToggleBtn = document.getElementById('menu-toggle-btn');
-            const navMenu = document.getElementById('nav-menu');
-
-            menuToggleBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                document.body.classList.toggle('menu-open');
+        // ------------------------------------------------------------------
+        // UI & INTERACCIONES
+        // ------------------------------------------------------------------
+        (function initUI() {
+            // Navbar Scroll
+            const nav = document.getElementById('navbar');
+            window.addEventListener('scroll', () => {
+                nav.classList.toggle('scrolled', window.scrollY > 20);
             });
 
-            navMenu.addEventListener('click', (e) => {
-                if (e.target.tagName === 'A' && window.innerWidth <= 1024) {
-                   document.body.classList.remove('menu-open');
+            // Mobile Menu Logic
+            const mobileToggle = document.getElementById('mobile-toggle');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const menuIcon = document.getElementById('menu-icon');
+            const closeIcon = document.getElementById('close-icon');
+            const body = document.body;
+
+            function toggleMenu() {
+                const isOpen = mobileMenu.classList.contains('open');
+                
+                // Toggle menú
+                if (isOpen) {
+                    mobileMenu.classList.remove('open');
+                    menuIcon.classList.remove('hidden');
+                    closeIcon.classList.add('hidden');
+                    body.style.overflow = ''; 
+                } else {
+                    mobileMenu.classList.add('open');
+                    menuIcon.classList.add('hidden');
+                    closeIcon.classList.remove('hidden');
+                    body.style.overflow = 'hidden'; 
                 }
+            }
+
+            mobileToggle.addEventListener('click', toggleMenu);
+
+            // Cerrar menú al hacer click en enlaces simples (no acordeones)
+            const simpleLinks = mobileMenu.querySelectorAll('a:not(.mobile-header)');
+            simpleLinks.forEach(link => {
+                link.addEventListener('click', toggleMenu);
             });
 
-            if (window.matchMedia('(min-width: 1025px)').matches) {
-                const menuItems = document.querySelectorAll('.nav-container > li');
-                menuItems.forEach(item => {
-                    const megaMenu = item.querySelector('.mega-menu');
-                    if (megaMenu) {
-                        let leaveTimeout;
-                        const showMenu = () => {
-                            clearTimeout(leaveTimeout);
-                            document.querySelectorAll('.mega-menu.is-active').forEach(m => {
-                                if (m !== megaMenu) m.classList.remove('is-active');
-                            });
-                            megaMenu.classList.add('is-active');
-                        };
-                        const startHideTimer = () => {
-                            leaveTimeout = setTimeout(() => megaMenu.classList.remove('is-active'), 250);
-                        };
-                        item.addEventListener('mouseenter', showMenu);
-                        item.addEventListener('mouseleave', startHideTimer);
+            // Acordeones Móviles
+            const mobileHeaders = document.querySelectorAll('.mobile-group .mobile-header');
+            
+            mobileHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const group = header.parentElement;
+                    const links = group.querySelector('.mobile-links');
+                    const isActive = group.classList.contains('active');
+
+                    // Cerrar otros acordeones (opcional, estilo UX)
+                    document.querySelectorAll('.mobile-group').forEach(otherGroup => {
+                        if (otherGroup !== group) {
+                            otherGroup.classList.remove('active');
+                            otherGroup.querySelector('.mobile-links').style.maxHeight = null;
+                        }
+                    });
+
+                    // Toggle actual
+                    group.classList.toggle('active');
+                    if (!isActive) {
+                        links.style.maxHeight = links.scrollHeight + "px";
+                    } else {
+                        links.style.maxHeight = null;
                     }
                 });
-            }
-        }
+            });
 
-        // --- SCROLL ANIMATION ---
-        function setupScrollAnimations() {
-            const animatedSections = document.querySelectorAll('[data-animate]');
+            // Animación de entrada al hacer scroll (IntersectionObserver)
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                        
-                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .visualization-container');
-                        elementsToAnimate.forEach((el, index) => {
-                           el.style.transitionDelay = `${index * 150}ms`;
-                        });
-
-                        observer.unobserve(entry.target);
+                        entry.target.classList.add('visible');
                     }
                 });
-            }, { threshold: 0.2 });
-            animatedSections.forEach(section => observer.observe(section));
-        }
+            }, { threshold: 0.1 });
 
-        // --- D3.JS GRAPHS ---
-        const vizData = { nodes: [{id:"Origen",link:"#trazado-vida"},{id:"Biología",link:"#biologia-celular"},{id:"Histología",link:"#biologia-celular"},{id:"Determinismo",link:"#filosofia-mente"},{id:"Libertad",link:"#filosofia-mente"},{id:"Ciencias Cognitivas",link:"#filosofia-mente"},{id:"Mente",link:"#filosofia-mente"},{id:"Filosofía",link:"#filosofia-mente"},{id:"Lenguaje",link:"#filosofia-mente"},{id:"Epistemología",link:"#trazado-vida"},{id:"Economía",link:"#analisis-redes"},{id:"Política",link:"#analisis-redes"},{id:"Subjetividad",link:"#filosofia-mente"},{id:"Varela",link:"#filosofia-mente"},{id:"Maturana",link:"#biologia-celular"}], links: [{source:"Origen",target:"Biología"},{source:"Biología",target:"Histología"},{source:"Biología",target:"Determinismo"},{source:"Biología",target:"Maturana"},{source:"Determinismo",target:"Libertad"},{source:"Libertad",target:"Filosofía"},{source:"Filosofía",target:"Ciencias Cognitivas"},{source:"Ciencias Cognitivas",target:"Mente"},{source:"Ciencias Cognitivas",target:"Varela"},{source:"Mente",target:"Lenguaje"},{source:"Filosofía",target:"Epistemología"},{source:"Libertad",target:"Economía"},{source:"Economía",target:"Política"},{source:"Política",target:"Subjetividad"}]};
-        const netData = { nodes: [{id:"Palabras",link:"#analisis-redes"},{id:"Lenguaje",link:"#filosofia-mente"},{id:"Visualización",link:"#analisis-redes"},{id:"Voyant",link:"#voyant-tools"},{id:"Histología",link:"#biologia-celular"},{id:"Herbario",link:"https://leolib87.github.io/herbario/"}], links: [{source:"Palabras",target:"Lenguaje"},{source:"Palabras",target:"Visualización"},{source:"Visualización",target:"Voyant"},{source:"Visualización",target:"Histología"},{source:"Histología",target:"Herbario"}]};
-        
-        function createForceGraph(containerId, data) {
-            const container = d3.select(containerId);
-            if (!container.node() || container.node().getBoundingClientRect().width === 0) return;
-            container.select("svg").remove();
-            
-            const width = container.node().getBoundingClientRect().width;
-            const height = container.node().getBoundingClientRect().height;
-            const isMobile = width < 600;
-            const nodeRadius = isMobile ? 8 : 10;
-
-            const svg = container.append("svg").attr("width", width).attr("height", height).attr("viewBox", `0 0 ${width} ${height}`);
-
-            const simulation = d3.forceSimulation(data.nodes)
-                .force("link", d3.forceLink(data.links).id(d => d.id).distance(isMobile ? 50 : 90).strength(0.6))
-                .force("charge", d3.forceManyBody().strength(isMobile ? -200 : -300))
-                .force("center", d3.forceCenter(width / 2, height / 2).strength(1))
-                .force("collide", d3.forceCollide().radius(nodeRadius * 3).strength(0.8));
-
-            const link = svg.append("g").selectAll(".link").data(data.links).enter().append("line").attr("class", "link");
-            const node = svg.append("g").selectAll(".node").data(data.nodes).enter().append("g").attr("class", "node").call(drag(simulation));
-            node.append("circle").attr("r", nodeRadius);
-            node.append("text").attr("dy", `-${nodeRadius + 4}px`).attr("text-anchor", "middle").text(d => d.id);
-
-            const linkedByIndex = {};
-            data.links.forEach(d => { linkedByIndex[`${d.source.index},${d.target.index}`] = 1; });
-            function areNodesConnected(a, b) { return linkedByIndex[`${a.index},${b.index}`] || linkedByIndex[`${b.index},${a.index}`] || a.index === b.index; }
-
-            node.on('mouseover.fade', (event, d) => {
-                node.style('opacity', o => areNodesConnected(d, o) ? 1 : 0.2);
-                link.style('stroke-opacity', o => o.source === d || o.target === d ? 0.8 : 0.1);
-            }).on('mouseout.fade', () => {
-                node.style('opacity', 1);
-                link.style('stroke-opacity', 0.4);
-            });
-
-            node.on("click", (event, d) => {
-                event.preventDefault();
-                if (d.link) {
-                    if (d.link.startsWith('http')) {
-                        window.open(d.link, '_blank');
-                    } else {
-                        const targetElement = document.querySelector(d.link);
-                        if (targetElement) targetElement.scrollIntoView({ behavior: 'smooth' });
-                    }
-                }
-            });
-            
-            simulation.on("tick", () => {
-                node.attr("transform", d => {
-                    d.x = Math.max(nodeRadius, Math.min(width - nodeRadius, d.x));
-                    d.y = Math.max(nodeRadius, Math.min(height - nodeRadius, d.y));
-                    return `translate(${d.x},${d.y})`;
-                });
-                link.attr("x1", d => d.source.x).attr("y1", d => d.source.y).attr("x2", d => d.target.x).attr("y2", d => d.target.y);
-            });
-
-            function drag(simulation) {
-                function dragstarted(event, d) {
-                    if (!event.active) simulation.alphaTarget(0.3).restart();
-                    d.fx = d.x; d.fy = d.y;
-                }
-                function dragged(event, d) {
-                    d.fx = Math.max(nodeRadius, Math.min(width - nodeRadius, event.x));
-                    d.fy = Math.max(nodeRadius, Math.min(height - nodeRadius, event.y));
-                }
-                function dragended(event, d) {
-                    if (!event.active) simulation.alphaTarget(0);
-                    d.fx = null; d.fy = null;
-                }
-                return d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended);
-            }
-        }
-        
-        function drawAllGraphs() {
-             createForceGraph("#visualization", vizData);
-             createForceGraph("#network-graph", netData);
-        }
+            document.querySelectorAll('.section').forEach(section => observer.observe(section));
+        })();
     </script>
 </body>
 </html>
