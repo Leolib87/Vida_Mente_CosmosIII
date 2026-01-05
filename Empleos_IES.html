@@ -166,17 +166,47 @@
         .tag-cft { background-color: rgba(6, 78, 59, 0.5); color: #6ee7b7; border: 1px solid #065f46; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; }
 
         /* D3 Network Styles */
-        #network-container { width: 100%; height: 700px; position: relative; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.1); border-radius: 8px; background: rgba(0,0,0,0.2); }
-        .node circle { stroke: #fff; stroke-width: 1.5px; transition: all 0.3s ease; }
-        .node:hover circle { stroke: var(--amber); stroke-width: 3px; filter: drop-shadow(0 0 5px var(--amber)); }
+        #network-container { width: 100%; height: 700px; position: relative; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.1); border-radius: 8px; background: rgba(0,0,0,0.2); cursor: grab; }
+        #network-container:active { cursor: grabbing; }
+        
+        .node { cursor: pointer; }
+        .node circle { stroke: #fff; stroke-width: 1px; transition: all 0.2s ease; }
+        .node:hover circle { stroke: var(--amber); stroke-width: 3px; filter: drop-shadow(0 0 8px var(--amber)); transform: scale(1.1); }
+        
         .node text { 
             font-family: 'JetBrains Mono', monospace; 
             pointer-events: none; 
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-            font-size: 10px; fill: #cbd5e1;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+            font-size: 10px; fill: #94a3b8;
+            opacity: 0.8;
+            transition: all 0.2s;
         }
-        .node.category text { font-size: 14px; font-weight: bold; fill: #fff; }
-        .link { stroke: #475569; stroke-opacity: 0.4; stroke-width: 1px; }
+        .node:hover text { fill: #fff; font-weight: bold; font-size: 12px; opacity: 1; z-index: 10; }
+        
+        .node.category text { font-size: 14px; font-weight: bold; fill: #fff; opacity: 1; }
+        .link { stroke: #475569; stroke-opacity: 0.2; stroke-width: 1px; }
+
+        /* D3 Tooltip */
+        .d3-tooltip {
+            position: absolute;
+            text-align: left;
+            padding: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8);
+            color: #cbd5e1;
+            z-index: 100;
+            max-width: 250px;
+            backdrop-filter: blur(4px);
+            transition: opacity 0.2s ease;
+        }
+        .d3-tooltip h4 { color: #f59e0b; font-weight: bold; margin-bottom: 4px; font-size: 14px; }
+        .d3-tooltip span { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-bottom: 6px; font-weight: 600; text-transform: uppercase; }
 
         /* Filter Input */
         .glow-input {
@@ -380,10 +410,12 @@
                     <p class="text-slate-400">Visualización de relaciones por tipo de institución (D3.js Force Simulation)</p>
                 </div>
                 
-                <div class="glass-card p-2 rounded-xl">
+                <div class="glass-card p-2 rounded-xl relative">
                     <div id="network-container">
                         <!-- D3 SVG will be appended here -->
                     </div>
+                    <!-- Tooltip Container -->
+                    <div id="d3-tooltip" class="d3-tooltip"></div>
                 </div>
                 <div class="flex justify-center gap-6 mt-4 text-sm font-mono">
                     <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-neon-cyan"></span> Públicas</div>
@@ -503,63 +535,87 @@
             filterTable();
         }
 
-        // 4. D3.js Network Logic
+        // 4. D3.js Network Logic (UPDATED: Dynamic Data from Table)
         (function initD3() {
             const container = document.getElementById('network-container');
-            const width = container.clientWidth;
-            const height = 700; // Increased height for more nodes
+            const tooltip = document.getElementById('d3-tooltip');
+            let width = container.clientWidth; 
+            const height = 750; 
 
-            // Full Dataset for Visualization
-            const data = {
-                "Pública": [
-                    { "name": "U. de Chile", "url": "#" }, { "name": "U. Austral de Chile", "url": "#" },
-                    { "name": "USACH", "url": "#" }, { "name": "UTEM", "url": "#" },
-                    { "name": "U. Arturo Prat", "url": "#" }, { "name": "U. de Los Lagos", "url": "#" },
-                    { "name": "U. Atacama", "url": "#" }, { "name": "U. de Aysen", "url": "#" },
-                    { "name": "U. de Magallanes", "url": "#" }, { "name": "U. de Ohiggins", "url": "#" },
-                    { "name": "U. Playa Ancha", "url": "#" }, { "name": "U. de Talca", "url": "#" },
-                    { "name": "U. de Valparaiso", "url": "#" }, { "name": "U. del Biobio", "url": "#" },
-                    { "name": "UMCE", "url": "#" }, { "name": "EMPLEOS SLEP", "url": "#" },
-                    { "name": "UTSM", "url": "#" }
-                ],
-                "Privada": [
-                    { "name": "PUC", "url": "#" }, { "name": "U. Adolfo Ibañez", "url": "#" },
-                    { "name": "U. Católica del Maule", "url": "#" }, { "name": "U. del Desarrollo", "url": "#" },
-                    { "name": "U. de Viña del Mar", "url": "#" }, { "name": "PUC de Valparaiso", "url": "#" },
-                    { "name": "U. Diego Portales", "url": "#" }, { "name": "DUOC", "url": "#" },
-                    { "name": "U. de los Andes", "url": "#" }, { "name": "U. Mayor", "url": "#" },
-                    { "name": "U. Alberto Hurtado", "url": "#" }, { "name": "U. Central", "url": "#" },
-                    { "name": "U. Finis Terrae", "url": "#" }, { "name": "UDLA", "url": "#" },
-                    { "name": "Acad. Humanismo Cristiano", "url": "#" }, { "name": "UBO", "url": "#" },
-                    { "name": "IACC", "url": "#" }, { "name": "U. Andrés Bello", "url": "#" },
-                    { "name": "UC. de Temuco", "url": "#" }, { "name": "U. Católica del Norte", "url": "#" },
-                    { "name": "UC. Silva Henriquez", "url": "#" }, { "name": "U. de Concepción", "url": "#" },
-                    { "name": "IDMA", "url": "#" }, { "name": "UST", "url": "#" },
-                    { "name": "USS", "url": "#" }, { "name": "UNAB", "url": "#" },
-                    { "name": "UDP", "url": "#" }, { "name": "INACAP", "url": "#" },
-                    { "name": "UCEN", "url": "#" }
-                ],
-                "CFT": [
-                    { "name": "CFT ENAC", "url": "#" }, { "name": "CFT de Magallanes", "url": "#" },
-                    { "name": "CFT Estatal Valpo", "url": "#" }
-                ]
-            };
+            // Clear previous SVG to avoid duplicates on reload/resize logic quirks
+            d3.select("#network-container svg").remove();
+
+            // Extract Data dynamically from the HTML Table
+            const rows = document.querySelectorAll('#data-table tbody tr');
+            const extractedData = { "Pública": [], "Privada": [], "CFT": [] };
+
+            rows.forEach(row => {
+                const cols = row.querySelectorAll('td');
+                if(cols.length < 5) return;
+                
+                const name = cols[0].innerText.trim();
+                const desc = cols[1].innerText.trim();
+                const typeText = cols[2].innerText.trim(); // "Pública", "Privada", "CFT"
+                const link = cols[4].querySelector('a') ? cols[4].querySelector('a').href : '#';
+
+                // Map table text to category keys
+                let categoryKey = "Privada"; // Default
+                if (typeText.includes("Pública")) categoryKey = "Pública";
+                else if (typeText.includes("CFT")) categoryKey = "CFT";
+                else if (typeText.includes("Privada")) categoryKey = "Privada";
+
+                if (extractedData[categoryKey]) {
+                    extractedData[categoryKey].push({ name, desc, url: link, type: typeText });
+                }
+            });
 
             const nodes = [];
             const links = [];
             const colors = ["#06b6d4", "#a855f7", "#10b981"]; // Cyan (Public), Purple (Private), Green (CFT)
+            const typeColorMap = { "Pública": "#06b6d4", "Privada": "#a855f7", "CFT": "#10b981" };
 
-            Object.entries(data).forEach(([category, institutions], index) => {
+            // Define positioning centers for clustering
+            const centers = {
+                "Pública": { x: width * 0.25, y: height * 0.4 },
+                "Privada": { x: width * 0.75, y: height * 0.4 },
+                "CFT": { x: width * 0.5, y: height * 0.8 },
+                "category": { x: width / 2, y: height / 2 }
+            };
+
+            // Build Nodes and Links
+            Object.entries(extractedData).forEach(([category, institutions], index) => {
                 const catNodeId = category;
-                nodes.push({ id: catNodeId, group: "category", size: 30 + (institutions.length * 0.5), color: colors[index] });
+                const catColor = colors[index];
                 
+                // Add Category Node
+                nodes.push({ 
+                    id: catNodeId, 
+                    group: "category", 
+                    size: 45, 
+                    color: catColor,
+                    desc: `Agrupación de ${institutions.length} instituciones`,
+                    type: "Categoría",
+                    fixedX: centers[category].x, // Target X for force
+                    fixedY: centers[category].y  // Target Y for force
+                });
+                
+                // Add Institution Nodes
                 institutions.forEach(inst => {
-                    nodes.push({ id: inst.name, group: "app", size: 6, color: colors[index], url: inst.url });
+                    nodes.push({ 
+                        id: inst.name, 
+                        group: "app", 
+                        size: 8, 
+                        color: catColor, 
+                        url: inst.url,
+                        desc: inst.desc,
+                        type: inst.type,
+                        catId: catNodeId // Reference for clustering
+                    });
                     links.push({ source: catNodeId, target: inst.name });
                 });
             });
 
-            // Inter-category links for cohesion
+            // Inter-category links for structure
             nodes.filter(n => n.group === "category").forEach((n1, i, arr) => {
                 for(let j = i+1; j < arr.length; j++) {
                     links.push({ source: n1.id, target: arr[j].id, distance: 400 });
@@ -569,24 +625,38 @@
             const svg = d3.select("#network-container").append("svg")
                 .attr("width", width)
                 .attr("height", height)
-                .call(d3.zoom().on("zoom", (event) => {
+                .call(d3.zoom().scaleExtent([0.5, 3]).on("zoom", (event) => {
                     g.attr("transform", event.transform);
-                }));
+                }))
+                .on("dblclick.zoom", null);
+
+            // NEON GLOW FILTER
+            const defs = svg.append("defs");
+            const filter = defs.append("filter").attr("id", "glow");
+            filter.append("feGaussianBlur").attr("stdDeviation", "2.5").attr("result", "coloredBlur");
+            const feMerge = filter.append("feMerge");
+            feMerge.append("feMergeNode").attr("in", "coloredBlur");
+            feMerge.append("feMergeNode").attr("in", "SourceGraphic");
 
             const g = svg.append("g");
 
+            // Simulation with improved forces for separation
             const simulation = d3.forceSimulation(nodes)
-                .force("link", d3.forceLink(links).id(d => d.id).distance(d => d.source.group === "category" && d.target.group === "category" ? 300 : 80))
-                .force("charge", d3.forceManyBody().strength(-200))
-                .force("center", d3.forceCenter(width / 2, height / 2))
-                .force("collision", d3.forceCollide().radius(d => d.size + 8));
+                .force("link", d3.forceLink(links).id(d => d.id).distance(d => d.source.group === "category" && d.target.group === "category" ? 400 : 60))
+                .force("charge", d3.forceManyBody().strength(-120))
+                .force("collide", d3.forceCollide().radius(d => d.size + 10).iterations(2))
+                // Force X/Y creates the clusters
+                .force("x", d3.forceX(d => d.group === "category" ? centers[d.id].x : centers[d.catId].x).strength(0.08))
+                .force("y", d3.forceY(d => d.group === "category" ? centers[d.id].y : centers[d.catId].y).strength(0.08));
 
             const link = g.append("g")
                 .attr("class", "links")
                 .selectAll("line")
                 .data(links)
                 .enter().append("line")
-                .attr("class", "link");
+                .attr("stroke", "#64748b")
+                .attr("stroke-opacity", 0.2)
+                .attr("stroke-width", 1);
 
             const node = g.append("g")
                 .attr("class", "nodes")
@@ -599,35 +669,98 @@
                     .on("drag", dragged)
                     .on("end", dragended));
 
+            // Circles with Glow
             node.append("circle")
                 .attr("r", d => d.size)
-                .attr("fill", d => d.group === "category" ? "rgba(0,0,0,0.5)" : d.color)
+                .attr("fill", d => d.group === "category" ? "rgba(0,0,0,0.4)" : d.color)
                 .attr("stroke", d => d.color)
                 .attr("stroke-width", d => d.group === "category" ? 2 : 1)
-                .style("fill-opacity", d => d.group === "category" ? 0.3 : 0.8);
+                .style("fill-opacity", d => d.group === "category" ? 0.3 : 0.8)
+                .style("filter", "url(#glow)"); // Apply the glow effect
 
+            // Labels with optimized visibility
             node.append("text")
-                .attr("dy", d => d.size + 12)
+                .attr("dy", d => d.size + 14)
                 .attr("text-anchor", "middle")
                 .text(d => d.id)
-                .style("display", d => d.group === "category" ? "block" : "none"); // Only show names for categories initially to reduce clutter
+                .style("display", "block") 
+                .style("font-size", d => d.group === "category" ? "14px" : "8px")
+                .style("fill", "#e2e8f0")
+                .style("opacity", d => d.group === "category" ? 1 : 0.6)
+                .style("pointer-events", "none")
+                .style("text-shadow", "0 2px 4px rgba(0,0,0,0.8)");
 
-            // Show name on hover
-            node.on("mouseover", function(event, d) {
-                d3.select(this).select("text").style("display", "block").style("font-weight", "bold");
-            }).on("mouseout", function(event, d) {
-                if (d.group !== "category") d3.select(this).select("text").style("display", "none");
+            // Interaction Events
+            node.on("click", (event, d) => {
+                if (d.url && d.url !== '#') {
+                    window.open(d.url, "_blank");
+                }
+            })
+            .on("mouseover", function(event, d) {
+                // Highlight Node
+                d3.select(this).select("circle")
+                    .transition().duration(200)
+                    .attr("r", d.size * 1.4)
+                    .style("fill", d.color)
+                    .style("fill-opacity", 1);
+                
+                d3.select(this).select("text")
+                    .style("font-weight", "bold")
+                    .style("font-size", "11px")
+                    .style("opacity", 1)
+                    .style("fill", "#fff");
+
+                // Show Tooltip
+                const color = typeColorMap[d.type] || '#ccc';
+                const typeLabel = d.type === "Categoría" ? "AGRUPACIÓN" : d.type.toUpperCase();
+                
+                tooltip.innerHTML = `
+                    <h4 style="color:${d.group === 'category' ? '#fff' : d.color}">${d.id}</h4>
+                    <span style="border: 1px solid ${color}; color: ${color};">${typeLabel}</span>
+                    <p style="margin-top:4px; line-height:1.4;">${d.desc}</p>
+                    ${d.url && d.url !== '#' ? `<div style="margin-top:6px; font-size:10px; color:${color};">Click para ver vacantes &nearr;</div>` : ''}
+                `;
+                
+                tooltip.style.opacity = 1;
+                tooltip.style.left = (event.pageX + 15) + "px";
+                tooltip.style.top = (event.pageY - 10) + "px";
+            })
+            .on("mousemove", function(event) {
+                tooltip.style.left = (event.pageX + 15) + "px";
+                tooltip.style.top = (event.pageY - 10) + "px";
+            })
+            .on("mouseout", function(event, d) {
+                // Reset Node
+                d3.select(this).select("circle")
+                    .transition().duration(200)
+                    .attr("r", d.size)
+                    .style("fill", d.group === "category" ? "rgba(0,0,0,0.4)" : d.color)
+                    .style("fill-opacity", d.group === "category" ? 0.3 : 0.8);
+
+                d3.select(this).select("text")
+                    .style("font-weight", "normal")
+                    .style("font-size", d.group === "category" ? "14px" : "8px")
+                    .style("opacity", d.group === "category" ? 1 : 0.6)
+                    .style("fill", "#e2e8f0");
+
+                // Hide Tooltip
+                tooltip.style.opacity = 0;
             });
 
             simulation.on("tick", () => {
+                // Soft Boundary Logic
+                node.attr("transform", d => {
+                    const radius = d.size + 5;
+                    d.x = Math.max(radius, Math.min(width - radius, d.x));
+                    d.y = Math.max(radius, Math.min(height - radius, d.y));
+                    return `translate(${d.x},${d.y})`;
+                });
+
                 link
                     .attr("x1", d => d.source.x)
                     .attr("y1", d => d.source.y)
                     .attr("x2", d => d.target.x)
                     .attr("y2", d => d.target.y);
-
-                node
-                    .attr("transform", d => `translate(${d.x},${d.y})`);
             });
 
             function dragstarted(event) {
@@ -648,9 +781,16 @@
             }
 
             window.addEventListener('resize', () => {
-                const newWidth = container.clientWidth;
-                svg.attr("width", newWidth);
-                simulation.force("center", d3.forceCenter(newWidth / 2, height / 2));
+                width = container.clientWidth; 
+                svg.attr("width", width);
+                
+                // Update force centers on resize
+                centers["Pública"] = { x: width * 0.25, y: height * 0.4 };
+                centers["Privada"] = { x: width * 0.75, y: height * 0.4 };
+                centers["CFT"] = { x: width * 0.5, y: height * 0.8 };
+                
+                simulation.force("x", d3.forceX(d => d.group === "category" ? centers[d.id].x : centers[d.catId].x).strength(0.08));
+                
                 simulation.alpha(0.3).restart();
             });
         })();
