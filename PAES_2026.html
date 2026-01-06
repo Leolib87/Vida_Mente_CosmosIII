@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vida, Mente y Cosmos | Ranking PAES 2026</title>
+    <meta name="description" content="Análisis dinámico de los 50 colegios con mejores ponderaciones en la PAES 2026. Visualización interactiva con D3.js.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { 
+            theme: { 
+                extend: { 
+                    fontFamily: { 
+                        sans: ['Inter', 'sans-serif'], 
+                        serif: ['Merriweather', 'serif'], 
+                        mono: ['JetBrains Mono', 'monospace'], 
+                    }, 
+                    colors: { 
+                        cosmos: { 950: '#020617', 900: '#08080c', 800: '#11111a', }, 
+                        neon: { blue: '#4f46e5', green: '#10b981', purple: '#a855f7', cyan: '#06b6d4', gold: '#fbbf24' } 
+                    }, 
+                    animation: { 
+                        'float': 'float 8s ease-in-out infinite', 
+                        'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite', 
+                    }, 
+                    keyframes: { 
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-15px)' } } 
+                    } 
+                } 
+            } 
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;900&family=Merriweather:ital,wght@0,300;0,400;1,400&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        :root { --nav-height: 80px; --amber: #f59e0b; --dark: #0f172a; --slate-300: #cbd5e1; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--dark); color: var(--slate-300); line-height: 1.8; overflow-x: hidden; background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px); background-size: 40px 40px; text-align: justify; }
+        .glass-card { background: rgba(17, 17, 26, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.5s; }
+        .glass-card:hover { transform: translateY(-3px); background: rgba(26, 26, 46, 0.9); border-color: rgba(255, 255, 255, 0.1); }
+        .nav-link { position: relative; padding: 0.5rem 0; color: #94a3b8; transition: color 0.3s; }
+        .nav-link:hover { color: white; }
+        .nav-link::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 1px; background: var(--amber); transition: width 0.3s; }
+        .nav-link:hover::after { width: 100%; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #08080c; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--amber); }
+        
+        .bar-label { font-size: 10px; fill: #94a3b8; font-family: 'JetBrains Mono', monospace; }
+        .bar-value { font-size: 10px; fill: white; font-weight: bold; }
+        .tooltip { position: absolute; padding: 10px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; font-size: 12px; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 100; backdrop-filter: blur(10px); }
+        
+        .btn-toggle { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 6px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; color: #94a3b8; }
+        .btn-toggle.active { background: var(--amber); color: #000; border-color: var(--amber); font-weight: bold; }
+    </style>
+</head>
+<body>
+    <nav class="fixed top-0 left-0 w-full h-[80px] z-50 glass-card border-b border-white/5 px-6 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-700 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-amber-500/20">VMC</div>
+            <span class="font-black tracking-tighter text-xl text-white hidden md:block uppercase">Vida, Mente y Cosmos</span>
+        </div>
+        <div class="hidden md:flex items-center gap-8 font-mono text-xs tracking-widest uppercase text-gray-400">
+            <a href="#" class="nav-link">Datos</a>
+            <a href="#" class="nav-link text-white font-bold">PAES 2026</a>
+            <a href="#" class="nav-link">Futuro</a>
+        </div>
+        <button class="p-2 hover:bg-white/10 rounded-full transition-colors"><i data-lucide="menu" class="text-white w-5 h-5"></i></button>
+    </nav>
+
+    <div class="bg-gradient" style="position: fixed; inset: 0; background: radial-gradient(circle at 30% 70%, rgba(245, 158, 11, 0.08) 0%, transparent 40%), var(--dark); z-index: -2;"></div>
+    <canvas id="bg-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;"></canvas>
+
+    <main class="main-content pt-20">
+        <!-- Hero Section -->
+        <section class="relative pt-24 pb-12 px-6">
+            <div class="max-w-5xl mx-auto text-center">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm mb-6 animate-float">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span class="text-[10px] font-mono text-gray-300 tracking-widest uppercase">Arquitectura del Éxito</span>
+                </div>
+                <h1 class="text-5xl md:text-7xl font-bold tracking-tighter mb-4 text-white">
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 via-gray-400 to-gray-600">PAES 2026</span>
+                </h1>
+                <p class="text-lg md:text-xl text-gray-400 font-serif italic max-w-3xl mx-auto leading-relaxed">
+                    Cartografía de la excelencia académica en el sistema escolar chileno. Datos crudos y visualización dinámica del espectro Top 50.
+                </p>
+            </div>
+        </section>
+
+        <!-- Tabla de Datos -->
+        <section class="py-12 px-6 bg-black/20 border-y border-white/5" id="seccion-tabla">
+            <div class="max-w-6xl mx-auto">
+                <div class="mb-12">
+                    <h2 class="text-2xl font-bold text-white mb-2 flex items-center gap-3">
+                        <span class="text-amber-500 font-mono">01.</span> Listado de Ponderaciones
+                    </h2>
+                    <p class="text-sm text-gray-400 font-mono uppercase tracking-widest">Base de datos de excelencia nominal</p>
+                </div>
+
+                <div class="overflow-x-auto rounded-2xl border border-white/10 glass-card">
+                    <table class="w-full text-left text-xs" id="data-table">
+                        <thead class="bg-white/5 font-mono text-gray-500 uppercase tracking-widest">
+                            <tr>
+                                <th class="p-4 border-b border-white/10">#</th>
+                                <th class="p-4 border-b border-white/10">Establecimiento</th>
+                                <th class="p-4 border-b border-white/10">Comuna</th>
+                                <th class="p-4 border-b border-white/10">Reg.</th>
+                                <th class="p-4 border-b border-white/10 text-right">Prom. 2025</th>
+                                <th class="p-4 border-b border-white/10 text-right">Prom. 2024</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-300 divide-y divide-white/5" id="table-body">
+                            <!-- Inyectado por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Gráfico D3.js -->
+        <section class="py-20 px-6" id="seccion-grafico">
+            <div class="max-w-6xl mx-auto">
+                <div class="glass-card p-8 md:p-12 rounded-[2rem] border border-white/10 relative overflow-hidden">
+                    
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+                        <div>
+                            <h2 class="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+                                <span class="text-amber-500 font-mono">02.</span> Análisis Visual
+                            </h2>
+                            <p class="text-sm text-gray-400 font-mono">INTERACTÚA CON LOS DATOS PARA REVELAR PATRONES</p>
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="updateChart('score')" class="btn-toggle active" id="btn-score">Puntaje</button>
+                            <button onclick="updateChart('name')" class="btn-toggle" id="btn-name">Nombre</button>
+                            <span class="w-px h-6 bg-white/10 mx-2 self-center"></span>
+                            <button onclick="filterRegion('ALL')" class="btn-toggle active" id="btn-all">Todos</button>
+                            <button onclick="filterRegion('RM')" class="btn-toggle" id="btn-rm">Santiaguinos</button>
+                            <button onclick="filterRegion('REG')" class="btn-toggle" id="btn-reg">Regionales</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Contenedor del Gráfico -->
+                    <div id="chart-container" class="w-full bg-black/40 rounded-2xl p-6 relative">
+                        <div id="tooltip" class="tooltip"></div>
+                        <svg id="paes-chart"></svg>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="py-20 px-6 text-center border-t border-white/5">
+            <div class="max-w-xl mx-auto">
+                <div class="flex justify-center gap-4 mb-8">
+                    <span class="w-12 h-[1px] bg-white/10 self-center"></span>
+                    <i data-lucide="database" class="text-amber-500 w-5 h-5"></i>
+                    <span class="w-12 h-[1px] bg-white/10 self-center"></span>
+                </div>
+                <p class="text-gray-500 text-xs font-mono uppercase tracking-[0.2em]">
+                    Sistemas Digitales de Control VMC © 2026
+                </p>
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        // Set de Datos Completo (Original PAES 2026)
+        const rawData = [
+            { pos: 1, name: "Cambridge College", com: "Providencia", reg: "RM", score: 893.4, prev: 862, ppos: 5 },
+            { pos: 2, name: "Colegio Cordillera", com: "Las Condes", reg: "RM", score: 889.8, prev: 856.9, ppos: 7 },
+            { pos: 3, name: "Colegio La Girouette", com: "Las Condes", reg: "RM", score: 872.8, prev: 858.6, ppos: 6 },
+            { pos: 4, name: "Colegio Tabancura", com: "Vitacura", reg: "RM", score: 870.3, prev: 870.8, ppos: 2 },
+            { pos: 5, name: "Colegio Huinganal", com: "Lo Barnechea", reg: "RM", score: 869.9, prev: 849.8, ppos: 13 },
+            { pos: 6, name: "Instituto Hebreo", com: "Lo Barnechea", reg: "RM", score: 865.8, prev: 832.1, ppos: 26 },
+            { pos: 7, name: "Colegio Francisco Encina", com: "Ñuñoa", reg: "RM", score: 863.2, prev: 832.4, ppos: 25 },
+            { pos: 8, name: "Colegio Los Andes de Vitacura", com: "Vitacura", reg: "RM", score: 862, prev: 865.6, ppos: 4 },
+            { pos: 9, name: "Colegio Pinares", com: "Chiguayante", reg: "VIII", score: 860.8, prev: 883.7, ppos: 1 },
+            { pos: 10, name: "Colegio The Grange School", com: "La Reina", reg: "RM", score: 856.1, prev: 843, ppos: 19 },
+            { pos: 11, name: "Colegio Santa Ursula", com: "Vitacura", reg: "RM", score: 854.1, prev: 855, ppos: 9 },
+            { pos: 12, name: "Colegio San Benito", com: "Vitacura", reg: "RM", score: 850.4, prev: 842.3, ppos: 20 },
+            { pos: 13, name: "Colegio Arauco", com: "Arauco", reg: "VIII", score: 849.4, prev: 833.4, ppos: 24 },
+            { pos: 14, name: "Colegio Everest", com: "Lo Barnechea", reg: "RM", score: 847.5, prev: 807.2, ppos: 62 },
+            { pos: 15, name: "The Southern Cross School", com: "Las Condes", reg: "RM", score: 845.9, prev: 827, ppos: 31 },
+            { pos: 16, name: "Andree English School", com: "La Reina", reg: "RM", score: 845, prev: 839.1, ppos: 22 },
+            { pos: 17, name: "C. Monte Tabor y Nazareth", com: "Lo Barnechea", reg: "RM", score: 844.8, prev: 849.5, ppos: 14 },
+            { pos: 18, name: "Saint George's College", com: "Vitacura", reg: "RM", score: 843.7, prev: 823.6, ppos: 35 },
+            { pos: 19, name: "Santiago College", com: "Lo Barnechea", reg: "RM", score: 843.7, prev: 825.9, ppos: 32 },
+            { pos: 20, name: "Colegio Itahue", com: "Chiguayante", reg: "VIII", score: 842.1, prev: 814.4, ppos: 47 },
+            { pos: 21, name: "Colegio Trebulco", com: "Talagante", reg: "RM", score: 841.8, prev: 801.2, ppos: 69 },
+            { pos: 22, name: "Colegio del Verbo Divino", com: "Las Condes", reg: "RM", score: 841.7, prev: 829.9, ppos: 29 },
+            { pos: 23, name: "C. San Francisco de Asis", com: "Las Condes", reg: "RM", score: 841.3, prev: 810.5, ppos: 53 },
+            { pos: 24, name: "Colegio Los Alerces", com: "Lo Barnechea", reg: "RM", score: 839.1, prev: 833.9, ppos: 23 },
+            { pos: 25, name: "Colegio Orchard College", com: "Curicó", reg: "VII", score: 838.7, prev: 848.8, ppos: 15 },
+            { pos: 26, name: "Colegio Akros", com: "Ñuñoa", reg: "RM", score: 837.2, prev: 825.3, ppos: 33 },
+            { pos: 27, name: "The Mackay School", com: "Viña del Mar", reg: "V", score: 837, prev: 805.8, ppos: 64 },
+            { pos: 28, name: "Saint Gaspar College", com: "Ñuñoa", reg: "RM", score: 835.3, prev: 815.8, ppos: 43 },
+            { pos: 29, name: "C. Lincoln Int Academy", com: "Colina", reg: "RM", score: 832.2, prev: 831.9, ppos: 28 },
+            { pos: 30, name: "Colegio Suizo de Santiago", com: "Ñuñoa", reg: "RM", score: 832.1, prev: 792.8, ppos: 84 },
+            { pos: 31, name: "C. San Miguel Arcangel", com: "Las Condes", reg: "RM", score: 832, prev: 816.4, ppos: 41 },
+            { pos: 32, name: "Colegio Redland School", com: "Las Condes", reg: "RM", score: 831.9, prev: 823.7, ppos: 34 },
+            { pos: 33, name: "Villa Maria Academy", com: "Las Condes", reg: "RM", score: 831, prev: 844.4, ppos: 18 },
+            { pos: 34, name: "Lincoln International Academy", com: "Lo Barnechea", reg: "RM", score: 830.9, prev: 850.5, ppos: 12 },
+            { pos: 35, name: "Alianza Francesa Jean Mermoz", com: "Curicó", reg: "VII", score: 829.8, prev: 805, ppos: 67 },
+            { pos: 36, name: "Colegio Huelen", com: "Vitacura", reg: "RM", score: 828, prev: 839.5, ppos: 21 },
+            { pos: 37, name: "San Ignacio El Bosque", com: "Providencia", reg: "RM", score: 827.5, prev: 828.7, ppos: 30 },
+            { pos: 38, name: "Colegio The Kent School", com: "Providencia", reg: "RM", score: 827.1, prev: 856, ppos: 8 },
+            { pos: 39, name: "Instituto Inglés Rancagua", com: "Rancagua", reg: "VI", score: 827, prev: 814.5, ppos: 46 },
+            { pos: 40, name: "Col. Internacional Antofagasta", com: "Antofagasta", reg: "II", score: 826.6, prev: 754.2, ppos: 162 },
+            { pos: 41, name: "Saint Gabriel's School", com: "Providencia", reg: "RM", score: 826.2, prev: 813.6, ppos: 49 },
+            { pos: 42, name: "Colegio Montemar", com: "Concón", reg: "V", score: 825.8, prev: 852.5, ppos: 11 },
+            { pos: 43, name: "Colegio Wenlock School", com: "Las Condes", reg: "RM", score: 825.1, prev: 776, ppos: 118 },
+            { pos: 44, name: "Particular Montessori", com: "Talca", reg: "VII", score: 825, prev: 798.4, ppos: 74 },
+            { pos: 45, name: "Alemán de Concepción", com: "San Pedro de la Paz", reg: "VIII", score: 824.8, prev: 775.7, ppos: 119 },
+            { pos: 46, name: "Colegio San Anselmo", com: "Colina", reg: "RM", score: 824.5, prev: 803.2, ppos: 68 },
+            { pos: 47, name: "The Newland School", com: "Lo Barnechea", reg: "RM", score: 824.4, prev: 822.8, ppos: 37 },
+            { pos: 48, name: "Alemán de Santiago", com: "Las Condes", reg: "RM", score: 824.3, prev: 811.9, ppos: 51 },
+            { pos: 49, name: "Sagrado Corazon Apoquindo", com: "Las Condes", reg: "RM", score: 823.3, prev: 784.5, ppos: 98 },
+            { pos: 50, name: "Trewhela's English School", com: "Providencia", reg: "RM", score: 821.9, prev: 814.1, ppos: 48 }
+        ];
+
+        let currentData = [...rawData];
+        let currentSort = 'score';
+
+        lucide.createIcons();
+
+        // Lógica D3.js Dinámica - Variables renombradas para evitar conflictos globales
+        const chartMargin = { top: 20, right: 60, bottom: 40, left: 160 };
+        let chartWidth, chartHeight, mainSvg, xScale, yScale;
+
+        function initChart() {
+            const container = document.getElementById('chart-container');
+            chartWidth = container.offsetWidth - chartMargin.left - chartMargin.right;
+            chartHeight = 1200 - chartMargin.top - chartMargin.bottom;
+
+            d3.select("#paes-chart").selectAll("*").remove();
+
+            mainSvg = d3.select("#paes-chart")
+                .attr("width", chartWidth + chartMargin.left + chartMargin.right)
+                .attr("height", chartHeight + chartMargin.top + chartMargin.bottom)
+                .append("g")
+                .attr("transform", `translate(${chartMargin.left},${chartMargin.top})`);
+
+            xScale = d3.scaleLinear().domain([800, 900]).range([0, chartWidth]);
+            yScale = d3.scaleBand().range([0, chartHeight]).padding(0.25);
+
+            renderElements();
+        }
+
+        function renderElements() {
+            yScale.domain(currentData.map(d => d.name));
+
+            // Eje X
+            mainSvg.selectAll(".axis-x").remove();
+            mainSvg.append("g")
+                .attr("class", "axis-x")
+                .attr("transform", `translate(0,${chartHeight})`)
+                .call(d3.axisBottom(xScale).ticks(chartWidth < 500 ? 3 : 6))
+                .selectAll("text").attr("class", "bar-label");
+
+            // Barras
+            const bars = mainSvg.selectAll(".bar").data(currentData, d => d.name);
+
+            bars.exit().remove();
+
+            const barsEnter = bars.enter().append("rect")
+                .attr("class", "bar")
+                .attr("x", xScale(800))
+                .attr("y", d => yScale(d.name))
+                .attr("height", yScale.bandwidth())
+                .attr("rx", 4)
+                .attr("fill", d => d.reg === 'RM' ? "rgba(79, 70, 229, 0.4)" : "rgba(245, 158, 11, 0.4)")
+                .attr("stroke", d => d.reg === 'RM' ? "#4f46e5" : "#f59e0b")
+                .on("mouseover", showTooltip)
+                .on("mouseout", hideTooltip);
+
+            barsEnter.merge(bars)
+                .transition().duration(1000)
+                .attr("y", d => yScale(d.name))
+                .attr("width", d => xScale(d.score));
+
+            // Etiquetas de Nombre (Eje Y)
+            const labels = mainSvg.selectAll(".y-label").data(currentData, d => d.name);
+            labels.exit().remove();
+            
+            labels.enter().append("text")
+                .attr("class", "y-label bar-label")
+                .attr("x", -10)
+                .attr("text-anchor", "end")
+                .attr("y", d => yScale(d.name) + yScale.bandwidth() / 2 + 4)
+                .text(d => d.name.length > 20 ? d.name.substring(0, 18) + "..." : d.name)
+                .merge(labels)
+                .transition().duration(1000)
+                .attr("y", d => yScale(d.name) + yScale.bandwidth() / 2 + 4);
+
+            // Valores
+            const values = mainSvg.selectAll(".val-text").data(currentData, d => d.name);
+            values.exit().remove();
+
+            values.enter().append("text")
+                .attr("class", "val-text bar-value")
+                .attr("x", d => xScale(d.score) + 5)
+                .attr("y", d => yScale(d.name) + yScale.bandwidth() / 2 + 4)
+                .merge(values)
+                .transition().duration(1000)
+                .attr("x", d => xScale(d.score) + 5)
+                .attr("y", d => yScale(d.name) + yScale.bandwidth() / 2 + 4)
+                .text(d => d.score);
+        }
+
+        function updateChart(sortType) {
+            currentSort = sortType;
+            document.getElementById('btn-score').classList.toggle('active', sortType === 'score');
+            document.getElementById('btn-name').classList.toggle('active', sortType === 'name');
+
+            if (sortType === 'score') {
+                currentData.sort((a, b) => b.score - a.score);
+            } else {
+                currentData.sort((a, b) => a.name.localeCompare(b.name));
+            }
+            renderElements();
+        }
+
+        function filterRegion(region) {
+            document.getElementById('btn-all').classList.toggle('active', region === 'ALL');
+            document.getElementById('btn-rm').classList.toggle('active', region === 'RM');
+            document.getElementById('btn-reg').classList.toggle('active', region === 'REG');
+
+            if (region === 'ALL') currentData = [...rawData];
+            else if (region === 'RM') currentData = rawData.filter(d => d.reg === 'RM');
+            else currentData = rawData.filter(d => d.reg !== 'RM');
+
+            updateChart(currentSort);
+        }
+
+        function showTooltip(event, d) {
+            const tooltip = d3.select("#tooltip");
+            tooltip.style("opacity", 1)
+                .html(`
+                    <div class="font-bold text-amber-500">${d.name}</div>
+                    <div class="text-[10px] text-gray-400 font-mono">${d.com} - ${d.reg}</div>
+                    <div class="mt-2 flex justify-between gap-4">
+                        <span>Puntaje:</span> <span class="text-white font-bold">${d.score}</span>
+                    </div>
+                    <div class="text-[10px] opacity-50">Posición anterior: ${d.ppos}</div>
+                `)
+                .style("left", (event.pageX - 150) + "px")
+                .style("top", (event.pageY - 120) + "px");
+        }
+
+        function hideTooltip() {
+            d3.select("#tooltip").style("opacity", 0);
+        }
+
+        // Llenar Tabla
+        function fillTable() {
+            const tbody = document.getElementById('table-body');
+            rawData.forEach(d => {
+                const row = `
+                    <tr class="hover:bg-white/5 transition-colors group">
+                        <td class="p-4 font-mono ${d.pos <= 3 ? 'text-amber-500 font-bold' : 'text-gray-500'}">${d.pos}</td>
+                        <td class="p-4 font-semibold text-white group-hover:text-amber-500 transition-colors">${d.name}</td>
+                        <td class="p-4 text-gray-500">${d.com}</td>
+                        <td class="p-4"><span class="px-2 py-0.5 rounded border border-white/10 text-[10px] uppercase font-mono">${d.reg}</span></td>
+                        <td class="p-4 text-right font-mono font-bold text-amber-500">${d.score}</td>
+                        <td class="p-4 text-right font-mono text-gray-600">${d.prev}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // Three.js Background
+        function initBackground() {
+            const canvas = document.getElementById('bg-canvas');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.position.z = 50;
+
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            for (let i = 0; i < 3000; i++) {
+                vertices.push(THREE.MathUtils.randFloatSpread(200), THREE.MathUtils.randFloatSpread(200), THREE.MathUtils.randFloatSpread(200));
+            }
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            const points = new THREE.Points(geometry, new THREE.PointsMaterial({ color: 0x6366f1, size: 0.05, transparent: true, opacity: 0.2 }));
+            scene.add(points);
+
+            function animate() {
+                requestAnimationFrame(animate);
+                points.rotation.y += 0.0003;
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        window.onload = () => {
+            initBackground();
+            fillTable();
+            initChart();
+        };
+
+        window.addEventListener('resize', initChart);
+    </script>
+</body>
+</html>
