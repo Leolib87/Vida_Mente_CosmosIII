@@ -1,473 +1,283 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Argumento Hegeliano | O.C.V.M. Plantilla</title>
+    <title>Vida, Mente y Cosmos | El Argumento Hegeliano</title>
+    <meta name="description" content="Una crítica al enactivismo utópico y su interferencia con el desarrollo de la ciencia de la conciencia. Por Mario Villalobos.">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], serif: ['Merriweather', 'serif'], mono: ['JetBrains Mono', 'monospace'], }, colors: { cosmos: { 950: '#020617', 900: '#08080c', 800: '#11111a', }, neon: { blue: '#4f46e5', green: '#10b981', purple: '#a855f7', cyan: '#06b6d4', gold: '#fbbf24' } }, animation: { 'float': 'float 8s ease-in-out infinite', 'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite', 'spin-slow': 'spin 20s linear infinite', }, keyframes: { float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-15px)' } } } } } }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;900&family=Merriweather:ital,wght@0,300;0,400;1,400&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
     <style>
-        /* Variables de CSS para colores y fuentes */
-        :root {
-            --primary: #818cf8;
-            --primary-dark: #6366f1;
-            --secondary: #22d3ee;
-            --primary-text: #e5e7eb;
-            --primary-glow: #818cf8;
-            --secondary-glow: #22d3ee;
-            --font-main: 'Inter', sans-serif;
-            --nav-height: 70px;
-            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
-            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
-            --person-color: #f472b6;    /* Rosa para nombres de personas */
-        }
-
-        /* Estilos generales para el cuerpo de la página */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
-        body {
-            background-color: #000000;
-            color: var(--primary-text);
-            font-family: var(--font-main);
-            line-height: 1.8;
-            overflow-x: hidden;
-            text-align: justify;
-        }
-        p {
-            text-align: justify;
-        }
-
-        /* Canvas de fondo con animación Three.js */
-        #bg-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            cursor: crosshair;
-        }
-
-        /* Estilo de glassmorphism para secciones y navegación */
-        .glassmorphism {
-            background: rgba(17, 24, 39, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Estilos para el menú de navegación en móviles */
-        body.menu-open { overflow: hidden; }
+        :root { --nav-height: 80px; --amber: #f59e0b; --dark: #0f172a; --slate-300: #cbd5e1; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--dark); color: var(--slate-300); line-height: 1.8; overflow-x: hidden; background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px); background-size: 40px 40px; text-align: justify; }
+        .glass-card { background: rgba(17, 17, 26, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.5s; }
+        .glass-card:hover { transform: translateY(-5px); background: rgba(26, 26, 46, 0.9); border-color: rgba(255, 255, 255, 0.1); box-shadow: 0 20px 50px -10px rgba(0,0,0,0.5); }
+        /* SCROLLBAR & NAV STYLES */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
         
-        nav {
-            position: fixed; top: 0; width: 100%; height: var(--nav-height);
-            z-index: 1000;
-            display: flex; justify-content: center; align-items: center;
-            padding: 0 5%;
-            pointer-events: auto;
-        }
-
-        .nav-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
+        nav { backdrop-filter: blur(12px); background: rgba(2, 6, 23, 0.8); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .nav-link { position: relative; }
+        .nav-link::after { content: ''; position: absolute; width: 0; height: 2px; bottom: -4px; left: 0; background-color: #4f46e5; transition: width 0.3s; }
+        .nav-link:hover::after { width: 100%; }
         
-        .nav-logo a {
-            font-size: 1.3em;
-            font-weight: 700;
-            color: #fff;
-            text-decoration: none;
-            text-shadow: 0 0 8px var(--primary-glow);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
-        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
-        nav .nav-container > li > a {
-            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
-            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
-        }
-        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
-        
-        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
-
-        /* Sección del héroe o cabecera principal */
-        .hero {
-            min-height: 60vh;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            text-align: center; position: relative;
-            padding: 1rem;
-            margin-top: var(--nav-height);
-        }
-        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
-        .hero h1 {
-            font-size: clamp(2rem, 7vw, 4.5rem); font-weight: 700; color: #fff;
-            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
-            animation: pulse-glow 3s infinite alternate;
-        }
-        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
-        @keyframes pulse-glow {
-            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
-            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Contenedor principal para el contenido */
-        .main-container { 
-            width: 100%;
-            max-width: 100%; /* El contenedor usa todo el ancho */
-            margin: 0 auto; 
-            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
-            pointer-events: none;
-        }
-        
-        main, .footer, .section, .hero-content {
-            pointer-events: auto;
-        }
-
-        main p, .footer p {
-            user-select: text;
-            cursor: default;
-        }
-
-        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
-        
-        .section {
-            padding: clamp(1.5rem, 5vw, 2.5rem);
-            border-radius: 12px; margin-bottom: 2rem; position: relative;
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
-        }
-        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
-        
-        /* Animación de aparición para las secciones con scroll */
-        .section h2, .section h3, .section p, .mermaid, .section ul, .section .authors {
-             opacity: 0;
-             transform: translateY(20px);
-             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-        }
-
-        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .mermaid, .section.is-visible ul, .section.is-visible .authors {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        h2 {
-            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
-            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
-        }
-        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
-        
-        /* Clases para colorear palabras y conceptos */
-        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
-        .concept2 { color: var(--concept-color-2); font-weight: 500; }
-        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
-        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; }
-
-        /* Pie de página */
-        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
-
-        /* Estilo para los diagramas de Mermaid */
-        .mermaid {
-            margin: 2rem auto;
-            display: flex; /* Usar flexbox para centrar */
-            justify-content: center; /* Centrar horizontalmente */
-            align-items: center; /* Centrar verticalmente */
-            width: 100%;
-            max-width: 800px; /* Reducir un poco el ancho máximo */
-        }
-        
-        /* Media queries para dispositivos móviles */
-        @media (max-width: 768px) {
-            .nav-container {
-                position: fixed;
-                top: var(--nav-height);
-                left: 0;
-                width: 100%;
-                height: calc(100vh - var(--nav-height));
-                background: rgba(17, 24, 39, 0.95);
-                backdrop-filter: blur(15px);
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-                transform: translateY(-110%);
-                overflow-y: auto;
-                padding: 2rem;
-            }
-            body.menu-open .nav-container {
-                transform: translateY(0);
-            }
-
-            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
-            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
-            
-            .menu-toggle {
-                display: block; position: relative; z-index: 1001;
-                width: 30px; height: 22px;
-                background: none; border: none; cursor: pointer;
-            }
-            .icon-bar {
-                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
-                margin: 6px 0; transition: all 0.3s ease-in-out;
-                border-radius: 2px;
-            }
-
-            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
-            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
-            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
-        }
-        @media (min-width: 769px) {
-            .menu-toggle { display: none; }
-        }
+        /* Mermaid specific override */
+        .mermaid svg { max-width: 100%; height: auto; }
     </style>
 </head>
 <body>
-    <!-- Canvas de fondo con animación Three.js -->
-    <canvas id="bg-canvas" aria-hidden="true"></canvas>
-    <nav class="glassmorphism">
-        <div class="nav-content">
-            <div class="nav-logo">
-                <a href="#inicio">
-                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
-                    <span>O.C.V.M.</span>
-                </a>
-            </div>
-            <ul class="nav-container" id="nav-menu">
-                <li><a href="#inicio">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
-                    Inicio</a></li>
-                <li><a href="#enactivismo">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
-                    Enactivismo</a></li>
-                <li><a href="#elargumento">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12A2.25 2.25 0 0020.25 14.25V3M3.75 20.25h16.5M3.75 12h16.5m-16.5 4.5h16.5m-16.5-8.25h16.5" /></svg>
-                    El Argumento</a></li>
-                <li><a href="#referencias">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
-                    Referencias</a></li>
-            </ul>
-            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
-                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+    <!-- Script de Mermaid inyectado aquí para funcionalidad sin tocar el head -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+
+    <div class="bg-gradient" style="position: fixed; inset: 0; background: radial-gradient(circle at 30% 70%, rgba(245, 158, 11, 0.08) 0%, transparent 40%), var(--dark); z-index: -2;"></div>
+    <canvas id="bg-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;"></canvas>
+
+    <!-- Navegación Integrada -->
+    <nav class="fixed top-0 w-full z-50 h-[80px] flex items-center justify-between px-6 md:px-12">
+        <a href="#inicio" class="flex items-center gap-3 group">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-neon-blue to-purple-600 flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform">O</div>
+            <span class="font-bold text-white tracking-wider text-lg">O.C.V.M.</span>
+        </a>
+
+        <!-- Desktop Menu -->
+        <ul class="hidden md:flex items-center gap-8">
+            <li><a href="#inicio" class="text-gray-300 hover:text-white nav-link text-sm uppercase tracking-widest">Inicio</a></li>
+            <li><a href="#enactivismo" class="text-gray-300 hover:text-white nav-link text-sm uppercase tracking-widest">Enactivismo</a></li>
+            <li><a href="#elargumento" class="text-gray-300 hover:text-white nav-link text-sm uppercase tracking-widest">El Argumento</a></li>
+            <li><a href="#referencias" class="text-gray-300 hover:text-white nav-link text-sm uppercase tracking-widest">Referencias</a></li>
+        </ul>
+
+        <!-- Mobile Menu Button -->
+        <button id="mobile-menu-btn" class="md:hidden text-white">
+            <i data-lucide="menu" class="w-8 h-8"></i>
+        </button>
+
+        <!-- Mobile Menu Overlay -->
+        <div id="mobile-menu" class="fixed inset-0 bg-cosmos-950/95 backdrop-blur-xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col items-center justify-center space-y-8">
+            <button id="close-menu-btn" class="absolute top-8 right-8 text-white">
+                <i data-lucide="x" class="w-8 h-8"></i>
             </button>
+            <a href="#inicio" class="text-2xl text-white font-light mobile-link">Inicio</a>
+            <a href="#enactivismo" class="text-2xl text-white font-light mobile-link">Enactivismo</a>
+            <a href="#elargumento" class="text-2xl text-white font-light mobile-link">El Argumento</a>
+            <a href="#referencias" class="text-2xl text-white font-light mobile-link">Referencias</a>
         </div>
     </nav>
 
-    <div class="main-container" id="inicio">
-        <!-- Sección Hero -->
-        <div class="hero">
-            <div class="hero-content">
-                <h1>El Argumento Hegeliano y el Enactivismo</h1>
-                <p>Una crítica al enactivismo utópico y su interferencia con el desarrollo de la ciencia de la conciencia.</p>
-                <p class="authors">Por <span class="person">Mario Villalobos</span></p>
+    <div class="main-content" style="padding-top: 80px; min-height: 100vh;" id="inicio">
+        
+        <!-- Hero Section -->
+        <section class="relative pt-32 pb-20 px-6 overflow-hidden">
+             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-neon-blue/5 rounded-full blur-[120px] -z-10"></div>
+             
+             <div class="max-w-5xl mx-auto text-center">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm mb-6 animate-float">
+                    <span class="w-2 h-2 rounded-full bg-neon-purple animate-pulse"></span>
+                    <span class="text-[10px] font-mono text-gray-300 tracking-widest uppercase">FILOSOFÍA DE LA MENTE</span>
+                </div>
+                <h1 class="text-4xl md:text-6xl font-bold tracking-tighter mb-4 text-white">
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-gray-200 via-gray-400 to-gray-500">El Argumento Hegeliano y el Enactivismo</span>
+                </h1>
+                <p class="text-lg md:text-xl text-gray-400 font-serif italic max-w-2xl mx-auto leading-relaxed">
+                    Una crítica al enactivismo utópico y su interferencia con el desarrollo de la ciencia de la conciencia.
+                    <br><span class="text-neon-purple not-italic text-base mt-2 block font-sans">Por Mario Villalobos</span>
+                </p>
             </div>
-        </div>
+        </section>
 
-        <div class="layout-grid">
-            <main class="content">
+        <!-- Main Content -->
+        <section class="py-12 bg-black/30 border-t border-white/5">
+            <div class="max-w-4xl mx-auto px-6 space-y-12">
                 
-                <!-- Sección 1: Enactivismo -->
-                <section id="enactivismo" class="glassmorphism section" data-animate>
-                    <h2>Distinción: Enactivismo Científico vs. Utópico</h2>
-                    <p>En su artículo, <span class="person">Mario Villalobos</span> apoya la distinción planteada por <span class="person">Meyer</span> y <span class="person">Brancazio</span> entre dos proyectos del enactivismo: el <span class="concept1">enactivismo utópico</span> y el <span class="concept2">enactivismo científico</span>. El utópico, con sus fuertes tesis filosóficas, busca dictar lo que los científicos deberían hacer, mientras que el científico se enfoca en un programa de investigación empírica. Villalobos argumenta que la interferencia del enactivismo utópico ha tenido un efecto perjudicial en la ciencia de la conciencia.</p>
+                <!-- Section 1: Enactivismo -->
+                <div id="enactivismo" class="glass-card p-8 md:p-12 rounded-2xl">
+                    <h2 class="text-3xl font-bold text-white mb-6 border-b border-white/10 pb-4">Distinción: Enactivismo Científico vs. Utópico</h2>
                     
-                    <h3>Neuropenomenología y la Visión Original de Varela</h3>
-                    <p>Un claro ejemplo de esta interferencia es la <span class="concept2">neuropenomenología</span>. En sus inicios, <span class="person">Francisco Varela</span> la concibió como un proyecto para enriquecer y complementar la neurociencia tradicional, combinando la investigación sobre la actividad cerebral con datos subjetivos de la experiencia en primera persona. Sin embargo, las presiones filosóficas del enactivismo utópico han llevado a este enfoque a cuestionar y, en ocasiones, a abandonar el diálogo con la neurociencia tradicional, empujándolo hacia una visión puramente externalista y encarnada de la conciencia. Este "argumento hegeliano"  ha resultado en un conflicto innecesario que compromete la colaboración entre ambos campos.</p>
+                    <p class="text-gray-300 mb-6 leading-relaxed">
+                        En su artículo, <span class="text-neon-purple font-semibold">Mario Villalobos</span> apoya la distinción planteada por <span class="text-neon-purple font-semibold">Meyer</span> y <span class="text-neon-purple font-semibold">Brancazio</span> entre dos proyectos del enactivismo: el <span class="text-neon-gold font-bold">enactivismo utópico</span> y el <span class="text-neon-green font-medium">enactivismo científico</span>. El utópico, con sus fuertes tesis filosóficas, busca dictar lo que los científicos deberían hacer, mientras que el científico se enfoca en un programa de investigación empírica. Villalobos argumenta que la interferencia del enactivismo utópico ha tenido un efecto perjudicial en la ciencia de la conciencia.
+                    </p>
                     
-                    <div class="mermaid">
-                        graph TD
-                            A[Enactivismo] --> B[Enactivismo Utópico];
-                            A --> C[Enactivismo Científico];
-                            B -- "Interfiere negativamente" --> D[Neuropenomenología];
-                            C -- "Combina" --> E[Neurociencia Tradicional];
-                            D -- "Enriquecía" --> E;
-                            style A fill:#818cf8,stroke:#333,stroke-width:2px;
-                            style B fill:#fbbf24,stroke:#333,stroke-width:2px;
-                            style C fill:#34d399,stroke:#333,stroke-width:2px;
-                            style D fill:#f472b6,stroke:#333,stroke-width:2px;
-                            style E fill:#fff,stroke:#000,stroke-width:1px,color:#000;
+                    <h3 class="text-xl text-neon-blue font-semibold mt-8 mb-4">Neuropenomenología y la Visión Original de Varela</h3>
+                    <p class="text-gray-300 mb-6 leading-relaxed">
+                        Un claro ejemplo de esta interferencia es la <span class="text-neon-green font-medium">neuropenomenología</span>. En sus inicios, <span class="text-neon-purple font-semibold">Francisco Varela</span> la concibió como un proyecto para enriquecer y complementar la neurociencia tradicional, combinando la investigación sobre la actividad cerebral con datos subjetivos de la experiencia en primera persona. Sin embargo, las presiones filosóficas del enactivismo utópico han llevado a este enfoque a cuestionar y, en ocasiones, a abandonar el diálogo con la neurociencia tradicional, empujándolo hacia una visión puramente externalista y encarnada de la conciencia. Este "argumento hegeliano" ha resultado en un conflicto innecesario que compromete la colaboración entre ambos campos.
+                    </p>
+
+                    <!-- Mermaid Diagram 1 -->
+                    <div class="bg-cosmos-900/50 p-6 rounded-lg my-8 overflow-x-auto border border-white/5 flex justify-center">
+                        <div class="mermaid">
+                            graph TD
+                                A[Enactivismo] --> B[Enactivismo Utópico]
+                                A --> C[Enactivismo Científico]
+                                B -- "Interfiere negativamente" --> D[Neuropenomenología]
+                                C -- "Combina" --> E[Neurociencia Tradicional]
+                                D -- "Enriquecía" --> E
+                                style A fill:#4f46e5,stroke:#fff,stroke-width:2px,color:#fff
+                                style B fill:#fbbf24,stroke:#fff,stroke-width:2px,color:#000
+                                style C fill:#10b981,stroke:#fff,stroke-width:2px,color:#000
+                                style D fill:#a855f7,stroke:#fff,stroke-width:2px,color:#fff
+                                style E fill:#1e293b,stroke:#fff,stroke-width:1px,color:#fff
+                        </div>
                     </div>
 
-                    <h3>El Problema con los Argumentos Hegelianos</h3>
-                    <p>Villalobos identifica la crítica del enactivismo utópico a la neurociencia tradicional como un <span class="concept1">argumento hegeliano</span>, un término acuñado por <span class="person">Anthony Chemero</span>. Estos argumentos son tesis filosóficas basadas en poca o ninguna evidencia empírica que concluyen que una determinada aproximación científica está destinada a fallar. Este tipo de razonamiento, según Villalobos, es irrelevante y dañino para el progreso científico.</p>
-                </section>
+                    <h3 class="text-xl text-neon-blue font-semibold mt-8 mb-4">El Problema con los Argumentos Hegelianos</h3>
+                    <p class="text-gray-300 leading-relaxed">
+                        Villalobos identifica la crítica del enactivismo utópico a la neurociencia tradicional como un <span class="text-neon-gold font-bold">argumento hegeliano</span>, un término acuñado por <span class="text-neon-purple font-semibold">Anthony Chemero</span>. Estos argumentos son tesis filosóficas basadas en poca o ninguna evidencia empírica que concluyen que una determinada aproximación científica está destinada a fallar. Este tipo de razonamiento, según Villalobos, es irrelevante y dañino para el progreso científico.
+                    </p>
+                </div>
 
-                <!-- Sección 2: El Argumento del Cerebro en la Cubeta -->
-                <section id="elargumento" class="glassmorphism section" data-animate>
-                    <h2>El Fallo del Argumento del "Cerebro en la Cubeta"</h2>
-                    <p>La crítica principal del enactivismo utópico se basa en un <span class="concept2">argumento filosófico</span> que utiliza el experimento mental del <span class="concept1">cerebro en la cubeta</span>. Los utopistas sostienen que el cerebro y el cuerpo son sistemas fisiológicamente inseparables y, por lo tanto, no pueden ser separados como factores explicativos de la conciencia. Esta crítica, sin embargo, ataca un "hombre de paja" y no el fundamento real de la neurociencia de la conciencia.</p>
-                    <p>La neurociencia tradicional, observa Villalobos, se guía por la <span class="concept2">explicación contrastiva</span>. Este marco metodológico busca identificar el factor clave que marca la diferencia en un fenómeno, permitiendo tratar el resto de factores como un <span class="concept1">fondo explicativo</span> constante. Las observaciones clínicas han demostrado que el factor que marca la diferencia en la conciencia es el cerebro, mientras que el cuerpo es una condición necesaria pero constante que puede ser tratada como fondo. Por ello, el argumento utópico, al ser irrelevante, no logra refutar la base metodológica de la neurociencia tradicional.</p>
+                <!-- Section 2: El Argumento -->
+                <div id="elargumento" class="glass-card p-8 md:p-12 rounded-2xl">
+                    <h2 class="text-3xl font-bold text-white mb-6 border-b border-white/10 pb-4">El Fallo del Argumento del "Cerebro en la Cubeta"</h2>
+                    
+                    <p class="text-gray-300 mb-6 leading-relaxed">
+                        La crítica principal del enactivismo utópico se basa en un <span class="text-neon-green font-medium">argumento filosófico</span> que utiliza el experimento mental del <span class="text-neon-gold font-bold">cerebro en la cubeta</span>. Los utopistas sostienen que el cerebro y el cuerpo son sistemas fisiológicamente inseparables y, por lo tanto, no pueden ser separados como factores explicativos de la conciencia. Esta crítica, sin embargo, ataca un "hombre de paja" y no el fundamento real de la neurociencia de la conciencia.
+                    </p>
+                    <p class="text-gray-300 leading-relaxed">
+                        La neurociencia tradicional, observa Villalobos, se guía por la <span class="text-neon-green font-medium">explicación contrastiva</span>. Este marco metodológico busca identificar el factor clave que marca la diferencia en un fenómeno, permitiendo tratar el resto de factores como un <span class="text-neon-gold font-bold">fondo explicativo</span> constante. Las observaciones clínicas han demostrado que el factor que marca la diferencia en la conciencia es el cerebro, mientras que el cuerpo es una condición necesaria pero constante que puede ser tratada como fondo. Por ello, el argumento utópico, al ser irrelevante, no logra refutar la base metodológica de la neurociencia tradicional.
+                    </p>
 
-                    <div class="mermaid">
-                        graph LR
-                            A[Enactivismo Utópico] -- "Critica a" --> B[Neurociencia Tradicional];
-                            B -- "Se basa en" --> C[Explicación Contrastiva];
-                            C -- "Identifica" --> D[Cerebro] -- "como" --> E[Factor Diferencial];
-                            C -- "Trata el" --> F[Cuerpo] -- "como" --> G[Fondo Constante];
-                            B -- "No asume que" --> H{Cuerpo Inseparable};
-                            A -- "Argumento Hegeliano" --> H;
-                            style A fill:#fbbf24,stroke:#333,stroke-width:2px;
-                            style B fill:#fff,stroke:#000,stroke-width:1px,color:#000;
-                            style C fill:#34d399,stroke:#333,stroke-width:2px;
-                            style D fill:#f472b6,stroke:#333,stroke-width:2px;
-                            style E fill:#818cf8,stroke:#333,stroke-width:2px;
-                            style F fill:#818cf8,stroke:#333,stroke-width:2px;
-                            style G fill:#fff,stroke:#000,stroke-width:1px,color:#000;
-                            style H fill:#34d399,stroke:#333,stroke-width:2px;
+                    <!-- Mermaid Diagram 2 -->
+                    <div class="bg-cosmos-900/50 p-6 rounded-lg my-8 overflow-x-auto border border-white/5 flex justify-center">
+                        <div class="mermaid">
+                            graph LR
+                                A[Enactivismo Utópico] -- "Critica a" --> B[Neurociencia Tradicional]
+                                B -- "Se basa en" --> C[Explicación Contrastiva]
+                                C -- "Identifica" --> D[Cerebro] -- "como" --> E[Factor Diferencial]
+                                C -- "Trata el" --> F[Cuerpo] -- "como" --> G[Fondo Constante]
+                                B -- "No asume que" --> H{Cuerpo Inseparable}
+                                A -- "Argumento Hegeliano" --> H
+                                style A fill:#fbbf24,stroke:#333,stroke-width:2px,color:#000
+                                style B fill:#1e293b,stroke:#fff,stroke-width:1px,color:#fff
+                                style C fill:#10b981,stroke:#333,stroke-width:2px,color:#000
+                                style D fill:#a855f7,stroke:#333,stroke-width:2px,color:#fff
+                                style E fill:#4f46e5,stroke:#333,stroke-width:2px,color:#fff
+                                style F fill:#4f46e5,stroke:#333,stroke-width:2px,color:#fff
+                                style G fill:#1e293b,stroke:#fff,stroke-width:1px,color:#fff
+                                style H fill:#10b981,stroke:#333,stroke-width:2px,color:#000
+                        </div>
                     </div>
-                </section>
-                
-                <!-- Sección 3: Conclusión -->
-                <section id="conclusion" class="glassmorphism section" data-animate>
-                    <h2>Conclusión: Colaboración y Pluralismo</h2>
-                    <p>En resumen, Villalobos advierte que los argumentos del enactivismo utópico, al presionar a la neuropenomenología para que se separe de la neurociencia tradicional, comprometen su desarrollo científico. En lugar de ser un paradigma opuesto, el enactivismo científico debería enriquecer y colaborar con el enfoque neurocéntrico. Las ciencias son intrínsecamente pluralistas en sus estrategias explicativas. La idea de que los científicos de la conciencia deben elegir entre un enfoque <span class="concept1">"cerebro-céntrico"</span> y un <span class="concept2">"enactivo"</span> es innecesaria y no trae beneficios para la investigación. La meta es colaborar para comprender la conciencia, no dictar cómo debe ser estudiada.</p>
-                </section>
+                </div>
 
-                <!-- Sección 4: Referencias -->
-                <section id="referencias" class="glassmorphism section" data-animate>
-                    <h2>Referencias</h2>
-                    <ul class="list-disc list-inside space-y-2">
-                        <li><span class="person">Meyer, R. & Brancazio, N.</span> (2024). All-or-Nothing Enactivism: For Whom, To Do What? <i>Constructivist Foundations, 19</i>(1). Disponible en: <a href="https://constructivist.info/19/1/001.meyer" target="_blank" class="text-blue-400 hover:text-blue-300">https://constructivist.info/19/1/001.meyer</a></li>
-                        <li><span class="person">Villalobos, M.</span> (2024). The Utopian Enactive approach to Consciousness: a Hegelian argument. <i>Constructivist Foundations, 19</i>(1). Disponible en: <a href="https://constructivist.info/19/1/001.meyer" target="_blank" class="text-blue-400 hover:text-blue-300">https://constructivist.info/19/1/001.meyer</a></li>
-                        <li><span class="person">Thompson, E., Lutz, A. & Cosmelli, D.</span> (2005). Neurophenomenology: An introduction for neurophilosophers. En: Brook A. & Akins K. (eds.). <i>Cognition and the brain: The philosophy and neuroscience movement</i>. Cambridge University Press. Disponible en: <a href="https://cepa.info/2374" target="_blank" class="text-blue-400 hover:text-blue-300">https://cepa.info/2374</a></li>
+                <!-- Section 3: Conclusión -->
+                <div class="glass-card p-8 md:p-12 rounded-2xl border-l-4 border-neon-blue">
+                    <h2 class="text-2xl font-bold text-white mb-4">Conclusión: Colaboración y Pluralismo</h2>
+                    <p class="text-gray-300 leading-relaxed">
+                        En resumen, Villalobos advierte que los argumentos del enactivismo utópico, al presionar a la neuropenomenología para que se separe de la neurociencia tradicional, comprometen su desarrollo científico. En lugar de ser un paradigma opuesto, el enactivismo científico debería enriquecer y colaborar con el enfoque neurocéntrico. Las ciencias son intrínsecamente pluralistas en sus estrategias explicativas. La idea de que los científicos de la conciencia deben elegir entre un enfoque <span class="text-neon-gold font-bold">"cerebro-céntrico"</span> y un <span class="text-neon-green font-medium">"enactivo"</span> es innecesaria y no trae beneficios para la investigación. La meta es colaborar para comprender la conciencia, no dictar cómo debe ser estudiada.
+                    </p>
+                </div>
+
+                <!-- Section 4: Referencias -->
+                <div id="referencias" class="glass-card p-8 rounded-2xl opacity-80 hover:opacity-100 transition-opacity">
+                    <h2 class="text-xl font-bold text-white mb-4 border-b border-white/5 pb-2">Referencias</h2>
+                    <ul class="space-y-4 text-sm text-gray-400 font-mono">
+                        <li class="pl-4 border-l-2 border-white/10 hover:border-neon-purple transition-colors">
+                            <span class="text-neon-purple font-semibold">Meyer, R. & Brancazio, N.</span> (2024). All-or-Nothing Enactivism: For Whom, To Do What? <i>Constructivist Foundations, 19</i>(1). Disponible en: <br>
+                            <a href="https://constructivist.info/19/1/001.meyer" target="_blank" class="text-neon-cyan hover:text-white underline decoration-dotted transition-colors">https://constructivist.info/19/1/001.meyer</a>
+                        </li>
+                        <li class="pl-4 border-l-2 border-white/10 hover:border-neon-purple transition-colors">
+                            <span class="text-neon-purple font-semibold">Villalobos, M.</span> (2024). The Utopian Enactive approach to Consciousness: a Hegelian argument. <i>Constructivist Foundations, 19</i>(1). Disponible en: <br>
+                            <a href="https://constructivist.info/19/1/001.meyer" target="_blank" class="text-neon-cyan hover:text-white underline decoration-dotted transition-colors">https://constructivist.info/19/1/001.meyer</a>
+                        </li>
+                        <li class="pl-4 border-l-2 border-white/10 hover:border-neon-purple transition-colors">
+                            <span class="text-neon-purple font-semibold">Thompson, E., Lutz, A. & Cosmelli, D.</span> (2005). Neurophenomenology: An introduction for neurophilosophers. En: Brook A. & Akins K. (eds.). <i>Cognition and the brain: The philosophy and neuroscience movement</i>. Cambridge University Press. Disponible en: <br>
+                            <a href="https://cepa.info/2374" target="_blank" class="text-neon-cyan hover:text-white underline decoration-dotted transition-colors">https://cepa.info/2374</a>
+                        </li>
                     </ul>
-                </section>
+                </div>
 
-            </main>
-        </div>
-        <footer class="footer" id="contacto">
-            <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo.</p>
-            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="py-12 border-t border-white/5 text-center">
+            <p class="text-gray-500 font-serif italic mb-4">"Este espacio es una cartografía personal y una invitación al diálogo."</p>
+            <p class="text-xs text-gray-600 uppercase tracking-widest">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
         </footer>
-    </div>
-    <script>
-        // Inicia el código del Canvas
-        document.addEventListener('DOMContentLoaded', () => {
-            // Inicialización de Three.js Background
-            if (typeof THREE !== 'undefined') {
-                initThreeJS();
-            } else {
-                console.error("Three.js not loaded");
-            }
 
-            setupNavigation();
-            setupScrollAnimations();
-            
-            // Renderizado de diagramas Mermaid
-            mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
-                'primaryColor': '#000000',
-                'primaryTextColor': '#e5e7eb',
-                'lineColor': '#818cf8',
-                'nodeBorder': '#818cf8',
-                'mainBkg': '#111827',
-                'textColor': '#e5e7eb'
-            } });
+    </div>
+
+    <script>
+        // Init Lucide Icons
+        lucide.createIcons();
+
+        // Initialize Mermaid
+        document.addEventListener('DOMContentLoaded', function () {
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'dark',
+                securityLevel: 'loose',
+                themeVariables: {
+                    fontFamily: 'Inter',
+                    primaryColor: '#1e293b',
+                    primaryTextColor: '#fff',
+                    primaryBorderColor: '#4f46e5',
+                    lineColor: '#cbd5e1',
+                    secondaryColor: '#0f172a',
+                    tertiaryColor: '#111827'
+                }
+            });
         });
 
-        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
-        let scene, camera, renderer, points;
+        // Mobile Menu Logic
+        const btn = document.getElementById('mobile-menu-btn');
+        const menu = document.getElementById('mobile-menu');
+        const closeBtn = document.getElementById('close-menu-btn');
+        const links = document.querySelectorAll('.mobile-link');
+
+        function toggleMenu() {
+            menu.classList.toggle('translate-x-full');
+            document.body.classList.toggle('overflow-hidden');
+        }
+
+        btn.addEventListener('click', toggleMenu);
+        closeBtn.addEventListener('click', toggleMenu);
+        links.forEach(link => link.addEventListener('click', toggleMenu));
+
+        // Three.js Background Animation (Simple Starfield)
+        const canvas = document.getElementById('bg-canvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
         
-        function initThreeJS() {
-            try {
-                scene = new THREE.Scene();
-                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
-                camera.position.z = 50;
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
 
-                renderer = new THREE.WebGLRenderer({
-                    canvas: document.getElementById("bg-canvas"),
-                    alpha: true
-                });
-                renderer.setSize(window.innerWidth, window.innerHeight);
+        const geometry = new THREE.BufferGeometry();
+        const count = 1000;
+        const positions = new Float32Array(count * 3);
 
-                const pointCount = 250;
-                const positions = new Float32Array(pointCount * 3);
-                const pointGeo = new THREE.BufferGeometry();
-                for (let i = 0; i < pointCount; i++) {
-                    positions[i * 3] = (Math.random() - 0.5) * 300;
-                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
-                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
-                }
-                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
-                points = new THREE.Points(pointGeo, pointMaterial);
-                scene.add(points);
-
-                window.addEventListener("resize", onWindowResize, false);
-                document.addEventListener('mousemove', onMouseMove, false);
-                animate();
-            } catch (error) {
-                console.error('Error initializing Three.js:', error);
-            }
+        for(let i = 0; i < count * 3; i++) {
+            positions[i] = (Math.random() - 0.5) * 50; 
         }
 
-        function onWindowResize() {
-            if(camera && renderer) {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            }
-        }
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const material = new THREE.PointsMaterial({ size: 0.05, color: 0x4f46e5, transparent: true, opacity: 0.8 });
+        const particles = new THREE.Points(geometry, material);
+        scene.add(particles);
 
-        let mouseX = 0, mouseY = 0;
-        function onMouseMove(event) {
-            mouseX = (event.clientX - window.innerWidth / 2) / 100;
-            mouseY = (event.clientY - window.innerHeight / 2) / 100;
-        }
+        camera.position.z = 5;
 
         function animate() {
             requestAnimationFrame(animate);
-            if(scene && camera && renderer && points) {
-                points.rotation.y += 0.0003;
-                points.rotation.x += 0.0002;
-                camera.position.x += (mouseX - camera.position.x) * 0.05;
-                camera.position.y += (-mouseY - camera.position.y) * 0.05;
-                camera.lookAt(scene.position);
-                renderer.render(scene, camera);
-            }
+            particles.rotation.y += 0.0005;
+            particles.rotation.x += 0.0002;
+            renderer.render(scene, camera);
         }
+        animate();
 
-        // --- CÓDIGO DE NAVEGACIÓN ---
-        function setupNavigation() {
-            const menuToggleBtn = document.getElementById('menu-toggle-btn');
-            const navMenu = document.getElementById('nav-menu');
-
-            menuToggleBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                document.body.classList.toggle('menu-open');
-            });
-
-            navMenu.addEventListener('click', (e) => {
-                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
-                   document.body.classList.remove('menu-open');
-                }
-            });
-        }
-
-        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
-        function setupScrollAnimations() {
-            const animatedSections = document.querySelectorAll('[data-animate]');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                        
-                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid, ul, .authors');
-                        elementsToAnimate.forEach((el, index) => {
-                           el.style.transitionDelay = `${index * 100}ms`;
-                        });
-
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.15 });
-            animatedSections.forEach(section => observer.observe(section));
-        }
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
