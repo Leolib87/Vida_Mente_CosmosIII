@@ -24,6 +24,7 @@
                     animation: {
                         'float': 'float 8s ease-in-out infinite',
                         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'spin-slow': 'spin 12s linear infinite',
                     },
                     keyframes: {
                         float: {
@@ -47,19 +48,26 @@
 
     <style>
         :root { --dark: #0f172a; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--dark); color: #cbd5e1; overflow-x: hidden; background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px); background-size: 40px 40px; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--dark); color: #cbd5e1; overflow-x: hidden; }
         
-        .glass-card { background: rgba(17, 17, 26, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.5s; }
-        .glass-card:hover { background: rgba(26, 26, 46, 0.8); border-color: rgba(79, 70, 229, 0.3); box-shadow: 0 20px 50px -10px rgba(0,0,0,0.5); }
+        /* O.C.V.M. Glass Architecture */
+        .glass-card { 
+            background: rgba(13, 14, 22, 0.7); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+        .glass-card:hover { 
+            background: rgba(20, 20, 35, 0.8); 
+            border-color: rgba(168, 85, 247, 0.3); 
+            box-shadow: 0 20px 50px -10px rgba(0,0,0,0.5); 
+            transform: translateY(-2px);
+        }
         
-        /* Custom Inputs */
-        input[type=range] { -webkit-appearance: none; background: transparent; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: #a855f7; cursor: pointer; margin-top: -5px; box-shadow: 0 0 10px #a855f7; }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #334155; border-radius: 2px; }
-
-        /* Equation Styling */
+        /* Math Blocks */
         .equation-box { 
-            background: rgba(0, 0, 0, 0.4); 
+            background: linear-gradient(90deg, rgba(6,182,212,0.05) 0%, rgba(0,0,0,0) 100%); 
             border-left: 3px solid #06b6d4; 
             padding: 1.5rem; 
             margin: 1.5rem 0; 
@@ -67,110 +75,139 @@
             color: #e2e8f0; 
             overflow-x: auto; 
             border-radius: 0 8px 8px 0;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
         }
         .mjx-chtml { outline: none; }
+
+        /* Custom Inputs */
+        input[type=range] { -webkit-appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: #a855f7; cursor: pointer; margin-top: -5px; box-shadow: 0 0 15px #a855f7; transition: transform 0.2s; }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #334155; border-radius: 2px; }
+        
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+        }
     </style>
 </head>
 <body>
-    <!-- BACKGROUND -->
-    <div class="fixed inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(168,85,247,0.1),_transparent_40%)] -z-10"></div>
-    <div class="fixed inset-0 bg-[radial-gradient(circle_at_bottom_left,_rgba(6,182,212,0.05),_transparent_40%)] -z-10"></div>
+    <!-- BACKGROUND ATMOSPHERE (THREE.JS CANVAS) -->
+    <canvas id="bg-canvas"></canvas>
+    <div class="fixed inset-0 bg-cosmos-950/20 -z-10 pointer-events-none"></div>
 
     <!-- NAV -->
     <nav class="fixed top-0 w-full z-50 h-[80px] flex items-center bg-cosmos-950/80 backdrop-blur-md border-b border-white/5">
         <div class="max-w-7xl mx-auto px-6 w-full flex justify-between items-center">
             <a href="index.html" class="flex items-center gap-3 group">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-neon-cyan to-neon-purple p-[1px]">
-                    <div class="w-full h-full rounded-full bg-cosmos-950 flex items-center justify-center">
-                        <span class="font-serif font-bold text-white group-hover:text-neon-purple transition-colors">3D</span>
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-neon-cyan to-neon-purple p-[1px] relative">
+                    <div class="absolute inset-0 rounded-full bg-neon-purple/20 blur-md group-hover:bg-neon-cyan/30 transition-all"></div>
+                    <div class="w-full h-full rounded-full bg-cosmos-950 flex items-center justify-center relative z-10">
+                        <span class="font-serif font-bold text-white group-hover:text-neon-cyan transition-colors">3D</span>
                     </div>
                 </div>
-                <span class="text-white font-bold tracking-wider text-sm md:text-base">VIDA <span class="text-neon-purple">MENTE</span> COSMOS</span>
+                <span class="text-white font-bold tracking-wider text-sm md:text-base font-sans">VIDA <span class="text-neon-purple">MENTE</span> COSMOS</span>
             </a>
             <ul class="hidden md:flex items-center gap-8">
-                <li><a href="index.html" class="text-sm font-medium text-gray-400 hover:text-white transition-all">Inicio</a></li>
-                <li><a href="juego_vida.html" class="text-sm font-medium text-gray-400 hover:text-white transition-all">Versión 2D</a></li>
+                <li><a href="index.html" class="text-sm font-medium text-gray-400 hover:text-white hover:text-neon-cyan transition-all">Inicio</a></li>
+                <li><a href="juego_vida.html" class="text-sm font-medium text-gray-400 hover:text-white hover:text-neon-cyan transition-all">Versión 2D</a></li>
             </ul>
         </div>
     </nav>
 
-    <div class="pt-[100px] min-h-screen">
+    <div class="pt-[120px] min-h-screen">
         
         <!-- HEADER -->
-        <header class="max-w-7xl mx-auto px-6 text-center mb-12">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neon-purple/20 bg-neon-purple/5 backdrop-blur-sm mb-6 animate-float">
+        <header class="max-w-7xl mx-auto px-6 text-center mb-16">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-neon-purple/30 bg-neon-purple/5 backdrop-blur-sm mb-8 animate-float shadow-[0_0_15px_rgba(168,85,247,0.1)]">
                 <span class="w-2 h-2 rounded-full bg-neon-purple animate-pulse"></span>
-                <span class="text-[10px] font-mono text-neon-purple tracking-widest uppercase">Dimensión Volumétrica</span>
+                <span class="text-[10px] font-mono text-neon-purple tracking-[0.2em] uppercase">Simulación Volumétrica</span>
             </div>
-            <h1 class="text-4xl md:text-7xl font-bold tracking-tighter text-white mb-6">
-                Juego de la Vida <span class="text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan to-neon-purple">3D</span>
+            <h1 class="text-5xl md:text-8xl font-bold tracking-tighter text-white mb-6">
+                Juego de la Vida <span class="text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-white to-neon-purple">3D</span>
             </h1>
-            <p class="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto font-serif italic leading-relaxed">
-                "Cuando la realidad trasciende el plano y conquista el volumen, las matemáticas de la emergencia revelan una complejidad exponencialmente bella."
+            <p class="text-lg md:text-2xl text-gray-400 max-w-3xl mx-auto font-serif italic leading-relaxed opacity-80">
+                "Donde el plano cartesiano asciende, la complejidad danza en el hiperespacio."
             </p>
         </header>
 
         <!-- MAIN LAYOUT -->
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 pb-20 space-y-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 pb-20 space-y-12">
             
             <!-- 3D VISUALIZATION CARD -->
-            <div class="glass-card rounded-2xl overflow-hidden relative border-neon-purple/20">
-                <!-- Toolbar -->
-                <div class="absolute top-0 left-0 w-full p-4 flex justify-between items-center z-10 pointer-events-none">
-                    <div class="flex items-center gap-2 bg-black/40 backdrop-blur px-3 py-1 rounded-full border border-white/10 pointer-events-auto">
-                        <span class="w-2 h-2 rounded-full bg-neon-green animate-pulse"></span>
-                        <span id="gen-counter" class="text-xs font-mono text-white">GEN: 0</span>
-                    </div>
-                    <div class="flex items-center gap-2 bg-black/40 backdrop-blur px-3 py-1 rounded-full border border-white/10 pointer-events-auto">
-                         <span id="pop-counter" class="text-xs font-mono text-neon-cyan">POBLACIÓN: 0</span>
+            <div class="glass-card rounded-2xl overflow-hidden relative border-neon-purple/20 shadow-2xl">
+                <!-- Data Overlay -->
+                <div class="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-10 pointer-events-none">
+                    <div class="flex flex-col gap-2 pointer-events-auto">
+                        <div class="flex items-center gap-3 bg-cosmos-950/60 backdrop-blur-md px-4 py-2 rounded-lg border border-white/10 shadow-lg">
+                            <span class="w-2 h-2 rounded-full bg-neon-green animate-pulse"></span>
+                            <span class="text-xs font-mono text-gray-400 uppercase tracking-wider">Generación</span>
+                            <span id="gen-counter" class="text-lg font-bold text-white font-mono">0</span>
+                        </div>
+                        <div class="flex items-center gap-3 bg-cosmos-950/60 backdrop-blur-md px-4 py-2 rounded-lg border border-white/10 shadow-lg">
+                            <i data-lucide="users" class="w-3 h-3 text-neon-cyan"></i>
+                            <span class="text-xs font-mono text-gray-400 uppercase tracking-wider">Población</span>
+                            <span id="pop-counter" class="text-lg font-bold text-neon-cyan font-mono">0</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Canvas Container -->
-                <div id="canvas-container" class="w-full h-[500px] md:h-[650px] bg-cosmos-900 cursor-move relative shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]">
+                <div id="canvas-container" class="w-full h-[500px] md:h-[700px] bg-cosmos-900 cursor-move relative shadow-[inset_0_0_100px_rgba(2,6,23,0.8)]">
                     <!-- Loading Overlay -->
                     <div id="loading" class="absolute inset-0 flex items-center justify-center bg-cosmos-950 z-20">
-                        <div class="text-neon-purple font-mono animate-pulse flex flex-col items-center gap-2">
-                            <i data-lucide="loader-2" class="animate-spin w-8 h-8"></i>
-                            <span>Inicializando Motor Volumétrico...</span>
+                        <div class="text-neon-purple font-mono animate-pulse flex flex-col items-center gap-4">
+                            <div class="relative w-16 h-16">
+                                <div class="absolute inset-0 border-t-2 border-neon-cyan rounded-full animate-spin"></div>
+                                <div class="absolute inset-2 border-r-2 border-neon-purple rounded-full animate-spin-slow"></div>
+                            </div>
+                            <span class="tracking-widest text-xs uppercase">Inicializando Vóxeles...</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Controls Panel -->
-                <div class="p-6 border-t border-white/5 bg-cosmos-950/50">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                <div class="p-6 md:p-8 border-t border-white/5 bg-gradient-to-b from-cosmos-950/80 to-cosmos-900/90 backdrop-blur-xl">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 items-end">
                         
-                        <div class="space-y-2">
-                            <label class="text-xs font-mono text-gray-400 uppercase">Densidad Inicial (Entropía)</label>
-                            <input type="range" id="density" min="5" max="50" value="15" class="w-full">
-                            <div class="flex justify-between text-xs text-gray-500 font-mono"><span>Vacio</span><span id="density-val" class="text-neon-purple">15%</span><span>Caos</span></div>
+                        <div class="space-y-3 group">
+                            <label class="flex justify-between text-xs font-mono text-gray-400 uppercase tracking-widest group-hover:text-neon-purple transition-colors">
+                                <span>Entropía Inicial</span>
+                                <span id="density-val" class="text-white">15%</span>
+                            </label>
+                            <input type="range" id="density" min="5" max="50" value="15" class="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer">
+                            <div class="flex justify-between text-[10px] text-gray-600 font-mono uppercase"><span>Vacío</span><span>Caos</span></div>
                         </div>
 
-                        <div class="space-y-2">
-                            <label class="text-xs font-mono text-gray-400 uppercase">Frecuencia Temporal</label>
-                            <input type="range" id="speed" min="50" max="1000" step="50" value="200" class="w-full">
-                            <div class="flex justify-between text-xs text-gray-500 font-mono"><span>20 FPS</span><span id="speed-val" class="text-neon-purple">200ms</span><span>1 FPS</span></div>
+                        <div class="space-y-3 group">
+                            <label class="flex justify-between text-xs font-mono text-gray-400 uppercase tracking-widest group-hover:text-neon-cyan transition-colors">
+                                <span>Frecuencia (ms)</span>
+                                <span id="speed-val" class="text-white">200ms</span>
+                            </label>
+                            <input type="range" id="speed" min="50" max="1000" step="50" value="200" class="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer">
+                            <div class="flex justify-between text-[10px] text-gray-600 font-mono uppercase"><span>Rápido</span><span>Lento</span></div>
                         </div>
 
-                        <div class="space-y-2">
-                             <label class="text-xs font-mono text-gray-400 uppercase flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
-                                <input type="checkbox" id="auto-rotate" class="rounded border-gray-600 text-neon-purple focus:ring-neon-purple bg-transparent">
-                                Rotación Orbital
+                        <div class="space-y-3">
+                             <label class="flex items-center gap-3 p-3 rounded-lg border border-white/5 bg-white/5 hover:bg-white/10 cursor-pointer transition-all group">
+                                <input type="checkbox" id="auto-rotate" class="rounded border-gray-600 text-neon-purple focus:ring-neon-purple bg-transparent w-4 h-4">
+                                <span class="text-xs font-mono text-gray-300 uppercase tracking-wider group-hover:text-white">Orbital Cam</span>
                              </label>
-                             <label class="text-xs font-mono text-gray-400 uppercase flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
-                                <input type="checkbox" id="glow-effect" checked class="rounded border-gray-600 text-neon-cyan focus:ring-neon-cyan bg-transparent">
-                                Renderizado Neón
+                             <label class="flex items-center gap-3 p-3 rounded-lg border border-white/5 bg-white/5 hover:bg-white/10 cursor-pointer transition-all group">
+                                <input type="checkbox" id="glow-effect" checked class="rounded border-gray-600 text-neon-cyan focus:ring-neon-cyan bg-transparent w-4 h-4">
+                                <span class="text-xs font-mono text-gray-300 uppercase tracking-wider group-hover:text-white">Modo Neón</span>
                              </label>
                         </div>
 
-                        <div class="flex gap-2">
-                            <button id="btn-toggle" class="flex-1 py-3 bg-neon-purple/20 hover:bg-neon-purple/40 border border-neon-purple/50 text-white rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:shadow-[0_0_25px_rgba(168,85,247,0.4)]">
-                                <i data-lucide="play" class="w-4 h-4"></i> <span id="btn-text">Iniciar Vida</span>
+                        <div class="flex gap-3 h-full">
+                            <button id="btn-toggle" class="flex-1 h-12 bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 hover:from-neon-purple/30 hover:to-neon-blue/30 border border-neon-purple/50 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(168,85,247,0.15)] hover:shadow-[0_0_30px_rgba(168,85,247,0.3)] hover:-translate-y-0.5">
+                                <i data-lucide="play" class="w-4 h-4"></i> <span id="btn-text" class="tracking-wide">INICIAR</span>
                             </button>
-                            <button id="btn-reset" class="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg transition-all hover:rotate-180 duration-500">
-                                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                            <button id="btn-reset" class="w-12 h-12 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl transition-all hover:rotate-180 duration-500 flex items-center justify-center">
+                                <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
                             </button>
                         </div>
                     </div>
@@ -178,113 +215,115 @@
             </div>
 
             <!-- EXPLICACIÓN FUNDAMENTAL -->
-            <div class="glass-card p-8 rounded-2xl mb-8">
-                <h2 class="text-3xl font-bold text-white mb-8 flex items-center gap-3 border-b border-white/10 pb-4">
-                    <span class="p-2 bg-neon-purple/10 rounded-lg"><i data-lucide="cpu" class="text-neon-purple"></i></span>
-                    La Arquitectura de la Vida Artificial
-                </h2>
+            <div class="glass-card p-8 md:p-12 rounded-2xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-neon-purple/5 rounded-full blur-[80px] -z-10"></div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="space-y-4">
-                        <h3 class="text-xl font-bold text-white">¿Cómo funciona el motor?</h3>
-                        <p class="text-gray-300 text-sm leading-relaxed">
-                            El Juego de la Vida no es un videojuego donde se gana o se pierde, sino un <strong class="text-neon-cyan">"Juego de Cero Jugadores"</strong>. Es un sistema determinista: una vez establecida la configuración inicial (la "semilla"), el sistema evoluciona por sí mismo sin ninguna intervención humana, siguiendo reglas matemáticas estrictas.
-                        </p>
-                        <p class="text-gray-300 text-sm leading-relaxed">
-                            Funciona como una máquina de estados finitos que opera en un ciclo infinito de <strong>"Generaciones"</strong>. En cada generación, el tiempo se congela, se calculan simultáneamente todos los cambios, y luego el universo avanza un paso.
-                        </p>
+                <div class="flex items-center gap-4 mb-10 border-b border-white/10 pb-6">
+                    <div class="w-12 h-12 rounded-xl bg-neon-purple/10 border border-neon-purple/30 flex items-center justify-center">
+                        <i data-lucide="cpu" class="text-neon-purple w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold text-white tracking-tight">Arquitectura de la Vida Artificial</h2>
+                        <p class="text-neon-purple/60 font-mono text-xs uppercase tracking-widest mt-1">Lógica Computacional & Determinismo</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <div class="space-y-6">
+                        <div class="prose prose-invert">
+                            <p class="text-gray-300 leading-relaxed font-serif text-lg">
+                                El Juego de la Vida no es un videojuego donde se gana o se pierde, sino un <span class="text-white font-bold border-b border-neon-cyan/50">autómata de estado cero</span>. Es un universo de bolsillo determinista donde el caos aparente emerge de un orden subyacente absoluto.
+                            </p>
+                            <p class="text-gray-400 leading-relaxed text-sm">
+                                Una vez sembrada la configuración inicial, la intervención humana cesa. El sistema evoluciona en ciclos discretos llamados <strong>"Generaciones"</strong>, donde el tiempo se congela para calcular el destino de cada partícula simultáneamente.
+                            </p>
+                        </div>
                     </div>
                     
-                    <div class="bg-black/30 p-6 rounded-xl border border-white/5">
-                        <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">El Algoritmo Maestro</h3>
-                        <ul class="space-y-4">
-                            <li class="flex items-start gap-3">
-                                <div class="w-6 h-6 rounded-full bg-neon-purple/20 flex items-center justify-center text-neon-purple text-xs font-bold font-mono">1</div>
-                                <div>
-                                    <strong class="text-white text-sm block">Escaneo Universal</strong>
-                                    <p class="text-gray-500 text-xs mt-1">El sistema examina cada vóxel (célula 3D) en la cuadrícula.</p>
-                                </div>
-                            </li>
-                            <li class="flex items-start gap-3">
-                                <div class="w-6 h-6 rounded-full bg-neon-purple/20 flex items-center justify-center text-neon-purple text-xs font-bold font-mono">2</div>
-                                <div>
-                                    <strong class="text-white text-sm block">Censo de Vecinos</strong>
-                                    <p class="text-gray-500 text-xs mt-1">Para cada célula, se cuentan cuántos de sus 26 vecinos están vivos.</p>
-                                </div>
-                            </li>
-                            <li class="flex items-start gap-3">
-                                <div class="w-6 h-6 rounded-full bg-neon-cyan/20 flex items-center justify-center text-neon-cyan text-xs font-bold font-mono">3</div>
-                                <div>
-                                    <strong class="text-white text-sm block">Aplicación de Leyes</strong>
-                                    <p class="text-gray-500 text-xs mt-1">Se aplican las reglas de supervivencia, muerte o nacimiento.</p>
-                                </div>
-                            </li>
-                            <li class="flex items-start gap-3">
-                                <div class="w-6 h-6 rounded-full bg-neon-green/20 flex items-center justify-center text-neon-green text-xs font-bold font-mono">4</div>
-                                <div>
-                                    <strong class="text-white text-sm block">Mutación Síncrona</strong>
-                                    <p class="text-gray-500 text-xs mt-1">Todas las células cambian de estado al mismo instante, creando la siguiente generación.</p>
-                                </div>
-                            </li>
-                        </ul>
+                    <div class="grid gap-4">
+                        <!-- Step 1 -->
+                        <div class="group flex items-start gap-4 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-colors">
+                            <span class="font-mono text-neon-purple/50 text-xl font-bold group-hover:text-neon-purple transition-colors">01</span>
+                            <div>
+                                <h3 class="text-white font-bold text-sm uppercase tracking-wide mb-1">Escaneo Universal</h3>
+                                <p class="text-gray-500 text-xs">El motor recorre cada vóxel en la matriz tridimensional \( \mathbb{L}^3 \).</p>
+                            </div>
+                        </div>
+                        <!-- Step 2 -->
+                        <div class="group flex items-start gap-4 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-colors">
+                            <span class="font-mono text-neon-cyan/50 text-xl font-bold group-hover:text-neon-cyan transition-colors">02</span>
+                            <div>
+                                <h3 class="text-white font-bold text-sm uppercase tracking-wide mb-1">Censo Vecinal</h3>
+                                <p class="text-gray-500 text-xs">Se calcula el sumatorio de estados de los 26 vecinos inmediatos.</p>
+                            </div>
+                        </div>
+                        <!-- Step 3 -->
+                        <div class="group flex items-start gap-4 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-colors">
+                            <span class="font-mono text-neon-green/50 text-xl font-bold group-hover:text-neon-green transition-colors">03</span>
+                            <div>
+                                <h3 class="text-white font-bold text-sm uppercase tracking-wide mb-1">Mutación Síncrona</h3>
+                                <p class="text-gray-500 text-xs">El universo entero actualiza su estado en un solo "tick" de reloj.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- EXPLICACIÓN Y FORMALIZACIÓN MATEMÁTICA -->
-            <div class="glass-card p-8 rounded-2xl">
-                <h2 class="text-3xl font-bold text-white mb-8 flex items-center gap-3 border-b border-white/10 pb-4">
-                    <span class="p-2 bg-neon-cyan/10 rounded-lg"><i data-lucide="sigma" class="text-neon-cyan"></i></span>
-                    Mecánica y Formalización del Universo 3D
-                </h2>
+            <div class="glass-card p-8 md:p-12 rounded-2xl relative overflow-hidden">
+                <div class="absolute bottom-0 left-0 w-64 h-64 bg-neon-cyan/5 rounded-full blur-[80px] -z-10"></div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <div class="flex items-center gap-4 mb-10 border-b border-white/10 pb-6">
+                    <div class="w-12 h-12 rounded-xl bg-neon-cyan/10 border border-neon-cyan/30 flex items-center justify-center">
+                        <i data-lucide="sigma" class="text-neon-cyan w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold text-white tracking-tight">Mecánica del Hipervolumen</h2>
+                        <p class="text-neon-cyan/60 font-mono text-xs uppercase tracking-widest mt-1">Formalización Matemática & Reglas 4555</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
                     
-                    <!-- LEFT COLUMN: SIMULATION EXPLANATION -->
+                    <!-- LEFT COLUMN -->
                     <div class="space-y-8">
                         <div>
-                            <h3 class="text-xl text-white font-bold flex items-center gap-2 mb-3">
-                                <span class="text-neon-purple">I.</span> Dinámica Volumétrica y Vóxeles
+                            <h3 class="text-lg text-white font-bold flex items-center gap-2 mb-4">
+                                <span class="text-neon-purple">I.</span> Topología Toroidal
                             </h3>
-                            <p class="text-gray-300 text-sm leading-relaxed mb-4">
-                                A diferencia de la versión 2D, que opera en un plano infinito de píxeles cuadrados, esta simulación ocurre en una <strong>Lattice Cúbica</strong> \( \mathbb{L}^3 \). La unidad fundamental es el <strong>Vóxel</strong> (Volumetric Pixel).
+                            <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                                Para evitar efectos de borde, simulamos un espacio infinito curvando el espacio sobre sí mismo. Un objeto que sale por la derecha, entra por la izquierda. Matemáticamente, las coordenadas \( (x, y, z) \) en un espacio de tamaño \( L \) se mapean mediante aritmética modular:
                             </p>
-                            <p class="text-gray-300 text-sm leading-relaxed">
-                                El espacio no es euclidiano infinito, sino un <strong>Toroide Tridimensional</strong>. Esto significa que los bordes están conectados: si un "glider" sale por la derecha, reaparece por la izquierda; si sube por el techo, reaparece por el suelo. Esto elimina los efectos de frontera y permite una evolución continua.
-                            </p>
-                            <div class="equation-box text-sm mt-4">
-                                <p class="text-xs text-gray-500 mb-2 font-sans">Mapeo de coordenadas toroidales para un espacio de tamaño \(L\):</p>
-                                \[ x' = (x + L) \pmod L \]
-                                \[ y' = (y + L) \pmod L \]
-                                \[ z' = (z + L) \pmod L \]
+                            <div class="equation-box text-xs md:text-sm shadow-inner bg-black/40">
+                                \[ \mathbf{x}' = (\mathbf{x} + L) \pmod L \]
                             </div>
                         </div>
 
                         <div>
-                            <h3 class="text-xl text-white font-bold flex items-center gap-2 mb-3">
-                                <span class="text-neon-purple">II.</span> El Vecindario de Moore 3D
+                            <h3 class="text-lg text-white font-bold flex items-center gap-2 mb-4">
+                                <span class="text-neon-purple">II.</span> Vecindario de Moore 3D
                             </h3>
-                            <p class="text-gray-300 text-sm leading-relaxed">
-                                La complejidad aumenta exponencialmente al añadir el eje Z. En lugar de 8 vecinos, cada célula interactúa con <strong>26 células adyacentes</strong> (el cubo de \(3 \times 3 \times 3\) menos el centro).
+                            <p class="text-gray-400 text-sm leading-relaxed">
+                                La explosión combinatoria es evidente: pasamos de 8 vecinos en 2D a <strong class="text-white">26 vecinos</strong> en 3D. El estado \( N \) de vecindad se define como:
                             </p>
-                            <div class="equation-box text-sm mt-4">
+                            <div class="equation-box text-xs md:text-sm shadow-inner bg-black/40">
                                 \[ N(\mathbf{x}, t) = \sum_{i,j,k \in \{-1,0,1\}} S(x+i, y+j, z+k, t) - S(\mathbf{x}, t) \]
                             </div>
                         </div>
                     </div>
 
-                    <!-- RIGHT COLUMN: MATHEMATICAL RULES -->
+                    <!-- RIGHT COLUMN -->
                     <div class="space-y-8">
                         <div>
-                            <h3 class="text-xl text-white font-bold flex items-center gap-2 mb-3">
-                                <span class="text-neon-cyan">III.</span> Función de Transición \( \delta \) (Regla 4555)
+                            <h3 class="text-lg text-white font-bold flex items-center gap-2 mb-4">
+                                <span class="text-neon-cyan">III.</span> Función de Transición \( \delta \) (Bays)
                             </h3>
-                            <p class="text-gray-300 text-sm leading-relaxed mb-4">
-                                Las reglas clásicas de Conway (2/3) provocan la extinción inmediata en 3D debido a la alta densidad de vecinos. Utilizamos el algoritmo <strong>4555 de Carter Bays</strong>, descubierto para permitir estructuras estables y móviles en el vacío tridimensional.
+                            <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                                Las reglas 2D (2/3) causarían una extinción inmediata en 3D. Usamos el algoritmo <strong>4555 de Carter Bays</strong> para la estabilidad volumétrica:
                             </p>
                             
-                            <div class="equation-box text-sm">
-                                \[ S(\mathbf{x}, t+1) = \delta(S(\mathbf{x}, t), N) = \begin{cases} 
+                            <div class="equation-box text-xs md:text-sm shadow-inner bg-black/40 !border-l-neon-purple">
+                                \[ S_{t+1} = \begin{cases} 
                                 1 & \text{si } S_t = 1 \land N \in \{4, 5\} \\
                                 1 & \text{si } S_t = 0 \land N = 5 \\
                                 0 & \text{en cualquier otro caso}
@@ -292,31 +331,19 @@
                             </div>
                         </div>
 
-                        <div class="bg-white/5 p-6 rounded-xl border border-white/5">
-                            <h4 class="text-sm font-bold text-white uppercase tracking-wider mb-4 border-b border-white/10 pb-2">Interpretación Biológica</h4>
-                            <ul class="space-y-4 text-sm">
-                                <li class="flex gap-3">
-                                    <div class="min-w-[4px] bg-neon-green rounded-full"></div>
-                                    <div>
-                                        <strong class="text-neon-green block">Supervivencia (Homeostasis)</strong>
-                                        <span class="text-gray-400">Rango Estrecho: \( N \in [4, 5] \). La vida en 3D es frágil y requiere un equilibrio preciso.</span>
-                                    </div>
-                                </li>
-                                <li class="flex gap-3">
-                                    <div class="min-w-[4px] bg-neon-cyan rounded-full"></div>
-                                    <div>
-                                        <strong class="text-neon-cyan block">Nacimiento (Reproducción)</strong>
-                                        <span class="text-gray-400">Punto Crítico: \( N = 5 \). Se requieren exactamente 5 "padres" para catalizar nueva vida.</span>
-                                    </div>
-                                </li>
-                                <li class="flex gap-3">
-                                    <div class="min-w-[4px] bg-red-400 rounded-full"></div>
-                                    <div>
-                                        <strong class="text-red-400 block">Muerte (Entropía)</strong>
-                                        <span class="text-gray-400">El sistema tiende al caos o al vacío si no se cumplen las condiciones estrictas.</span>
-                                    </div>
-                                </li>
-                            </ul>
+                        <div class="grid grid-cols-1 gap-3">
+                            <div class="flex items-center justify-between p-3 rounded border border-neon-green/20 bg-neon-green/5">
+                                <span class="text-xs font-mono font-bold text-neon-green uppercase">Supervivencia</span>
+                                <span class="text-xs text-gray-300">4 ó 5 Vecinos</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 rounded border border-neon-cyan/20 bg-neon-cyan/5">
+                                <span class="text-xs font-mono font-bold text-neon-cyan uppercase">Nacimiento</span>
+                                <span class="text-xs text-gray-300">Exactamente 5 Vecinos</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 rounded border border-red-500/20 bg-red-500/5">
+                                <span class="text-xs font-mono font-bold text-red-400 uppercase">Muerte</span>
+                                <span class="text-xs text-gray-300">Soledad (<4) o Aglomeración (>5)</span>
+                            </div>
                         </div>
                     </div>
 
@@ -328,21 +355,21 @@
         <!-- FOOTER -->
         <footer class="border-t border-white/5 bg-cosmos-950 py-12 relative z-10">
             <div class="max-w-7xl mx-auto px-6 text-center">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-neon-blue to-neon-purple mx-auto mb-6 p-[1px]">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-neon-blue to-neon-purple mx-auto mb-6 p-[1px] animate-pulse-slow">
                      <div class="w-full h-full rounded-full bg-cosmos-950 flex items-center justify-center text-white font-serif font-bold">O</div>
                 </div>
                 <h3 class="text-xl font-serif text-white mb-2">Proyecto O.C.V.M.</h3>
                 <p class="text-gray-500 text-sm max-w-md mx-auto font-mono">
                     Arquitectura Digital & Filosofía Computacional
                 </p>
-                <div class="mt-8 text-xs text-gray-700">
+                <div class="mt-8 text-xs text-gray-700 font-mono tracking-widest">
                     &copy; 2025 TODOS LOS DERECHOS RESERVADOS
                 </div>
             </div>
         </footer>
     </div>
 
-    <!-- 3D LOGIC SCRIPT -->
+    <!-- LOGIC SCRIPTS -->
     <script>
         // --- CONFIG ---
         const GRID_SIZE = 24; 
@@ -354,11 +381,11 @@
         let population = 0;
         let autoRotate = false;
 
-        // --- THREE.JS VARIABLES ---
+        // --- THREE.JS VARIABLES (SIMULATION) ---
         let scene, camera, renderer, controls;
-        let mesh; // InstancedMesh
+        let mesh; 
         let dummy = new THREE.Object3D();
-        let gridState = []; // 3D Array [x][y][z]
+        let gridState = []; 
         let nextState = [];
 
         // --- DOM ELEMENTS ---
@@ -373,6 +400,7 @@
 
         // --- INITIALIZATION ---
         init();
+        initBackground(); // Init background
         resetGrid();
         animate();
         document.getElementById('loading').style.display = 'none';
@@ -406,48 +434,105 @@
             dirLight.position.set(10, 20, 10);
             scene.add(dirLight);
 
-            const pointLight = new THREE.PointLight(0xa855f7, 2, 50); // Neon Purple Glow
+            const pointLight = new THREE.PointLight(0xa855f7, 2, 50); 
             pointLight.position.set(GRID_SIZE/2, GRID_SIZE/2, GRID_SIZE/2);
             scene.add(pointLight);
 
-            // --- INSTANCED MESH SETUP (CRITICAL FOR PERFORMANCE) ---
-            const geometry = new THREE.BoxGeometry(0.85, 0.85, 0.85); // Slightly smaller for gap
+            // --- INSTANCED MESH SETUP ---
+            const geometry = new THREE.BoxGeometry(0.85, 0.85, 0.85); 
             const material = new THREE.MeshPhysicalMaterial({ 
-                color: 0x4f46e5, // Base blue
-                emissive: 0xa855f7, // Purple glow
+                color: 0x4f46e5, 
+                emissive: 0xa855f7, 
                 emissiveIntensity: 0.5,
                 metalness: 0.8,
                 roughness: 0.2,
-                transmission: 0.2, // Glass-like
+                transmission: 0.2, 
                 opacity: 0.9,
                 transparent: true
             });
 
-            // Total possible cells
             const count = GRID_SIZE * GRID_SIZE * GRID_SIZE;
             mesh = new THREE.InstancedMesh(geometry, material, count);
-            mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); // Will update every frame
+            mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); 
             scene.add(mesh);
 
-            // --- GRID HELPER ---
-            const gridHelper = new THREE.GridHelper(GRID_SIZE, GRID_SIZE, 0x334155, 0x1e293b);
+            // --- GRID HELPER (WHITE LINES) ---
+            const gridHelper = new THREE.GridHelper(GRID_SIZE, GRID_SIZE, 0xffffff, 0xffffff);
             gridHelper.position.set(GRID_SIZE/2 - 0.5, -0.5, GRID_SIZE/2 - 0.5);
+            gridHelper.material.opacity = 0.2; // Transparent White
+            gridHelper.material.transparent = true;
             scene.add(gridHelper);
             
-            // Add a wireframe box to define boundary
+            // --- BOUNDARY BOX (WHITE LINES) ---
             const boxGeo = new THREE.BoxGeometry(GRID_SIZE, GRID_SIZE, GRID_SIZE);
             const edges = new THREE.EdgesGeometry(boxGeo);
-            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x334155 }));
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 }));
             line.position.set(GRID_SIZE/2 - 0.5, GRID_SIZE/2 - 0.5, GRID_SIZE/2 - 0.5);
             scene.add(line);
 
-            // Event Listeners
             window.addEventListener('resize', onWindowResize);
             lucide.createIcons();
         }
 
+        // --- BACKGROUND LOGIC (THREE.JS) ---
+        function initBackground() {
+            const canvasBg = document.getElementById('bg-canvas');
+            if (!canvasBg) return;
+
+            const bgScene = new THREE.Scene();
+            const bgCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const bgRenderer = new THREE.WebGLRenderer({ canvas: canvasBg, alpha: true });
+            
+            bgRenderer.setSize(window.innerWidth, window.innerHeight);
+            bgRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Particles
+            const particlesGeometry = new THREE.BufferGeometry();
+            const particlesCount = 700;
+            const posArray = new Float32Array(particlesCount * 3);
+
+            for(let i = 0; i < particlesCount * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 20; 
+            }
+
+            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const material = new THREE.PointsMaterial({
+                size: 0.02,
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.5,
+            });
+
+            const particlesMesh = new THREE.Points(particlesGeometry, material);
+            bgScene.add(particlesMesh);
+            bgCamera.position.z = 3;
+
+            // Simple parallax
+            let mouseX = 0, mouseY = 0;
+            document.addEventListener('mousemove', (event) => {
+                mouseX = event.clientX / window.innerWidth - 0.5;
+                mouseY = event.clientY / window.innerHeight - 0.5;
+            });
+
+            function animateBg() {
+                requestAnimationFrame(animateBg);
+                particlesMesh.rotation.y += 0.0005;
+                particlesMesh.rotation.x += 0.0002;
+                particlesMesh.rotation.x += mouseY * 0.01;
+                particlesMesh.rotation.y += mouseX * 0.01;
+                bgRenderer.render(bgScene, bgCamera);
+            }
+            animateBg();
+
+            // Resize handler for BG
+            window.addEventListener('resize', () => {
+                bgCamera.aspect = window.innerWidth / window.innerHeight;
+                bgCamera.updateProjectionMatrix();
+                bgRenderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
         // --- GAME LOGIC (3D) ---
-        
         function initArrays() {
             gridState = new Int8Array(GRID_SIZE * GRID_SIZE * GRID_SIZE);
             nextState = new Int8Array(GRID_SIZE * GRID_SIZE * GRID_SIZE);
@@ -471,10 +556,8 @@
             updateUI();
         }
 
-        // Rule 4555: Survive 4-5, Born 5
         function computeNextGen() {
             let newPop = 0;
-            // Clear next state
             nextState.fill(0);
 
             for (let x = 0; x < GRID_SIZE; x++) {
@@ -484,14 +567,12 @@
                         const idx = getIndex(x, y, z);
                         const state = gridState[idx];
                         
-                        // Count Neighbors (26)
                         let neighbors = 0;
                         for (let dx = -1; dx <= 1; dx++) {
                             for (let dy = -1; dy <= 1; dy++) {
                                 for (let dz = -1; dz <= 1; dz++) {
                                     if (dx === 0 && dy === 0 && dz === 0) continue;
                                     
-                                    // Toroidal wrapping for better ecosystem
                                     let nx = (x + dx + GRID_SIZE) % GRID_SIZE;
                                     let ny = (y + dy + GRID_SIZE) % GRID_SIZE;
                                     let nz = (z + dz + GRID_SIZE) % GRID_SIZE;
@@ -502,15 +583,14 @@
                             }
                         }
 
-                        // Apply Rules (Carter Bays 4555)
                         if (state === 1) {
                             if (neighbors === 4 || neighbors === 5) {
-                                nextState[idx] = 1; // Survive
+                                nextState[idx] = 1; 
                                 newPop++;
                             }
                         } else {
                             if (neighbors === 5) {
-                                nextState[idx] = 1; // Birth
+                                nextState[idx] = 1; 
                                 newPop++;
                             }
                         }
@@ -518,7 +598,6 @@
                 }
             }
 
-            // Swap arrays
             gridState.set(nextState);
             population = newPop;
             generation++;
@@ -540,8 +619,7 @@
                             dummy.updateMatrix();
                             mesh.setMatrixAt(instanceIdx, dummy.matrix);
                             
-                            // Color variation based on height (Y) for visual flair
-                            const hue = 0.5 + (y / GRID_SIZE) * 0.2; // Blue to Purple
+                            const hue = 0.5 + (y / GRID_SIZE) * 0.2; 
                             color.setHSL(hue, 1.0, 0.6);
                             mesh.setColorAt(instanceIdx, color);
                             
@@ -551,7 +629,6 @@
                 }
             }
             
-            // Hide unused instances
             for (let i = instanceIdx; i < mesh.count; i++) {
                 dummy.position.set(10000, 10000, 10000);
                 dummy.updateMatrix();
@@ -563,23 +640,22 @@
         }
 
         function updateUI() {
-            labelGen.innerText = `GEN: ${generation}`;
-            labelPop.innerText = `POBLACIÓN: ${population}`;
+            labelGen.innerText = `${generation}`;
+            labelPop.innerText = `${population}`;
         }
 
-        // --- INTERACTION ---
         function toggleSim() {
             running = !running;
             if (running) {
                 intervalId = setInterval(computeNextGen, SPEED);
-                btnToggle.innerHTML = `<i data-lucide="pause" class="w-4 h-4"></i> <span id="btn-text">Pausar Vida</span>`;
-                btnToggle.classList.remove('bg-neon-purple/20', 'border-neon-purple/50');
-                btnToggle.classList.add('bg-neon-cyan/20', 'border-neon-cyan/50');
+                btnToggle.innerHTML = `<i data-lucide="pause" class="w-4 h-4"></i> <span id="btn-text" class="tracking-wide">PAUSAR</span>`;
+                btnToggle.classList.remove('from-neon-purple/20', 'to-neon-blue/20', 'border-neon-purple/50');
+                btnToggle.classList.add('from-neon-cyan/20', 'to-neon-green/20', 'border-neon-cyan/50');
             } else {
                 clearInterval(intervalId);
-                btnToggle.innerHTML = `<i data-lucide="play" class="w-4 h-4"></i> <span id="btn-text">Reanudar Vida</span>`;
-                btnToggle.classList.add('bg-neon-purple/20', 'border-neon-purple/50');
-                btnToggle.classList.remove('bg-neon-cyan/20', 'border-neon-cyan/50');
+                btnToggle.innerHTML = `<i data-lucide="play" class="w-4 h-4"></i> <span id="btn-text" class="tracking-wide">REANUDAR</span>`;
+                btnToggle.classList.add('from-neon-purple/20', 'to-neon-blue/20', 'border-neon-purple/50');
+                btnToggle.classList.remove('from-neon-cyan/20', 'to-neon-green/20', 'border-neon-cyan/50');
             }
             lucide.createIcons();
         }
