@@ -1,568 +1,533 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Explicación del Paper: Enaction for QBists</title>
-    <!-- Importar Three.js -->
+    <title>Vida, Mente y Cosmos | Decodificando el "Entre"</title>
+    <meta name="description" content="Un análisis detallado del paper de Amanda Gefter que busca unificar la física cuántica (QBism) y la ciencia cognitiva (Enactivismo).">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Merriweather', 'serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        cosmos: { 950: '#020617', 900: '#08080c', 800: '#11111a', },
+                        neon: { blue: '#4f46e5', green: '#10b981', purple: '#a855f7', cyan: '#06b6d4', gold: '#fbbf24' }
+                    },
+                    animation: {
+                        'float': 'float 8s ease-in-out infinite',
+                        'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;900&family=Merriweather:ital,wght@0,300;0,400;1,400&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
     <style>
-        /* Importar fuentes para un look limpio y académico */
-        @import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Merriweather:wght@400;700&display=swap');
-
-        body {
-            font-family: 'Lato', sans-serif;
-            line-height: 1.7;
-            background-color: #0a0a0a; /* Fondo base oscuro */
-            color: #e0e0e0; /* Texto principal claro */
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden; /* Evitar scroll horizontal */
-        }
-
-        /* Canvas de Three.js para el fondo */
-        #bg-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1; /* Detrás de todo el contenido */
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 20px auto;
-            padding: 0 20px;
-            position: relative; /* Para que esté sobre el canvas */
-            z-index: 1;
-        }
-
-        /* Contenedores con fondo semitransparente y blur */
-        header, section {
-            background-color: rgba(20, 20, 20, 0.85); /* Fondo oscuro semitransparente */
-            backdrop-filter: blur(8px); /* Efecto "frosty" */
-            -webkit-backdrop-filter: blur(8px);
-            padding: 30px;
-            margin-bottom: 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        header {
-            text-align: center;
-            border-bottom: 3px solid #0056b3;
-        }
-
-        header h1 {
-            font-family: 'Merriweather', serif;
-            color: #90caf9; /* Azul claro */
-            margin: 0;
-            font-size: 2.5em;
-        }
-
-        header p {
-            font-size: 1.2em;
-            color: #cccccc;
-            margin: 10px 0 0;
-        }
+        :root { --nav-height: 80px; --dark: #0f172a; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--dark); color: #cbd5e1; line-height: 1.8; overflow-x: hidden; text-align: justify; }
         
-        header .paper-info {
-            font-size: 0.9em;
-            color: #aaaaaa;
-            margin-top: 15px;
-        }
-
-        h2 {
-            font-family: 'Merriweather', serif;
-            color: #64b5f6; /* Azul claro */
-            border-bottom: 2px solid #444;
-            padding-bottom: 10px;
-            margin-top: 0;
-        }
-
-        h3 {
-            font-family: 'Merriweather', serif;
-            color: #42a5f5; /* Azul un poco más brillante */
-        }
-
-        blockquote {
-            border-left: 5px solid #42a5f5;
-            background-color: #2a2a2a;
-            padding: 20px;
-            margin: 20px 0;
-            font-style: italic;
-            font-size: 1.1em;
-            position: relative;
-        }
-
-        blockquote::before {
-            content: '“';
-            font-family: 'Merriweather', serif;
-            font-size: 4em;
-            color: #42a5f5;
-            opacity: 0.2;
-            position: absolute;
-            top: -10px;
-            left: 10px;
-        }
-
-        .highlight {
-            color: #90caf9;
-            font-weight: 700;
-        }
-
-        /* Estilos para el acordeón de conceptos clave (modo oscuro) */
-        details {
-            background-color: #252525;
-            border: 1px solid #444;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            overflow: hidden;
-        }
-
-        summary {
-            font-family: 'Merriweather', serif;
-            font-weight: 700;
-            font-size: 1.1em;
-            color: #90caf9;
-            padding: 15px 20px;
-            cursor: pointer;
-            outline: none;
-            position: relative;
-        }
-
-        summary::marker {
-            color: #64b5f6;
-        }
+        /* Glassmorphism Classes */
+        .glass-card { background: rgba(17, 17, 26, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s ease; }
+        .glass-card:hover { background: rgba(26, 26, 46, 0.8); border-color: rgba(255, 255, 255, 0.1); }
+        .glass-nav { background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
         
-        details[open] summary {
-            border-bottom: 1px solid #444;
-            background-color: #1e1e1e;
-        }
-
-        .details-content {
-            padding: 20px;
-            border-top: 1px solid #444;
-        }
-
-        /* Estilos para la lista de referencias */
-        .reference-list {
-            font-size: 0.9em;
-            color: #cccccc;
-        }
-        .reference-list p {
-            margin-bottom: 12px;
-            padding-left: 15px; /* Espacio para el número */
-            text-indent: -15px; /* Sangría negativa para alinear */
-        }
-        .reference-list p strong {
-            color: #64b5f6; /* Resaltar el número de referencia */
-        }
-
-        footer {
-            text-align: center;
-            padding: 20px;
-            margin-top: 30px;
-            color: #888;
-            font-size: 0.9em;
-        }
-
-        /* Estilos para las citas (modo oscuro) */
-        .cite {
-            font-size: 0.8em;
-            color: #29b6f6;
-            vertical-align: super;
-            margin-left: 2px;
-            text-decoration: none;
-        }
+        /* Typography Utilities */
+        .text-glow { text-shadow: 0 0 20px rgba(79, 70, 229, 0.5); }
+        h2 { font-family: 'Inter', sans-serif; letter-spacing: -0.025em; }
+        h3 { font-family: 'Inter', sans-serif; }
+        p { margin-bottom: 1.5rem; }
+        
+        /* Accordion Animations */
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        details[open] summary ~ * { animation: sweep .5s ease-in-out; }
+        @keyframes sweep { 0%    {opacity: 0; transform: translateY(-10px)} 100%  {opacity: 1; transform: translateY(0)} }
     </style>
 </head>
 <body>
 
-    <!-- Canvas para el fondo de Three.js -->
-    <canvas id="bg-canvas"></canvas>
+    <!-- Background Layers -->
+    <div class="fixed inset-0 bg-gradient-to-b from-cosmos-950 via-cosmos-900 to-cosmos-950 -z-20"></div>
+    <div class="fixed inset-0 opacity-20 -z-10" style="background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px); background-size: 40px 40px;"></div>
+    <canvas id="bg-canvas" class="fixed top-0 left-0 w-full h-full -z-10 opacity-60"></canvas>
 
-    <div class="container">
-
-        <header>
-            <h1>Decodificando el "Entre": Una Guía Web sobre "Enaction for QBists"</h1>
-            <p>Un análisis detallado del paper de Amanda Gefter que busca unificar la física cuántica y la ciencia cognitiva.</p>
-            <div class="paper-info">
-                <strong>Paper:</strong> Enaction for QBists | <strong>Autora:</strong> Amanda Gefter | <strong>Fecha:</strong> Octubre 2024
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 glass-nav h-[80px] flex items-center">
+        <div class="max-w-7xl mx-auto px-6 w-full flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i data-lucide="atom" class="text-neon-blue w-8 h-8"></i>
+                <span class="font-bold text-xl tracking-tighter text-white">O.C.V.M.</span>
             </div>
-        </header>
+            <div class="hidden md:flex gap-8 text-sm font-medium text-gray-400">
+                <a href="#" class="hover:text-neon-blue transition-colors">Inicio</a>
+                <a href="#" class="hover:text-neon-cyan transition-colors">Explorar</a>
+                <a href="#" class="text-white">Lectura Actual</a>
+            </div>
+        </div>
+    </nav>
 
-        <main>
-            <section id="abstract">
-                <h2>Resumen: El Puente entre Mente y Materia</h2>
-                <p>
-                    Este paper comienza como una introducción a la <span class="highlight">teoría enactiva</span> para físicos cuánticos de la escuela <span class="highlight">QBism</span>. A diferencia de la ciencia cognitiva tradicional, que ve la mente como una computadora que procesa representaciones internas de un mundo externo, el enfoque enactivo ve la cognición como una <span class="highlight">acción adaptativa y encarnada</span>.
-                </p>
-                <p>
-                    La tesis central es que QBism y Enaction son profundamente compatibles. Ambas rechazan una división absoluta y preexistente entre sujeto y objeto.
-                </p>
-                <ul>
-                    <li>Para el <span class="highlight">QBism</span>, la medición cuántica es la <span class="highlight">promulgación (enactment)</span> de la división sujeto-objeto. Es una teoría de cómo el mundo se crea y recrea a través de interacciones con un agente.</li>
-                    <li>Para la <an class="highlight">Enaction</span>, la cognición es la <span class="highlight">promulgación (enactment)</span> de esa misma división. Es una teoría de cómo los agentes se crean y recrean a través de interacciones con el mundo.</li>
-                </ul>
-                <p>
-                    Juntas, estas dos teorías ofrecen la posibilidad de una metafísica unificada que finalmente reúne la mente y el mundo, el sujeto y el objeto.
-                </p>
-            </section>
-
-            <section id="problem">
-                <h2>El Problema: La Incompatibilidad del Universo Participativo</h2>
-                <p>
-                    La física cuántica, especialmente en la tradición de John Wheeler, nos dice que vivimos en un <span class="highlight">"universo participativo"</span>. La idea de un observador pasivo, separado del mundo por un "vidrio de una pulgada de espesor", queda demolida.
-                </p>
-                 <blockquote>
-                   "Tenemos que tachar esa vieja palabra 'observador' y reemplazarla por la nueva palabra 'participante'. En algún extraño sentido, el principio cuántico nos dice que estamos tratando con un universo participativo." - John Wheeler [1]
-                </blockquote>
-                <p>
-                    El QBism adopta esta idea: la mecánica cuántica es un "manual de usuario" que guía la participación de un agente en la creación continua del mundo. El problema es que esta visión choca frontalmente con la ciencia cognitiva dominante, el <span class="highlight">cognitivismo</span>.
-                </p>
-                <h3>El Conflicto con el Cognitivismo</h3>
-                <p>
-                    El cognitivismo es fundamentalmente cartesiano: asume una división clara entre el sujeto (mente/cerebro "en la cabeza") y el objeto (mundo "ahí fuera"). Postula que:
-                </p>
-                <ol>
-                    <li>Habitamos un mundo con propiedades preexistentes.</li>
-                    <li>"Recogemos" esas propiedades representándolas internamente (en el cerebro).</li>
-                    <li>Hay un "nosotros" subjetivo y separado que hace esto.</li>
-                </ol>
-                <p>
-                    Esta idea es incompatible con la cuántica. Como dijo Heisenberg, el cuanto de acción "hace imposible la aguda separación entre el mundo y el Yo". [6] Si el QBism usa términos como "agente", "experiencia" o "creencia" definidos por el cognitivismo, cae en contradicciones y es (mal)interpretado como solipsismo.
-                </p>
-            </section>
-
-            <section id="solution">
-                <h2>La Solución: El Enfoque Enactivo de la Cognición</h2>
-                <p>
-                    El paper propone una alternativa radical: la <span class="highlight">teoría enactiva</span>. Esta visión, presentada en "The Embodied Mind" (Varela, Thompson y Rosch) [7], rechaza las suposiciones del cognitivismo.
-                </p>
-                <blockquote>
-                    "Proponemos el término enactivo para enfatizar la creciente convicción de que la cognición no es la representación de un mundo preexistente por una mente preexistente, sino más bien la <span class="highlight">promulgación (enactment) de un mundo y una mente</span> sobre la base de una historia de la variedad de acciones que un ser en el mundo realiza." [7]
-                </blockquote>
-                <p>
-                    En resumen: <span class="highlight">la cognición es acción encarnada</span> (embodied action). No se trata de tener un modelo interno del mundo; se trata de actuar adaptativamente en él para seguir viviendo.
-                </p>
-            </section>
-
-            <section id="key-concepts">
-                <h2>Conceptos Clave del Enactivismo</h2>
-                <p>Para entender la teoría enactiva, el paper destaca varios conceptos fundamentales, presentados aquí en formato de acordeón.</p>
-
-                <details>
-                    <summary>1. Autopoiesis (Autocreación)</summary>
-                    <div class="details-content">
-                        <p>Acuñado por Humberto Maturana y Francisco Varela [8], "autopoiesis" significa <span class="highlight">"auto-creación"</span>. Es la esencia de la vida biológica.</p>
-                        <p>El ejemplo más básico es una célula: es una red de procesos metabólicos que crean los componentes de la propia red, incluida su <span class="highlight">propia membrana</span>.</p>
-                        <p>Al crear su propio límite, la célula se distingue a sí misma del mundo. Literalmente, <span class="highlight">promulga (enacts) su propia división sujeto-objeto</span>. No es una división dada, es una división *creada y mantenida activamente*.</p>
-                        <p>Según Ezequiel Di Paolo [10, 53], esto crea una <span class="highlight">"tensión inherente"</span>: la célula debe <span class="highlight">auto-producirse</span> (permanecer abierta al entorno para obtener energía) y <span class="highlight">auto-distinguirse</span> (permanecer cerrada para mantener su identidad). La <span class="highlight">agencia</span> surge precisamente de la necesidad de navegar y regular esta tensión.</p>
-                    </div>
-                </details>
-
-                <details>
-                    <summary>2. Sense-making (Creación de Sentido)</summary>
-                    <div class="details-content">
-                        <p>El acto de navegar la tensión autopoiética requiere que el agente regule su interacción con el entorno. Debe diferenciar lo útil de lo dañino, lo bueno de lo malo, no en términos absolutos, sino <span class="highlight">en relación con sus necesidades autopoiéticas</span> actuales (su supervivencia).</p>
-                        <p>Este proceso es el <span class="highlight">"sense-making" (creación de sentido)</span>. Es la base de la mente. Como dicen Thompson y Stapleton, el mundo se convierte en "un lugar de prominencia (salience), significado y valor" [11] solo en virtud de que el agente está vivo y es precario.</p>
-                        <p>Existir es interactuar con el mundo de forma <span class="highlight">normativa</span>. Esto vincula directamente la vida con la mente.</p>
-                    </div>
-                </details>
-
-                <details>
-                    <summary>3. Bucles Sensoriomotores (Cognición como Acción)</summary>
-                    <div class="details-content">
-                        <p>El "sense-making" conduce al acoplamiento sensoriomotor. Los receptores de un organismo detectan señales, que desencadenan movimientos, que a su vez cambian las señales sensoriales entrantes, formando un <span class="highlight">bucle sensoriomotor</span>.</p>
-                        <p>Para el enactivismo, la cognición y la percepción *son* esta actividad. La percepción no es una "imagen en la cabeza".</p>
-                        <blockquote>
-                           "Ver es el proceso de estar involucrado en hacer y responder preguntas sobre lo que está ante nosotros... <span class="highlight">No hay un producto final</span> para ser contemplado por un homúnculo." - Kevin O'Regan [13]
-                        </blockquote>
-                        <p>Evidencia experimental, como el "carrusel de gatitos" de Held o los experimentos de sustitución sensorial de Bach y Rita, muestra que la recepción pasiva de señales no produce percepción. Es necesaria la <span class="highlight">acción</span>.</p>
-                    </div>
-                </details>
-
-                <details>
-                    <summary>4. El Cuerpo (Embodiment) y el Rechazo a la IA Fuerte</summary>
-                    <div class="details-content">
-                        <p>La encarnación (embodiment) es central. Pero el "cuerpo" enactivo no es una máquina cartesiana. Como dijo Merleau-Ponty, "Nuestro cuerpo es un ser de dos hojas", perteneciendo tanto al orden del "objeto" como al del "sujeto". [19]</p>
-                        <p>Poner una IA en un robot <span class="highlight">no es</span> encarnación. Un robot es un objeto; un cuerpo vivo "se sitúa a horcajadas sobre la división sujeto-objeto".</p>
-                        <p>El filósofo Hans Jonas lo describe maravillosamente: un cuerpo vivo no es como una máquina que persiste mientras el combustible fluye a través de ella. El metabolismo <span class="highlight">"es el constante devenir de la máquina misma"</span> [22]. El cuerpo es una *actividad* que se rehace a sí misma constantemente, no una *cosa* terminada.</p>
-                        <p>Por esta razón, una IA desencarnada (o una IA en un robot-objeto) no puede ser cognitiva: <span class="highlight">sin autopoiesis y las normas que esta genera, una máquina no es capaz de "sense-making"</span>.</p>
-                    </div>
-                </details>
-                
-                <details>
-                    <summary>5. Saber-Cómo vs. Saber-Qué (Conocimiento como Habilidad)</summary>
-                    <div class="details-content">
-                        <p>El cognitivismo tradicional, siguiendo a Gilbert Ryle [23], valora el <span class="highlight">"saber qué"</span> (conocimiento proposicional, ej. "la nieve es blanca") como superior.</p>
-                        <p>El enactivismo argumenta que el <span class="highlight">"saber cómo"</span> (conocimiento sensoriomotor encarnado, ej. saber cómo andar en bicicleta) es más fundamental.</p>
-                        <p>El experimento mental de <span class="highlight">"la habitación de Mary"</span> (Mary's Room) [25] ilustra esto: Mary sabe *todo* sobre la física del color rojo, pero nunca lo ha visto. Cuando sale y ve una rosa roja, ¿aprende algo nuevo? El enactivismo diría que sí: aprende el "saber cómo" de acoplarse corporalmente al rojo, una habilidad, no una proposición.</p>
-                        <p>El paper lleva esto hasta el final: incluso la lógica y las matemáticas son formas de "saber cómo". "Y", "si", "pero" son "sentimientos" de modulación corporal [26]. Las matemáticas no son algo "allá afuera" ni "aquí adentro"; <span class="highlight">son algo que *hacemos*</span> [28].</p>
-                    </div>
-                </details>
-                
-                <details>
-                    <summary>6. F/acts (Hechos/Actos)</summary>
-                    <div class="details-content">
-                        <p>Para capturar esta naturaleza performativa del conocimiento, Di Paolo acuña el término <span class="highlight">"f/act"</span> (un juego de palabras entre 'fact', hecho, y 'act', acto). [29]</p>
-                        <p>Un "f/act" no es un hecho proposicional sobre el mundo, sino una <span class="highlight">coordinación sensoriomotora exitosa</span>, un "agarre" (grip) exitoso sobre el mundo. Es un concepto "onto-epistémico": es tanto sobre el ser (onto) como sobre el conocer (epistémico).</p>
-                        <p>Los "F/acts" se sitúan a horcajadas sobre la división sujeto-objeto: "Dependen tanto del agente como del mundo". No son verdades eternas, sino que están en "diversas etapas de devenir".</p>
-                    </div>
-                </details>
-            </section>
-
-            <section id="perspectives">
-                <h2>Más Allá del "Yo" y el "Ello": La 2ª Persona</h2>
-                <p>
-                    El paper argumenta que tanto el realismo (3ª persona) como el idealismo (1ª persona) fallan porque asumen una división sujeto-objeto fija.
-                </p>
-                <ul>
-                    <li>El realismo (3ª persona, "Ello") comienza con un mundo objetivo pero no puede explicar la experiencia de la 1ª persona (el "problema difícil").</li>
-                    <li>El idealismo (1ª persona, "Yo") comienza con la experiencia privada pero no puede garantizar un mundo externo (el "problema del solipsismo").</li>
-                </ul>
-                <p>
-                    <span class="highlight">El QBism rechaza la 3ª persona:</span> No hay una descripción del mundo en tercera persona, "vista de ningún lugar".
-                </p>
-                <p>
-                    <span class="highlight">Enaction rechaza la 1ª persona:</span> El "Yo" (el cogito de Descartes) no es un punto de partida. El "Yo" no se da de forma privada; se <span class="highlight">forja externamente</span>, en la interacción.
-                </p>
-                <p>
-                    El paper cita el libro favorito de Bohr, <span class="highlight">*Las Aventuras de un Estudiante Danés*</span> [30], donde el protagonista se divide en una "secuencia infinita y regresiva de 'Yoes' que se consideran unos a otros", incapaz de saber en qué 'Yo' detenerse. Esto, para Gefter, ilustra la imposibilidad de un "Yo" fundamental.
-                </p>
-                <p>
-                    Como dijo G. H. Mead: "El individuo es un otro antes de ser un sí mismo". [35]
-                </p>
-                <h3>La Solución: La 2ª Persona ("Tú")</h3>
-                <p>
-                    Si no hay ni "Yo" ni "Ello" como fundamentos, ¿qué queda? Queda el <span class="highlight">"Tú"</span>.
-                </p>
-                <p>
-                    Esta es la perspectiva de la 2ª persona, el "Entre" (Between) de Martin Buber [39]. No es ni interna ni externa, sino "anterior a la noción misma de un corte entre los dos". Es la perspectiva genuinamente participativa donde "el Yo de la palabra-par I-Tú se dice también". [38]
-                </p>
-            </section>
-            
-            <section id="multi-agent">
-                <h2>El Problema de Múltiples Agentes y el Lenguaje como Acción</h2>
-                <p>
-                    Esto nos lleva al "misterio central" de Wheeler: "¿Cómo se encajan los actos de observación-participación?" [41]. ¿Cómo puede un universo participativo ser también un <span class="highlight">universo compartido</span>?.
-                </p>
-                <h3>Sense-making Participativo</h3>
-                <p>
-                    La respuesta enactiva es el <span class="highlight">"sense-making participativo"</span> [42]. Cuando dos agentes interactúan, no solo se modelan mutuamente (como diría el cognitivismo). En cambio, la <span class="highlight">interacción misma</span> adquiere una autonomía temporal, co-creada por los agentes.
-                </p>
-                <p>
-                    Esto permite que surja una novedad genuina. "Dos agentes pueden saber cosas juntos que ninguno sabe por separado".
-                </p>
-                <p>
-                    Esto da lugar a una <span class="highlight">"tensión primordial"</span> [20]: la necesidad del agente de ser tanto abierto como cerrado a la interacción social (mantener su autonomía individual *mientras* participa en la autonomía de la interacción). El paper sugiere que <span class="highlight">el lenguaje surge para regular esta tensión</span>.
-                </p>
-                <h3>El Lenguaje no Representa, Actúa</h3>
-                <p>
-                    En esta visión, el lenguaje no es una herramienta para representar un mundo preexistente. El lenguaje <span class="highlight">"hace cosas"</span>. "Languaging" (el acto de lenguajear) es una forma de acción encarnada para regular las interacciones sociales.
-                </p>
-                <blockquote>
-                    "El habla [...] debe permitir incluso al propio sujeto trascender lo que había pensado previamente, y debe encontrar en sus propias palabras más de lo que pensaba que había puesto allí..." - Merleau-Ponty [44]
-                </blockquote>
-                <p>
-                    El significado no es fijo; se <span class="highlight">crea y negocia</span> en la interacción. El paper critica la insistencia de Bohr en el <span class="highlight">"lenguaje sin ambigüedades"</span> [46]. Para el enactivismo (y Buber), es la <span class="highlight">ambigüedad</span> lo que constituye el lenguaje vivo, ya que exige participación y negociación. [34]
-                </p>
-                <p>
-                    Por lo tanto, los acuerdos intersubjetivos no están "dados" (por un mundo externo), sino que deben ser <span class="highlight">"logrados"</span> (achieved). Se promulgan (enact) como "f/acts" en la 2ª persona. [29]
-                </p>
-            </section>
-            
-            <section id="synthesis">
-                <h2>La Gran Síntesis: Por qué QBism y Enaction se Necesitan Mutuamente</h2>
-                <p>
-                    El paper concluye que estas dos teorías son las dos mitades de una misma historia.
-                </p>
-                <h3>Por qué el QBism necesita a Enaction:</h3>
-                <p>
-                    El QBism es acusado de solipsismo porque usa términos como "agente" y "experiencia". Si se entienden desde el cognitivismo (como experiencias privadas en un cerebro), la acusación es válida.
-                </p>
-                <p>
-                    Enaction le da al QBism una base <span class="highlight">no-solipsista</span> para estos términos:
-                </p>
-                <ul>
-                    <li><span class="highlight">Agente:</span> No es un "primitivo", sino un sistema autopoiético, encarnado, que debe actuar para sobrevivir.</li>
-                    <li><span class="highlight">Mattering (Importancia):</span> Enaction explica *por qué* las cosas "importan" a un agente (un criterio clave del QBism [48]). La Regla de Born es una restricción normativa porque el agente está "apostando por su vida"; debe actuar para mantener su autopoiesis contra la entropía (la "muerte segura"). [49]</li>
-                    <li><span class="highlight">Experiencia:</span> No es algo privado "en la cabeza", sino el proceso de "sense-making" a través de la interacción sensoriomotora.</li>
-                </ul>
-                
-                <h3>Por qué Enaction necesita al QBism:</h3>
-                <p>
-                    El enactivismo explica la aparición del agente, pero a menudo deja el <span class="highlight">mundo</span> como un primitivo. Si ese mundo se entiende como un mundo físico clásico, no participativo, la teoría enactiva cae en incoherencia.
-                </p>
-                <p>
-                    El QBism proporciona al enactivismo el <span class="highlight">tipo de mundo correcto</span>: un mundo que no está predefinido, sino que se crea y recrea a través de la interacción participativa. Enaction necesita un mundo QBista para que sus premisas sobre la promulgación de la división sujeto-objeto sean físicamente coherentes.
-                </p>
-            </section>
-
-            <section id="conclusion">
-                <h2>Conclusión: Hacia una Metafísica Post-Cartesiana Unificada</h2>
-                <p>
-                    Tanto el QBism como Enaction son teorías sobre cómo la división sujeto-objeto <span class="highlight">es promulgada (enacted)</span>, interacción por interacción, en lugar de ser una línea fija y absoluta.
-                </p>
-                <blockquote>
-                    "El QBism socavó el objeto clásico, mientras que Enaction socavó el sujeto clásico, y entre ellos abrieron un nuevo lugar en el medio... para encontrarse."
-                </blockquote>
-                <p>
-                    Están librando la <span class="highlight">misma batalla</span> contra la misma división cartesiana del siglo XVII. Juntos, argumenta Gefter, ofrecen por primera vez una <span class="highlight">metafísica post-cartesiana unificada</span>, una que finalmente vuelve a unir al yo y al mundo.
-                </p>
-            </section>
-
-            <section id="references">
-                <h2>Referencias Citadas en el Paper</h2>
-                <div class="reference-list">
-                    <p><strong>[1]</strong> J. A. Wheeler, "Perspectives: The Universe as Home for Man..." (1974).</p>
-                    <p><strong>[2]</strong> C. A. Fuchs, "QBism, the Perimeter of Quantum Bayesianism" (2010).</p>
-                    <p><strong>[3]</strong> C. A. Fuchs and R. Schack, "Quantum-Bayesian Coherence" (2013).</p>
-                    <p><strong>[4]</strong> C. A. Fuchs, N. D. Mermin, and R. Schack, "An Introduction to QBism..." (2014).</p>
-                    <p><strong>[5]</strong> C. A. Fuchs, "Notwithstanding Bohr, the Reasons for QBism" (2017).</p>
-                    <p><strong>[6]</strong> Werner Heisenberg, Physics and Philosophy (1958).</p>
-                    <p><strong>[7]</strong> Francisco Varela, Evan Thompson, and Eleanor Rosch, The Embodied Mind (1993).</p>
-                    <p><strong>[8]</strong> Humberto Maturana and Francisco Varela, Autopoiesis and Cognition (1980).</p>
-                    <p><strong>[9]</strong> Tom Froese and Ezequiel Di Paolo, "The enactive approach..." (2011).</p>
-                    <p><strong>[10]</strong> Ezequiel Di Paolo, Thomas Buhrmann, and Xabier E. Barandiaran, Sensorimotor Life (2017).</p>
-                    <p><strong>[11]</strong> Evan Thompson and Mog Stapleton, "Making Sense of Sense-Making" (2008).</p>
-                    <p><strong>[12]</strong> Ezequiel Di Paolo, Marieke Rohde, and Hanne De Jaegher, "Horizons for the Enactive Mind" (2010).</p>
-                    <p><strong>[13]</strong> J. Kevin O’Regan, Why Red Doesn’t Sound Like a Bell (2011).</p>
-                    <p><strong>[14]</strong> Shaun Gallagher, Enactivist Interventions (2017).</p>
-                    <p><strong>[15]</strong> Ezequiel Di Paolo, "Arrows that Come and Go" (2020).</p>
-                    <p><strong>[16]</strong> Thomas Fuchs, Ecology of the Brain (2018).</p>
-                    <p><strong>[17]</strong> Marjorie Grene in R. E. Auxier and L. E. Hahn (Eds.), The Philosophy of Marjorie Grene (2002).</p>
-                    <p><strong>[18]</strong> Alva Noë, Out of Our Heads (2009).</p>
-                    <p><strong>[19]</strong> Maurice Merleau-Ponty, The Visible and the Invisible (1968).</p>
-                    <p><strong>[20]</strong> Ezequiel Di Paolo, Elena Cuffari, and Hanne De Jaegher, Linguistic Bodies (2018).</p>
-                    <p><strong>[21]</strong> Mark Fischetti and Jen Christiansen, "A New You in 80 Days" (2021).</p>
-                    <p><strong>[22]</strong> Hans Jonas, "Is God a Mathematician? The Meaning of Metabolism" (2001 [1966]).</p>
-                    <p><strong>[23]</strong> Gilbert Ryle, "Knowing How and Knowing That" (1945-1946).</p>
-                    <p><strong>[24]</strong> Andy Clark, Mindware (2000).</p>
-                    <p><strong>[25]</strong> Frank Jackson, "Epiphenomenal Qualia" (1982).</p>
-                    <p><strong>[26]</strong> William James, Principles of Psychology, Vol. 1 (1950 [1890]).</p>
-                    <p><strong>[27]</strong> Mark Johnson, The Meaning of the Body (2007).</p>
-                    <p><strong>[28]</strong> George Lakoff and Rafael Núñez, Where Mathematics Comes From (2000).</p>
-                    <p><strong>[29]</strong> Ezequiel Di Paolo, "F/acts: Ways of Enactive Worldmaking" (2023).</p>
-                    <p><strong>[30]</strong> Richard Rhodes, The Making of the Atomic Bomb (2012 [1986]).</p>
-                    <p><strong>[31]</strong> Pentti Määttänen, Mind in Action (2015).</p>
-                    <p><strong>[32]</strong> Lev Vygotsky, Mind in Society (1978).</p>
-                    <p><strong>[33]</strong> Gilbert Ryle, The Concept of Mind (2008 [1949]).</p>
-                    <p><strong>[34]</strong> Martin Buber, The Knowledge of Man (1965).</p>
-                    <p><strong>[35]</strong> George Herbert Mead, The Philosophy of the Act (1972 [1938]).</p>
-                    <p><strong>[36]</strong> John Dewey, Experience and Nature (1929).</p>
-                    <p><strong>[37]</strong> Amanda Gefter, "A private view of quantum reality" (2015).</p>
-                    <p><strong>[38]</strong> Martin Buber, I and Thou (1970 [1923]).</p>
-                    <p><strong>[39]</strong> Martin Buber, Between Man and Man (1965).</p>
-                    <p><strong>[40]</strong> Christopher A. Fuchs, "On Participatory Realism" (2016).</p>
-                    <p><strong>[41]</strong> John Archibald Wheeler collection, American Philosophical Society Library.</p>
-                    <p><strong>[42]</strong> Hanne De Jaegher and Ezequiel Di Paolo, "Participatory Sense-Making" (2007).</p>
-                    <p><strong>[43]</strong> George Herbert Mead, Mind, Self and Society (2015 [1934]).</p>
-                    <p><strong>[44]</strong> Maurice Merleau-Ponty, The Phenomenology of Perception (2014 [1945]).</D>
-                    <p><strong>[45]</strong> Martin Buber, Between Man and Man (1965).</p>
-                    <p><strong>[46]</strong> Niels Bohr, Analysis and Synthesis, (1941) quoted in David Favrholdt (1993).</p>
-                    <p><strong>[47]</strong> Christopher A. Fuchs and Blake Stacey, "QBians Do Not Exist" (2020).</p>
-                    <p><strong>[48]</strong> Christopher A. Fuchs, "QBism, Where Next?" (2023).</p>
-                    <p><strong>[49]</strong> Ezequiel Di Paolo, Marieke Rohde, and Hanne De Jaegher, "Horizons for the Enactive Mind" (2010).</p>
-                    <p><strong>[50]</strong> Rüdiger Schack, "When will two agents agree on a quantum measurement outcome?" (2023).</p>
-                    <p><strong>[51]</strong> Amanda Gefter, "QuEn 2023: QBism/Enactivism with Chris Fuchs, Ezequiel Di Paolo and Hanne De Jaegher" (YouTube).</p>
-                    <p><strong>[52]</strong> John A. Wheeler, "Not Consciousness but the Distinction Between the Probe and the Probed..." (1981).</p>
-                    <p><strong>[53]</strong> Ezequiel Di Paolo, "The enactive conception of life" (2018).</p>
-                    <p><strong>[54]</strong> Hanne De Jaegher, "Loving and knowing. Reflections for an engaged epistemology" (2021).</p>
+    <div class="main-content pt-[80px] min-h-screen">
+        
+        <!-- Hero Section -->
+        <section class="relative pt-32 pb-20 px-6 overflow-hidden">
+             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-neon-blue/10 rounded-full blur-[120px] -z-10"></div>
+             
+             <div class="max-w-5xl mx-auto text-center">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm mb-6 animate-float">
+                    <span class="w-2 h-2 rounded-full bg-neon-green animate-pulse"></span>
+                    <span class="text-[10px] font-mono text-gray-300 tracking-widest uppercase">Paper Review • Oct 2024</span>
                 </div>
-            </section>
-        </main>
+                <h1 class="text-4xl md:text-6xl font-bold tracking-tighter mb-6 text-white leading-tight">
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 via-gray-300 to-gray-500">Decodificando el "Entre"</span>
+                </h1>
+                <p class="text-lg md:text-xl text-gray-400 font-serif italic max-w-2xl mx-auto leading-relaxed">
+                    Una Guía Web sobre "Enaction for QBists" de Amanda Gefter. Unificando la física cuántica y la ciencia cognitiva.
+                </p>
+            </div>
+        </section>
 
-        <footer>
-            Página generada como resumen detallado del paper "Enaction for QBists" (arXiv:2411.04230v2).
+        <!-- Main Content -->
+        <section class="py-12 border-t border-white/5 bg-cosmos-900/50">
+            <div class="max-w-3xl mx-auto px-6">
+                
+                <!-- Abstract -->
+                <div class="mb-16">
+                    <h2 class="text-2xl font-bold text-neon-cyan mb-6 flex items-center gap-3">
+                        <i data-lucide="sparkles" class="w-6 h-6"></i> Resumen: El Puente entre Mente y Materia
+                    </h2>
+                    <p class="text-gray-300">
+                        Este paper comienza como una introducción a la <span class="text-neon-purple font-semibold">teoría enactiva</span> para físicos cuánticos de la escuela <span class="text-neon-blue font-semibold">QBism</span>. A diferencia de la ciencia cognitiva tradicional, que ve la mente como una computadora que procesa representaciones internas de un mundo externo, el enfoque enactivo ve la cognición como una <span class="text-neon-green font-semibold">acción adaptativa y encarnada</span>.
+                    </p>
+                    <p class="text-gray-300">
+                        La tesis central es que QBism y Enaction son profundamente compatibles. Ambas rechazan una división absoluta y preexistente entre sujeto y objeto.
+                    </p>
+                    <div class="glass-card p-6 rounded-xl border-l-4 border-neon-blue">
+                        <ul class="list-none space-y-3 mt-4 text-gray-400 text-sm">
+                            <li class="flex gap-3">
+                                <i data-lucide="arrow-right" class="text-neon-blue w-4 h-4 mt-1 flex-shrink-0"></i>
+                                <span>Para el <span class="text-white font-semibold">QBism</span>, la medición cuántica es la <span class="text-white font-semibold">promulgación (enactment)</span> de la división sujeto-objeto. Es una teoría de cómo el mundo se crea y recrea a través de interacciones con un agente.</span>
+                            </li>
+                            <li class="flex gap-3">
+                                <i data-lucide="arrow-right" class="text-neon-green w-4 h-4 mt-1 flex-shrink-0"></i>
+                                <span>Para la <span class="text-white font-semibold">Enaction</span>, la cognición es la <span class="text-white font-semibold">promulgación (enactment)</span> de esa misma división. Es una teoría de cómo los agentes se crean y recrean a través de interacciones con el mundo.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <p class="text-gray-300 mt-6">
+                        Juntas, estas dos teorías ofrecen la posibilidad de una metafísica unificada que finalmente reúne la mente y el mundo, el sujeto y el objeto.
+                    </p>
+                </div>
+
+                <!-- The Problem -->
+                <div class="mb-16">
+                    <h2 class="text-2xl font-bold text-neon-cyan mb-6">El Problema: La Incompatibilidad del Universo Participativo</h2>
+                    <p class="text-gray-300">
+                        La física cuántica, especialmente en la tradición de John Wheeler, nos dice que vivimos en un <span class="text-white font-semibold">"universo participativo"</span>. La idea de un observador pasivo, separado del mundo por un "vidrio de una pulgada de espesor", queda demolida.
+                    </p>
+                    
+                    <blockquote class="relative p-8 my-8 text-xl font-serif italic text-gray-300 border-l-2 border-neon-gold bg-white/5 rounded-r-lg">
+                        <span class="absolute top-4 left-4 text-6xl text-neon-gold opacity-20 font-serif">“</span>
+                        Tenemos que tachar esa vieja palabra 'observador' y reemplazarla por la nueva palabra 'participante'. En algún extraño sentido, el principio cuántico nos dice que estamos tratando con un universo participativo.
+                        <footer class="mt-4 text-sm font-sans font-bold text-neon-gold not-italic">— John Wheeler [1]</footer>
+                    </blockquote>
+
+                    <p class="text-gray-300">
+                        El QBism adopta esta idea: la mecánica cuántica es un "manual de usuario" que guía la participación de un agente en la creación continua del mundo. El problema es que esta visión choca frontalmente con la ciencia cognitiva dominante, el <span class="text-neon-purple font-semibold">cognitivismo</span>.
+                    </p>
+
+                    <h3 class="text-xl font-semibold text-white mt-8 mb-4">El Conflicto con el Cognitivismo</h3>
+                    <p class="text-gray-300">
+                        El cognitivismo es fundamentalmente cartesiano: asume una división clara entre el sujeto (mente/cerebro "en la cabeza") y el objeto (mundo "ahí fuera"). Postula que:
+                    </p>
+                    <ol class="list-decimal pl-6 space-y-2 text-gray-400 marker:text-neon-blue">
+                        <li>Habitamos un mundo con propiedades preexistentes.</li>
+                        <li>"Recogemos" esas propiedades representándolas internamente (en el cerebro).</li>
+                        <li>Hay un "nosotros" subjetivo y separado que hace esto.</li>
+                    </ol>
+                    <p class="mt-4 text-gray-300">
+                        Esta idea es incompatible con la cuántica. Como dijo Heisenberg, el cuanto de acción "hace imposible la aguda separación entre el mundo y el Yo". [6] Si el QBism usa términos como "agente", "experiencia" o "creencia" definidos por el cognitivismo, cae en contradicciones y es (mal)interpretado como solipsismo.
+                    </p>
+                </div>
+
+                <!-- The Solution -->
+                <div class="mb-16">
+                    <h2 class="text-2xl font-bold text-neon-cyan mb-6">La Solución: El Enfoque Enactivo de la Cognición</h2>
+                    <p class="text-gray-300">
+                        El paper propone una alternativa radical: la <span class="text-neon-purple font-semibold">teoría enactiva</span>. Esta visión, presentada en "The Embodied Mind" (Varela, Thompson y Rosch) [7], rechaza las suposiciones del cognitivismo.
+                    </p>
+                    <blockquote class="relative p-8 my-8 text-xl font-serif italic text-gray-300 border-l-2 border-neon-blue bg-white/5 rounded-r-lg">
+                        <span class="absolute top-4 left-4 text-6xl text-neon-blue opacity-20 font-serif">“</span>
+                        Proponemos el término enactivo para enfatizar la creciente convicción de que la cognición no es la representación de un mundo preexistente por una mente preexistente, sino más bien la <span class="text-white font-semibold">promulgación (enactment) de un mundo y una mente</span> sobre la base de una historia de la variedad de acciones que un ser en el mundo realiza.
+                        <footer class="mt-4 text-sm font-sans font-bold text-neon-blue not-italic">— [7]</footer>
+                    </blockquote>
+                    <p class="text-gray-300">
+                        En resumen: <span class="text-white font-semibold">la cognición es acción encarnada</span> (embodied action). No se trata de tener un modelo interno del mundo; se trata de actuar adaptativamente en él para seguir viviendo.
+                    </p>
+                </div>
+
+                <!-- Key Concepts Accordion -->
+                <div class="mb-16">
+                    <h2 class="text-2xl font-bold text-neon-cyan mb-8 flex items-center gap-3">
+                        <i data-lucide="layers" class="w-6 h-6"></i> Conceptos Clave del Enactivismo
+                    </h2>
+                    <p class="text-gray-300 mb-6">Para entender la teoría enactiva, el paper destaca varios conceptos fundamentales, presentados aquí en formato de acordeón.</p>
+                    
+                    <div class="space-y-4">
+                        <!-- Item 1 -->
+                        <details class="glass-card rounded-lg overflow-hidden group">
+                            <summary class="flex items-center justify-between p-5 cursor-pointer select-none text-white font-semibold hover:bg-white/5 transition-colors">
+                                <span>1. Autopoiesis (Autocreación)</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 text-neon-blue group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="p-6 pt-2 text-gray-400 border-t border-white/5 bg-black/20">
+                                <p>Acuñado por Humberto Maturana y Francisco Varela [8], "autopoiesis" significa <span class="text-white font-semibold">"auto-creación"</span>. Es la esencia de la vida biológica.</p>
+                                <p>El ejemplo más básico es una célula: es una red de procesos metabólicos que crean los componentes de la propia red, incluida su <span class="text-white font-semibold">propia membrana</span>.</p>
+                                <p>Al crear su propio límite, la célula se distingue a sí misma del mundo. Literalmente, <span class="text-white font-semibold">promulga (enacts) su propia división sujeto-objeto</span>. No es una división dada, es una división *creada y mantenida activamente*.</p>
+                                <p>Según Ezequiel Di Paolo [10, 53], esto crea una <span class="text-white font-semibold">"tensión inherente"</span>: la célula debe <span class="text-white font-semibold">auto-producirse</span> (permanecer abierta al entorno para obtener energía) y <span class="text-white font-semibold">auto-distinguirse</span> (permanecer cerrada para mantener su identidad). La <span class="text-white font-semibold">agencia</span> surge precisamente de la necesidad de navegar y regular esta tensión.</p>
+                            </div>
+                        </details>
+
+                        <!-- Item 2 -->
+                        <details class="glass-card rounded-lg overflow-hidden group">
+                            <summary class="flex items-center justify-between p-5 cursor-pointer select-none text-white font-semibold hover:bg-white/5 transition-colors">
+                                <span>2. Sense-making (Creación de Sentido)</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 text-neon-blue group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="p-6 pt-2 text-gray-400 border-t border-white/5 bg-black/20">
+                                <p>El acto de navegar la tensión autopoiética requiere que el agente regule su interacción con el entorno. Debe diferenciar lo útil de lo dañino, lo bueno de lo malo, no en términos absolutos, sino <span class="text-white font-semibold">en relación con sus necesidades autopoiéticas</span> actuales (su supervivencia).</p>
+                                <p>Este proceso es el <span class="text-white font-semibold">"sense-making" (creación de sentido)</span>. Es la base de la mente. Como dicen Thompson y Stapleton, el mundo se convierte en "un lugar de prominencia (salience), significado y valor" [11] solo en virtud de que el agente está vivo y es precario.</p>
+                                <p>Existir es interactuar con el mundo de forma <span class="text-white font-semibold">normativa</span>. Esto vincula directamente la vida con la mente.</p>
+                            </div>
+                        </details>
+
+                        <!-- Item 3 -->
+                        <details class="glass-card rounded-lg overflow-hidden group">
+                            <summary class="flex items-center justify-between p-5 cursor-pointer select-none text-white font-semibold hover:bg-white/5 transition-colors">
+                                <span>3. Bucles Sensoriomotores (Cognición como Acción)</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 text-neon-blue group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="p-6 pt-2 text-gray-400 border-t border-white/5 bg-black/20">
+                                <p>El "sense-making" conduce al acoplamiento sensoriomotor. Los receptores de un organismo detectan señales, que desencadenan movimientos, que a su vez cambian las señales sensoriales entrantes, formando un <span class="text-white font-semibold">bucle sensoriomotor</span>.</p>
+                                <p>Para el enactivismo, la cognición y la percepción *son* esta actividad. La percepción no es una "imagen en la cabeza".</p>
+                                <blockquote class="border-l-2 border-neon-blue pl-4 italic text-gray-400 my-4">
+                                    "Ver es el proceso de estar involucrado en hacer y responder preguntas sobre lo que está ante nosotros... <span class="text-white font-semibold">No hay un producto final</span> para ser contemplado por un homúnculo." - Kevin O'Regan [13]
+                                </blockquote>
+                                <p>Evidencia experimental, como el "carrusel de gatitos" de Held o los experimentos de sustitución sensorial de Bach y Rita, muestra que la recepción pasiva de señales no produce percepción. Es necesaria la <span class="text-white font-semibold">acción</span>.</p>
+                            </div>
+                        </details>
+
+                        <!-- Item 4 -->
+                        <details class="glass-card rounded-lg overflow-hidden group">
+                            <summary class="flex items-center justify-between p-5 cursor-pointer select-none text-white font-semibold hover:bg-white/5 transition-colors">
+                                <span>4. El Cuerpo (Embodiment) y el Rechazo a la IA Fuerte</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 text-neon-blue group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="p-6 pt-2 text-gray-400 border-t border-white/5 bg-black/20">
+                                <p>La encarnación (embodiment) es central. Pero el "cuerpo" enactivo no es una máquina cartesiana. Como dijo Merleau-Ponty, "Nuestro cuerpo es un ser de dos hojas", perteneciendo tanto al orden del "objeto" como al del "sujeto". [19]</p>
+                                <p>Poner una IA en un robot <span class="text-white font-semibold">no es</span> encarnación. Un robot es un objeto; un cuerpo vivo "se sitúa a horcajadas sobre la división sujeto-objeto".</p>
+                                <p>El filósofo Hans Jonas lo describe maravillosamente: un cuerpo vivo no es como una máquina que persiste mientras el combustible fluye a través de ella. El metabolismo <span class="text-white font-semibold">"es el constante devenir de la máquina misma"</span> [22]. El cuerpo es una *actividad* que se rehace a sí misma constantemente, no una *cosa* terminada.</p>
+                                <p>Por esta razón, una IA desencarnada (o una IA en un robot-objeto) no puede ser cognitiva: <span class="text-white font-semibold">sin autopoiesis y las normas que esta genera, una máquina no es capaz de "sense-making"</span>.</p>
+                            </div>
+                        </details>
+
+                        <!-- Item 5 -->
+                        <details class="glass-card rounded-lg overflow-hidden group">
+                            <summary class="flex items-center justify-between p-5 cursor-pointer select-none text-white font-semibold hover:bg-white/5 transition-colors">
+                                <span>5. Saber-Cómo vs. Saber-Qué (Conocimiento como Habilidad)</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 text-neon-blue group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="p-6 pt-2 text-gray-400 border-t border-white/5 bg-black/20">
+                                <p>El cognitivismo tradicional, siguiendo a Gilbert Ryle [23], valora el <span class="text-white font-semibold">"saber qué"</span> (conocimiento proposicional, ej. "la nieve es blanca") como superior.</p>
+                                <p>El enactivismo argumenta que el <span class="text-white font-semibold">"saber cómo"</span> (conocimiento sensoriomotor encarnado, ej. saber cómo andar en bicicleta) es más fundamental.</p>
+                                <p>El experimento mental de <span class="text-white font-semibold">"la habitación de Mary"</span> (Mary's Room) [25] ilustra esto: Mary sabe *todo* sobre la física del color rojo, pero nunca lo ha visto. Cuando sale y ve una rosa roja, ¿aprende algo nuevo? El enactivismo diría que sí: aprende el "saber cómo" de acoplarse corporalmente al rojo, una habilidad, no una proposición.</p>
+                                <p>El paper lleva esto hasta el final: incluso la lógica y las matemáticas son formas de "saber cómo". "Y", "si", "pero" son "sentimientos" de modulación corporal [26]. Las matemáticas no son algo "allá afuera" ni "aquí adentro"; <span class="text-white font-semibold">son algo que *hacemos*</span> [28].</p>
+                            </div>
+                        </details>
+
+                        <!-- Item 6 -->
+                        <details class="glass-card rounded-lg overflow-hidden group">
+                            <summary class="flex items-center justify-between p-5 cursor-pointer select-none text-white font-semibold hover:bg-white/5 transition-colors">
+                                <span>6. F/acts (Hechos/Actos)</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 text-neon-blue group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="p-6 pt-2 text-gray-400 border-t border-white/5 bg-black/20">
+                                <p>Para capturar esta naturaleza performativa del conocimiento, Di Paolo acuña el término <span class="text-white font-semibold">"f/act"</span> (un juego de palabras entre 'fact', hecho, y 'act', acto). [29]</p>
+                                <p>Un "f/act" no es un hecho proposicional sobre el mundo, sino una <span class="text-white font-semibold">coordinación sensoriomotora exitosa</span>, un "agarre" (grip) exitoso sobre el mundo. Es un concepto "onto-epistémico": es tanto sobre el ser (onto) como sobre el conocer (epistémico).</p>
+                                <p>Los "F/acts" se sitúan a horcajadas sobre la división sujeto-objeto: "Dependen tanto del agente como del mundo". No son verdades eternas, sino que están en "diversas etapas de devenir".</p>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+
+                <!-- Perspectives -->
+                <div class="mb-16">
+                    <h2 class="text-2xl font-bold text-neon-cyan mb-6">Más Allá del "Yo" y el "Ello": La 2ª Persona</h2>
+                    <p class="text-gray-300">
+                        El paper argumenta que tanto el realismo (3ª persona) como el idealismo (1ª persona) fallan porque asumen una división sujeto-objeto fija.
+                    </p>
+                    <ul class="list-disc pl-6 space-y-2 text-gray-400 marker:text-neon-blue mb-4">
+                        <li>El realismo (3ª persona, "Ello") comienza con un mundo objetivo pero no puede explicar la experiencia de la 1ª persona (el "problema difícil").</li>
+                        <li>El idealismo (1ª persona, "Yo") comienza con la experiencia privada pero no puede garantizar un mundo externo (el "problema del solipsismo").</li>
+                    </ul>
+                    <p class="text-gray-300">
+                        <span class="text-white font-semibold">El QBism rechaza la 3ª persona:</span> No hay una descripción del mundo en tercera persona, "vista de ningún lugar".
+                    </p>
+                    <p class="text-gray-300">
+                        <span class="text-white font-semibold">Enaction rechaza la 1ª persona:</span> El "Yo" (el cogito de Descartes) no es un punto de partida. El "Yo" no se da de forma privada; se <span class="text-white font-semibold">forja externamente</span>, en la interacción.
+                    </p>
+                    <p class="text-gray-300">
+                        El paper cita el libro favorito de Bohr, <span class="text-white font-semibold">*Las Aventuras de un Estudiante Danés*</span> [30], donde el protagonista se divide en una "secuencia infinita y regresiva de 'Yoes' que se consideran unos a otros", incapaz de saber en qué 'Yo' detenerse. Esto, para Gefter, ilustra la imposibilidad de un "Yo" fundamental.
+                    </p>
+                    <p class="text-gray-300">
+                        Como dijo G. H. Mead: "El individuo es un otro antes de ser un sí mismo". [35]
+                    </p>
+
+                    <h3 class="text-xl font-semibold text-white mt-8 mb-4">La Solución: La 2ª Persona ("Tú")</h3>
+                    <p class="text-gray-300">
+                        Si no hay ni "Yo" ni "Ello" como fundamentos, ¿qué queda? Queda el <span class="text-white font-semibold">"Tú"</span>.
+                    </p>
+                    <p class="text-gray-300">
+                        Esta es la perspectiva de la 2ª persona, el "Entre" (Between) de Martin Buber [39]. No es ni interna ni externa, sino "anterior a la noción misma de un corte entre los dos". Es la perspectiva genuinamente participativa donde "el Yo de la palabra-par I-Tú se dice también". [38]
+                    </p>
+                </div>
+
+                <!-- Multi-agent -->
+                <div class="mb-16">
+                    <h2 class="text-2xl font-bold text-neon-cyan mb-6">El Problema de Múltiples Agentes y el Lenguaje como Acción</h2>
+                    <p class="text-gray-300">
+                        Esto nos lleva al "misterio central" de Wheeler: "¿Cómo se encajan los actos de observación-participación?" [41]. ¿Cómo puede un universo participativo ser también un <span class="text-white font-semibold">universo compartido</span>?.
+                    </p>
+
+                    <h3 class="text-xl font-semibold text-white mt-8 mb-4">Sense-making Participativo</h3>
+                    <p class="text-gray-300">
+                        La respuesta enactiva es el <span class="text-white font-semibold">"sense-making participativo"</span> [42]. Cuando dos agentes interactúan, no solo se modelan mutuamente (como diría el cognitivismo). En cambio, la <span class="text-white font-semibold">interacción misma</span> adquiere una autonomía temporal, co-creada por los agentes.
+                    </p>
+                    <p class="text-gray-300">
+                        Esto permite que surja una novedad genuina. "Dos agentes pueden saber cosas juntos que ninguno sabe por separado".
+                    </p>
+                    <p class="text-gray-300">
+                        Esto da lugar a una <span class="text-white font-semibold">"tensión primordial"</span> [20]: la necesidad del agente de ser tanto abierto como cerrado a la interacción social (mantener su autonomía individual *mientras* participa en la autonomía de la interacción). El paper sugiere que <span class="text-white font-semibold">el lenguaje surge para regular esta tensión</span>.
+                    </p>
+                    
+                    <h3 class="text-xl font-semibold text-white mt-8 mb-4">El Lenguaje no Representa, Actúa</h3>
+                    <p class="text-gray-300">
+                        En esta visión, el lenguaje no es una herramienta para representar un mundo preexistente. El lenguaje <span class="text-white font-semibold">"hace cosas"</span>. "Languaging" (el acto de lenguajear) es una forma de acción encarnada para regular las interacciones sociales.
+                    </p>
+                    <blockquote class="relative p-8 my-8 text-xl font-serif italic text-gray-300 border-l-2 border-neon-purple bg-white/5 rounded-r-lg">
+                         <span class="absolute top-4 left-4 text-6xl text-neon-purple opacity-20 font-serif">“</span>
+                        "El habla [...] debe permitir incluso al propio sujeto trascender lo que había pensado previamente, y debe encontrar en sus propias palabras más de lo que pensaba que había puesto allí..."
+                         <footer class="mt-4 text-sm font-sans font-bold text-neon-purple not-italic">— Merleau-Ponty [44]</footer>
+                    </blockquote>
+                    <p class="text-gray-300">
+                        El significado no es fijo; se <span class="text-white font-semibold">crea y negocia</span> en la interacción. El paper critica la insistencia de Bohr en el <span class="text-white font-semibold">"lenguaje sin ambigüedades"</span> [46]. Para el enactivismo (y Buber), es la <span class="text-white font-semibold">ambigüedad</span> lo que constituye el lenguaje vivo, ya que exige participación y negociación. [34]
+                    </p>
+                    <p class="text-gray-300">
+                        Por lo tanto, los acuerdos intersubjetivos no están "dados" (por un mundo externo), sino que deben ser <span class="text-white font-semibold">"logrados"</span> (achieved). Se promulgan (enact) como "f/acts" en la 2ª persona. [29]
+                    </p>
+                </div>
+
+                <!-- Synthesis -->
+                <div class="mb-16">
+                    <h2 class="text-2xl font-bold text-neon-cyan mb-6">La Gran Síntesis: Por qué QBism y Enaction se Necesitan Mutuamente</h2>
+                    <p class="text-gray-300 mb-6">
+                        El paper concluye que estas dos teorías son las dos mitades de una misma historia.
+                    </p>
+                    
+                    <h3 class="text-xl font-semibold text-neon-blue mt-8 mb-4">Por qué el QBism necesita a Enaction:</h3>
+                    <p class="text-gray-300">
+                        El QBism es acusado de solipsismo porque usa términos como "agente" y "experiencia". Si se entienden desde el cognitivismo (como experiencias privadas en un cerebro), la acusación es válida.
+                    </p>
+                    <p class="text-gray-300">
+                        Enaction le da al QBism una base <span class="text-white font-semibold">no-solipsista</span> para estos términos:
+                    </p>
+                    <ul class="list-disc pl-6 space-y-2 text-gray-400 marker:text-neon-blue mb-6">
+                        <li><span class="text-white font-semibold">Agente:</span> No es un "primitivo", sino un sistema autopoiético, encarnado, que debe actuar para sobrevivir.</li>
+                        <li><span class="text-white font-semibold">Mattering (Importancia):</span> Enaction explica *por qué* las cosas "importan" a un agente (un criterio clave del QBism [48]). La Regla de Born es una restricción normativa porque el agente está "apostando por su vida"; debe actuar para mantener su autopoiesis contra la entropía (la "muerte segura"). [49]</li>
+                        <li><span class="text-white font-semibold">Experiencia:</span> No es algo privado "en la cabeza", sino el proceso de "sense-making" a través de la interacción sensoriomotora.</li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold text-neon-green mt-8 mb-4">Por qué Enaction necesita al QBism:</h3>
+                    <p class="text-gray-300">
+                        El enactivismo explica la aparición del agente, pero a menudo deja el <span class="text-white font-semibold">mundo</span> como un primitivo. Si ese mundo se entiende como un mundo físico clásico, no participativo, la teoría enactiva cae en incoherencia.
+                    </p>
+                    <p class="text-gray-300">
+                        El QBism proporciona al enactivismo el <span class="text-white font-semibold">tipo de mundo correcto</span>: un mundo que no está predefinido, sino que se crea y recrea a través de la interacción participativa. Enaction necesita un mundo QBista para que sus premisas sobre la promulgación de la división sujeto-objeto sean físicamente coherentes.
+                    </p>
+                </div>
+
+                <!-- Conclusion -->
+                <div class="mb-16 text-center">
+                    <h2 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-purple mb-6">Conclusión: Hacia una Metafísica Post-Cartesiana Unificada</h2>
+                    <p class="text-lg text-gray-300 mb-6">
+                        Tanto el QBism como Enaction son teorías sobre cómo la división sujeto-objeto <span class="text-white font-semibold">es promulgada (enacted)</span>, interacción por interacción, en lugar de ser una línea fija y absoluta.
+                    </p>
+                    <blockquote class="relative p-8 my-8 text-xl font-serif italic text-gray-300 bg-white/5 rounded-lg border border-white/10">
+                        "El QBism socavó el objeto clásico, mientras que Enaction socavó el sujeto clásico, y entre ellos abrieron un nuevo lugar en el medio... para encontrarse."
+                    </blockquote>
+                    <p class="text-lg text-gray-300 italic">
+                        Están librando la <span class="text-white font-semibold">misma batalla</span> contra la misma división cartesiana del siglo XVII. Juntos, argumenta Gefter, ofrecen por primera vez una <span class="text-white font-semibold">metafísica post-cartesiana unificada</span>, una que finalmente vuelve a unir al yo y al mundo.
+                    </p>
+                </div>
+
+                <!-- References -->
+                <div class="border-t border-white/10 pt-12">
+                    <h3 class="text-lg font-mono text-gray-500 mb-4 uppercase tracking-widest">Referencias Citadas en el Paper</h3>
+                    <div class="text-xs text-gray-500 font-mono space-y-2 reference-list">
+                        <p><strong>[1]</strong> J. A. Wheeler, "Perspectives: The Universe as Home for Man..." (1974).</p>
+                        <p><strong>[2]</strong> C. A. Fuchs, "QBism, the Perimeter of Quantum Bayesianism" (2010).</p>
+                        <p><strong>[3]</strong> C. A. Fuchs and R. Schack, "Quantum-Bayesian Coherence" (2013).</p>
+                        <p><strong>[4]</strong> C. A. Fuchs, N. D. Mermin, and R. Schack, "An Introduction to QBism..." (2014).</p>
+                        <p><strong>[5]</strong> C. A. Fuchs, "Notwithstanding Bohr, the Reasons for QBism" (2017).</p>
+                        <p><strong>[6]</strong> Werner Heisenberg, Physics and Philosophy (1958).</p>
+                        <p><strong>[7]</strong> Francisco Varela, Evan Thompson, and Eleanor Rosch, The Embodied Mind (1993).</p>
+                        <p><strong>[8]</strong> Humberto Maturana and Francisco Varela, Autopoiesis and Cognition (1980).</p>
+                        <p><strong>[9]</strong> Tom Froese and Ezequiel Di Paolo, "The enactive approach..." (2011).</p>
+                        <p><strong>[10]</strong> Ezequiel Di Paolo, Thomas Buhrmann, and Xabier E. Barandiaran, Sensorimotor Life (2017).</p>
+                        <p><strong>[11]</strong> Evan Thompson and Mog Stapleton, "Making Sense of Sense-Making" (2008).</p>
+                        <p><strong>[12]</strong> Ezequiel Di Paolo, Marieke Rohde, and Hanne De Jaegher, "Horizons for the Enactive Mind" (2010).</p>
+                        <p><strong>[13]</strong> J. Kevin O’Regan, Why Red Doesn’t Sound Like a Bell (2011).</p>
+                        <p><strong>[14]</strong> Shaun Gallagher, Enactivist Interventions (2017).</p>
+                        <p><strong>[15]</strong> Ezequiel Di Paolo, "Arrows that Come and Go" (2020).</p>
+                        <p><strong>[16]</strong> Thomas Fuchs, Ecology of the Brain (2018).</p>
+                        <p><strong>[17]</strong> Marjorie Grene in R. E. Auxier and L. E. Hahn (Eds.), The Philosophy of Marjorie Grene (2002).</p>
+                        <p><strong>[18]</strong> Alva Noë, Out of Our Heads (2009).</p>
+                        <p><strong>[19]</strong> Maurice Merleau-Ponty, The Visible and the Invisible (1968).</p>
+                        <p><strong>[20]</strong> Ezequiel Di Paolo, Elena Cuffari, and Hanne De Jaegher, Linguistic Bodies (2018).</p>
+                        <p><strong>[21]</strong> Mark Fischetti and Jen Christiansen, "A New You in 80 Days" (2021).</p>
+                        <p><strong>[22]</strong> Hans Jonas, "Is God a Mathematician? The Meaning of Metabolism" (2001 [1966]).</p>
+                        <p><strong>[23]</strong> Gilbert Ryle, "Knowing How and Knowing That" (1945-1946).</p>
+                        <p><strong>[24]</strong> Andy Clark, Mindware (2000).</p>
+                        <p><strong>[25]</strong> Frank Jackson, "Epiphenomenal Qualia" (1982).</p>
+                        <p><strong>[26]</strong> William James, Principles of Psychology, Vol. 1 (1950 [1890]).</p>
+                        <p><strong>[27]</strong> Mark Johnson, The Meaning of the Body (2007).</p>
+                        <p><strong>[28]</strong> George Lakoff and Rafael Núñez, Where Mathematics Comes From (2000).</p>
+                        <p><strong>[29]</strong> Ezequiel Di Paolo, "F/acts: Ways of Enactive Worldmaking" (2023).</p>
+                        <p><strong>[30]</strong> Richard Rhodes, The Making of the Atomic Bomb (2012 [1986]).</p>
+                        <p><strong>[31]</strong> Pentti Määttänen, Mind in Action (2015).</p>
+                        <p><strong>[32]</strong> Lev Vygotsky, Mind in Society (1978).</p>
+                        <p><strong>[33]</strong> Gilbert Ryle, The Concept of Mind (2008 [1949]).</p>
+                        <p><strong>[34]</strong> Martin Buber, The Knowledge of Man (1965).</p>
+                        <p><strong>[35]</strong> George Herbert Mead, The Philosophy of the Act (1972 [1938]).</p>
+                        <p><strong>[36]</strong> John Dewey, Experience and Nature (1929).</p>
+                        <p><strong>[37]</strong> Amanda Gefter, "A private view of quantum reality" (2015).</p>
+                        <p><strong>[38]</strong> Martin Buber, I and Thou (1970 [1923]).</p>
+                        <p><strong>[39]</strong> Martin Buber, Between Man and Man (1965).</p>
+                        <p><strong>[40]</strong> Christopher A. Fuchs, "On Participatory Realism" (2016).</p>
+                        <p><strong>[41]</strong> John Archibald Wheeler collection, American Philosophical Society Library.</p>
+                        <p><strong>[42]</strong> Hanne De Jaegher and Ezequiel Di Paolo, "Participatory Sense-Making" (2007).</p>
+                        <p><strong>[43]</strong> George Herbert Mead, Mind, Self and Society (2015 [1934]).</p>
+                        <p><strong>[44]</strong> Maurice Merleau-Ponty, The Phenomenology of Perception (2014 [1945]).</p>
+                        <p><strong>[45]</strong> Martin Buber, Between Man and Man (1965).</p>
+                        <p><strong>[46]</strong> Niels Bohr, Analysis and Synthesis, (1941) quoted in David Favrholdt (1993).</p>
+                        <p><strong>[47]</strong> Christopher A. Fuchs and Blake Stacey, "QBians Do Not Exist" (2020).</p>
+                        <p><strong>[48]</strong> Christopher A. Fuchs, "QBism, Where Next?" (2023).</p>
+                        <p><strong>[49]</strong> Ezequiel Di Paolo, Marieke Rohde, and Hanne De Jaegher, "Horizons for the Enactive Mind" (2010).</p>
+                        <p><strong>[50]</strong> Rüdiger Schack, "When will two agents agree on a quantum measurement outcome?" (2023).</p>
+                        <p><strong>[51]</strong> Amanda Gefter, "QuEn 2023: QBism/Enactivism with Chris Fuchs, Ezequiel Di Paolo and Hanne De Jaegher" (YouTube).</p>
+                        <p><strong>[52]</strong> John A. Wheeler, "Not Consciousness but the Distinction Between the Probe and the Probed..." (1981).</p>
+                        <p><strong>[53]</strong> Ezequiel Di Paolo, "The enactive conception of life" (2018).</p>
+                        <p><strong>[54]</strong> Hanne De Jaegher, "Loving and knowing. Reflections for an engaged epistemology" (2021).</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="py-8 text-center text-gray-600 text-xs border-t border-white/5 bg-cosmos-950">
+            <p>O.C.V.M. Architecture • Generado basado en arXiv:2411.04230v2</p>
         </footer>
 
     </div>
 
-    <!-- Script para la animación de Three.js -->
+    <!-- UI Logic & 3D Background -->
     <script>
-        let scene, camera, renderer, stars;
+        // Init Lucide Icons
+        lucide.createIcons();
 
-        function init() {
-            // Escena
-            scene = new THREE.Scene();
+        // Three.js Background Animation (O.C.V.M. Standard Neural Network)
+        const canvas = document.getElementById('bg-canvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
 
-            // Cámara
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
-            camera.position.z = 5;
+        // Particles
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 700; // Density
+        const posArray = new Float32Array(particlesCount * 3);
 
-            // Renderer
-            const canvas = document.getElementById('bg-canvas');
-            renderer = new THREE.WebGLRenderer({
-                canvas: canvas,
-                alpha: true // Fondo transparente
-            });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-
-            // Geometría de estrellas (puntos)
-            const starGeometry = new THREE.BufferGeometry();
-            const starVertices = [];
-            for (let i = 0; i < 10000; i++) {
-                const x = (Math.random() - 0.5) * 2000;
-                const y = (Math.random() - 0.5) * 2000;
-                const z = (Math.random() - 0.5) * 2000;
-                starVertices.push(x, y, z);
-            }
-            starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
-
-            // Material de estrellas
-            const starMaterial = new THREE.PointsMaterial({
-                color: 0xaaaaaa, // Color de las estrellas
-                size: 0.7,
-                transparent: true,
-                opacity: 0.6
-            });
-
-            stars = new THREE.Points(starGeometry, starMaterial);
-            scene.add(stars);
-            
-            // Luz ambiental sutil
-            const ambientLight = new THREE.AmbientLight(0x404040, 0.5); // Luz suave
-            scene.add(ambientLight);
-
-            // Luz puntual para dar algo de dirección
-            const pointLight = new THREE.PointLight(0x90caf9, 1, 100);
-            pointLight.position.set(10, 10, 10);
-            scene.add(pointLight);
-
-
-            // Evento de redimensionar
-            window.addEventListener('resize', onWindowResize, false);
-            
-            // Iniciar animación
-            animate();
+        for(let i = 0; i < particlesCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 25; // Spread
         }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+
+        const material = new THREE.PointsMaterial({
+            size: 0.03,
+            color: 0x4f46e5, // Neon Blue
+            transparent: true,
+            opacity: 0.8,
+        });
+
+        // Lines mesh (Neural connections)
+        const particlesMesh = new THREE.Points(particlesGeometry, material);
+        scene.add(particlesMesh);
+
+        camera.position.z = 5;
+
+        // Interaction
+        let mouseX = 0;
+        let mouseY = 0;
+
+        document.addEventListener('mousemove', (event) => {
+            mouseX = event.clientX / window.innerWidth - 0.5;
+            mouseY = event.clientY / window.innerHeight - 0.5;
+        });
+
+        // Animation Loop
+        const clock = new THREE.Clock();
 
         function animate() {
             requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
 
-            // Rotación de las estrellas
-            if (stars) {
-                stars.rotation.x += 0.0001;
-                stars.rotation.y += 0.0002;
-            }
+            particlesMesh.rotation.y = elapsedTime * 0.05;
+            particlesMesh.rotation.x = mouseY * 0.1;
+            particlesMesh.rotation.y += mouseX * 0.1;
 
             renderer.render(scene, camera);
         }
 
-        function onWindowResize() {
+        animate();
+
+        // Resize handler
+        window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        // Iniciar todo
-        init();
+        });
     </script>
-
 </body>
 </html>
-
