@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Trabajo de Boltzmann | Física Estadística</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    
+    <!-- MathJax Configuration -->
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #94a3b8; /* slate-400 */
+            scroll-behavior: smooth;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 70%);
+            background-attachment: fixed;
+        }
+
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Highlight classes */
+        .concept {
+            color: #f59e0b; /* amber-500 */
+            font-weight: 600;
+        }
+        
+        .name {
+            color: #cbd5e1; /* slate-300 */
+            font-weight: 600;
+        }
+
+        /* --- Estilos de Navegación Desktop --- */
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+            cursor: pointer;
+            display: block;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -2px;
+            left: 0;
+            background-color: #f59e0b;
+            transition: width 0.3s ease;
+        }
+        
+        @media (min-width: 768px) {
+            .nav-item:hover .nav-link::after {
+                width: 100%;
+            }
+            .nav-item:hover .dropdown-menu {
+                opacity: 1;
+                visibility: visible;
+                transform: translateX(-50%) translateY(0);
+            }
+            .dropdown-menu {
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%) translateY(10px);
+                min-width: 220px;
+                opacity: 0;
+                visibility: hidden;
+            }
+            .dropdown-menu::before {
+                content: '';
+                position: absolute;
+                top: -6px;
+                left: 50%;
+                transform: translateX(-50%);
+                border-width: 0 6px 6px 6px;
+                border-style: solid;
+                border-color: transparent transparent rgba(255, 255, 255, 0.1) transparent;
+            }
+            .dropdown-menu::after {
+                content: '';
+                position: absolute;
+                top: -20px;
+                left: 0;
+                width: 100%;
+                height: 20px;
+                background: transparent;
+            }
+        }
+
+        .dropdown-menu {
+            background-color: rgba(2, 6, 23, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease-in-out;
+            z-index: 100;
+        }
+
+        .dropdown-link {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            border-radius: 0.25rem;
+            line-height: 1.4;
+        }
+
+        .dropdown-link:hover {
+            color: #f59e0b;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        @media (max-width: 767px) {
+            #mobile-menu-container {
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+            .nav-item {
+                width: 100%;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                padding: 0;
+            }
+            .nav-item-content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.5rem;
+            }
+            .dropdown-menu {
+                position: static;
+                transform: none;
+                opacity: 1;
+                visibility: visible;
+                width: 100%;
+                box-shadow: none;
+                background-color: rgba(0, 0, 0, 0.3);
+                border: none;
+                border-top: 1px solid rgba(255,255,255,0.05);
+                display: none;
+                margin-top: 0;
+            }
+            .arrow-icon {
+                transition: transform 0.3s;
+            }
+            .nav-item.active .arrow-icon {
+                transform: rotate(180deg);
+            }
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* Ajustes Mermaid actualizados */
+        .mermaid .node rect, .mermaid .node circle, .mermaid .node ellipse, .mermaid .node polygon, .mermaid .node path {
+            fill: #1e293b !important; /* Slate-800 - Fondo de nodos ligeramente más claro */
+            stroke: #2dd4bf !important; /* Teal-400 - Borde turquesa */
+            stroke-width: 2px !important;
+        }
+        .mermaid .label {
+            color: #ffffff !important; /* Texto Blanco puro */
+            font-family: 'Inter', sans-serif !important;
+        }
+        /* Regla específica para forzar blanco en elementos de texto SVG */
+        .mermaid text {
+            fill: #ffffff !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+        .mermaid .edgePath .path {
+            stroke: #cbd5e1 !important; /* Slate-300 - Líneas gris claro para alto contraste */
+            stroke-width: 2px !important;
+        }
+        .mermaid .marker {
+            fill: #cbd5e1 !important;
+            stroke: #cbd5e1 !important;
+        }
+        
+        blockquote {
+            border-left-color: #f59e0b !important;
+            color: #cbd5e1 !important;
+        }
+        
+        /* Ajuste para MathJax */
+        mjx-container {
+            color: #f59e0b !important;
+        }
+    </style>
+</head>
+<body class="selection:bg-amber-500 selection:text-slate-900 min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- Navegación Responsiva -->
+    <nav class="fixed w-full z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+            <div class="flex justify-between items-center h-16">
+                
+                <a href="#" class="flex items-center space-x-2 group">
+                    <div class="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-150 transition-transform"></div>
+                    <span class="text-[10px] md:text-xs font-bold tracking-widest uppercase text-slate-200 group-hover:text-white transition-colors">
+                        O.C.V.M. <span class="text-slate-600 mx-1">|</span> Boltzmann
+                    </span>
+                </a>
+
+                <button id="menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+
+                <div id="mobile-menu-container" class="hidden md:flex absolute md:static top-16 left-0 w-full md:w-auto bg-slate-950 md:bg-transparent flex-col md:flex-row md:items-center overflow-y-auto md:overflow-visible max-h-[80vh] md:max-h-full transition-all">
+                    
+                    <ul class="flex flex-col md:flex-row md:items-center text-[11px] font-medium uppercase tracking-widest text-slate-400 w-full md:w-auto">
+                        
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#intro" class="nav-link text-amber-500 hover:text-amber-400" onclick="closeMobileMenu()">01. Intro</a>
+                                <button class="md:hidden p-2 arrow-icon" onclick="toggleDropdown(this)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu md:w-48">
+                                <a href="#perceptions" class="dropdown-link" onclick="closeMobileMenu()">Percepciones</a>
+                                <a href="#debates" class="dropdown-link" onclick="closeMobileMenu()">Debates</a>
+                                <a href="#chronography" class="dropdown-link" onclick="closeMobileMenu()">Cronografía</a>
+                            </div>
+                        </li>
+
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#sza-ergodic" class="nav-link hover:text-white" onclick="closeMobileMenu()">02. SZA & Ergódica</a>
+                            </div>
+                        </li>
+
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#h-theorem" class="nav-link hover:text-white" onclick="closeMobileMenu()">03. Teorema-H</a>
+                                <button class="md:hidden p-2 arrow-icon" onclick="toggleDropdown(this)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu md:w-56">
+                                <a href="#boltzmann-eq" class="dropdown-link" onclick="closeMobileMenu()">Ecuación de Boltzmann</a>
+                                <a href="#reversibility" class="dropdown-link" onclick="closeMobileMenu()">Objeción de Reversibilidad</a>
+                            </div>
+                        </li>
+
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#combinatorial" class="nav-link hover:text-white" onclick="closeMobileMenu()">04. Combinatoria</a>
+                            </div>
+                        </li>
+
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#later-work" class="nav-link hover:text-white" onclick="closeMobileMenu()">05. Trabajo Tardío</a>
+                            </div>
+                        </li>
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu-container');
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            mobileMenu.classList.toggle('flex');
+        });
+        function toggleDropdown(button) {
+            const navItem = button.closest('.nav-item');
+            const dropdown = navItem.querySelector('.dropdown-menu');
+            navItem.classList.toggle('active');
+            if (dropdown.style.display === 'block') { dropdown.style.display = 'none'; } else { dropdown.style.display = 'block'; }
+        }
+        function closeMobileMenu() {
+            if (window.innerWidth < 768) {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('flex');
+                document.querySelectorAll('.dropdown-menu').forEach(d => d.style.display = 'none');
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            }
+        }
+    </script>
+
+    <div class="flex-grow pt-32 md:pt-48 pb-16 md:pb-24 px-6 md:px-12 w-full">
+        <main class="w-full mx-auto text-center">
+            
+            <header class="mb-24 relative animate-fade-in-up">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-amber-500/5 rounded-full blur-3xl -z-10"></div>
+                <h1 class="text-4xl sm:text-5xl md:text-7xl font-black text-slate-100 mb-6 leading-none tracking-tighter drop-shadow-2xl break-words">
+                    EL TRABAJO DE BOLTZMANN<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-500 text-2xl md:text-4xl block mt-4 font-serif italic">En Física Estadística</span>
+                </h1>
+                <p class="mt-8 text-sm md:text-base text-slate-400 font-medium tracking-wide max-w-2xl mx-auto">
+                    Publicado por primera vez el mié 17 de nov de 2004; revisión sustancial el jue 10 de oct de 2024.
+                </p>
+                <div class="mt-16 flex justify-center">
+                    <div class="h-24 w-px bg-gradient-to-b from-amber-500/0 via-amber-500/50 to-amber-500/0"></div>
+                </div>
+            </header>
+
+            <!-- Abstract -->
+            <section class="w-full mx-auto mb-24 text-left bg-slate-900/40 p-8 md:p-12 rounded-xl border border-white/5 shadow-xl backdrop-blur-sm">
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        <span class="name">Ludwig Boltzmann</span> (1844–1906) es generalmente reconocido como uno de los físicos más importantes del siglo XIX. Es particularmente famosa su explicación estadística de la <span class="concept">segunda ley de la termodinámica</span>. La célebre fórmula $S = k \log W$, que expresa una relación entre la <span class="concept">entropía</span> $S$ y la <span class="concept">probabilidad</span> $W$, ha sido grabada en su lápida (aunque él nunca escribió realmente esta fórmula). Las opiniones de Boltzmann sobre la <span class="concept">física estadística</span> continúan desempeñando un papel importante en los debates contemporáneos sobre los fundamentos de esa teoría.
+                    </p>
+                    <p>
+                        Sin embargo, las ideas de Boltzmann sobre la relación precisa entre las propiedades termodinámicas de los cuerpos macroscópicos y su constitución microscópica, y el papel de la probabilidad en esta relación, son complejas y difirieron notablemente en diferentes períodos de su vida. De hecho, en su primer artículo sobre física estadística de 1866, afirmó haber obtenido un teorema completamente general a partir de la mecánica que probaría la segunda ley. Sin embargo, treinta años después declaró que la segunda ley nunca podría probarse solo por medios mecánicos, sino que dependía esencialmente de la <span class="concept">teoría de la probabilidad</span>. En su lucha de por vida con el problema empleó un arsenal variable de herramientas y suposiciones (por mencionar algunas: el llamado <span class="concept">Stoßzahlansatz</span>, la <span class="concept">hipótesis ergódica</span>, los <span class="concept">ensambles</span>, el <span class="concept">argumento combinatorio</span>, la hipótesis del <span class="concept">desorden molecular</span>). Sin embargo, el papel exacto de estas suposiciones, y los resultados que obtuvo de ellas, también cambiaron con el tiempo. Particularmente notorios son el papel de la hipótesis ergódica y el estado del llamado <span class="concept">Teorema-H</span>. Además, usó 'probabilidad' en cuatro significados técnicos diferentes. Por lo tanto, no es fácil hablar de un "enfoque boltzmanniano" consistente y único para la física estadística. Es el propósito de este ensayo describir la evolución de una selección de estos enfoques y sus problemas conceptuales.
+                    </p>
+                </div>
+            </section>
+
+            <!-- 1. Introduction -->
+            <section id="intro" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">1. Introducción</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
+                    
+                    <h3 id="perceptions" class="text-xl text-amber-500 font-bold mt-8 mb-4">1.1 Percepciones populares de Boltzmann</h3>
+                    <p>
+                        El trabajo de Boltzmann recibió reacciones mixtas durante su vida, y continúa haciéndolo incluso hoy. Puede valer la pena, por lo tanto, dedicar algunos comentarios a la percepción y recepción de su trabajo.
+                    </p>
+                    <p>
+                        A menudo se retrata a Boltzmann como un defensor acérrimo de la <span class="concept">visión atómica de la materia</span>, en un momento en que la opinión dominante en la comunidad física de habla alemana, liderada por autores influyentes como <span class="name">Mach</span> y <span class="name">Ostwald</span>, desaprobaba esta visión. De hecho, dice la historia, a finales del siglo XIX, cualquier intento de buscar un sustento microfísico hipotético de los fenómenos macroscópicos se consideraba sospechoso. Además, críticas serias a su trabajo fueron planteadas por <span class="name">Loschmidt</span> y <span class="name">Zermelo</span>. Varios pasajes en los escritos de Boltzmann, especialmente a finales de la década de 1890, se quejan de que su trabajo apenas fue notado o incluso sobre una "actitud hostil" hacia la teoría de gases, y de su conciencia de "ser un individuo impotente luchando contra las corrientes del tiempo".
+                    </p>
+                    <p>
+                        Así, ha surgido el mito de que Boltzmann fue ignorado o resistido por sus contemporáneos. A veces, su suicidio en 1906 se atribuye a la injusticia que supuestamente sufrió. El hecho de que su muerte ocurriera justo en el amanecer de la victoria definitiva de la visión atómica en los trabajos de <span class="name">Einstein</span>, <span class="name">Smoluchowski</span>, <span class="name">Perrin</span> y otros, añade un toque adicional de drama a esta imagen.
+                    </p>
+                    <p>
+                        En realidad, la reputación de Boltzmann como físico teórico era ampliamente conocida y respetada. Se le ofrecieron cátedras prestigiosas en Berlín, Múnich, Viena y Leipzig. Fue elegido miembro de muchas academias y recibió numerosos honores. En resumen, no hay evidencia fáctica para la afirmación de que Boltzmann fuera ignorado o sufriera una falta inusual de reconocimiento. Su suicidio parece haber sido debido a factores en su vida personal (un declive de la salud mental y física) más que a asuntos académicos.
+                    </p>
+
+                    <h3 id="debates" class="text-xl text-amber-500 font-bold mt-12 mb-4">1.2 Debates y controversias</h3>
+                    <p>
+                        A lo largo de su vida, Boltzmann estuvo involucrado en varias disputas académicas. Pero esto no quiere decir que fuera la víctima inocente de hostilidades. En muchos casos tomó la iniciativa lanzando un ataque polémico a sus colegas.
+                    </p>
+                    <p>
+                        <span class="name">Ostwald</span> y <span class="name">Mach</span> resistieron claramente la visión atómica de la materia. Boltzmann ciertamente defendió y promovió esta visión, pero no como un realista ingenuo. En cambio, enfatizó desde la década de 1880 que la visión atómica ofrecía en el mejor de los casos una <span class="concept">analogía</span>, o un <span class="concept">modelo</span> de la realidad. En su debate con Mach defendió este enfoque como una forma económica de entender el comportamiento térmico de los gases. Lo que los dividía era una cuestión estratégica: Boltzmann afirmaba que ningún enfoque en la ciencia natural que evite completamente las hipótesis podría tener éxito.
+                    </p>
+                    <p>
+                        En el caso de <span class="name">Ostwald</span> y su <span class="concept">energética</span>, Boltzmann se vio envuelto en una disputa acalorada en Lübeck en 1895. La energética presentaba una concepción de la naturaleza que tomaba la energía como la entidad física más fundamental, resistiéndose a las imágenes mecánicas. Boltzmann criticó devastadoramente esta visión, saliendo victorioso del debate, aunque Ostwald y él siguieron siendo amigos.
+                    </p>
+                    <p>
+                        Tampoco hubo hostilidad en la famosa <span class="concept">objeción de reversibilidad</span> de <span class="name">Loschmidt</span> (1876), un amigo de toda la vida de Boltzmann. Su objeción surgió de intentos de socavar la predicción sobre la temperatura en un campo gravitacional.
+                    </p>
+                    <p>
+                        La oposición de <span class="name">Zermelo</span> tuvo un trasfondo diferente (era asistente de Planck). Su artículo de 1896 (la <span class="concept">objeción de recurrencia</span>) presentaba un dilema lógico entre la termodinámica y la teoría de gases. Fue la reacción sarcástica de Boltzmann la que pudo haber generado hostilidad.
+                    </p>
+
+                    <h3 id="relevance" class="text-xl text-amber-500 font-bold mt-12 mb-4">1.3 Relevancia de Boltzmann para los fundamentos</h3>
+                    <p>
+                        Los fundamentos de la física estadística pueden caracterizarse hoy como un campo de batalla entre muchas escuelas (<span class="concept">teoría ergódica</span>, <span class="concept">grano grueso</span>, etc.). Sin embargo, muchos protagonistas expresan su deuda con las ideas de Boltzmann. Parece que Boltzmann es el padre de muchos enfoques, incluso si estos se ven actualmente como conflictivos. Esto se debe a que Boltzmann persiguió muchas líneas de pensamiento, a menudo cambiando de enfoque.
+                    </p>
+                    <p>
+                        Utilizo el término 'física estadística' para incluir dos teorías: la <span class="concept">teoría cinética de los gases</span> y la <span class="concept">mecánica estadística</span> propiamente dicha. La primera explica las propiedades de los gases mediante moléculas en movimiento. Durante la década de 1860 se importaron consideraciones de probabilidad a esta teoría ("cineto-estadística de la molécula"). Con el tiempo se hizo una transición a la mecánica estadística, donde las probabilidades se adjuntan a todo el sistema de gas ("cineto-estadística del modelo de gas").
+                    </p>
+                    <p>
+                        Los <span class="name">Ehrenfest</span> (1912) sugirieron que la <span class="concept">hipótesis ergódica</span> jugaba un papel fundamental en el pensamiento de Boltzmann para conectar estas teorías, argumentando que promediar sobre un tiempo infinito sería idéntico al promedio de fase microcanónico. Sin embargo, expresaron dudas sobre su validez. Aunque esta reconstrucción da coherencia al trabajo de Boltzmann, no es históricamente correcta, ya que Boltzmann también tenía graves dudas sobre esta hipótesis y la evitaba cuando podía.
+                    </p>
+
+                    <h3 id="chronography" class="text-xl text-amber-500 font-bold mt-12 mb-4">1.4 Cronografía concisa</h3>
+                    <div class="my-12 p-6 bg-slate-900/50 border border-slate-800 rounded-lg flex justify-center overflow-x-auto">
+                        <div class="mermaid">
+                            graph TD
+                            A[1866: Primer Artículo] -->|Derivando 2da Ley desde la Mecánica| B(1868-1871: Período Formativo);
+                            B -->|SZA e Hipótesis Ergódica| C{1872: Weitere Studien};
+                            C -->|Ec. Boltzmann y Teorema-H| D[1876: Objeción de Reversibilidad];
+                            D -->|Crítica de Loschmidt| E[1877b: Argumento Combinatorio];
+                            E -->|Probabilidad como Volumen de Fase| F(1880s-1890s: Trabajo Tardío);
+                            F -->|Retorno de Hip. Ergódica y Debate Nature| G[1896-1898: Lecciones sobre Teoría de Gases];
+                        </div>
+                    </div>
+                    <p>
+                        El trabajo de Boltzmann se puede dividir en cuatro períodos. 
+                        1. <strong>1866–1871 (Formativo):</strong> Interés en relacionar termodinámica y mecánica. Uso del <span class="concept">Stoßzahlansatz (SZA)</span> para derivar la distribución de Maxwell. Introducción del concepto de ensambles.
+                        2. <strong>1872–1878:</strong> Sus dos artículos más famosos. En 1872, la <span class="concept">Ecuación de Boltzmann</span> y el <span class="concept">Teorema-H</span>. Tras la crítica de Loschmidt (1876), produjo en 1877b el <span class="concept">argumento combinatorio</span>, donde la entropía se relaciona con la probabilidad de un macroestado.
+                        3. <strong>1880s:</strong> Menos atención. Retorno a la hipótesis ergódica y ensambles.
+                        4. <strong>1890s:</strong> Resurgimiento del problema de la reversibilidad (Debate en <em>Nature</em>) y la objeción de recurrencia de Zermelo. Publicación de <em>Lecciones sobre Teoría de Gases</em>.
+                    </p>
+                </div>
+            </section>
+
+            <!-- 2. SZA & Ergodic -->
+            <section id="sza-ergodic" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">2. El Stoßzahlansatz y la hipótesis ergódica</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        El primer artículo de Boltzmann (1866) apuntaba a reducir la segunda ley a la mecánica. Luego se familiarizó con los artículos de Maxwell (1860, 1867) que introdujeron la probabilidad. Maxwell caracterizó el estado de un gas mediante una distribución de probabilidad $f$ sobre las velocidades moleculares $\vec{v}$. Argumentó que el estado de equilibrio se caracteriza por la <span class="concept">distribución de Maxwell</span>:
+                    </p>
+                    <div class="bg-slate-900 p-4 rounded-md border border-slate-800 my-4 text-center font-mono text-amber-500">
+                        $$ f(\vec{v}) = A e^{-|\vec{v}|^2/B} $$
+                    </div>
+                    <p>
+                        En 1867, Maxwell requirió que la distribución de equilibrio fuera <span class="concept">estacionaria</span>. La suposición crucial para esto es el <span class="concept">Stoßzahlansatz (SZA)</span>. Establece que el número de pares de partículas a punto de chocar en un tiempo $dt$ es proporcional a:
+                    </p>
+                    <div class="bg-slate-900 p-4 rounded-md border border-slate-800 my-4 text-center font-mono text-amber-500">
+                        $$ N(\vec{v}_1, \vec{v}_2) \propto N^2 f(\vec{v}_1) f(\vec{v}_2) \, dt \, d^3\vec{v}_1 \, d^3\vec{v}_2 $$
+                    </div>
+                    <p>
+                        Para Maxwell y Boltzmann, esto parecía evidente, aunque introducía un elemento asimétrico en el tiempo al elegir velocidades iniciales.
+                    </p>
+                    <p>
+                        En 1868, Boltzmann aplicó esto a otros modelos. Comenzó con una interpretación de probabilidad como <span class="concept">tiempo relativo</span>, pero a menudo la identificaba con el <span class="concept">número relativo de partículas</span>. En la última sección de ese artículo, cambió de rumbo y se centró en un sistema hamiltoniano general. El estado del sistema es un punto de fase $x$ en el espacio de fase mecánico $\Gamma$, moviéndose en una hipersuperficie de energía $H(x) = E$.
+                    </p>
+                    <p>
+                        Usando el <span class="concept">teorema de Liouville</span>, mostró que la única probabilidad estacionaria con energía total fija (asumiendo que la trayectoria visita todos los puntos) es la <span class="concept">distribución microcanónica</span>:
+                    </p>
+                    <div class="bg-slate-900 p-4 rounded-md border border-slate-800 my-4 text-center font-mono text-amber-500">
+                        $$ \rho_{mc} = \delta(H(x) - E) $$
+                    </div>
+                    <p>
+                        Al integrar sobre todos los momentos excepto uno, mostró que la distribución marginal tiende a la de Maxwell cuando $N \to \infty$. Esto sugiere una gran generalidad: para un sistema aislado en estado estacionario, la probabilidad de velocidades moleculares siempre asumirá la forma maxwelliana si el número de partículas tiende a infinito, independientemente de los detalles del modelo.
+                    </p>
+                    <p>
+                        La debilidad principal es la suposición de que la trayectoria visita <em>todos</em> los puntos de la hipersuperficie de energía. Esta es la <span class="concept">hipótesis ergódica</span>. Boltzmann observó que las excepciones (como movimientos periódicos) serían destruidas por perturbaciones externas.
+                    </p>
+
+                    <h3 id="doubts-ergodic" class="text-xl text-amber-500 font-bold mt-12 mb-4">2.1 Dudas sobre la hipótesis ergódica</h3>
+                    <p>
+                        En 1871a y 1871b, Boltzmann mostró cautela, describiendo la suposición como una "hipótesis". Existe confusión moderna sobre si Boltzmann creía que una trayectoria atraviesa literalmente todos los puntos (lo cual es matemáticamente imposible en dimensiones altas). Sin embargo, el contexto de 1871b sugiere que Boltzmann entendía la hipótesis en el sentido de lo que los Ehrenfest llamaron la <span class="concept">hipótesis cuasi-ergódica</span>: la trayectoria pasa arbitrariamente cerca de cada punto (es densa en la hipersuperficie).
+                    </p>
+                    <p>
+                        Parece que Boltzmann consideraba la hipótesis ergódica como una suposición dinámica especial que podría o no ser cierta, cuyo papel era ayudar a derivar un resultado general (la distribución microcanónica) independientemente de los detalles de la interacción. No hay evidencia de que la usara para equiparar promedios temporales y de fase.
+                    </p>
+                </div>
+            </section>
+
+            <!-- 3. H-Theorem -->
+            <section id="h-theorem" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">3. El Teorema-H y la objeción de reversibilidad</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
+                    
+                    <h3 id="boltzmann-eq" class="text-xl text-amber-500 font-bold mt-8 mb-4">3.1 1872: La Ecuación de Boltzmann y el Teorema-H</h3>
+                    <p>
+                        En 1872, Boltzmann publicó <em>Weitere Studien</em>, apuntando a mostrar que un gas siempre tiende a evolucionar hacia el equilibrio. Afirmó que "los problemas de la teoría mecánica del calor son realmente problemas de cálculo de probabilidades". Su objetivo era probar rigurosamente que, cualquiera que sea el estado inicial, el sistema debe acercarse al estado caracterizado por la distribución de Maxwell.
+                    </p>
+                    <p>
+                        Asumiendo el <span class="concept">Stoßzahlansatz</span>, derivó la <span class="concept">Ecuación de Boltzmann</span> para la evolución de la función de distribución $f_t(\vec{v})$.
+                    </p>
+                    <p>
+                        <strong>El Teorema-H:</strong> Asumiendo la validez de la ecuación de Boltzmann, probó que la cantidad $H$, definida como:
+                    </p>
+                    <div class="bg-slate-900 p-4 rounded-md border border-slate-800 my-4 text-center font-mono text-amber-500">
+                        $$ H[f_t] := \int f_t(v) \ln f_t(v) \, d^3\vec{v} $$
+                    </div>
+                    <p>
+                        disminuye monótonamente en el tiempo:
+                    </p>
+                    <div class="bg-slate-900 p-4 rounded-md border border-slate-800 my-4 text-center font-mono text-amber-500">
+                        $$ \frac{dH[f_t]}{dt} \leq 0 $$
+                    </div>
+                    <p>
+                        Boltzmann concluyó que esto proporcionaba una prueba analítica y rigurosa de la Segunda Ley.
+                    </p>
+
+                    <h3 id="remarks-prob" class="text-xl text-amber-500 font-bold mt-12 mb-4">3.2 Comentarios y problemas</h3>
+                    <p>
+                        Boltzmann enfatizó el papel de la probabilidad, pero su concepción seguía siendo mecánica. No puso énfasis en las suposiciones especiales como el SZA, presentándolo como evidente. Sus contemporáneos entendieron que el Teorema-H seguía necesariamente de la dinámica. Aunque Boltzmann mencionó excepciones para gases no uniformes, afirmó la validez rigurosa bajo sus condiciones.
+                    </p>
+                    <p>
+                        El verdadero importe de sus resultados es que proporcionan una generalización del concepto de entropía a estados de no equilibrio y una afirmación de que esta <span class="concept">entropía de no equilibrio</span> $-kH$ aumenta monótonamente.
+                    </p>
+
+                    <h3 id="reversibility" class="text-xl text-amber-500 font-bold mt-12 mb-4">3.3 1876: La objeción de reversibilidad</h3>
+                    <p>
+                        En 1876, <span class="name">Loschmidt</span> planteó que, dado que las leyes mecánicas son invariantes bajo inversión temporal, para cada solución donde $H$ disminuye, se puede construir una invirtiendo velocidades donde $H$ aumenta. Esta es la <span class="concept">objeción de reversibilidad</span>: el Teorema-H no puede ser un teorema general de la mecánica.
+                    </p>
+                    <p>
+                        La respuesta de Boltzmann (1877a) reconoció que ciertos estados iniciales llevarían a un aumento de $H$, pero argumentó que tales estados eran <span class="concept">extremadamente improbables</span> y podían ignorarse. Esto marcó un cambio hacia un enfoque donde la probabilidad se aplica al estado del gas como un todo, no solo a velocidades moleculares. Sin embargo, esta refutación no era satisfactoria por sí sola, ya que restringía el teorema a casos triviales. La verdadera fuente del problema (el SZA contiene una asimetría temporal) fue identificada más tarde por Burbury y Bryan.
+                    </p>
+                </div>
+            </section>
+
+            <!-- 4. Combinatorial -->
+            <section id="combinatorial" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">4. 1877b: El argumento combinatorio</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        En 1877b, Boltzmann buscó elucidar la relación entre la Segunda Ley y el cálculo de probabilidades. Anunció que un sistema siempre evolucionará de estados improbables a más probables hasta alcanzar el equilibrio. "Podemos identificar esa cantidad que generalmente se llama entropía, con la probabilidad del estado en cuestión".
+                    </p>
+                    <p>
+                        El argumento considera el <span class="concept">$\mu$-espacio</span> (espacio de estados de una molécula) particionado en $m$ celdas. Un <span class="concept">macroestado</span> $Z := (n_1, \dots, n_m)$ se define por el número de partículas en cada celda. El número de <span class="concept">microestados</span> correspondientes a un macroestado es proporcional al número de permutaciones.
+                    </p>
+                    <p>
+                        Boltzmann buscó el macroestado con el volumen máximo $|A_Z|$ bajo restricciones de energía y número de partículas constantes. Usando multiplicadores de Lagrange, encontró la distribución discreta de Maxwell. Además, relacionó el volumen con la función H:
+                    </p>
+                    <div class="bg-slate-900 p-4 rounded-md border border-slate-800 my-4 text-center font-mono text-amber-500">
+                        $$ -NH \approx \ln |A_Z| $$
+                    </div>
+                    <p>
+                        Si tomamos $-kNH$ como la entropía, esta es proporcional al logaritmo de la "probabilidad" (volumen en el espacio de fase) del macroestado.
+                    </p>
+
+                    <h3 id="remarks-comb" class="text-xl text-amber-500 font-bold mt-12 mb-4">4.1 Comentarios y problemas</h3>
+                    <p>
+                        1. No se hace ninguna suposición dinámica (colisiones). Sin embargo, asume que la energía total es la suma de energías individuales, restringiendo la validez a gases ideales.
+                        2. La partición del $\mu$-espacio en celdas es esencial. Boltzmann muestra que las celdas deben ser de igual tamaño en posición y momento para obtener el resultado correcto.
+                        3. <span class="concept">Micro vs Macro:</span> La probabilidad ahora se asigna al macroestado del gas completo (volumen relativo en el espacio de fase), no a partículas individuales (tiempo relativo). El equilibrio se concibe como el macroestado que puede realizarse de la mayor cantidad de maneras, permitiendo <span class="concept">fluctuaciones</span>.
+                        4. ¿Y las evoluciones? El artículo de 1877b apenas toca el problema de la evolución temporal y la objeción de reversibilidad, a pesar de anunciarlo. Boltzmann no prueba que los estados no uniformes tiendan estadísticamente a los uniformes aquí.
+                    </p>
+                    <p>
+                        Parece que Boltzmann solo consideró este enfoque satisfactorio temporalmente, volviendo más tarde al enfoque de 1872 (SZA y Ecuación de Boltzmann).
+                    </p>
+                </div>
+            </section>
+
+            <!-- 5. Later Work -->
+            <section id="later-work" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">5. Trabajo posterior</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
+                    
+                    <h3 id="return-ergodic" class="text-xl text-amber-500 font-bold mt-8 mb-4">5.1 Retorno de la hipótesis ergódica</h3>
+                    <p>
+                        En la década de 1880, un artículo de Maxwell (1879) sobre el "teorema de Boltzmann" revivió el interés de Boltzmann en la hipótesis ergódica. Maxwell criticó la hipótesis señalando excepciones, pero rechazó la visión de tiempo-promedio de Boltzmann a favor de densidades de ensamble. Boltzmann (1887) expresó renovada confianza en que los cuerpos térmicos obedecen la hipótesis ergódica, aunque no volvió a esto en sus obras posteriores como <em>Lecciones sobre Teoría de Gases</em>.
+                    </p>
+
+                    <h3 id="return-reversibility" class="text-xl text-amber-500 font-bold mt-12 mb-4">5.2 Retorno de la objeción de reversibilidad</h3>
+                    <p>
+                        En 1887b, Boltzmann respondió a una discusión entre Tait y Burbury con una nueva estrategia. Argumentó que si se invierten las velocidades en un estado inicial, el sistema eventualmente volverá al estado de equilibrio (quizás después de mucho tiempo). Aquí, la idea es que, independientemente del comportamiento de la función H, hay razones independientes para asumir que el sistema se acerca al equilibrio.
+                    </p>
+
+                    <h3 id="debate-nature" class="text-xl text-amber-500 font-bold mt-12 mb-4">5.3 El debate en Nature</h3>
+                    <p>
+                        En la década de 1890, tras una reunión de la BAAS, surgió un debate en <em>Nature</em> sobre el Teorema-H y la reversibilidad. Burbury y Bryan clarificaron que el SZA contiene una suposición independiente de la mecánica (Condición A) que viola la reversibilidad.
+                    </p>
+                    <p>
+                        Boltzmann intervino (1895) elucidando su posición final: "Mi teorema del mínimo... son solo teoremas de probabilidad". No se puede probar solo con ecuaciones de movimiento que H siempre disminuya.
+                    </p>
+                    <p>
+                        Describió la <span class="concept">Curva-H</span>: La mayor parte del tiempo, $H(t)$ estará muy cerca de su mínimo. Los picos altos son extremadamente improbables. Si elegimos un estado al azar, es extremadamente probable que $H$ disminuya (ya sea hacia el futuro o el pasado).
+                    </p>
+                    <blockquote class="border-l-2 border-amber-500 pl-4 italic my-4 text-slate-400">
+                        "Lo que he probado... es lo siguiente: Es extremadamente probable que H esté muy cerca de su valor mínimo; si es mayor, puede aumentar o disminuir, pero la probabilidad de que disminuya es siempre mayor."
+                    </blockquote>
+                    <p>
+                        Sobre la reversibilidad: admitió que al invertir velocidades se obtiene un estado excepcional donde H aumenta temporalmente, pero esto no refuta el teorema estadístico, ya que tales casos tienen una probabilidad extremadamente pequeña, aunque no cero.
+                    </p>
+                    <p>
+                        Sin embargo, Boltzmann afirmó haber "probado" el teorema H estadístico, lo cual es una exageración; tal prueba no existe en su obra. Los Ehrenfest sugirieron que confiaba implícitamente en la hipótesis ergódica para justificar estas afirmaciones probabilísticas, aunque no hay evidencia directa de esto.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Bibliography -->
+            <section id="bibliography" class="w-full mx-auto mb-24 text-left border-t border-slate-800 pt-12">
+                <h2 class="text-2xl font-serif font-bold text-white mb-8">Bibliografía</h2>
+                <div class="text-sm text-slate-400 space-y-3 font-light text-justify">
+                    <p>En lo anterior, "WA" se refiere a: Boltzmann, L., 1909, <em>Wissenschaftliche Abhandlungen</em>, Vol. I, II, y III, F. Hasenöhrl (ed.).</p>
+                    
+                    <h4 class="text-amber-500 font-bold mt-4">Fuentes Primarias</h4>
+                    <ul class="list-disc pl-5 space-y-2">
+                        <li><span class="name">Boltzmann, L.</span> (1866). Über die Mechanische Bedeutung des Zweiten Hauptsatzes der Wärmetheorie. <i>Wiener Berichte, 53</i>, 195–220; en WA I.</li>
+                        <li><span class="name">Boltzmann, L.</span> (1868). Studien über das Gleichgewicht der lebendigen Kraft... <i>Wiener Berichte, 58</i>; en WA I.</li>
+                        <li><span class="name">Boltzmann, L.</span> (1871a/b/c). Artículos sobre equilibrio térmico en <i>Wiener Berichte, 63</i>; en WA I.</li>
+                        <li><span class="name">Boltzmann, L.</span> (1872). Weitere Studien über das Wärmegleichgewicht unter Gasmolekülen. <i>Wiener Berichte, 66</i>; en WA I.</li>
+                        <li><span class="name">Boltzmann, L.</span> (1877a). Bermerkungen über einige Probleme der mechanische Wärmetheorie. <i>Wiener Berichte, 75</i>; en WA II.</li>
+                        <li><span class="name">Boltzmann, L.</span> (1877b). Über die beziehung dem zweiten Haubtsatze... <i>Wiener Berichte, 76</i>; en WA II.</li>
+    <!-- Mermaid Initialization -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'dark',
+                securityLevel: 'loose',
+                themeVariables: {
+                    primaryColor: '#1e293b', // Slate-800
+                    edgeLabelBackground: '#0f172a',
+                    tertiaryColor: '#1e293b',
+                    primaryTextColor: '#ffffff', // Texto Blanco
+                    lineColor: '#cbd5e1', // Líneas Claras
+                    mainBkg: '#020617'
+                }
+            });
+        });
+    </script>
+
+    <!-- Footer Simple -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-6 md:py-8">
+        <div class="max-w-full mx-auto px-6 md:px-12 flex flex-col items-center justify-center gap-2">
+            <p class="text-[10px] md:text-[11px] font-medium text-slate-400 text-center">
+                Traducido y adaptado de la entrada de la Enciclopedia de Filosofía de Stanford por Jos Uffink.
+            </p>
+            <p class="text-[9px] md:text-[10px] text-slate-600 font-mono text-center">
+                $S = k \log W$ | 2025
+            </p>
+        </div>
+    </footer>
+
+</body>
+</html>
