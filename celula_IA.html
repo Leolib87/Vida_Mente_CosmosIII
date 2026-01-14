@@ -3,540 +3,517 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Construyendo la Célula Virtual con IA | O.C.V.M. Plantilla</title>
+    <title>Construyendo la Célula Virtual con IA | O.C.V.M.</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
     <style>
-        /* Variables de CSS para colores y fuentes */
-        :root {
-            --primary: #818cf8;
-            --primary-dark: #6366f1;
-            --secondary: #22d3ee;
-            --primary-text: #e5e7eb;
-            --primary-glow: #818cf8;
-            --secondary-glow: #22d3ee;
-            --font-main: 'Inter', sans-serif;
-            --nav-height: 70px;
-            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
-            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
-            --person-color: #f472b6;    /* Rosa para nombres de personas */
-        }
-
-        /* Estilos generales para el cuerpo de la página */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+        
         body {
-            background-color: #000000;
-            color: var(--primary-text);
-            font-family: var(--font-main);
-            line-height: 1.8;
-            overflow-x: hidden;
-            text-align: justify;
-        }
-        p {
-            text-align: justify;
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #94a3b8; /* slate-400 */
+            scroll-behavior: smooth;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 70%);
+            background-attachment: fixed;
         }
 
-        /* Canvas de fondo con animación Three.js */
-        #bg-canvas {
-            position: fixed;
-            top: 0;
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* --- Estilos de Navegación Desktop --- */
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+            cursor: pointer;
+            display: block;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -2px;
             left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            cursor: crosshair;
-        }
-
-        /* Estilo de glassmorphism para secciones y navegación */
-        .glassmorphism {
-            background: rgba(17, 24, 39, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Estilos para el menú de navegación en móviles */
-        body.menu-open { overflow: hidden; }
-        
-        nav {
-            position: fixed; top: 0; width: 100%; height: var(--nav-height);
-            z-index: 1000;
-            display: flex; justify-content: center; align-items: center;
-            padding: 0 5%;
-            pointer-events: auto;
-        }
-
-        .nav-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
+            background-color: #f59e0b;
+            transition: width 0.3s ease;
         }
         
-        .nav-logo a {
-            font-size: 1.3em;
-            font-weight: 700;
-            color: #fff;
-            text-decoration: none;
-            text-shadow: 0 0 8px var(--primary-glow);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
-        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
-        nav .nav-container > li > a {
-            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
-            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
-        }
-        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
-        
-        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
-
-        /* Sección del héroe o cabecera principal */
-        .hero {
-            min-height: 60vh;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            text-align: center; position: relative;
-            padding: 1rem;
-            margin-top: var(--nav-height);
-        }
-        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
-        .hero h1 {
-            font-size: clamp(2rem, 6vw, 4rem); font-weight: 700; color: #fff;
-            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
-            animation: pulse-glow 3s infinite alternate;
-        }
-        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
-        @keyframes pulse-glow {
-            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
-            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Contenedor principal para el contenido */
-        .main-container { 
-            width: 100%;
-            max-width: 100%; /* El contenedor usa todo el ancho */
-            margin: 0 auto; 
-            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
-            pointer-events: none;
-        }
-        
-        main, .footer, .section, .hero-content {
-            pointer-events: auto;
-        }
-
-        main p, .footer p, .section li {
-            user-select: text;
-            cursor: default;
-        }
-
-        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
-        
-        .section {
-            padding: clamp(1.5rem, 5vw, 2.5rem);
-            border-radius: 12px; margin-bottom: 2rem; position: relative;
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
-        }
-        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
-        
-        /* Animación de aparición para las secciones con scroll */
-        .section h2, .section h3, .section p, .mermaid, .section ul, .section li, .section .authors {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-        }
-
-        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .mermaid, .section.is-visible ul, .section.is-visible li, .section.is-visible .authors {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        h2 {
-            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
-            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
-        }
-        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
-        
-        /* Clases para colorear palabras y conceptos */
-        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
-        .concept2 { color: var(--concept-color-2); font-weight: 500; }
-        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
-        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; }
-
-        /* Pie de página */
-        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
-
-        /* Estilo para los diagramas de Mermaid */
-        .mermaid {
-            margin: 2rem auto;
-            display: flex; /* Usar flexbox para centrar */
-            justify-content: center; /* Centrar horizontalmente */
-            align-items: center; /* Centrar verticalmente */
-            width: 100%;
-            max-width: 900px; 
-        }
-        
-        /* Media queries para dispositivos móviles */
-        @media (max-width: 768px) {
-            .nav-container {
-                position: fixed;
-                top: var(--nav-height);
+        /* Solo aplicar hover underline en desktop */
+        @media (min-width: 768px) {
+            .nav-item:hover .nav-link::after {
+                width: 100%;
+            }
+            
+            /* Dropdown Desktop: Absolute & Hover */
+            .nav-item:hover .dropdown-menu {
+                opacity: 1;
+                visibility: visible;
+                transform: translateX(-50%) translateY(0);
+            }
+            
+            .dropdown-menu {
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%) translateY(10px);
+                min-width: 220px;
+                opacity: 0;
+                visibility: hidden;
+                /* Flechita superior solo en desktop */
+            }
+            .dropdown-menu::before {
+                content: '';
+                position: absolute;
+                top: -6px;
+                left: 50%;
+                transform: translateX(-50%);
+                border-width: 0 6px 6px 6px;
+                border-style: solid;
+                border-color: transparent transparent rgba(255, 255, 255, 0.1) transparent;
+            }
+            /* Puente invisible para mejorar UX */
+            .dropdown-menu::after {
+                content: '';
+                position: absolute;
+                top: -20px;
                 left: 0;
                 width: 100%;
-                height: calc(100vh - var(--nav-height));
-                background: rgba(17, 24, 39, 0.95);
-                backdrop-filter: blur(15px);
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-                transform: translateY(-110%);
-                overflow-y: auto;
-                padding: 2rem;
+                height: 20px;
+                background: transparent;
             }
-            body.menu-open .nav-container {
-                transform: translateY(0);
-            }
-
-            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
-            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
-            
-            .menu-toggle {
-                display: block; position: relative; z-index: 1001;
-                width: 30px; height: 22px;
-                background: none; border: none; cursor: pointer;
-            }
-            .icon-bar {
-                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
-                margin: 6px 0; transition: all 0.3s ease-in-out;
-                border-radius: 2px;
-            }
-
-            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
-            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
-            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
         }
-        @media (min-width: 769px) {
-            .menu-toggle { display: none; }
+
+        /* --- Estilos Comunes Dropdown --- */
+        .dropdown-menu {
+            background-color: rgba(2, 6, 23, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease-in-out;
+            z-index: 100;
+        }
+
+        .dropdown-link {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            border-radius: 0.25rem;
+            line-height: 1.4;
+        }
+
+        .dropdown-link:hover {
+            color: #f59e0b; /* amber-500 */
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* --- Ajustes Móviles --- */
+        @media (max-width: 767px) {
+            #mobile-menu-container {
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+            
+            .nav-item {
+                width: 100%;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                padding: 0;
+            }
+
+            .nav-item-content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.5rem;
+            }
+
+            .dropdown-menu {
+                position: static;
+                transform: none;
+                opacity: 1;
+                visibility: visible;
+                width: 100%;
+                box-shadow: none;
+                background-color: rgba(0, 0, 0, 0.3);
+                border: none;
+                border-top: 1px solid rgba(255,255,255,0.05);
+                display: none;
+                margin-top: 0;
+            }
+            
+            .arrow-icon {
+                transition: transform 0.3s;
+            }
+            .nav-item.active .arrow-icon {
+                transform: rotate(180deg);
+            }
+        }
+
+        /* Ajustes scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* Ajustes Mermaid para tema oscuro */
+        .mermaid .node rect, .mermaid .node circle, .mermaid .node ellipse, .mermaid .node polygon, .mermaid .node path {
+            fill: #1e293b !important;
+            stroke: #f59e0b !important;
+            stroke-width: 2px !important;
+        }
+        .mermaid .label {
+            color: #e2e8f0 !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+        .mermaid .edgePath .path {
+            stroke: #64748b !important;
+            stroke-width: 2px !important;
+        }
+        .mermaid .marker {
+            fill: #64748b !important;
+            stroke: #64748b !important;
+        }
+        .mermaid .nodeLabel {
+             color: #e2e8f0 !important;
         }
     </style>
 </head>
-<body>
-    <!-- Canvas de fondo con animación Three.js -->
-    <canvas id="bg-canvas" aria-hidden="true"></canvas>
-    <nav class="glassmorphism">
-        <div class="nav-content">
-            <div class="nav-logo">
-                <a href="#inicio">
-                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
-                    <span>O.C.V.M.</span>
+<body class="selection:bg-amber-500 selection:text-slate-900 min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- Navegación Responsiva -->
+    <nav class="fixed w-full z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+            <div class="flex justify-between items-center h-16">
+                
+                <!-- Logo / Marca -->
+                <a href="#" class="flex items-center space-x-2 group">
+                    <div class="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-150 transition-transform"></div>
+                    <span class="text-[10px] md:text-xs font-bold tracking-widest uppercase text-slate-200 group-hover:text-white transition-colors">
+                        O.C.V.M. <span class="text-slate-600 mx-1">|</span> Célula Virtual IA
+                    </span>
                 </a>
+
+                <!-- Botón Hamburguesa -->
+                <button id="menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+
+                <!-- Menú Desktop & Contenedor Móvil -->
+                <div id="mobile-menu-container" class="hidden md:flex absolute md:static top-16 left-0 w-full md:w-auto bg-slate-950 md:bg-transparent flex-col md:flex-row md:items-center overflow-y-auto md:overflow-visible max-h-[80vh] md:max-h-full transition-all">
+                    
+                    <ul class="flex flex-col md:flex-row md:items-center text-[11px] font-medium uppercase tracking-widest text-slate-400 w-full md:w-auto">
+                        
+                        <!-- 1. Visión -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#vision" class="nav-link hover:text-white" onclick="closeMobileMenu()">01. Visión</a>
+                            </div>
+                        </li>
+
+                        <!-- 2. Capacidades -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#capacidades" class="nav-link hover:text-white" onclick="closeMobileMenu()">02. Capacidades</a>
+                                <button class="md:hidden p-2 arrow-icon" onclick="toggleDropdown(this)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu md:w-48">
+                                <span class="block text-[9px] text-amber-500 mb-2 border-b border-white/10 pb-1">Funciones</span>
+                                <a href="#representacion" class="dropdown-link" onclick="closeMobileMenu()">Representación Universal</a>
+                                <a href="#prediccion" class="dropdown-link" onclick="closeMobileMenu()">Predicción</a>
+                                <a href="#experimentacion" class="dropdown-link" onclick="closeMobileMenu()">Experimentación in silico</a>
+                            </div>
+                        </li>
+
+                        <!-- 3. Construcción -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#construccion" class="nav-link hover:text-white" onclick="closeMobileMenu()">03. Construcción</a>
+                            </div>
+                        </li>
+
+                        <!-- 4. Desafíos -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#desafios" class="nav-link hover:text-white" onclick="closeMobileMenu()">04. Desafíos</a>
+                            </div>
+                        </li>
+
+                        <!-- 5. Referencias -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#referencias" class="nav-link text-amber-500 hover:text-amber-400" onclick="closeMobileMenu()">05. Referencias</a>
+                            </div>
+                        </li>
+
+                    </ul>
+                </div>
             </div>
-            <ul class="nav-container" id="nav-menu">
-                <li><a href="#inicio">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
-                    Inicio</a></li>
-                <li><a href="#vision">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
-                    Visión</a></li>
-                <li><a href="#capacidades">
-                     <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12A2.25 2.25 0 0020.25 14.25V3M3.75 20.25h16.5M3.75 12h16.5m-16.5 4.5h16.5m-16.5-8.25h16.5" /></svg>
-                    Capacidades</a></li>
-                <li><a href="#construccion">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-1.621-.87a3 3 0 01-.879-2.122v-1.007M15 15.75a3 3 0 01-6 0M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    Construcción</a></li>
-                <li><a href="#referencias">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
-                    Referencias</a></li>
-            </ul>
-            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
-                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
-            </button>
         </div>
     </nav>
 
-    <div class="main-container" id="inicio">
-        <!-- Sección Hero -->
-        <div class="hero">
-            <div class="hero-content">
-                <h1>Cómo Construir la Célula Virtual con Inteligencia Artificial</h1>
-                <p>Una perspectiva sobre las prioridades y oportunidades para crear un modelo de la célula basado en IA, multi-escala y multi-modal, que pueda simular el comportamiento de moléculas, células y tejidos.</p>
-                <p class="authors">Por <span class="person">Charlotte Bunne, Yusuf Roohani, Yanay Rosen,</span> y la comunidad colaboradora.</p>
-            </div>
-        </div>
-
-        <div class="layout-grid">
-            <main class="content">
-                
-                <!-- Sección 1: Visión y Oportunidad -->
-                <section id="vision" class="glassmorphism section" data-animate>
-                    <h2>La Visión de la Célula Virtual IA (AIVC)</h2>
-                    <p>La célula, la unidad fundamental de la vida, es un sistema dinámico y adaptativo de una complejidad asombrosa. Los modelos tradicionales, a menudo basados en reglas y ecuaciones diferenciales, no logran capturar la totalidad de sus funciones. Sin embargo, dos revoluciones paralelas —en <span class="concept1">Inteligencia Artificial (IA)</span> y en <span class="concept2">tecnologías ómicas</span>— nos brindan una oportunidad sin precedentes para construir un nuevo tipo de modelo: la <span class="concept1">Célula Virtual de IA (AIVC)</span>.</p>
-                    <p>La AIVC se concibe como un modelo basado en grandes redes neuronales, <span class="concept2">multi-escala</span> y <span class="concept2">multi-modal</span>, aprendido directamente de los datos. Este modelo podrá representar y simular el comportamiento de moléculas, células y tejidos a través de diversos estados, desde la salud hasta la enfermedad. Esta herramienta transformará la investigación biológica al permitir simulaciones de alta fidelidad, acelerar descubrimientos y guiar estudios experimentales, abriendo nuevas vías para comprender las funciones celulares y fomentar la ciencia abierta.</p>
-                    
-                    <div class="mermaid">
-                        graph TD
-                            A["Datos Multi-modales<br>(Genómica, Proteómica, Imágenes)"] --> C{Modelo Fundacional de IA};
-                            B["Avances en IA<br>(Transformers, Modelos Difusión)"] --> C;
-                            C --> D["Representación Universal (UR)<br>de Estados Celulares"];
-                            D --> E["Simulación y Predicción<br>de Comportamientos Celulares"];
-                            E --> F["Nuevas Hipótesis y<br>Diseño Experimental"];
-
-                            style A fill:#34d399,stroke:#333,stroke-width:2px;
-                            style B fill:#34d399,stroke:#333,stroke-width:2px;
-                            style C fill:#818cf8,stroke:#fff,stroke-width:3px,color:#fff;
-                            style D fill:#fbbf24,stroke:#333,stroke-width:2px;
-                            style E fill:#f472b6,stroke:#333,stroke-width:2px;
-                    </div>
-
-                    <h3>Una Nueva Era de Simulación Biológica</h3>
-                    <p>Con la AIVC, los biólogos podrán explorar preguntas que antes eran inabordables. Un biólogo del cáncer podría modelar cómo mutaciones específicas transforman células sanas en malignas. Un biólogo del desarrollo podría predecir cómo evolucionan los linajes celulares en respuesta a perturbaciones. La AIVC no reemplazará la experimentación, sino que la potenciará, permitiendo a los científicos generar y priorizar hipótesis de manera más eficiente, reduciendo el espacio de búsqueda y acelerando el ciclo de descubrimiento.</p>
-                </section>
-
-                <!-- Sección 2: Capacidades -->
-                <section id="capacidades" class="glassmorphism section" data-animate>
-                    <h2>Capacidades Fundamentales de la AIVC</h2>
-                    <p>Para que la AIVC sea una herramienta transformadora, debe poseer un conjunto de capacidades clave que permitan a los investigadores interactuar con el modelo de manera intuitiva y poderosa. Estas capacidades giran en torno a la representación, la predicción y la experimentación virtual.</p>
-                    
-                    <h3>1. Crear una Representación Universal (UR)</h3>
-                    <p>La AIVC mapeará datos biológicos a un espacio de <span class="concept1">Representación Universal (UR)</span>. Esta UR integrará datos a través de escalas físicas (molecular, celular, multicelular), modalidades (secuenciación, imágenes) y contextos (especies, tejidos, enfermedades). Esto permitirá a los investigadores comparar y complementar nuevos datos con el vasto conocimiento biológico existente en el modelo, generalizando a estados celulares nunca antes observados.</p>
-
-                    <h3>2. Predecir el Comportamiento y la Dinámica Celular</h3>
-                    <p>Una función central será modelar las respuestas y <span class="concept2">dinámicas celulares</span>. La AIVC podrá predecir cómo las células responden a perturbaciones, ya sean genéticas (mutaciones) o químicas (fármacos), incluso para combinaciones no probadas en el laboratorio. Simulará la evolución temporal de los estados celulares en procesos como el desarrollo, la homeostasis o la progresión de enfermedades, proponiendo mecanismos causales detrás de los fenotipos observados.</p>
-
-                    <h3>3. Realizar Experimentación <i>in silico</i></h3>
-                    <p>La AIVC funcionará como un laboratorio virtual, permitiendo la <span class="concept1">experimentación <i>in silico</i></span>. Los científicos podrán diseñar experimentos virtuales para probar miles de hipótesis a una escala imposible en el mundo real. Por ejemplo, se podría simular el efecto de miles de fármacos sobre un tipo de célula cancerosa o predecir resultados de experimentos costosos a partir de mediciones más baratas. Además, el modelo podrá identificar sus propias áreas de incertidumbre y guiar la recolección de datos para mejorar su propio rendimiento en un ciclo de aprendizaje activo.</p>
-
-                    <div class="mermaid">
-                        mindmap
-                          root((AIVC))
-                            (Representación Universal)
-                              ::icon(fa fa-globe)
-                              Escala Molecular
-                              Escala Celular
-                              Escala Multicelular
-                            (Predicción y Dinámica)
-                              ::icon(fa fa-cogs)
-                              Respuesta a Perturbaciones
-                              Evolución Temporal
-                              Descubrimiento de Mecanismos
-                            (Experimentación in silico)
-                              ::icon(fa fa-flask)
-                              Diseño de Fármacos
-                              Ingeniería Celular
-                              Guía para Experimentos Reales
-                    </div>
-                </section>
-                
-                <!-- Sección 3: Construcción -->
-                <section id="construccion" class="glassmorphism section" data-animate>
-                    <h2>Construyendo la AIVC: Un Enfoque Multi-escala</h2>
-                    <p>La AIVC se concibe como un marco de IA compuesto por varios modelos fundacionales interconectados que representan sistemas biológicos en niveles de organización crecientes. El enfoque es construirlo de abajo hacia arriba, desde las moléculas hasta los tejidos, asegurando la consistencia a través de las escalas.</p>
-
-                    <h3>Escala Molecular: El Lenguaje de la Vida</h3>
-                    <p>La primera capa representa las especies moleculares individuales: <span class="concept2">ADN, ARN y proteínas</span>. Estos pueden ser tratados como secuencias, lo que los hace ideales para modelos de IA como los <span class="concept1">Grandes Modelos de Lenguaje (LLMs)</span>, similares a los que procesan el lenguaje humano. Estos modelos pueden aprender la "gramática" de las secuencias biológicas para predecir propiedades funcionales a partir de la secuencia sola. Se entrenarán con la vasta cantidad de datos genómicos y proteómicos disponibles.</p>
-
-                    <h3>Escala Celular: La Célula como un Todo</h3>
-                    <p>El siguiente nivel modela los estados celulares individuales. Una <span class="concept1">UR celular</span> se construirá integrando las representaciones moleculares con datos que describen la abundancia y organización de estos componentes. Los datos clave aquí provienen de tecnologías de célula única como <span class="concept2">scRNA-seq</span> (transcriptómica) y de una variedad de <span class="concept2">tecnologías de imagen</span> que miden la morfología celular y la localización subcelular de las proteínas. Modelos como las <span class="concept1">Redes Neuronales Convolucionales (CNNs)</span> y los <span class="concept1">Vision Transformers</span> son ideales para procesar estos datos de imagen.</p>
-                    
-                    <h3>Escala Multicelular: La Sociedad de las Células</h3>
-                    <p>La capa final modela la organización de las células en tejidos. Esta <span class="concept1">UR multicelular</span> explora cómo las interacciones célula-célula, gobernadas por la proximidad espacial, dan lugar a estructuras complejas. Los datos provendrán de tecnologías de <span class="concept2">transcriptómica espacial</span>, que mapean la expresión génica conservando la estructura del tejido. La organización espacial se puede representar como un grafo, donde cada célula es un nodo, lo que hace que las <span class="concept1">Redes Neuronales de Grafos (GNNs)</span> sean la arquitectura de IA perfecta para esta escala.</p>
-
-                    <div class="mermaid">
-                        graph LR
-                            subgraph "Escala Molecular"
-                                A(ADN) --> B(ARN) --> C(Proteína)
-                            end
-                            subgraph "Escala Celular"
-                                D{UR Celular}
-                            end
-                            subgraph "Escala Multicelular"
-                                E[Tejido]
-                            end
-                            C -- Abundancia y Localización --> D
-                            D -- Interacciones Espaciales --> E
-                            
-                            style A fill:#f472b6
-                            style B fill:#f472b6
-                            style C fill:#f472b6
-                            style D fill:#fbbf24,stroke:#fff,stroke-width:3px,color:#333
-                            style E fill:#34d399
-                    </div>
-                </section>
-                
-                <!-- Sección 4: Desafíos y Colaboración -->
-                <section id="desafios" class="glassmorphism section" data-animate>
-                    <h2>Desafíos, Ética y Colaboración Abierta</h2>
-                    <p>La construcción de la AIVC es una empresa monumental que enfrenta desafíos técnicos, éticos y logísticos. Superarlos requerirá un esfuerzo concertado y abierto de toda la comunidad científica.</p>
-
-                    <h3>Grandes Desafíos Técnicos</h3>
-                    <p>Los principales desafíos incluyen el diseño de marcos de evaluación que midan capacidades biológicamente relevantes, asegurar la <span class="concept1">auto-consistencia</span> del modelo a través de diferentes escalas y modalidades, y encontrar el equilibrio adecuado entre el rendimiento predictivo y la <span class="concept2">interpretabilidad</span> del modelo. Un modelo "caja negra", por muy preciso que sea, tiene una utilidad limitada si no puede generar conocimiento biológico comprensible.</p>
-                    
-                    <h3>Un Marco para la Colaboración</h3>
-                    <p>Ningún laboratorio o institución puede construir la AIVC por sí solo. Prevemos un futuro en el que las plataformas AIVC funcionen como centros abiertos e interconectados para el desarrollo colaborativo. Esto requiere una inversión significativa en infraestructura que fomente la ciencia abierta, incluyendo <span class="concept2">estándares de datos</span>, benchmarks públicos y plataformas para compartir modelos y resultados.</p>
-                    
-                    <h3>Uso Ético y Responsable</h3>
-                    <p>Un desafío fundamental es la generación de grandes conjuntos de datos abiertos que reflejen la <span class="concept1">diversidad humana</span> (ancestral, de sexo y geográfica) sin comprometer la privacidad individual. Los desarrolladores deben tener el máximo cuidado para garantizar que estos datos se utilicen de manera ética y transparente. Además, la colaboración con expertos en ética y regulación desde el principio es primordial para establecer normas que faciliten el uso responsable de las AIVC.</p>
-                    
-                    <ul class="list-disc list-inside space-y-2 mt-6">
-                        <li><b>Datos:</b> Priorizar la generación de datos a gran escala que capturen la diversidad biológica y abarquen múltiples escalas temporales y físicas.</li>
-                        <li><b>Evaluación:</b> Desarrollar benchmarks que no solo midan la precisión, sino también la capacidad de generar nuevas hipótesis biológicas verificables.</li>
-                        <li><b>Acceso:</b> Democratizar el acceso a los modelos y a los recursos computacionales necesarios para entrenarlos y utilizarlos.</li>
-                        <li><b>Comunidad:</b> Fomentar la colaboración entre la academia, la industria, la filantropía y las agencias reguladoras para acelerar el progreso de manera segura y equitativa.</li>
-                    </ul>
-                </section>
-
-
-                <!-- Sección 5: Referencias -->
-                <section id="referencias" class="glassmorphism section" data-animate>
-                    <h2>Referencias Clave</h2>
-                    <p>Este trabajo se basa en las ideas y esfuerzos de una amplia comunidad científica. A continuación se presentan algunas de las publicaciones y autores fundamentales que han sentado las bases para la visión de la Célula Virtual de IA.</p>
-                    <ul class="list-disc list-inside space-y-3 mt-4">
-                        <li><span class="person">Karr, J.R., et al.</span> (2012). A whole-cell computational model predicts phenotype from genotype. <i>Cell</i>. El primer modelo computacional de una célula completa (Mycoplasma genitalium).</li>
-                        <li><span class="person">Regev, A., Teichmann, S.A., et al.</span> (2017). The Human Cell Atlas. <i>eLife</i>. Una iniciativa global para mapear todos los tipos de células humanas como referencia para la salud y la enfermedad.</li>
-                        <li><span class="person">Jumper, J., Evans, R., Pritzel, A., et al.</span> (2021). Highly accurate protein structure prediction with AlphaFold. <i>Nature</i>. Un hito en el uso de la IA para predecir la estructura 3D de las proteínas a partir de su secuencia.</li>
-                        <li><span class="person">Roohani, Y., Huang, K., & Leskovec, J.</span> (2023). Predicting transcriptional outcomes of novel multigene perturbations with GEARS. <i>Nat. Biotechnol</i>. Un ejemplo de modelo de IA para predecir los efectos de perturbaciones genéticas.</li>
-                        <li><span class="person">Rosen, Y., Brbić, M., Roohani, Y., et al.</span> (2024). Toward universal cell embeddings: integrating single-cell RNA-seq datasets across species with Saturn. <i>Nat. Methods</i>. Un paso hacia la creación de representaciones universales para células.</li>
-                    </ul>
-                </section>
-
-            </main>
-        </div>
-        <footer class="footer" id="contacto">
-            <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo.</p>
-            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
-        </footer>
-    </div>
+    <!-- Script de Navegación -->
     <script>
-        // Inicia el código del Canvas
-        document.addEventListener('DOMContentLoaded', () => {
-            // Inicialización de Three.js Background
-            if (typeof THREE !== 'undefined') {
-                initThreeJS();
-            } else {
-                console.error("Three.js not loaded");
-            }
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu-container');
 
-            setupNavigation();
-            setupScrollAnimations();
-            
-            // Renderizado de diagramas Mermaid
-            mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
-                'primaryColor': '#111827',
-                'primaryTextColor': '#e5e7eb',
-                'lineColor': '#818cf8',
-                'nodeBorder': '#818cf8',
-                'mainBkg': 'transparent', // Fondo transparente para que se vea el canvas
-                'textColor': '#e5e7eb',
-                'fontFamily': '"Inter", sans-serif'
-            } });
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            mobileMenu.classList.toggle('flex');
         });
 
-        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
-        let scene, camera, renderer, points;
-        
-        function initThreeJS() {
-            try {
-                scene = new THREE.Scene();
-                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
-                camera.position.z = 50;
-
-                renderer = new THREE.WebGLRenderer({
-                    canvas: document.getElementById("bg-canvas"),
-                    alpha: true
-                });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-
-                const pointCount = 250;
-                const positions = new Float32Array(pointCount * 3);
-                const pointGeo = new THREE.BufferGeometry();
-                for (let i = 0; i < pointCount; i++) {
-                    positions[i * 3] = (Math.random() - 0.5) * 300;
-                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
-                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
-                }
-                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
-                points = new THREE.Points(pointGeo, pointMaterial);
-                scene.add(points);
-
-                window.addEventListener("resize", onWindowResize, false);
-                document.addEventListener('mousemove', onMouseMove, false);
-                animate();
-            } catch (error) {
-                console.error('Error initializing Three.js:', error);
+        function toggleDropdown(button) {
+            const navItem = button.closest('.nav-item');
+            const dropdown = navItem.querySelector('.dropdown-menu');
+            navItem.classList.toggle('active');
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            } else {
+                dropdown.style.display = 'block';
             }
         }
 
-        function onWindowResize() {
-            if(camera && renderer) {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
+        function closeMobileMenu() {
+            if (window.innerWidth < 768) {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('flex');
+                document.querySelectorAll('.dropdown-menu').forEach(d => d.style.display = 'none');
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             }
-        }
-
-        let mouseX = 0, mouseY = 0;
-        function onMouseMove(event) {
-            mouseX = (event.clientX - window.innerWidth / 2) / 100;
-            mouseY = (event.clientY - window.innerHeight / 2) / 100;
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            if(scene && camera && renderer && points) {
-                points.rotation.y += 0.0003;
-                points.rotation.x += 0.0002;
-                camera.position.x += (mouseX - camera.position.x) * 0.05;
-                camera.position.y += (-mouseY - camera.position.y) * 0.05;
-                camera.lookAt(scene.position);
-                renderer.render(scene, camera);
-            }
-        }
-
-        // --- CÓDIGO DE NAVEGACIÓN ---
-        function setupNavigation() {
-            const menuToggleBtn = document.getElementById('menu-toggle-btn');
-            const navMenu = document.getElementById('nav-menu');
-
-            menuToggleBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                document.body.classList.toggle('menu-open');
-            });
-
-            navMenu.addEventListener('click', (e) => {
-                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
-                   document.body.classList.remove('menu-open');
-                }
-            });
-        }
-
-        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
-        function setupScrollAnimations() {
-            const animatedSections = document.querySelectorAll('[data-animate]');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                        
-                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid, ul, li, .authors');
-                        elementsToAnimate.forEach((el, index) => {
-                           el.style.transitionDelay = `${index * 100}ms`;
-                        });
-
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.15 });
-            animatedSections.forEach(section => observer.observe(section));
         }
     </script>
+
+    <!-- Contenido Principal -->
+    <div class="flex-grow pt-32 md:pt-48 pb-16 md:pb-24 px-6 md:px-12 w-full">
+        <main class="w-full mx-auto text-center">
+            
+            <!-- Bloque Hero -->
+            <header class="mb-24 relative animate-fade-in-up">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-amber-500/5 rounded-full blur-3xl -z-10"></div>
+                
+                <h1 class="text-4xl sm:text-5xl md:text-6xl font-black text-slate-100 mb-6 leading-none tracking-tighter drop-shadow-2xl break-words">
+                    CÓMO CONSTRUIR LA<br>CÉLULA VIRTUAL CON IA<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-500 text-2xl md:text-3xl block mt-6 font-serif italic">Prioridades y oportunidades para un modelo multi-escala</span>
+                </h1>
+                
+                <p class="mt-8 text-sm md:text-base text-slate-400 font-medium tracking-wide max-w-2xl mx-auto">
+                    Una perspectiva sobre cómo crear un modelo de la célula basado en IA, multi-escala y multi-modal, que pueda simular el comportamiento de moléculas, células y tejidos.
+                </p>
+                
+                <div class="mt-8 flex flex-wrap justify-center gap-4 text-xs md:text-sm text-amber-500 uppercase tracking-widest font-bold">
+                    <span>Charlotte Bunne</span> • <span>Yusuf Roohani</span> • <span>Yanay Rosen</span> • <span>Comunidad Colaboradora</span>
+                </div>
+                
+                <div class="mt-16 flex justify-center">
+                    <div class="h-24 w-px bg-gradient-to-b from-amber-500/0 via-amber-500/50 to-amber-500/0"></div>
+                </div>
+            </header>
+
+            <!-- Sección 1: Visión y Oportunidad -->
+            <section id="vision" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">1. La Visión de la Célula Virtual IA (AIVC)</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        La célula, la unidad fundamental de la vida, es un sistema dinámico y adaptativo de una complejidad asombrosa. Los modelos tradicionales, a menudo basados en reglas y ecuaciones diferenciales, no logran capturar la totalidad de sus funciones. Sin embargo, dos revoluciones paralelas —en <strong class="text-amber-500">Inteligencia Artificial (IA)</strong> y en <strong class="text-white">tecnologías ómicas</strong>— nos brindan una oportunidad sin precedentes para construir un nuevo tipo de modelo: la <strong class="text-amber-500">Célula Virtual de IA (AIVC)</strong>.
+                    </p>
+                    <p>
+                        La AIVC se concibe como un modelo basado en grandes redes neuronales, <strong class="text-white">multi-escala</strong> y <strong class="text-white">multi-modal</strong>, aprendido directamente de los datos. Este modelo podrá representar y simular el comportamiento de moléculas, células y tejidos a través de diversos estados, desde la salud hasta la enfermedad. Esta herramienta transformará la investigación biológica al permitir simulaciones de alta fidelidad, acelerar descubrimientos y guiar estudios experimentales, abriendo nuevas vías para comprender las funciones celulares y fomentar la ciencia abierta.
+                    </p>
+
+                    <!-- Mermaid Diagram Container -->
+                    <div class="my-12 p-6 bg-slate-900/50 border border-slate-800 rounded-lg flex justify-center overflow-x-auto">
+                        <div class="mermaid">
+                            graph TD
+                                A["Datos Multi-modales<br>(Genómica, Proteómica, Imágenes)"] --> C{Modelo Fundacional de IA};
+                                B["Avances en IA<br>(Transformers, Modelos Difusión)"] --> C;
+                                C --> D["Representación Universal (UR)<br>de Estados Celulares"];
+                                D --> E["Simulación y Predicción<br>de Comportamientos Celulares"];
+                                E --> F["Nuevas Hipótesis y<br>Diseño Experimental"];
+                        </div>
+                    </div>
+
+                    <h3 class="text-xl text-amber-500 font-bold mt-8 mb-4">Una Nueva Era de Simulación Biológica</h3>
+                    <p>
+                        Con la AIVC, los biólogos podrán explorar preguntas que antes eran inabordables. Un biólogo del cáncer podría modelar cómo mutaciones específicas transforman células sanas en malignas. Un biólogo del desarrollo podría predecir cómo evolucionan los linajes celulares en respuesta a perturbaciones. La AIVC no reemplazará la experimentación, sino que la potenciará, permitiendo a los científicos generar y priorizar hipótesis de manera más eficiente, reduciendo el espacio de búsqueda y acelerando el ciclo de descubrimiento.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Sección 2: Capacidades -->
+            <section id="capacidades" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">2. Capacidades Fundamentales</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        Para que la AIVC sea una herramienta transformadora, debe poseer un conjunto de capacidades clave que permitan a los investigadores interactuar con el modelo de manera intuitiva y poderosa. Estas capacidades giran en torno a la representación, la predicción y la experimentación virtual.
+                    </p>
+
+                    <h3 id="representacion" class="text-xl text-amber-500 font-bold mt-8 mb-4">1. Crear una Representación Universal (UR)</h3>
+                    <p>
+                        La AIVC mapeará datos biológicos a un espacio de <strong class="text-amber-500">Representación Universal (UR)</strong>. Esta UR integrará datos a través de escalas físicas (molecular, celular, multicelular), modalidades (secuenciación, imágenes) y contextos (especies, tejidos, enfermedades). Esto permitirá a los investigadores comparar y complementar nuevos datos con el vasto conocimiento biológico existente en el modelo, generalizando a estados celulares nunca antes observados.
+                    </p>
+
+                    <h3 id="prediccion" class="text-xl text-amber-500 font-bold mt-8 mb-4">2. Predecir el Comportamiento y la Dinámica Celular</h3>
+                    <p>
+                        Una función central será modelar las respuestas y <strong class="text-white">dinámicas celulares</strong>. La AIVC podrá predecir cómo las células responden a perturbaciones, ya sean genéticas (mutaciones) o químicas (fármacos), incluso para combinaciones no probadas en el laboratorio. Simulará la evolución temporal de los estados celulares en procesos como el desarrollo, la homeostasis o la progresión de enfermedades, proponiendo mecanismos causales detrás de los fenotipos observados.
+                    </p>
+
+                    <h3 id="experimentacion" class="text-xl text-amber-500 font-bold mt-8 mb-4">3. Realizar Experimentación in silico</h3>
+                    <p>
+                        La AIVC funcionará como un laboratorio virtual, permitiendo la <strong class="text-amber-500">experimentación <em>in silico</em></strong>. Los científicos podrán diseñar experimentos virtuales para probar miles de hipótesis a una escala imposible en el mundo real. Por ejemplo, se podría simular el efecto de miles de fármacos sobre un tipo de célula cancerosa o predecir resultados de experimentos costosos a partir de mediciones más baratas. Además, el modelo podrá identificar sus propias áreas de incertidumbre y guiar la recolección de datos para mejorar su propio rendimiento en un ciclo de aprendizaje activo.
+                    </p>
+
+                    <!-- Mermaid Mindmap -->
+                    <div class="my-12 p-6 bg-slate-900/50 border border-slate-800 rounded-lg flex justify-center overflow-x-auto">
+                        <div class="mermaid">
+                            mindmap
+                              root((AIVC))
+                                (Representación Universal)
+                                  Escala Molecular
+                                  Escala Celular
+                                  Escala Multicelular
+                                (Predicción y Dinámica)
+                                  Respuesta a Perturbaciones
+                                  Evolución Temporal
+                                  Descubrimiento de Mecanismos
+                                (Experimentación in silico)
+                                  Diseño de Fármacos
+                                  Ingeniería Celular
+                                  Guía para Experimentos
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección 3: Construcción -->
+            <section id="construccion" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">3. Construcción Multi-escala</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        La AIVC se concibe como un marco de IA compuesto por varios modelos fundacionales interconectados que representan sistemas biológicos en niveles de organización crecientes. El enfoque es construirlo de abajo hacia arriba, desde las moléculas hasta los tejidos, asegurando la consistencia a través de las escalas.
+                    </p>
+
+                    <h3 class="text-xl text-amber-500 font-bold mt-8 mb-4">Escala Molecular: El Lenguaje de la Vida</h3>
+                    <p>
+                        La primera capa representa las especies moleculares individuales: <strong class="text-white">ADN, ARN y proteínas</strong>. Estos pueden ser tratados como secuencias, lo que los hace ideales para modelos de IA como los <strong class="text-amber-500">Grandes Modelos de Lenguaje (LLMs)</strong>, similares a los que procesan el lenguaje humano. Estos modelos pueden aprender la "gramática" de las secuencias biológicas para predecir propiedades funcionales a partir de la secuencia sola. Se entrenarán con la vasta cantidad de datos genómicos y proteómicos disponibles.
+                    </p>
+
+                    <h3 class="text-xl text-amber-500 font-bold mt-8 mb-4">Escala Celular: La Célula como un Todo</h3>
+                    <p>
+                        El siguiente nivel modela los estados celulares individuales. Una <strong class="text-amber-500">UR celular</strong> se construirá integrando las representaciones moleculares con datos que describen la abundancia y organización de estos componentes. Los datos clave aquí provienen de tecnologías de célula única como <strong class="text-white">scRNA-seq</strong> (transcriptómica) y de una variedad de <strong class="text-white">tecnologías de imagen</strong> que miden la morfología celular y la localización subcelular de las proteínas. Modelos como las <strong class="text-amber-500">Redes Neuronales Convolucionales (CNNs)</strong> y los <strong class="text-amber-500">Vision Transformers</strong> son ideales para procesar estos datos de imagen.
+                    </p>
+
+                    <h3 class="text-xl text-amber-500 font-bold mt-8 mb-4">Escala Multicelular: La Sociedad de las Células</h3>
+                    <p>
+                        La capa final modela la organización de las células en tejidos. Esta <strong class="text-amber-500">UR multicelular</strong> explora cómo las interacciones célula-célula, gobernadas por la proximidad espacial, dan lugar a estructuras complejas. Los datos provendrán de tecnologías de <strong class="text-white">transcriptómica espacial</strong>, que mapean la expresión génica conservando la estructura del tejido. La organización espacial se puede representar como un grafo, donde cada célula es un nodo, lo que hace que las <strong class="text-amber-500">Redes Neuronales de Grafos (GNNs)</strong> sean la arquitectura de IA perfecta para esta escala.
+                    </p>
+
+                    <div class="my-12 p-6 bg-slate-900/50 border border-slate-800 rounded-lg flex justify-center overflow-x-auto">
+                        <div class="mermaid">
+                            graph LR
+                                subgraph "Escala Molecular"
+                                    A(ADN) --> B(ARN) --> C(Proteína)
+                                end
+                                subgraph "Escala Celular"
+                                    D{UR Celular}
+                                end
+                                subgraph "Escala Multicelular"
+                                    E[Tejido]
+                                end
+                                C -- Abundancia y Localización --> D
+                                D -- Interacciones Espaciales --> E
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección 4: Desafíos -->
+            <section id="desafios" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">4. Desafíos, Ética y Colaboración</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        La construcción de la AIVC es una empresa monumental que enfrenta desafíos técnicos, éticos y logísticos. Superarlos requerirá un esfuerzo concertado y abierto de toda la comunidad científica.
+                    </p>
+
+                    <h3 class="text-xl text-amber-500 font-bold mt-8 mb-4">Grandes Desafíos Técnicos</h3>
+                    <p>
+                        Los principales desafíos incluyen el diseño de marcos de evaluación que midan capacidades biológicamente relevantes, asegurar la <strong class="text-amber-500">auto-consistencia</strong> del modelo a través de diferentes escalas y modalidades, y encontrar el equilibrio adecuado entre el rendimiento predictivo y la <strong class="text-white">interpretabilidad</strong> del modelo. Un modelo "caja negra", por muy preciso que sea, tiene una utilidad limitada si no puede generar conocimiento biológico comprensible.
+                    </p>
+
+                    <h3 class="text-xl text-amber-500 font-bold mt-8 mb-4">Un Marco para la Colaboración</h3>
+                    <p>
+                        Ningún laboratorio o institución puede construir la AIVC por sí solo. Prevemos un futuro en el que las plataformas AIVC funcionen como centros abiertos e interconectados para el desarrollo colaborativo. Esto requiere una inversión significativa en infraestructura que fomente la ciencia abierta, incluyendo <strong class="text-white">estándares de datos</strong>, benchmarks públicos y plataformas para compartir modelos y resultados.
+                    </p>
+
+                    <h3 class="text-xl text-amber-500 font-bold mt-8 mb-4">Uso Ético y Responsable</h3>
+                    <p>
+                        Un desafío fundamental es la generación de grandes conjuntos de datos abiertos que reflejen la <strong class="text-amber-500">diversidad humana</strong> (ancestral, de sexo y geográfica) sin comprometer la privacidad individual. Los desarrolladores deben tener el máximo cuidado para garantizar que estos datos se utilicen de manera ética y transparente. Además, la colaboración con expertos en ética y regulación desde el principio es primordial para establecer normas que faciliten el uso responsable de las AIVC.
+                    </p>
+
+                    <ul class="list-disc pl-6 space-y-2 mb-8 border-l-2 border-slate-700 pl-6 ml-4">
+                        <li><strong class="text-white">Datos:</strong> Priorizar la generación de datos a gran escala que capturen la diversidad biológica y abarquen múltiples escalas temporales y físicas.</li>
+                        <li><strong class="text-white">Evaluación:</strong> Desarrollar benchmarks que no solo midan la precisión, sino también la capacidad de generar nuevas hipótesis biológicas verificables.</li>
+                        <li><strong class="text-white">Acceso:</strong> Democratizar el acceso a los modelos y a los recursos computacionales necesarios para entrenarlos y utilizarlos.</li>
+                        <li><strong class="text-white">Comunidad:</strong> Fomentar la colaboración entre la academia, la industria, la filantropía y las agencias reguladoras para acelerar el progreso de manera segura y equitativa.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Sección 5: Referencias -->
+            <section id="referencias" class="w-full mx-auto mb-24 text-left border-t border-slate-800 pt-12">
+                <h2 class="text-2xl font-serif font-bold text-white mb-8">Referencias Clave</h2>
+                <p class="text-sm text-slate-400 mb-6">
+                    Este trabajo se basa en las ideas y esfuerzos de una amplia comunidad científica. A continuación se presentan algunas de las publicaciones y autores fundamentales que han sentado las bases para la visión de la Célula Virtual de IA.
+                </p>
+                <ul class="text-sm text-slate-400 space-y-3 font-light">
+                    <li><span class="text-amber-500 font-bold">Karr, J.R., et al.</span> (2012). A whole-cell computational model predicts phenotype from genotype. <i>Cell</i>. El primer modelo computacional de una célula completa (Mycoplasma genitalium).</li>
+                    <li><span class="text-amber-500 font-bold">Regev, A., Teichmann, S.A., et al.</span> (2017). The Human Cell Atlas. <i>eLife</i>. Una iniciativa global para mapear todos los tipos de células humanas como referencia para la salud y la enfermedad.</li>
+                    <li><span class="text-amber-500 font-bold">Jumper, J., Evans, R., Pritzel, A., et al.</span> (2021). Highly accurate protein structure prediction with AlphaFold. <i>Nature</i>. Un hito en el uso de la IA para predecir la estructura 3D de las proteínas a partir de su secuencia.</li>
+                    <li><span class="text-amber-500 font-bold">Roohani, Y., Huang, K., & Leskovec, J.</span> (2023). Predicting transcriptional outcomes of novel multigene perturbations with GEARS. <i>Nat. Biotechnol</i>. Un ejemplo de modelo de IA para predecir los efectos de perturbaciones genéticas.</li>
+                    <li><span class="text-amber-500 font-bold">Rosen, Y., Brbić, M., Roohani, Y., et al.</span> (2024). Toward universal cell embeddings: integrating single-cell RNA-seq datasets across species with Saturn. <i>Nat. Methods</i>. Un paso hacia la creación de representaciones universales para células.</li>
+                </ul>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Mermaid Initialization -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'dark',
+                securityLevel: 'loose',
+                themeVariables: {
+                    primaryColor: '#0f172a',
+                    edgeLabelBackground: '#0f172a',
+                    tertiaryColor: '#1e293b',
+                    primaryTextColor: '#cbd5e1',
+                    lineColor: '#64748b',
+                    mainBkg: '#020617'
+                }
+            });
+        });
+    </script>
+
+    <!-- Footer Simple -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-6 md:py-8">
+        <div class="max-w-full mx-auto px-6 md:px-12 flex flex-col items-center justify-center gap-2">
+            <p class="text-[10px] md:text-[11px] font-medium text-slate-400 text-center">
+                Este espacio es una cartografía personal y una invitación al diálogo.
+            </p>
+            <p class="text-[9px] md:text-[10px] text-slate-600 font-mono text-center">
+                La vida es terriblemente bella cuando los jugadores juegan. | 2025
+            </p>
+        </div>
+    </footer>
+
 </body>
 </html>
