@@ -3,1115 +3,704 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulación de Autopoiesis 3D | Exploración Transdisciplinaria</title>
+    <title>Modelo de Autopoiesis 3D | O.C.V.M.</title>
+    
+    <!-- Tailwind & Plugins -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    
+    <!-- Three.js Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- Fonts -->
     <style>
-        /* Variables CSS de la plantilla O.C.V.M. */
-        :root {
-            --primary: #818cf8; /* Azul/Morado principal */
-            --primary-dark: #6366f1; /* Azul/Morado más oscuro */
-            --secondary: #22d3ee; /* Cian/Teal */
-            --primary-text: #e5e7eb; /* Texto general (gris claro) */
-            --primary-glow: #818cf8; /* Brillo principal (azul/morado) */
-            --secondary-glow: #22d3ee; /* Brillo secundario (cian/teal) */
-            --nav-height: 70px;
-
-            /* Colores específicos para las partículas de la simulación, mapeados a la paleta O.C.V.M. */
-            --simulation-substrate-color: var(--secondary-glow); /* Sustratos: Cian/Teal */
-            --simulation-catalyst-color: #f472b6; /* Catalizadores: Rosa Magenta */
-            --simulation-link-color: var(--primary-glow); /* Enlaces: Azul/Morado */
-        }
-
-        /* Reset y estilos base */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        html { scroll-behavior: smooth; }
-
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+        
         body {
-            background-color: #000000; /* Fondo negro como en la plantilla O.C.V.M. */
-            color: var(--primary-text); /* Color de texto general de la plantilla */
-            font-family: var(--font-main); /* Fuente principal de la plantilla */
-            line-height: 1.8;
-            overflow-x: hidden;
-            transition: overflow 0.3s ease;
-        }
-        
-        body.menu-open {
-            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #94a3b8; /* slate-400 */
+            scroll-behavior: smooth;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 70%);
+            background-attachment: fixed;
         }
 
-        /* Canvas de fondo animado (Three.js) */
-        #bg-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            cursor: crosshair;
+        .font-serif {
+            font-family: 'Playfair Display', serif;
         }
 
-        /* Estilo Glassmorphism */
-        .glassmorphism {
-            background: rgba(17, 24, 39, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* --- NAVEGACIÓN (Estilo de la plantilla O.C.V.M.) --- */
-        nav {
-            position: fixed; top: 0; width: 100%; height: var(--nav-height);
-            z-index: 1000;
-            display: flex; justify-content: center; align-items: center;
-            padding: 0 5%;
-            pointer-events: auto; /* Permite interacción con la nav */
-        }
-
-        .nav-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
-        
-        .nav-logo a {
-            font-size: 1.3em;
-            font-weight: 700;
-            color: #fff;
-            text-decoration: none;
-            text-shadow: 0 0 8px var(--primary-glow);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 0.5rem;}
-        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
-        nav .nav-container > li > a {
-            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
-            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
-        }
-        nav .nav-container > li > a:hover, nav .nav-container > li:hover > a { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
-        
-        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
-        
-        /* --- MEGA MENÚ (Estilo de la plantilla O.C.V.M.) --- */
-        .mega-menu {
-            position: fixed;
-            top: var(--nav-height);
-            left: 50%;
-            transform: translateX(-50%) scale(0.95);
-            border-radius: 10px; width: auto;
-            min-width: clamp(300px, 80vw, 950px); max-width: 95vw;
-            padding: 2rem; 
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 2rem; 
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, transform 0.3s ease, visibility 0s 0.3s;
-            transform-origin: top center;
-        }
-        
-        .mega-menu.is-active { 
-            opacity: 1;
-            visibility: visible;
-            transform: translateX(-50%) scale(1);
-            transition: opacity 0.3s ease, transform 0.3s ease, visibility 0s 0s;
-        }
-        
-        .mega-menu.mega-menu-single {
-            min-width: 280px;
-            max-width: 350px;
-            grid-template-columns: 1fr;
-        }
-
-        .mega-menu h3 {
-            color: var(--primary-glow); font-size: 1.1em; margin-bottom: 1rem;
-            text-shadow: 0 0 5px var(--primary-glow);
-            border-bottom: 1px solid rgba(129, 140, 248, 0.3);
-            padding-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        .mega-menu ul { display: flex; flex-direction: column; gap: 0.75rem; list-style: none; }
-        .mega-menu li { position: relative; }
-        .mega-menu a {
-            font-size: 0.9em; color: var(--primary-text); text-decoration: none;
-            transition: color 0.3s, padding-left 0.3s, background-color 0.3s;
-            padding: 0.5rem 0.75rem 0.5rem 2rem; border-radius: 4px;
-            display: block;
+        /* --- Estilos de Navegación Desktop --- */
+        .nav-link {
             position: relative;
-        }
-        .mega-menu a::before {
-            content: '›';
-            color: var(--primary-glow);
-            position: absolute;
-            left: 0.75rem;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 1.2em;
-            transition: color 0.3s;
-        }
-        .mega-menu a:hover { color: #000; background-color: var(--primary-glow); padding-left: 2.5rem; }
-        .mega-menu a:hover::before { color: #000; }
-        
-        /* --- ESTILOS DE PÁGINA (Combinados de O.C.V.M. y Autopoiesis) --- */
-        .page-header {
-            position: relative;
-            text-align: center;
-            padding: 6rem 1rem;
-            margin-bottom: 2rem;
-            min-height: 40vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            padding-top: calc(6rem + var(--nav-height)); /* Ajuste para la altura de la nav */
-        }
-
-        #particles-js {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-
-        .header-content {
-            position: relative;
-            z-index: 2;
-        }
-        
-        .header-content h1 {
-            font-size: clamp(2.5rem, 6vw, 4.5rem);
-            font-weight: 700;
-            color: #fff;
-            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7); /* Usar primary-glow */
-            animation: pulse-glow 3s infinite alternate;
-            font-family: 'Orbitron', sans-serif; /* Mantener Orbitron para el título principal */
-        }
-
-        @keyframes pulse-glow {
-            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
-            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
-        }
-
-        .main-container { max-width: 1440px; margin: 0 auto; padding: 1rem; padding-top: var(--nav-height); }
-        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 0; }
-        
-        .section {
-            padding: clamp(1.5rem, 5vw, 2.5rem);
-            background: rgba(17, 24, 39, 0.8); /* Usar glassmorphism base */
-            border: 1px solid rgba(255, 255, 255, 0.1); /* Usar glassmorphism base */
-            border-radius: 12px; margin-bottom: 2rem;
-            position: relative; /* Para animaciones de scroll */
-            transition: transform 0.4s ease, box-shadow 0.4s ease; /* Animación de la plantilla */
-        }
-        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); } /* Animación de la plantilla */
-
-        /* Animaciones de scroll para el contenido */
-        .section h2, .section h3, .section p, .section ul, .section ol, .section .controls-grid, .section #visualization {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-        }
-
-        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible ul, .section.is-visible ol, .section.is-visible .controls-grid, .section.is-visible #visualization {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        h2 {
-            font-size: clamp(1.8rem, 5vw, 2.5rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
-            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
-            font-family: 'Orbitron', sans-serif; /* Mantener Orbitron para h2 */
-        }
-        h3 { 
-            font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2rem 0 1rem 0;
-            font-family: 'Orbitron', sans-serif; /* Mantener Orbitron para h3 */
-        }
-        p, li { 
-            font-size: clamp(1rem, 1.5vw, 1.1rem); 
-            color: var(--primary-text); /* Texto principal */
-        }
-        ul, ol { padding-left: 2rem; margin-bottom: 1rem;}
-
-        .highlight { color: var(--primary-glow); font-weight: bold; }
-        .substrate { color: var(--secondary-glow); font-weight: bold; } /* Mapeado a secondary-glow */
-        .catalyst { color: #f472b6; font-weight: bold; } /* Mapeado a dead-cell color */
-        .link { color: var(--primary-glow); font-weight: bold; } /* Mapeado a primary-glow */
-        
-        .controls-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            align-items: center;
-        }
-
-        button {
-            background: var(--primary); /* Usar primary para el botón */
-            border: 1px solid var(--primary-glow);
-            color: var(--primary-text); /* Texto del botón */
-            padding: 10px 20px;
-            border-radius: 5px;
+            transition: color 0.3s ease;
             cursor: pointer;
-            font-family: 'Orbitron', sans-serif; /* Fuente específica para botones */
-            transition: all 0.3s ease;
-            text-shadow: 0 0 5px var(--primary-glow);
-        }
-        button:hover {
-            background: var(--primary-glow);
-            color: #000;
-            box-shadow: 0 0 15px var(--primary-glow);
-        }
-        input[type="range"] {
-            width: 100%;
-            accent-color: var(--primary-glow); /* Color del slider */
-        }
-
-        #visualization {
-            width: 100%;
-            height: 600px;
-            background: rgba(0,0,0,0.4); /* Fondo para la simulación 3D */
-            border: 1px solid rgba(129, 140, 248, 0.2); /* Borde de la simulación 3D */
-            border-radius: 8px;
-            margin-top: 2rem;
-            overflow: hidden;
-        }
-
-        .footer { 
-            text-align: center; padding: 2.5rem 1rem; 
-            color: var(--primary-glow); /* Color de la plantilla para el footer */
-            border-top: 1px solid var(--primary-text); /* Borde de la plantilla para el footer */
-            margin-top: 2rem; 
-            font-family: var(--font-main); /* Fuente de la plantilla para el footer */
+            display: block;
         }
         
-        /* Media Queries (Combinados y ajustados) */
-        @media (min-width: 1025px) {
-            .nav-logo { display: flex; } /* Mostrar logo en desktop */
-            .menu-toggle { display: none; }
-            .nav-container { display: flex; }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -2px;
+            left: 0;
+            background-color: #f59e0b;
+            transition: width 0.3s ease;
+        }
+        
+        @media (min-width: 768px) {
+            .nav-item:hover .nav-link::after {
+                width: 100%;
+            }
         }
 
-        @media (max-width: 1024px) {
-            .nav-content { justify-content: space-between; }
-            .nav-container {
-                position: fixed; top: var(--nav-height); left: 0;
-                width: 100%; max-width: 100%;
-                height: calc(100vh - var(--nav-height));
-                background: rgba(0, 5, 8, 0.98); /* Fondo oscuro para el menú móvil */
-                backdrop-filter: blur(15px);
-                flex-direction: column; justify-content: flex-start;
+        /* --- Ajustes Móviles --- */
+        @media (max-width: 767px) {
+            #mobile-menu-container {
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+            .nav-item {
+                width: 100%;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                padding: 0;
+            }
+            .nav-item-content {
+                display: flex;
+                justify-content: space-between;
                 align-items: center;
-                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-                transform: translateY(-110%);
-                overflow-y: auto; padding: 2rem;
+                padding: 1rem 1.5rem;
             }
-            body.menu-open .nav-container { transform: translateY(0); }
+        }
 
-            nav .nav-container > li { width: 100%; height: auto; flex-direction: column; align-items: center; text-align: center; }
-            nav .nav-container > li > a { padding: 1rem; width: 100%; font-size: 1.5em;}
-            
-            .mega-menu {
-                position: static; display: grid; opacity: 1; transform: none; visibility: visible; width: 100%; box-shadow: none; 
-                border: none; padding: 1rem 0 1.5rem 0; background: none; backdrop-filter: none;
-                grid-template-columns: 1fr; border-top: 1px solid rgba(129, 140, 248, 0.2); margin-top: 1rem; /* Borde de la plantilla */
-            }
-            
-            .mega-menu h3 { font-size: 1.8em; }
-            .mega-menu ul { align-items: stretch; text-align: left; list-style: none; padding-left: 0; }
-            .mega-menu li { position: relative; }
-            .mega-menu a {
-                font-size: 1.5em; padding: 0.8rem 1rem 0.8rem 2.5rem;
-                transition: color 0.3s, background-color 0.3s;
-                display: block; text-align: left; position: relative;
-            }
-            .mega-menu a::before {
-                content: '■'; color: var(--primary-glow); /* Cuadrado de la plantilla */
-                position: absolute; left: 0.5rem; top: 50%;
-                transform: translateY(-50%) scale(0.6); font-size: 1.5em;
-            }
-            .mega-menu a:hover { padding-left: 2.5rem; color: #000; background-color: var(--primary-glow); }
-            .mega-menu a:hover::before { color: #000; }
-            
-            .menu-toggle { display: block; position: relative; z-index: 1001; width: 30px; height: 22px; background: none; border: none; cursor: pointer; }
-            .icon-bar { display: block; width: 100%; height: 3px; background-color: var(--primary-text); margin: 6px 0; transition: all 0.3s ease-in-out; border-radius: 2px; }
-            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
-            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
-            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        /* Ajustes scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
 
-            #visualization { height: 400px; }
+        /* Estilos específicos para la simulación */
+        #visualization canvas {
+            outline: none;
+            border-radius: 0.5rem;
+        }
+        
+        /* Sliders personalizados para coincidir con el tema Amber */
+        input[type=range] {
+            -webkit-appearance: none; 
+            background: transparent; 
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+        }
+        input[type=range]:focus {
+            outline: none; 
+        }
+        
+        /* Citas en bloque */
+        blockquote {
+            border-left-color: #f59e0b !important;
+            font-style: italic;
+            color: #cbd5e1 !important;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 1rem;
+            border-radius: 0 0.5rem 0.5rem 0;
         }
     </style>
 </head>
-<body>
-    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+<body class="selection:bg-amber-500 selection:text-slate-900 min-h-screen flex flex-col overflow-x-hidden">
 
-    <nav class="glassmorphism">
-        <div class="nav-content">
-            <div class="nav-logo">
-                <a href="index.html">
-                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
-                    <span>O.C.V.M.</span>
+    <!-- Navegación Responsiva -->
+    <nav class="fixed w-full z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+            <div class="flex justify-between items-center h-16">
+                
+                <!-- Logo / Marca -->
+                <a href="#" class="flex items-center space-x-2 group">
+                    <div class="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-150 transition-transform"></div>
+                    <span class="text-[10px] md:text-xs font-bold tracking-widest uppercase text-slate-200 group-hover:text-white transition-colors">
+                        O.C.V.M. <span class="text-slate-600 mx-1">|</span> Autopoiesis
+                    </span>
                 </a>
-            </div>
-            <ul class="nav-container" id="nav-menu">
-                <li><a href="index.html">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
-                    Inicio</a></li>
-        
-                <li><a href="#">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
-                    Origen del Cosmos</a>
-                    <div class="mega-menu glassmorphism">
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" /></svg>Sistemas Complejos</h3>
-                            <ul>
-                                <li><a href="GAME_OF_LIFE.HTML">Juego de la Vida (Conway)</a></li>
-                                <li><a href="GAME_OF_LIFE3D.HTML">Juego de la Vida (3D)</a></li>
-                            </ul>
-                        </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5" /></svg>Principios Fundamentales</h3>
-                            <ul>
-                                <li><a href="#">(Próximamente: Física)</a></li>
-                                <li><a href="#">(Próximamente: Cosmología)</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </li>
-                
-                <li><a href="#">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V5.75A2.25 2.25 0 0018 3.5H6A2.25 2.25 0 003.75 5.75v12.5A2.25 2.25 0 006 20.25z" /></svg>
-                    Origen de la Vida</a>
-                    <div class="mega-menu glassmorphism">
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z" /></svg>Fundamentos de Biología</h3>
-                            <ul>
-                                <li><a href="index.html#biologia-celular">Introducción a la Célula</a></li>
-                                <li><a href="NUMEROS_BIOLOGOS.HTML">Números Importantes en Biología Celular</a></li>
-                                <li><a href="CURSO_BIOLOGIA_CELULAR.HTML">Curso Biología Celular</a></li>
-                                <li><a href="HISTOLOGIA.html">Histología y Tejidos</a></li>
-                                <li><a href="cuerpo humano completo plantilla Lt.html">Anatomía Humana</a></li>
-                            </ul>
-                        </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.667 0l3.181-3.183m-4.991-2.691v4.992h4.992v-.001M2.985 19.644l3.181-3.182m0-4.992l-3.181 3.183a8.25 8.25 0 0011.667 0l3.181-3.183" /></svg>Autopoiesis y Sistemas Vivos</h3>
-                            <ul>
-                                <li><a href="AUTOPOIESIS.HTML">Simulación Autopoiesis</a></li>
-                                <li><a href="AUTOPOIESIS_3D.HTML">Simulación Autopoiesis (3D)</a></li>
-                                <li><a href="Autopoiesis_Fractal00.html">Simulación Autopoiesis (Fractal)</a></li>
-                                <li><a href="Paper_Varela_1974.html">Paper de Varela (1974)</a></li>
-                            </ul>
-                        </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>Herramientas de Investigación</h3>
-                            <ul>
-                                <li><a href="https://leolib87.github.io/herbario/">Herbario Digital</a></li>
-                                <li><a href="WESTERNCHILE.HTML">Proveedores Western Blot</a></li>
-                                <li><a href="histologychile.html">Proveedores Histología</a></li>
-                                <li><a href="proveedores_biologia.html">Proveedores Biología</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </li>
-                
-                <li><a href="#">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z" /></svg>
-                    Origen de la Mente</a>
-                    <div class="mega-menu glassmorphism">
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>Filosofía y Cognición</h3>
-                            <ul>
-                                <li><a href="index.html#filosofia-mente">Mente, Lenguaje y Realidad</a></li>
-                                <li><a href="index.html#ciencias-cognitivas">Mente Encarnada y Cognición</a></li>
-                                <li><a href="index.html#inteligencia-artificial">IA y Sistemas Complejos</a></li>
-                                <li><a href="Feno_style.html">Aproximación Fenomenológica</a></li>
-                                <li><a href="index.html#epistemologia">Epistemología del Conocer</a></li>
-                                <li><a href="index.html#trazado-vida">Sentido de Vida y Muerte</a></li>
-                                <li><a href="conocer_fv.html">Conocer, FV</a></li>
-                            </ul>
-                        </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>Autores y Referentes</h3>
-                            <ul>
-                                <li><a href="PAPERS_VARELA.HTML">Publicaciones de Varela</a></li>
-                                <li><a href="CITAS.HTML">Fragmentos de Mentes</a></li>
-                                <li><a href="MAPEO_FILO_MENTE_CHILE.HTML">Mapeo Filosofía Mente (Chile)</a></li>
-                            </ul>
-                        </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0l-1.07-1.07m15.482 0l1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07M12 6.873l-1.07 1.07m2.14 0l-1.07-1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07" /></svg>Reflexiones Culturales</h3>
-                                <ul>
-                                    <li><a href="peliculas.html">Reflexiones en el Cine</a></li>
-                                    <li><a href="MUSICA.HTML">Letras de Canciones</a></li>
-                                </ul>
-                        </div>
-                    </div>
-                </li>
-        
-                <li><a href="#">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" /></svg>
-                    Cartografías del Saber</a>
-                    <div class="mega-menu glassmorphism">
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12A2.25 2.25 0 0020.25 18V5.75A2.25 2.25 0 0018 3.5H6A2.25 2.25 0 003.75 5.75v12.5A2.25 2.25 0 006 20.25z" /></svg>Visualización de Datos</h3>
-                            <ul>
-                                <li><a href="index.html#analisis-redes">Introducción a las Redes</a></li>
-                                <li><a href="index.html#elementos-comunes">Mapa Conceptual General</a></li>
-                                <li><a href="RED POLITICOS.html">Red de Políticos</a></li>
-                                <li><a href="varios graficos.html">Colección de Gráficos</a></li>
-                                <li><a href="GRAFICO DE LINEAS Y TREEMAP.html">Líneas y Treemaps</a></li>
-                                <li><a href="treemap_ias.html">Treemap de IAs</a></li>
-                                <li><a href="INFLACION ARGENTINA RESPONSIVA.html">INFLACION EN ARGENTINA</a></li> 
-                            </ul>
-                        </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>Mapas Conceptuales</h3>
-                            <ul>
-                                <li><a href="MAPA_MENTAL_TRABAJO.HTML">Mapa Mental "Trabajo"</a></li>
-                                <li><a href="VARELA_CARTOGRAFIA.HTML">Cartografía Varela (3D)</a></li>
-                                <li><a href="cartografia_varela_01.html">Cartografía Varela (2D)</a></li>
-                                <li><a href="Explorando la Visualización Filosófica.HTML">Visualización Filosófica</a></li>
-                            </ul>
-                        </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>Herramientas Digitales y IA</h3>
-                            <ul>
-                                <li><a href="Herramientas_Investigacion_definitiva.html">Guía de Herramientas</a></li>
-                                <li><a href="IAS_BUSQUEDA.HTML">Buscador de IAs</a></li>
-                                <li><a href="googleias.html">IAs de Google</a></li>
-                                <li><a href="IAs.html">Red de IAs</a></li>
-                                <li><a href="index.html#voyant-tools">Análisis con Voyant Tools</a></li>
-                                <li><a href="Paper_web.html">Plantilla Web para Papers</a></li>
-                            </ul>
-                        </div>
-                        <div><h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>Recursos y Proyectos</h3>
-                            <ul>
-                                <li><a href="MI_BIBLIOTECA.HTML">Biblioteca Humanidades</a></li>
-                                <li><a href="BIBLIOTECA_CIENCIAS.HTML">Biblioteca Ciencias</a></li>
-                                <li><a href="BIBLIOTECA SHADOW.html">Bibliotecas Sombra</a></li>
-                                <li><a href="FUENTES_FINANCIAMIENTO.HTML">Fuentes de Financiamiento</a></li>
-                                <li><a href="FONDOS.HTML">DEEP Financiamiento</a></li>
-                                <li><a href="FONDECYT.HTML">Análisis Proyectos Fondecyt</a></li>
-                                <li><a href="Empleos_IES.html">Empleos en Educación Superior</a></li>
-                                <li><a href="Pedagogia-Biologia.html">Pedagogías en Biología (Chile)</a></li>
-                                <li><a href="QF.HTML">Química y Farmacia (Chile)</a></li>
-                                <li><a href="tiny_houses_web.html">Tiny Houses (Chile)</a></li> 
-                            </ul>
-                        </div>
-                    </div>
-                </li>
 
-                <li><a href="#">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h6M9 11.25h6m-6 4.5h6M6.75 21v-5.625a2.25 2.25 0 012.25-2.25h6a2.25 2.25 0 012.25 2.25V21M6.75 3v2.25A2.25 2.25 0 009 7.5h6a2.25 2.25 0 002.25-2.25V3" /></svg>
-                    Laboratorio</a>
-                    <div class="mega-menu glassmorphism">
-                        <div>
-                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9l-3.375-3.375A7.5 7.5 0 007.5 21l3.375-3.375m0-3.75L13.5 7.5" /></svg>Proyectos y Noticias</h3>
-                            <ul>
-                                <li><a href="LEOLIB NEWS BLACK.HTML">Leolib News</a></li>
-                                <li><a href="CHAT_LEO.HTML">Chat Leo</a></li>
-                                <li><a href="vida mente cosmos web deepresearcheada.html">VIDA MENTE COSMOS DEEP</a></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 3h.008v.008H8.25v-.008zm0 3h.008v.008H8.25v-.008zm3-6h.008v.008H11.25v-.008zm0 3h.008v.008H11.25v-.008zm0 3h.008v.008H11.25v-.008zm3-6h.008v.008H14.25v-.008zm0 3h.008v.008H14.25v-.008zm0 3h.008v.008H14.25v-.008zM4.5 21V5.625c0-1.036.84-1.875 1.875-1.875h11.25c1.035 0 1.875.84 1.875 1.875V21m-18 0h18M4.5 21V9" /></svg>Herramientas y Calculadoras</h3>
-                            <ul>
-                                <li><a href="CALCULADORA COMPRAS MOLECULAR RESPONSIVA.html">Calculadora Biología Molecular</a></li>
-                                <li><a href=" Histologia Calculadora.html">Calculadora Histología</a></li>
-                                <li><a href="CALCULADORA COMPRAS BLOT.HTML">Calculadora Western Blot</a></li>
-                                <li><a href="PLANTILLA CALCULADORA LABORATORIO.HTML">Plantilla Calculadora General</a></li>
-                                <li><a href="COTIZACION_yupielei.html">Cotización W-H-M</a></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0l-1.07-1.07m15.482 0l1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07m-1.07-1.07l-1.07 1.07m1.07-1.07l-1.07 1.07M12 6.873l-1.07 1.07m2.14 0l-1.07-1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07m-1.07 1.07l-1.07-1.07m2.14 0l-1.07 1.07" /></svg>Académico y Docencia</h3>
-                            <ul>
-                                <li><a href="horario_2025.html">Horario 2025</a></li>
-                                <li><a href="HORARIOS_LAB.HTML">Horarios Lab</a></li>
-                                <li><a href="INTEGRAL1_noq.HTML">Integral 1</a></li>
-                                <li><a href="red 2.html">Red Tesis Enseñanza Cs.</a></li>
-                                <li><a href="red3.html">Red Tesis Ejemplos</a></li>
-                                <li><a href="LAB1 BIOMOLECULAS.html">LAB I Biomoléculas</a></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h3><svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" /></svg>Desarrollo y Pruebas</h3>
-                            <ul>
-                                <li><a href="fondosX2.html">Dashboard Fondos</a></li>
-                                <li><a href="web.moderna.html">Web Moderna (Test)</a></li>
-                                <li><a href="web.three.html">Web Three.js (Test)</a></li>
-                                <li><a href="totem.html">Totem 1</a></li>
-                                <li><a href="totem2.html">Totem 2</a></li>
-                                <li><a href="PROBANDO.HTML">Probando 1</a></li>
-                                <li><a href="probando2gemini.html">Probando 2</a></li>
-                                <li><a href="web caos orden.html">Web Caos y Orden</a></li>
-                                <li><a href="AI- ESCRITURA- INCLUYE SHADOW FINAL.html">AI Escritura Incluye Shadow Final</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </li>
-                
-                <li><a href="#contacto">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
-                    Contacto</a></li>
-            </ul>
-            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
-                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
-            </button>
+                <!-- Botón Hamburguesa -->
+                <button id="menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+
+                <!-- Menú Desktop & Contenedor Móvil -->
+                <div id="mobile-menu-container" class="hidden md:flex absolute md:static top-16 left-0 w-full md:w-auto bg-slate-950 md:bg-transparent flex-col md:flex-row md:items-center overflow-y-auto md:overflow-visible max-h-[80vh] md:max-h-full transition-all shadow-2xl md:shadow-none">
+                    <ul class="flex flex-col md:flex-row md:items-center text-[11px] font-medium uppercase tracking-widest text-slate-400 w-full md:w-auto">
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#simulacion" class="nav-link text-amber-500 hover:text-amber-400" onclick="closeMobileMenu()">Simulación</a>
+                            </div>
+                        </li>
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#introduccion" class="nav-link hover:text-white" onclick="closeMobileMenu()">Contexto</a>
+                            </div>
+                        </li>
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#conceptos" class="nav-link hover:text-white" onclick="closeMobileMenu()">Análisis Profundo</a>
+                            </div>
+                        </li>
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#contacto" class="nav-link hover:text-white" onclick="closeMobileMenu()">Reflexión</a>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </nav>
 
-    <div class="main-container" id="inicio">
-        <div class="page-header">
-            <div id="particles-js"></div>
-            <div class="header-content">
-                <h1>Modelo de Autopoiesis 3D</h1>
-            </div>
-        </div>
+    <!-- Contenido Principal -->
+    <div class="flex-grow pt-32 md:pt-48 pb-16 md:pb-24 px-6 md:px-12 w-full">
+        <main class="w-full mx-auto text-center max-w-7xl">
+            
+            <!-- Bloque Hero -->
+            <header class="mb-16 relative animate-fade-in-up">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-amber-500/5 rounded-full blur-3xl -z-10"></div>
+                
+                <h1 class="text-4xl sm:text-5xl md:text-7xl font-black text-slate-100 mb-6 leading-none tracking-tighter drop-shadow-2xl break-words">
+                    AUTOPOIESIS<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-600 text-3xl md:text-5xl block mt-4 font-serif italic">La Organización de lo Vivo</span>
+                </h1>
+                
+                <p class="mt-8 text-sm md:text-base text-slate-400 font-medium tracking-wide max-w-2xl mx-auto">
+                    Un análisis interactivo basado en "Autopoiesis: The Organization of Living Systems, Its Characterization and a Model" (Varela, Maturana & Uribe, 1974).
+                </p>
+                
+                <div class="mt-16 flex justify-center">
+                    <div class="h-16 w-px bg-gradient-to-b from-amber-500/0 via-amber-500/50 to-amber-500/0"></div>
+                </div>
+            </header>
 
-        <div class="layout-grid">
-            <div class="section" id="controls" data-animate>
-                <h2>Controles de Simulación</h2>
-                <div class="controls-grid">
-                    <div>
-                        <p>Catalizadores: <span id="enzymeCountValue">5</span></p>
-                        <input type="range" id="enzymeCount" min="1" max="10" value="5">
+            <!-- Sección de Simulación (MANTENIDA INTENSA) -->
+            <section id="simulacion" class="w-full mx-auto mb-24 text-left">
+                <div class="bg-slate-900/40 p-6 md:p-8 rounded-xl border border-white/5 shadow-2xl backdrop-blur-sm">
+                    <div class="flex flex-col md:flex-row justify-between items-end mb-6 border-b border-slate-800 pb-4">
+                        <div>
+                            <h3 class="text-amber-500 font-bold uppercase tracking-widest text-xs mb-1">Modelo Computacional</h3>
+                            <h2 class="text-2xl font-serif text-white">Simulación de la Unidad Mínima</h2>
+                        </div>
+                        <div class="text-xs font-mono text-slate-500 mt-2 md:mt-0" id="status">
+                            Sustratos: 0 | Enlaces: 0 | Catalizadores: 0
+                        </div>
                     </div>
-                    <div>
-                        <p>Velocidad de Sustrato: <span id="substrateSpeedValue">5</span></p>
-                        <input type="range" id="substrateSpeed" min="1" max="10" value="5">
+
+                    <!-- Controles Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 text-sm text-slate-300">
+                        <!-- Catalizadores -->
+                        <div class="bg-slate-950/50 p-4 rounded-lg border border-white/5">
+                            <div class="flex justify-between mb-2">
+                                <label for="enzymeCount" class="font-medium text-amber-500/90">Catalizadores</label>
+                                <span id="enzymeCountValue" class="font-mono text-white">5</span>
+                            </div>
+                            <input type="range" id="enzymeCount" min="1" max="10" value="5" 
+                                class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500">
+                        </div>
+
+                        <!-- Velocidad -->
+                        <div class="bg-slate-950/50 p-4 rounded-lg border border-white/5">
+                            <div class="flex justify-between mb-2">
+                                <label for="substrateSpeed" class="font-medium text-cyan-400/90">Vel. Sustrato</label>
+                                <span id="substrateSpeedValue" class="font-mono text-white">5</span>
+                            </div>
+                            <input type="range" id="substrateSpeed" min="1" max="10" value="5" 
+                                class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                        </div>
+
+                        <!-- Desintegración -->
+                        <div class="bg-slate-950/50 p-4 rounded-lg border border-white/5">
+                            <div class="flex justify-between mb-2">
+                                <label for="decayRate" class="font-medium text-rose-400/90">Desintegración</label>
+                                <span id="decayRateValue" class="font-mono text-white">0.005</span>
+                            </div>
+                            <input type="range" id="decayRate" min="0" max="0.01" step="0.0001" value="0.005" 
+                                class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-rose-400">
+                        </div>
+
+                        <!-- Botón Reset -->
+                        <div class="flex items-end">
+                            <button onclick="resetSimulation()" class="w-full py-3 bg-slate-800 hover:bg-amber-600 hover:text-white text-slate-300 transition-all rounded-lg font-bold text-xs uppercase tracking-widest border border-white/10 shadow-lg hover:shadow-amber-500/20">
+                                Reiniciar Sistema
+                            </button>
+                        </div>
                     </div>
-                    <div>
-                        <p>Tasa de Desintegración: <span id="decayRateValue">0.005</span></p>
-                        <input type="range" id="decayRate" min="0" max="0.01" step="0.0001" value="0.005">
-                    </div>
-                    <div>
-                        <p>Estado: <span id="status">Sustratos: 0, Enlaces: 0, Catalizadores: 0</span></p>
-                        <button onclick="resetSimulation()">Reiniciar</button>
+
+                    <!-- Visualización 3D -->
+                    <div id="visualization" class="w-full h-[500px] bg-slate-950/80 rounded-lg border border-slate-700/50 shadow-inner overflow-hidden relative">
+                        <div class="absolute top-4 left-4 z-10 pointer-events-none">
+                            <div class="flex items-center space-x-2 text-[10px] uppercase tracking-wider font-bold">
+                                <span class="w-2 h-2 rounded-full bg-cyan-400"></span><span class="text-cyan-400">Sustrato (O)</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-[10px] uppercase tracking-wider font-bold mt-1">
+                                <span class="w-2 h-2 rounded-full bg-pink-500"></span><span class="text-pink-500">Catalizador (K)</span>
+                            </div>
+                            <div class="flex items-center space-x-2 text-[10px] uppercase tracking-wider font-bold mt-1">
+                                <span class="w-2 h-2 rounded-full bg-indigo-400"></span><span class="text-indigo-400">Enlace (L)</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div id="visualization"></div>
-            </div>
+            </section>
 
-            <div class="section" id="intro" data-animate>
-                <h2>Introducción a la Autopoiesis</h2>
-                <p>Imagina un sistema que se construye desde dentro, una entidad viva que desafía el caos tejiendo su propia existencia. La <span class="highlight">autopoiesis</span>, un concepto revolucionario de los biólogos Humberto Maturana y Francisco Varela, captura esta esencia de la vida. Describe sistemas que se automantienen al producir y regenerar sus propios componentes mediante una red cerrada de procesos. Visualiza una célula: su danza química sostiene su forma frente a la entropía. En esta simulación, los <span class="substrate">sustratos</span> (verde) se desplazan sin rumbo, los <span class="catalyst">enzimas</span> (magenta) desencadenan la creación de <span class="link">enlaces</span> (cian), y estos enlaces se descomponen de nuevo en sustratos: un eco digital del equilibrio dinámico de la vida.</p>
-            </div>
+            <!-- Introducción: El Problema de la Biología Moderna -->
+            <section id="introduccion" class="w-full mx-auto mb-20 text-left max-w-4xl">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">1. El Problema: Historia vs. Organización</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        A pesar de la inmensa diversidad de las formas biológicas, todos los sistemas vivos deben compartir una <strong>organización común</strong> que reconocemos implícitamente al llamarlos "vivos". Sin embargo, Varela, Maturana y Uribe argumentan que la biología contemporánea ha oscurecido esta organización fundamental al enfatizar excesivamente los componentes aislados y los procesos históricos como la evolución.
+                    </p>
+                    <blockquote class="text-lg my-6">
+                        "La reproducción y la evolución no son rasgos constitutivos de la organización viviente... todas las propiedades de una unidad no pueden explicarse solo a través de las propiedades de sus componentes."
+                        <span class="block text-right text-xs mt-2 text-amber-500 not-italic">— Varela, Maturana & Uribe (1974)</span>
+                    </blockquote>
+                    <p>
+                        La confusión principal radica en mezclar procesos que son <strong>dependientes de la historia</strong> (evolución, ontogénesis) con aquellos que son <strong>independientes de la historia</strong> (la organización individual en el presente). Para entender qué es la vida, no debemos preguntar qué hace que un sistema se reproduzca, sino:
+                    </p>
+                    <p class="font-serif italic text-xl text-center text-white my-8">
+                        "¿Cuál es la organización necesaria y suficiente para que un sistema dado sea una unidad viva?"
+                    </p>
+                </div>
+            </section>
 
-            <div class="section" id="concepts" data-animate>
-                <h2>Síntesis de "Autopoiesis: La Organización de los Sistemas Vivos" (Varela y Maturana, 1974)</h2>
-                <h3>1. Introducción</h3>
-                <p>Este trabajo seminal redefine la vida, alejándose de la reproducción y la evolución como rasgos definitorios. En su lugar, centra la atención en la <span class="highlight">unidad</span> de los sistemas vivos y su organización intrínseca.</p>
-                <h3>2. Organización</h3>
-                <p>Todo sistema puede verse como una <span class="highlight">unidad</span> singular o como una red compleja de componentes. Su <span class="highlight">organización</span>—la trama relacional que une estas partes—lo convierte en un todo funcional.</p>
-                <h3>3. Organización Autopoiética</h3>
-                <p>Un sistema autopoiético se caracteriza por:</p>
-                <ul>
-                    <li>Una <span class="highlight">red de producción</span> donde los componentes se generan recursivamente a sí mismos.</li>
-                    <li>Una unidad que se sostiene gracias a esta red.</li>
-                </ul>
-                <p><strong>Ejemplo:</strong> Una célula, con sus reacciones químicas renovando constantemente su estructura, encarna la autopoiesis.</p>
-                <h3>4. Autopoiesis vs. Alopoiesis</h3>
-                <p>Los <span class="highlight">sistemas autopoiéticos</span> crean sus propios componentes, preservando su identidad. Los <span class="highlight">sistemas alopoiéticos</span>, como un ribosoma, producen algo externo a sí mismos.</p>
-                <h3>5. La Autopoiesis como Núcleo de la Vida</h3>
-                <p>Los seres vivos son inherentemente autopoiéticos. La reproducción y la evolución son secundarias; el corazón de la vida reside en esta unidad autoconstruida.</p>
-                <h3>6. Modelo de Simulación</h3>
-                <p>La simulación tridimensional que aquí presentamos incluye:</p>
-                <ul>
-                    <li><span class="substrate">Sustratos (O)</span>: Materias primas que se mueven en el espacio 3D.</li>
-                    <li><span class="catalyst">Catalizadores (*)</span>: Agentes que forman <span class="link">enlaces</span> entre sustratos, creando estructuras dinámicas.</li>
-                    <li><strong>Autoreparación:</strong> Los catalizadores facilitan la generación de nuevos elementos, manteniendo la dinámica autopoiética.</li>
-                </ul>
-                <h3>7. Implicaciones y Aplicaciones</h3>
-                <p>La autopoiesis depende de dinámicas relacionales, no de materiales específicos. Esto abre caminos hacia:</p>
-                <ul>
-                    <li><span class="highlight">Origen de la Vida:</span> Ejemplo: liposomas con reacciones internas.</li>
-                    <li><span class="highlight">Vida Artificial:</span> Desafíos para sintetizar sistemas autopoiéticos.</li>
-                </ul>
-                <h3>8. Conclusión</h3>
-                <p>Un sistema autopoiético:</p>
-                <ol>
-                    <li>Tiene <span class="highlight">límites</span> definidos.</li>
-                    <li>Contiene <span class="highlight">componentes</span> internos.</li>
-                    <li>Opera mecánicamente con interacciones precisas.</li>
-                    <li>Genera sus propios <span class="highlight">límites</span> mediante interacciones.</li>
-                    <li>Produce todos sus <span class="highlight">componentes</span> internamente.</li>
-                    <li>Mantiene su <span class="highlight">organización</span> mientras sus procesos internos permanezcan activos.</li>
-                </ol>
-                <p>Este marco afina nuestra comprensión de lo vivo, conectando biología, inteligencia artificial y filosofía de la mente.</p>
-            </div>
-        </div>
-        <footer class="footer" id="contacto">
-            <h2>Contacto</h2>
-            <p>Este espacio es una cartografía personal y una invitación al diálogo.</p>
-            <p style="margin-top:1.5rem; font-size: 0.9em;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
-        </footer>
+            <!-- Análisis Profundo -->
+            <section id="conceptos" class="w-full mx-auto mb-20 text-left max-w-4xl">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">2. La Organización Autopoiética</h2>
+                
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light">
+                    
+                    <!-- Organización como Unidad -->
+                    <h3 class="text-xl text-amber-500 font-bold mt-8 mb-4">La Unidad y sus Relaciones</h3>
+                    <p>
+                        Un sistema complejo se define como una unidad no por sus componentes materiales (que pueden cambiar), sino por las <strong>relaciones</strong> entre estos componentes que realizan al sistema como un todo.
+                    </p>
+                    <p>
+                        Es decir, la misma organización puede realizarse en sistemas con diferentes tipos de componentes, siempre que estos componentes tengan las propiedades necesarias para realizar las relaciones requeridas. Esto separa la lógica de la organización (el <em>software</em>, metafóricamente) de su materialidad física (el <em>hardware</em>).
+                    </p>
+
+                    <!-- Definición Formal -->
+                    <h3 class="text-xl text-amber-500 font-bold mt-12 mb-4">Definición Formal de Autopoiesis</h3>
+                    <p>
+                        El término clave introducido es <strong>Autopoiesis</strong> (del griego <em>auto</em>, a sí mismo, y <em>poiesis</em>, creación/producción). Los autores ofrecen la siguiente definición precisa:
+                    </p>
+                    <blockquote class="text-lg my-6">
+                        "La organización autopoiética se define como una unidad mediante una red de producciones de componentes que:
+                        <ol class="list-decimal pl-5 mt-2 space-y-2">
+                            <li>Participan recursivamente en la misma red de producciones de componentes que produjo estos componentes, y</li>
+                            <li>Realizan la red de producciones como una unidad en el espacio en el que existen los componentes."</li>
+                        </ol>
+                        <span class="block text-right text-xs mt-2 text-amber-500 not-italic">— Varela, Maturana & Uribe (1974)</span>
+                    </blockquote>
+                    <p>
+                        Considere el caso de una célula: es una red de reacciones químicas que producen moléculas. Estas moléculas, a través de sus interacciones, generan la misma red de reacciones que las produjo y, crucialmente, constituyen la célula como una unidad material separada del entorno (la membrana). La célula persiste solo mientras esta organización se realiza continuamente bajo un recambio permanente de materia.
+                    </p>
+
+                    <!-- Autonomía vs Alopoiesis -->
+                    <h3 class="text-xl text-amber-500 font-bold mt-12 mb-4">Autonomía vs. Alopoiesis</h3>
+                    <p>
+                        La fenomenología distintiva de un sistema autopoiético es la <strong>autonomía</strong>. El producto de su operación es el sistema mismo. Si la red se interrumpe, la unidad se desintegra.
+                    </p>
+                    <p>
+                        En contraposición, los sistemas mecanicistas donde el producto de su operación es diferente de ellos mismos se denominan <strong>Alopoiéticos</strong> (<em>allo</em> = otro).
+                    </p>
+                    <ul class="list-disc pl-6 space-y-2 border-l-2 border-slate-700 ml-4">
+                        <li><strong>Ejemplo Autopoiético:</strong> Una célula viva. Su "trabajo" es mantenerse a sí misma.</li>
+                        <li><strong>Ejemplo Alopoiético:</strong> Una línea de ensamblaje de coches o un ribosoma. El ribosoma produce proteínas, no más ribosomas (como función primaria de su operación inmediata). Su existencia no depende de su operación.</li>
+                    </ul>
+
+                    <!-- El Modelo Computacional Detallado -->
+                    <h3 class="text-xl text-amber-500 font-bold mt-12 mb-4">El Modelo Minimalista (Simulado arriba)</h3>
+                    <p>
+                        Para demostrar que la autopoiesis puede surgir espontáneamente de componentes no vivos, los autores diseñaron un universo (simulado en el canvas superior) con reglas simples:
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 my-6 text-sm">
+                        <div class="bg-slate-900 p-4 rounded border border-cyan-900/50">
+                            <strong class="text-cyan-400 block mb-2">Sustrato (O)</strong>
+                            Elementos libres que se mueven aleatoriamente y pueden atravesar barreras.
+                        </div>
+                        <div class="bg-slate-900 p-4 rounded border border-pink-900/50">
+                            <strong class="text-pink-400 block mb-2">Catalizador (*)</strong>
+                            Elemento crucial que facilita la reacción. No se consume en el proceso.
+                        </div>
+                        <div class="bg-slate-900 p-4 rounded border border-indigo-900/50">
+                            <strong class="text-indigo-400 block mb-2">Enlace (L)</strong>
+                            Producido por la interacción O + 2O → L en presencia de *. Pueden unirse para formar cadenas.
+                        </div>
+                    </div>
+                    <p>
+                        La dinámica clave es:
+                        <br><strong>Composición:</strong> <span class="font-mono text-amber-400">* + 2O → * + L</span> (El catalizador une sustratos para formar enlaces).
+                        <br><strong>Desintegración:</strong> <span class="font-mono text-amber-400">L → 2O</span> (Los enlaces decaen naturalmente).
+                    </p>
+                    <p>
+                        Cuando una cadena de enlaces (L) se cierra sobre sí misma encerrando un catalizador (*), ocurre la magia de la autopoiesis. El catalizador, atrapado dentro, produce nuevos enlaces (L) usando el sustrato (O) que permea la membrana. Estos nuevos enlaces reemplazan a los que se desintegran en la membrana, reparando activamente la unidad. El sistema se mantiene a sí mismo dinámicamente.
+                    </p>
+
+                    <!-- La Llave de 6 Puntos -->
+                    <h3 class="text-xl text-amber-500 font-bold mt-12 mb-4">Clave para Identificar Sistemas Vivos</h3>
+                    <p>
+                        El paper concluye con una "llave" algorítmica de 6 pasos para determinar si una unidad dada es autopoiética. Si la respuesta es "Sí" a todas, el sistema está vivo en el sentido de la organización.
+                    </p>
+                    <div class="bg-slate-900/50 p-6 rounded-lg border border-white/5 space-y-4 text-sm md:text-base">
+                        <div class="flex gap-4">
+                            <span class="font-bold text-amber-500">1.</span>
+                            <p>¿Tiene la unidad <strong>fronteras</strong> identificables?</p>
+                        </div>
+                        <div class="flex gap-4">
+                            <span class="font-bold text-amber-500">2.</span>
+                            <p>¿Tiene <strong>componentes</strong> constitutivos?</p>
+                        </div>
+                        <div class="flex gap-4">
+                            <span class="font-bold text-amber-500">3.</span>
+                            <p>¿Es un sistema <strong>mecanicista</strong>? (Las propiedades de los componentes determinan sus interacciones).</p>
+                        </div>
+                        <div class="flex gap-4">
+                            <span class="font-bold text-amber-500">4.</span>
+                            <p>¿Las fronteras están determinadas por <strong>interacciones preferenciales</strong> entre los componentes?</p>
+                        </div>
+                        <div class="flex gap-4">
+                            <span class="font-bold text-amber-500">5.</span>
+                            <p>¿Los componentes de las fronteras son <strong>producidos por interacciones</strong> de los componentes de la unidad?</p>
+                        </div>
+                        <div class="flex gap-4">
+                            <span class="font-bold text-amber-500">6.</span>
+                            <p>¿Todos los demás componentes son producidos internamente o participan permanentemente en la producción?</p>
+                        </div>
+                    </div>
+                    
+                </div>
+            </section>
+
+        </main>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+
+    <!-- Footer Simple -->
+    <footer id="contacto" class="bg-slate-950 border-t border-slate-900 py-6 md:py-8">
+        <div class="max-w-full mx-auto px-6 md:px-12 flex flex-col items-center justify-center gap-2">
+            <h2 class="text-amber-500 font-bold uppercase tracking-widest text-xs mb-2">Reflexión Final</h2>
+            <p class="text-[10px] md:text-[11px] font-medium text-slate-400 text-center max-w-lg">
+                "Este modelo muestra que la organización autopoiética es una posibilidad real en el espacio de las dinámicas de sistemas, independiente de la naturaleza física de los componentes."
+            </p>
+            <p class="text-[9px] md:text-[10px] text-slate-600 font-mono text-center mt-4">
+                O.C.V.M. | 2025
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts de Interfaz -->
     <script>
-        // --- INICIALIZACIÓN DE PARTICLES.JS (Para el header) ---
-        if (document.getElementById('particles-js')) {
-            particlesJS("particles-js", {
-                "particles": { "number": { "value": 60, "density": { "enable": true, "value_area": 800 } }, "color": { "value": "#00ffff" }, "shape": { "type": "circle" }, "opacity": { "value": 0.5, "random": true }, "size": { "value": 2, "random": true }, "line_linked": { "enable": true, "distance": 150, "color": "#00ffc2", "opacity": 0.3, "width": 1 }, "move": { "enable": true, "speed": 1, "direction": "none", "random": true, "straight": false, "out_mode": "out" } },
-                "interactivity": { "detect_on": "canvas", "events": { "onhover": { "enable": true, "mode": "grab" }, "onclick": { "enable": true, "mode": "push" }, "resize": true }, "modes": { "grab": { "distance": 140, "line_linked": { "opacity": 0.7 } }, "push": { "particles_nb": 4 } } }, "retina_detect": true
-            });
-        }
+        // Lógica del menú móvil
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu-container');
 
-        // --- SCRIPTS DE NAVEGACIÓN (de la plantilla O.C.V.M.) ---
-        document.addEventListener('DOMContentLoaded', () => {
-            const menuToggleBtn = document.getElementById('menu-toggle-btn');
-            const navMenu = document.getElementById('nav-menu');
-
-            const toggleMenu = (e) => {
-                e.stopPropagation();
-                document.body.classList.toggle('menu-open');
-            };
-
-            const closeMenu = () => {
-                if (document.body.classList.contains('menu-open')) {
-                    document.body.classList.remove('menu-open');
-                }
-            };
-            
-            menuToggleBtn.addEventListener('click', toggleMenu);
-            navMenu.addEventListener('click', (e) => {
-                if (e.target.tagName === 'A') {
-                   closeMenu();
-                }
-            });
-            document.addEventListener('click', (e) => {
-                if (document.body.classList.contains('menu-open') && !navMenu.contains(e.target) && !menuToggleBtn.contains(e.target)) {
-                    closeMenu();
-                }
-            });
-
-            if (window.matchMedia('(min-width: 1025px)').matches) {
-                const menuItems = document.querySelectorAll('.nav-container > li');
-                menuItems.forEach(item => {
-                    const megaMenu = item.querySelector('.mega-menu');
-                    if (megaMenu) {
-                        let leaveTimeout;
-                        const showMenu = () => {
-                            clearTimeout(leaveTimeout);
-                            document.querySelectorAll('.mega-menu.is-active').forEach(m => {
-                                if (m !== megaMenu) m.classList.remove('is-active');
-                            });
-                            megaMenu.classList.add('is-active');
-                        };
-                        const startHideTimer = () => {
-                            leaveTimeout = setTimeout(() => megaMenu.classList.remove('is-active'), 250);
-                        };
-                        item.addEventListener('mouseenter', showMenu);
-                        item.addEventListener('mouseleave', startHideTimer);
-                        megaMenu.addEventListener('mouseenter', () => clearTimeout(leaveTimeout));
-                        megaMenu.addEventListener('mouseleave', startHideTimer);
-                    }
-                });
-            }
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            mobileMenu.classList.toggle('flex');
         });
 
-        // --- SCROLL ANIMATION (de la plantilla O.C.V.M.) ---
-        function setupScrollAnimations() {
-            const animatedSections = document.querySelectorAll('[data-animate]');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                        
-                        // Animar elementos con un retraso escalonado
-                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, ul, ol, .controls-grid, #visualization');
-                        elementsToAnimate.forEach((el, index) => {
-                           el.style.transitionDelay = `${index * 150}ms`;
-                        });
-
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.2 }); // Ajusta el threshold según cuándo quieres que se active la animación
-            animatedSections.forEach(section => observer.observe(section));
-        }
-
-        // --- THREE.JS BACKGROUND (de la plantilla O.C.V.M.) ---
-        let sceneBackground, cameraBackground, rendererBackground, pointsBackground, linesBackground;
-        
-        function initThreeJSBackground() {
-            try {
-                sceneBackground = new THREE.Scene();
-                cameraBackground = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
-                cameraBackground.position.z = 50;
-
-                rendererBackground = new THREE.WebGLRenderer({
-                    canvas: document.getElementById("bg-canvas"),
-                    alpha: true // Permite que el fondo CSS se vea a través del canvas
-                });
-                rendererBackground.setSize(window.innerWidth, window.innerHeight);
-
-                const pointCount = 200;
-                const positions = new Float32Array(pointCount * 3);
-                const pointGeo = new THREE.BufferGeometry();
-                for (let i = 0; i < pointCount; i++) {
-                    positions[i * 3] = (Math.random() - 0.5) * 400;
-                    positions[i * 3 + 1] = (Math.random() - 0.5) * 400;
-                    positions[i * 3 + 2] = (Math.random() - 0.5) * 400;
-                }
-                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.5, transparent: true, opacity: 0.8 });
-                pointsBackground = new THREE.Points(pointGeo, pointMaterial);
-                sceneBackground.add(pointsBackground);
-
-                regenerateLinesBackground();
-
-                window.addEventListener("resize", onWindowResizeBackground, false);
-                document.addEventListener('mousemove', onMouseMoveBackground, false);
-                animateBackground();
-            } catch (error) {
-                console.error('Error initializing Three.js background:', error);
+        function closeMobileMenu() {
+            if (window.innerWidth < 768) {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('flex');
             }
         }
+    </script>
 
-        function onWindowResizeBackground() {
-            if(cameraBackground && rendererBackground) {
-                cameraBackground.aspect = window.innerWidth / window.innerHeight;
-                cameraBackground.updateProjectionMatrix();
-                rendererBackground.setSize(window.innerWidth, window.innerHeight);
-            }
-        }
-
-        let mouseXBackground = 0, mouseYBackground = 0;
-        function onMouseMoveBackground(event) {
-            mouseXBackground = (event.clientX - window.innerWidth / 2) / 100;
-            mouseYBackground = (event.clientY - window.innerHeight / 2) / 100;
-        }
-
-        function animateBackground() {
-            requestAnimationFrame(animateBackground);
-            if(sceneBackground && cameraBackground && rendererBackground && pointsBackground && linesBackground) {
-                pointsBackground.rotation.y += 0.0005;
-                linesBackground.rotation.y += 0.0005;
-                cameraBackground.position.x += (mouseXBackground - cameraBackground.position.x) * 0.05;
-                cameraBackground.position.y += (-mouseYBackground - cameraBackground.position.y) * 0.05;
-                cameraBackground.lookAt(sceneBackground.position);
-                rendererBackground.render(sceneBackground, cameraBackground);
-            }
-        }
-
-        function regenerateLinesBackground() {
-            if (linesBackground) sceneBackground.remove(linesBackground);
-            const pointPositions = pointsBackground.geometry.attributes.position.array;
-            const pointCount = pointPositions.length / 3;
-            const linePositions = [];
-            for (let i = 0; i < pointCount; i++) {
-                for (let j = i + 1; j < pointCount; j++) {
-                    const dx = pointPositions[i * 3] - pointPositions[j * 3];
-                    const dy = pointPositions[i * 3 + 1] - pointPositions[j * 3 + 1];
-                    const dz = pointPositions[i * 3 + 2] - pointPositions[j * 3 + 2];
-                    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                    if (dist < 50) { // Conecta puntos si están lo suficientemente cerca
-                        linePositions.push(pointPositions[i * 3], pointPositions[i * 3 + 1], pointPositions[i * 3 + 2]);
-                        linePositions.push(pointPositions[j * 3], pointPositions[j * 3 + 1], pointPositions[j * 3 + 2]);
-                    }
-                }
-            }
-            const lineGeo = new THREE.BufferGeometry();
-            lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
-            const lineMaterial = new THREE.LineBasicMaterial({ color: 0x22d3ee, opacity: 0.3, transparent: true });
-            linesBackground = new THREE.LineSegments(lineGeo, lineMaterial);
-            sceneBackground.add(linesBackground);
-        }
-
-        // --- SCRIPT DE SIMULACIÓN 3D DE AUTOPOIESIS (código original, ajustado a los colores) ---
+    <!-- Lógica de Simulación Three.js -->
+    <script>
         const vizContainer = document.getElementById('visualization');
-        if (vizContainer) {
-            let scene, camera, renderer, controls, gridSize = 20;
-            let substrates = [], catalysts = [], links = [], bondedLinks = [];
-            let catalystCount = 5, substrateSpeed = 5, decayRate = 0.005;
+        let scene, camera, renderer, controls, gridSize = 20;
+        let substrates = [], catalysts = [], links = [], bondedLinks = [];
+        let catalystCount = 5, substrateSpeed = 5, decayRate = 0.005;
 
-            function initThreeJS() {
-                scene = new THREE.Scene();
-                camera = new THREE.PerspectiveCamera(75, vizContainer.clientWidth / 600, 0.1, 1000);
-                renderer = new THREE.WebGLRenderer({ antialias: true });
-                renderer.setSize(vizContainer.clientWidth, 600);
-                vizContainer.appendChild(renderer.domElement);
+        // Sliders de control
+        const catalystSlider = document.getElementById("enzymeCount");
+        const speedSlider = document.getElementById("substrateSpeed");
+        const decaySlider = document.getElementById("decayRate");
 
-                scene.background = new THREE.Color(0x000000); // Fondo oscuro para la simulación
+        // Event Listeners para los Sliders
+        catalystSlider.oninput = function() {
+            catalystCount = +this.value;
+            document.getElementById("enzymeCountValue").textContent = catalystCount;
+        };
+        speedSlider.oninput = function() {
+            substrateSpeed = +this.value;
+            document.getElementById("substrateSpeedValue").textContent = substrateSpeed;
+        };
+        decaySlider.oninput = function() {
+            decayRate = +this.value;
+            document.getElementById("decayRateValue").textContent = decayRate.toFixed(4);
+        };
 
-                // Grid de fondo
-                const gridMaterial = new THREE.LineBasicMaterial({ color: 0x818cf8, transparent: true, opacity: 0.2 }); /* Color de grid ajustado a primary */
-                const gridGeometry = new THREE.BufferGeometry();
-                const vertices = [];
-                for (let i = 0; i <= gridSize; i++) {
-                    for (let j = 0; j <= gridSize; j++) {
-                        vertices.push(i - gridSize / 2, j - gridSize / 2, -gridSize / 2);
-                        vertices.push(i - gridSize / 2, j - gridSize / 2, gridSize / 2);
-                        vertices.push(i - gridSize / 2, -gridSize / 2, j - gridSize / 2);
-                        vertices.push(i - gridSize / 2, gridSize / 2, j - gridSize / 2);
-                        vertices.push(-gridSize / 2, i - gridSize / 2, j - gridSize / 2);
-                        vertices.push(gridSize / 2, i - gridSize / 2, j - gridSize / 2);
-                    }
+        function initThreeJS() {
+            scene = new THREE.Scene();
+            // Sin fondo o fondo transparente para que se vea el fondo de la página
+            // scene.background = new THREE.Color(0x020617); 
+
+            camera = new THREE.PerspectiveCamera(75, vizContainer.clientWidth / 500, 0.1, 1000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(vizContainer.clientWidth, 500);
+            renderer.setClearColor(0x000000, 0); // Transparente
+            vizContainer.appendChild(renderer.domElement);
+
+            // Grid de fondo (Color ajustado al tema Slate/Indigo)
+            const gridMaterial = new THREE.LineBasicMaterial({ color: 0x6366f1, transparent: true, opacity: 0.15 }); 
+            const gridGeometry = new THREE.BufferGeometry();
+            const vertices = [];
+            for (let i = 0; i <= gridSize; i++) {
+                for (let j = 0; j <= gridSize; j++) {
+                    vertices.push(i - gridSize / 2, j - gridSize / 2, -gridSize / 2);
+                    vertices.push(i - gridSize / 2, j - gridSize / 2, gridSize / 2);
+                    vertices.push(i - gridSize / 2, -gridSize / 2, j - gridSize / 2);
+                    vertices.push(i - gridSize / 2, gridSize / 2, j - gridSize / 2);
+                    vertices.push(-gridSize / 2, i - gridSize / 2, j - gridSize / 2);
+                    vertices.push(gridSize / 2, i - gridSize / 2, j - gridSize / 2);
                 }
-                gridGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-                const grid = new THREE.LineSegments(gridGeometry, gridMaterial);
-                scene.add(grid);
+            }
+            gridGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            const grid = new THREE.LineSegments(gridGeometry, gridMaterial);
+            scene.add(grid);
 
-                camera.position.set(gridSize, gridSize, gridSize * 1.5);
-                camera.lookAt(0, 0, 0);
+            camera.position.set(gridSize, gridSize, gridSize * 1.5);
+            camera.lookAt(0, 0, 0);
 
-                controls = new THREE.OrbitControls(camera, renderer.domElement);
-                controls.enableDamping = true;
-                controls.dampingFactor = 0.05;
-                controls.screenSpacePanning = false;
-                controls.minDistance = 5;
-                controls.maxDistance = 50;
-                controls.enablePan = false;
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = false;
+            controls.minDistance = 5;
+            controls.maxDistance = 50;
+            controls.enablePan = false;
+            // Deshabilitar zoom con scroll para no interferir con el scroll de la página
+            controls.enableZoom = true; 
 
-                window.addEventListener('resize', resizeSimulation);
+            window.addEventListener('resize', resizeSimulation);
+        }
+
+        // Función para reiniciar la simulación
+        window.resetSimulation = function() { 
+            substrates.forEach(s => scene.remove(s.mesh));
+            catalysts.forEach(k => scene.remove(k.mesh));
+            links.forEach(l => scene.remove(l.mesh));
+            bondedLinks.forEach(bl => scene.remove(bl.mesh));
+            substrates = [];
+            catalysts = [];
+            links = [];
+            bondedLinks = [];
+
+            // Colores adaptados ligeramente (Cyan, Pink, Indigo)
+            const substrateMaterial = new THREE.MeshBasicMaterial({ color: 0x22d3ee }); 
+            const catalystMaterial = new THREE.MeshBasicMaterial({ color: 0xec4899 }); 
+            const linkMaterial = new THREE.MeshBasicMaterial({ color: 0x818cf8 }); 
+            const bondedLinkMaterial = new THREE.MeshBasicMaterial({ color: 0x818cf8, opacity: 0.8, transparent: true }); 
+            const geometry = new THREE.SphereGeometry(0.3, 16, 16);
+
+            const initialSubstrateCount = gridSize * gridSize * gridSize * 0.1;
+            for (let i = 0; i < initialSubstrateCount; i++) {
+                const mesh = new THREE.Mesh(geometry, substrateMaterial);
+                mesh.position.set(
+                    Math.floor(Math.random() * gridSize) - gridSize / 2,
+                    Math.floor(Math.random() * gridSize) - gridSize / 2,
+                    Math.floor(Math.random() * gridSize) - gridSize / 2
+                );
+                substrates.push({ mesh, x: mesh.position.x, y: mesh.position.y, z: mesh.position.z });
+                scene.add(mesh);
             }
 
-            // Sliders de control
-            const catalystSlider = document.getElementById("enzymeCount");
-            catalystSlider.oninput = function() {
-                catalystCount = +this.value;
-                document.getElementById("enzymeCountValue").textContent = catalystCount;
-            };
-            const speedSlider = document.getElementById("substrateSpeed");
-            speedSlider.oninput = function() {
-                substrateSpeed = +this.value;
-                document.getElementById("substrateSpeedValue").textContent = substrateSpeed;
-            };
-            const decaySlider = document.getElementById("decayRate");
-            decaySlider.oninput = function() {
-                decayRate = +this.value;
-                document.getElementById("decayRateValue").textContent = decayRate.toFixed(4);
-            };
+            for (let i = 0; i < catalystCount; i++) {
+                const mesh = new THREE.Mesh(geometry, catalystMaterial);
+                mesh.position.set(
+                    Math.floor(Math.random() * gridSize) - gridSize / 2,
+                    Math.floor(Math.random() * gridSize) - gridSize / 2,
+                    Math.floor(Math.random() * gridSize) - gridSize / 2
+                );
+                catalysts.push({ mesh, x: mesh.position.x, y: mesh.position.y, z: mesh.position.z });
+                scene.add(mesh);
+            }
+            updateStatus();
+        }
 
-            // Función para reiniciar la simulación
-            window.resetSimulation = function() { // Hacerla global para que el botón pueda llamarla
-                substrates.forEach(s => scene.remove(s.mesh));
-                catalysts.forEach(k => scene.remove(k.mesh));
-                links.forEach(l => scene.remove(l.mesh));
-                bondedLinks.forEach(bl => scene.remove(bl.mesh));
-                substrates = [];
-                catalysts = [];
-                links = [];
-                bondedLinks = [];
+        function moveSubstrates() {
+            substrates.forEach(s => {
+                if (Math.random() < substrateSpeed / 10) {
+                    const dir = Math.floor(Math.random() * 6);
+                    const moves = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+                    const [dx, dy, dz] = moves[dir];
+                    const newX = s.x + dx;
+                    const newY = s.y + dy;
+                    const newZ = s.z + dz;
+                    if (Math.abs(newX) <= gridSize / 2 && Math.abs(newY) <= gridSize / 2 && Math.abs(newZ) <= gridSize / 2) {
+                        const occupied = catalysts.some(k => k.x === newX && k.y === newY && k.z === newZ) ||
+                                         bondedLinks.some(bl => bl.x === newX && bl.y === newY && bl.z === newZ) ||
+                                         links.some(l => l.x === newX && l.y === newY && l.z === newZ);
+                        if (!occupied) {
+                            s.x = newX;
+                            s.y = newY;
+                            s.z = newZ;
+                            s.mesh.position.set(newX, newY, newZ);
+                        }
+                    }
+                }
+            });
+        }
 
-                const substrateMaterial = new THREE.MeshBasicMaterial({ color: 0x22d3ee }); /* Sustratos: secondary-glow (Cian) */
-                const catalystMaterial = new THREE.MeshBasicMaterial({ color: 0xf472b6 }); /* Catalizadores: Rosa Magenta */
-                const linkMaterial = new THREE.MeshBasicMaterial({ color: 0x818cf8 }); /* Enlaces: primary-glow (Azul/Morado) */
-                const bondedLinkMaterial = new THREE.MeshBasicMaterial({ color: 0x818cf8, opacity: 0.8, transparent: true }); /* Enlaces unidos: primary-glow (Azul/Morado) */
-                const geometry = new THREE.SphereGeometry(0.3, 16, 16);
-
-                const initialSubstrateCount = gridSize * gridSize * gridSize * 0.1;
-                for (let i = 0; i < initialSubstrateCount; i++) {
-                    const mesh = new THREE.Mesh(geometry, substrateMaterial);
-                    mesh.position.set(
-                        Math.floor(Math.random() * gridSize) - gridSize / 2,
-                        Math.floor(Math.random() * gridSize) - gridSize / 2,
-                        Math.floor(Math.random() * gridSize) - gridSize / 2
+        function produceLinks() {
+            catalysts.forEach(k => {
+                const nearby = substrates.filter(s => {
+                    const dist = Math.sqrt((s.x - k.x) ** 2 + (s.y - k.y) ** 2 + (s.z - k.z) ** 2);
+                    return dist <= 1.5; 
+                });
+                if (nearby.length >= 2) {
+                    const s1 = nearby[0];
+                    const s2 = nearby[1];
+                    const options = [
+                        { x: k.x + 1, y: k.y, z: k.z },
+                        { x: k.x - 1, y: k.y, z: k.z },
+                        { x: k.x, y: k.y + 1, z: k.z },
+                        { x: k.x, y: k.y - 1, z: k.z },
+                        { x: k.x, y: k.y, z: k.z + 1 },
+                        { x: k.x, y: k.y, z: k.z - 1 }
+                    ].filter(pos => 
+                        Math.abs(pos.x) <= gridSize / 2 && 
+                        Math.abs(pos.y) <= gridSize / 2 && 
+                        Math.abs(pos.z) <= gridSize / 2 &&
+                        !links.some(l => l.x === pos.x && l.y === pos.y && l.z === pos.z) &&
+                        !bondedLinks.some(bl => bl.x === pos.x && bl.y === pos.y && bl.z === pos.z)
                     );
-                    substrates.push({ mesh, x: mesh.position.x, y: mesh.position.y, z: mesh.position.z });
-                    scene.add(mesh);
-                }
-
-                for (let i = 0; i < catalystCount; i++) {
-                    const mesh = new THREE.Mesh(geometry, catalystMaterial);
-                    mesh.position.set(
-                        Math.floor(Math.random() * gridSize) - gridSize / 2,
-                        Math.floor(Math.random() * gridSize) - gridSize / 2,
-                        Math.floor(Math.random() * gridSize) - gridSize / 2
-                    );
-                    catalysts.push({ mesh, x: mesh.position.x, y: mesh.position.y, z: mesh.position.z });
-                    scene.add(mesh);
-                }
-                updateStatus();
-            }
-
-            function moveSubstrates() {
-                substrates.forEach(s => {
-                    if (Math.random() < substrateSpeed / 10) {
-                        const dir = Math.floor(Math.random() * 6);
-                        const moves = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
-                        const [dx, dy, dz] = moves[dir];
-                        const newX = s.x + dx;
-                        const newY = s.y + dy;
-                        const newZ = s.z + dz;
-                        if (Math.abs(newX) <= gridSize / 2 && Math.abs(newY) <= gridSize / 2 && Math.abs(newZ) <= gridSize / 2) {
-                            const occupied = catalysts.some(k => k.x === newX && k.y === newY && k.z === newZ) ||
-                                           bondedLinks.some(bl => bl.x === newX && bl.y === newY && bl.z === newZ) ||
-                                           links.some(l => l.x === newX && l.y === newY && l.z === newZ);
-                            if (!occupied) {
-                                s.x = newX;
-                                s.y = newY;
-                                s.z = newZ;
-                                s.mesh.position.set(newX, newY, newZ);
-                            }
-                        }
-                    }
-                });
-            }
-
-            function moveLinks() {
-                // Los enlaces no se mueven por sí mismos en este modelo, solo se crean y desintegran.
-            }
-            function moveCatalysts() {
-                // Los catalizadores son estáticos en este modelo.
-            }
-
-            function produceLinks() {
-                catalysts.forEach(k => {
-                    const nearby = substrates.filter(s => {
-                        const dist = Math.sqrt((s.x - k.x) ** 2 + (s.y - k.y) ** 2 + (s.z - k.z) ** 2);
-                        return dist <= 1.5; // Dentro de un radio cercano al catalizador
-                    });
-                    if (nearby.length >= 2) {
-                        const s1 = nearby[0];
-                        const s2 = nearby[1];
-                        // Intentar crear un enlace en una posición adyacente al catalizador
-                        const options = [
-                            { x: k.x + 1, y: k.y, z: k.z },
-                            { x: k.x - 1, y: k.y, z: k.z },
-                            { x: k.x, y: k.y + 1, z: k.z },
-                            { x: k.x, y: k.y - 1, z: k.z },
-                            { x: k.x, y: k.y, z: k.z + 1 },
-                            { x: k.x, y: k.y, z: k.z - 1 }
-                        ].filter(pos => 
-                            Math.abs(pos.x) <= gridSize / 2 && 
-                            Math.abs(pos.y) <= gridSize / 2 && 
-                            Math.abs(pos.z) <= gridSize / 2 &&
-                            !links.some(l => l.x === pos.x && l.y === pos.y && l.z === pos.z) &&
-                            !bondedLinks.some(bl => bl.x === pos.x && bl.y === pos.y && bl.z === pos.z)
-                        );
-                        if (options.length > 0) {
-                            const chosen = options[Math.floor(Math.random() * options.length)];
-                            scene.remove(s1.mesh);
-                            scene.remove(s2.mesh);
-                            substrates = substrates.filter(s => s !== s1 && s !== s2);
-                            const linkMesh = new THREE.Mesh(
-                                new THREE.SphereGeometry(0.3, 16, 16),
-                                new THREE.MeshBasicMaterial({ color: 0x818cf8 }) /* Enlaces: primary-glow (Azul/Morado) */
-                            );
-                            linkMesh.position.set(chosen.x, chosen.y, chosen.z);
-                            links.push({ mesh: linkMesh, x: chosen.x, y: chosen.y, z: chosen.z });
-                            scene.add(linkMesh);
-                        }
-                    }
-                });
-            }
-
-            function bondLinks() {
-                links = links.filter(l => {
-                    const nearbyLinks = links.filter(other => other !== l && Math.sqrt((l.x - other.x) ** 2 + (l.y - other.y) ** 2 + (l.z - other.z) ** 2) <= 1.5);
-                    if (nearbyLinks.length > 0) {
-                        const other = nearbyLinks[0];
-                        const dx = other.x - l.x;
-                        const dy = other.y - l.y;
-                        const dz = other.z - l.z;
-                        const distSq = dx * dx + dy * dy + dz * dz;
-                        const angle = Math.acos(distSq / (Math.sqrt(distSq) * Math.sqrt(distSq))); 
-                        
-                        if (angle > Math.PI / 2) { 
-                            scene.remove(l.mesh);
-                            const bondedLinkMesh = new THREE.Mesh(
-                                new THREE.SphereGeometry(0.3, 16, 16),
-                                new THREE.MeshBasicMaterial({ color: 0x818cf8, opacity: 0.8, transparent: true }) /* Enlaces unidos: primary-glow (Azul/Morado) */
-                            );
-                            bondedLinkMesh.position.set(l.x, l.y, l.z);
-                            bondedLinks.push({ mesh: bondedLinkMesh, x: l.x, y: l.y, z: l.z });
-                            scene.add(bondedLinkMesh);
-                            return false;
-                        }
-                    }
-                    return true;
-                });
-            }
-
-            function disintegrateLinks() {
-                // Desintegración de enlaces individuales
-                links = links.filter(l => {
-                    if (Math.random() < decayRate) {
-                        scene.remove(l.mesh);
-                        const substrateMesh = new THREE.Mesh(
+                    if (options.length > 0) {
+                        const chosen = options[Math.floor(Math.random() * options.length)];
+                        scene.remove(s1.mesh);
+                        scene.remove(s2.mesh);
+                        substrates = substrates.filter(s => s !== s1 && s !== s2);
+                        const linkMesh = new THREE.Mesh(
                             new THREE.SphereGeometry(0.3, 16, 16),
-                            new THREE.MeshBasicMaterial({ color: 0x22d3ee }) /* Sustratos: secondary-glow (Cian) */
+                            new THREE.MeshBasicMaterial({ color: 0x818cf8 })
                         );
-                        substrateMesh.position.set(l.x, l.y, l.z);
-                        substrates.push({ mesh: substrateMesh, x: l.x, y: l.y, z: l.z });
-                        scene.add(substrateMesh);
+                        linkMesh.position.set(chosen.x, chosen.y, chosen.z);
+                        links.push({ mesh: linkMesh, x: chosen.x, y: chosen.y, z: chosen.z });
+                        scene.add(linkMesh);
+                    }
+                }
+            });
+        }
+
+        function bondLinks() {
+            links = links.filter(l => {
+                const nearbyLinks = links.filter(other => other !== l && Math.sqrt((l.x - other.x) ** 2 + (l.y - other.y) ** 2 + (l.z - other.z) ** 2) <= 1.5);
+                if (nearbyLinks.length > 0) {
+                    const other = nearbyLinks[0];
+                    const dx = other.x - l.x;
+                    const dy = other.y - l.y;
+                    const dz = other.z - l.z;
+                    const distSq = dx * dx + dy * dy + dz * dz;
+                    const angle = Math.acos(distSq / (Math.sqrt(distSq) * Math.sqrt(distSq))); 
+                    
+                    if (angle > Math.PI / 2) { 
+                        scene.remove(l.mesh);
+                        const bondedLinkMesh = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.3, 16, 16),
+                            new THREE.MeshBasicMaterial({ color: 0x818cf8, opacity: 0.8, transparent: true })
+                        );
+                        bondedLinkMesh.position.set(l.x, l.y, l.z);
+                        bondedLinks.push({ mesh: bondedLinkMesh, x: l.x, y: l.y, z: l.z });
+                        scene.add(bondedLinkMesh);
                         return false;
                     }
-                    return true;
-                });
-
-                // Desintegración de enlaces unidos (estructuras)
-                bondedLinks = bondedLinks.filter(bl => {
-                    const structureSize = bondedLinks.length; 
-                    if (Math.random() < decayRate * structureSize * 0.1) { 
-                        scene.remove(bl.mesh);
-                        const nearbyCatalysts = catalysts.filter(k => Math.sqrt((k.x - bl.x) ** 2 + (k.y - bl.y) ** 2 + (k.z - bl.z) ** 2) < 2);
-                        
-                        if (nearbyCatalysts.length > 0 && substrates.length > 0) {
-                            const s = substrates.shift(); 
-                            scene.remove(s.mesh);
-                            const newBondedLinkMesh = new THREE.Mesh(
-                                new THREE.SphereGeometry(0.3, 16, 16),
-                                new THREE.MeshBasicMaterial({ color: 0x818cf8, opacity: 0.8, transparent: true }) /* Enlaces unidos: primary-glow (Azul/Morado) */
-                            );
-                            newBondedLinkMesh.position.set(bl.x, bl.y, bl.z); 
-                            bondedLinks.push({ mesh: newBondedLinkMesh, x: bl.x, y: bl.y, z: bl.z });
-                            scene.add(newBondedLinkMesh);
-                            return false; 
-                        } else {
-                            const substrateMesh = new THREE.Mesh(
-                                new THREE.SphereGeometry(0.3, 16, 16),
-                                new THREE.MeshBasicMaterial({ color: 0x22d3ee }) /* Sustratos: secondary-glow (Cian) */
-                            );
-                            substrateMesh.position.set(bl.x, bl.y, bl.z);
-                            substrates.push({ mesh: substrateMesh, x: bl.x, y: bl.y, z: bl.z });
-                            scene.add(substrateMesh);
-                            return false; 
-                        }
-                    }
-                    return true; 
-                });
-            }
-
-            function updateStatus() {
-                document.getElementById("status").textContent = 
-                    `Sustratos: ${substrates.length}, Enlaces: ${links.length + bondedLinks.length}, Catalizadores: ${catalysts.length}`;
-            }
-
-            let animationFrameId;
-            function animateSimulation() {
-                animationFrameId = requestAnimationFrame(animateSimulation);
-                moveSubstrates();
-                produceLinks();
-                bondLinks();
-                disintegrateLinks();
-                updateStatus();
-                controls.update(); 
-                renderer.render(scene, camera);
-            }
-
-            function resizeSimulation() {
-                const width = vizContainer.clientWidth;
-                const height = 600; 
-                renderer.setSize(width, height);
-                camera.aspect = width / height;
-                camera.updateProjectionMatrix();
-            }
-
-            // Iniciar la simulación una vez que el DOM esté cargado
-            initThreeJS();
-            resetSimulation();
-            animateSimulation();
+                }
+                return true;
+            });
         }
 
-        // Asegúrate de que las animaciones de scroll se configuren después de que el DOM esté listo
+        function disintegrateLinks() {
+            links = links.filter(l => {
+                if (Math.random() < decayRate) {
+                    scene.remove(l.mesh);
+                    const substrateMesh = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.3, 16, 16),
+                        new THREE.MeshBasicMaterial({ color: 0x22d3ee })
+                    );
+                    substrateMesh.position.set(l.x, l.y, l.z);
+                    substrates.push({ mesh: substrateMesh, x: l.x, y: l.y, z: l.z });
+                    scene.add(substrateMesh);
+                    return false;
+                }
+                return true;
+            });
+
+            bondedLinks = bondedLinks.filter(bl => {
+                const structureSize = bondedLinks.length; 
+                if (Math.random() < decayRate * structureSize * 0.1) { 
+                    scene.remove(bl.mesh);
+                    const nearbyCatalysts = catalysts.filter(k => Math.sqrt((k.x - bl.x) ** 2 + (k.y - bl.y) ** 2 + (k.z - bl.z) ** 2) < 2);
+                    
+                    if (nearbyCatalysts.length > 0 && substrates.length > 0) {
+                        const s = substrates.shift(); 
+                        scene.remove(s.mesh);
+                        const newBondedLinkMesh = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.3, 16, 16),
+                            new THREE.MeshBasicMaterial({ color: 0x818cf8, opacity: 0.8, transparent: true })
+                        );
+                        newBondedLinkMesh.position.set(bl.x, bl.y, bl.z); 
+                        bondedLinks.push({ mesh: newBondedLinkMesh, x: bl.x, y: bl.y, z: bl.z });
+                        scene.add(newBondedLinkMesh);
+                        return false; 
+                    } else {
+                        const substrateMesh = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.3, 16, 16),
+                            new THREE.MeshBasicMaterial({ color: 0x22d3ee })
+                        );
+                        substrateMesh.position.set(bl.x, bl.y, bl.z);
+                        substrates.push({ mesh: substrateMesh, x: bl.x, y: bl.y, z: bl.z });
+                        scene.add(substrateMesh);
+                        return false; 
+                    }
+                }
+                return true; 
+            });
+        }
+
+        function updateStatus() {
+            document.getElementById("status").innerHTML = 
+                `<span class="text-cyan-400">Sustratos: ${substrates.length}</span> | <span class="text-indigo-400">Enlaces: ${links.length + bondedLinks.length}</span> | <span class="text-pink-400">Catalizadores: ${catalysts.length}</span>`;
+        }
+
+        let animationFrameId;
+        function animateSimulation() {
+            animationFrameId = requestAnimationFrame(animateSimulation);
+            moveSubstrates();
+            produceLinks();
+            bondLinks();
+            disintegrateLinks();
+            updateStatus();
+            controls.update(); 
+            renderer.render(scene, camera);
+        }
+
+        function resizeSimulation() {
+            const width = vizContainer.clientWidth;
+            const height = 500; 
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        }
+
+        // Iniciar
         document.addEventListener('DOMContentLoaded', () => {
-            initThreeJSBackground(); // Inicia el fondo animado
-            setupScrollAnimations(); // Inicia las animaciones de scroll
+            if (vizContainer) {
+                initThreeJS();
+                resetSimulation();
+                animateSimulation();
+            }
         });
     </script>
+
 </body>
 </html>
