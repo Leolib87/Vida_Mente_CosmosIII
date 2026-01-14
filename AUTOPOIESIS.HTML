@@ -3,212 +3,442 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulación de Autopoiesis | Origen, Mente y Cosmos</title>
+    <title>Simulación de Autopoiesis | O.C.V.M.</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <!-- D3.js is required for the simulation logic -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
-        :root {
-            --primary: #818cf8;
-            --primary-dark: #6366f1;
-            --secondary: #22d3ee;
-            --primary-text: #e5e7eb;
-            --primary-glow: #818cf8;
-            --secondary-glow: #22d3ee;
-            --font-main: 'Inter', sans-serif;
-            --nav-height: 70px;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        html { scroll-behavior: smooth; }
-
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+        
         body {
-            background-color: #000000;
-            color: var(--primary-text);
-            font-family: var(--font-main);
-            line-height: 1.8;
-            overflow-x: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #94a3b8; /* slate-400 */
+            scroll-behavior: smooth;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 70%);
+            background-attachment: fixed;
+        }
+
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* --- Estilos de Navegación Desktop --- */
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+            cursor: pointer;
+            display: block;
         }
         
-        #bg-canvas {
-            position: fixed;
-            top: 0;
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -2px;
             left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            cursor: crosshair;
-        }
-
-        .glassmorphism {
-            background: rgba(17, 24, 39, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        body.menu-open {
-            overflow: hidden;
+            background-color: #f59e0b;
+            transition: width 0.3s ease;
         }
         
-        nav {
-            position: fixed; top: 0; width: 100%; height: var(--nav-height);
-            z-index: 1000;
-            pointer-events: auto;
-        }
-        
-        .hero-content { animation: fadeIn 2s ease-in; }
-        @keyframes pulse-glow {
-            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
-            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .main-container { 
-            pointer-events: none;
-        }
-        main, .footer, .section, .hero-content {
-            pointer-events: auto;
-        }
-        
-        .section {
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
-        }
-        
-        .section h2, .section h3, .section p, .section .controls-grid, .section #visualization, .section ul, .section ol {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-        }
-
-        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .controls-grid, .section.is-visible #visualization, .section.is-visible ul, .section.is-visible ol {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        .highlight, .substrate, .catalyst, .link { font-weight: bold; }
-        .highlight { color: var(--primary-glow); }
-        .substrate { color: var(--secondary-glow); }
-        .catalyst { color: #f472b6; }
-        .link { color: var(--primary-glow); }
-        
-        #visualization {
-            background: rgba(0,0,0,0.5);
-            border: 1px solid rgba(129, 140, 248, 0.2);
-        }
-        .circle-substrate { fill: var(--secondary-glow); }
-        .circle-enzyme { fill: #f472b6; }
-        .circle-link { fill: var(--primary-glow); }
-
-        @media (max-width: 1024px) {
-            .menu-toggle { display: block; }
-            .icon-bar {
-                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
-                margin: 6px 0; transition: all 0.3s ease-in-out;
-                border-radius: 2px;
+        @media (min-width: 768px) {
+            .nav-item:hover .nav-link::after {
+                width: 100%;
             }
-            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
-            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
-            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+        }
+
+        /* --- Ajustes Móviles --- */
+        @media (max-width: 767px) {
+            #mobile-menu-container {
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+            .nav-item {
+                width: 100%;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                padding: 0;
+            }
+            .nav-item-content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.5rem;
+            }
+        }
+
+        /* Ajustes scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* Estilos específicos para la Simulación D3 */
+        #visualization {
+            background: rgba(2, 6, 23, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        /* Colores de los nodos en la simulación */
+        .circle-substrate { fill: #38bdf8; /* sky-400 */ opacity: 0.6; }
+        .circle-enzyme { fill: #f59e0b; /* amber-500 */ }
+        .circle-link { fill: #e2e8f0; /* slate-200 */ }
+
+        input[type=range] {
+            accent-color: #f59e0b;
+        }
+        
+        /* --- NUEVO ESTILO DE CITAS --- */
+        .citation-modern {
+            position: relative;
+            background-color: #0f172a; /* Slate 900 sólido para contraste nítido */
+            border-left: 4px solid #f59e0b; /* Borde Ámbar */
+            padding: 2rem;
+            margin: 3rem 0;
+            border-radius: 0 0.5rem 0.5rem 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #e2e8f0; /* Texto claro */
+            transition: transform 0.3s ease;
+        }
+
+        .citation-modern:hover {
+            transform: translateX(5px);
+        }
+        
+        .citation-modern::before {
+            content: '“';
+            position: absolute;
+            top: -1.5rem;
+            left: 1rem;
+            font-size: 5rem;
+            line-height: 1;
+            color: #f59e0b;
+            opacity: 0.2;
+            font-family: serif;
+        }
+
+        .citation-source {
+            display: block;
+            margin-top: 1rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            text-align: right;
+        }
+
+        /* Clases de utilidad para simulación en texto */
+        .sim-text-substrate { color: #38bdf8; font-weight: 600; }
+        .sim-text-enzyme { color: #f59e0b; font-weight: 600; }
+        .sim-text-link { color: #e2e8f0; font-weight: 600; }
+        
+        .concept-card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s;
+        }
+        .concept-card:hover {
+            background: rgba(30, 41, 59, 0.6);
+            border-color: rgba(56, 189, 248, 0.3); /* Sky blue hint */
         }
     </style>
 </head>
-<body class="bg-black">
-    <canvas id="bg-canvas" aria-hidden="true"></canvas>
-    <nav class="glassmorphism flex justify-center items-center px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center w-full max-w-7xl">
-            <div class="nav-logo">
-                <a href="index.html" class="flex items-center gap-3">
-                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
-                    <span class="text-lg font-bold text-white">O.C.V.M.</span>
+<body class="selection:bg-amber-500 selection:text-slate-900 min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- Navegación Responsiva -->
+    <nav class="fixed w-full z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+            <div class="flex justify-between items-center h-16">
+                
+                <!-- Logo / Marca -->
+                <a href="#" class="flex items-center space-x-2 group">
+                    <div class="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-150 transition-transform"></div>
+                    <span class="text-[10px] md:text-xs font-bold tracking-widest uppercase text-slate-200 group-hover:text-white transition-colors">
+                        O.C.V.M. <span class="text-slate-600 mx-1">|</span> Autopoiesis
+                    </span>
                 </a>
+
+                <!-- Botón Hamburguesa -->
+                <button id="menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+
+                <!-- Menú Desktop & Contenedor Móvil -->
+                <div id="mobile-menu-container" class="hidden md:flex absolute md:static top-16 left-0 w-full md:w-auto bg-slate-950 md:bg-transparent flex-col md:flex-row md:items-center overflow-y-auto md:overflow-visible max-h-[80vh] md:max-h-full transition-all">
+                    
+                    <ul class="flex flex-col md:flex-row md:items-center text-[11px] font-medium uppercase tracking-widest text-slate-400 w-full md:w-auto">
+                        
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#simulacion" class="nav-link text-amber-500 hover:text-amber-400" onclick="closeMobileMenu()">Simulación</a>
+                            </div>
+                        </li>
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#fundamentos" class="nav-link hover:text-white" onclick="closeMobileMenu()">Fundamentos</a>
+                            </div>
+                        </li>
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#modelo" class="nav-link hover:text-white" onclick="closeMobileMenu()">Modelo</a>
+                            </div>
+                        </li>
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#criterios" class="nav-link hover:text-white" onclick="closeMobileMenu()">La Llave</a>
+                            </div>
+                        </li>
+
+                    </ul>
+                </div>
             </div>
-            <ul id="nav-menu" class="hidden lg:flex items-center justify-center list-none h-full gap-2">
-                 <li><a href="#inicio" class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors">Inicio</a></li>
-            </ul>
-            <button class="menu-toggle lg:hidden relative z-50 w-8 h-8" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
-                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
-            </button>
         </div>
     </nav>
 
-    <div class="main-container w-full mx-auto px-4 sm:px-6 lg:px-8 pt-[var(--nav-height)]">
-        <div id="inicio" class="hero flex flex-col justify-center items-center text-center relative h-screen min-h-[500px] md:min-h-[600px]">
-            <div class="hero-content relative z-10">
-                <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white" style="animation: pulse-glow 3s infinite alternate;">Modelo de Autopoiesis</h1>
-            </div>
-        </div>
-
-        <div class="layout-grid grid grid-cols-1 gap-8 mt-8">
-            <main class="content">
-                <section class="section glassmorphism rounded-xl mb-8 p-4 sm:p-6 lg:p-8" data-animate>
-                    <h2 class="text-2xl sm:text-3xl font-bold border-b border-indigo-400 pb-4 mb-6 text-center">Controles de Simulación</h2>
-                    <div class="controls-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 items-center">
-                        <div>
-                            <label for="substrateDensity" class="block text-sm font-medium text-gray-300">Densidad Sustrato (%): <span id="substrateDensityValue" class="font-bold text-white">50</span></label>
-                            <input type="range" id="substrateDensity" min="10" max="70" value="50" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer" style="accent-color: var(--primary);">
-                        </div>
-                        <div>
-                            <label for="enzymeCount" class="block text-sm font-medium text-gray-300">Enzimas: <span id="enzymeCountValue" class="font-bold text-white">20</span></label>
-                            <input type="range" id="enzymeCount" min="1" max="100" value="20" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer" style="accent-color: var(--primary);">
-                        </div>
-                        <div>
-                            <label for="substrateSpeed" class="block text-sm font-medium text-gray-300">Velocidad Sustrato: <span id="substrateSpeedValue" class="font-bold text-white">10</span></label>
-                            <input type="range" id="substrateSpeed" min="1" max="20" value="10" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer" style="accent-color: var(--primary);">
-                        </div>
-                        <div>
-                            <label for="decayRate" class="block text-sm font-medium text-gray-300">Tasa Decaimiento: <span id="decayRateValue" class="font-bold text-white">0.0010</span></label>
-                            <input type="range" id="decayRate" min="0" max="0.05" step="0.001" value="0.001" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer" style="accent-color: var(--primary);">
-                        </div>
-                        <div class="text-center md:col-span-2 lg:col-span-3 xl:col-span-1">
-                             <p class="text-gray-400 text-sm mb-2">Estado: <span id="status" class="font-semibold text-gray-200"></span></p>
-                            <button onclick="resetSimulation()" class="w-full px-5 py-2 font-semibold text-white bg-indigo-500 rounded-md hover:bg-indigo-600 transition-colors">Reiniciar</button>
-                        </div>
-                    </div>
-                    <div id="visualization" class="w-full h-[60vh] min-h-[400px] max-h-[600px] rounded-lg mt-6"></div>
-                </section>
-
-                <section class="section glassmorphism rounded-xl mb-8 p-4 sm:p-6 lg:p-8" data-animate>
-                    <h2 class="text-2xl sm:text-3xl font-bold border-b border-indigo-400 pb-4 mb-6 text-center">Introducción a la Autopoiesis</h2>
-                    <p class="text-gray-300 text-justify">Imagina un sistema que se construye desde dentro, una entidad viva que desafía el caos tejiendo su propia existencia. La <span class="highlight">autopoiesis</span>, un concepto revolucionario de los biólogos Humberto Maturana y Francisco Varela, captura esta esencia de la vida. Describe sistemas que se automantienen al producir y regenerar sus propios componentes mediante una red cerrada de procesos. Visualiza una célula: su danza química sostiene su forma frente a la entropía. En esta simulación, los <span class="substrate">sustratos</span> (cian) se desplazan sin rumbo, los <span class="catalyst">enzimas</span> (magenta) desencadenan la creación de <span class="link">enlaces</span> (índigo), y estos enlaces se descomponen de nuevo en sustratos: un eco digital del equilibrio dinámico de la vida.</p>
-                </section>
-                
-                <section class="section glassmorphism rounded-xl mb-8 p-4 sm:p-6 lg:p-8" data-animate>
-                    <h2 class="text-2xl sm:text-3xl font-bold border-b border-indigo-400 pb-4 mb-6 text-center">Síntesis de "Autopoiesis" (Varela y Maturana, 1974)</h2>
-                    <div class="text-gray-300 text-justify">
-                        <h3 class="text-xl sm:text-2xl font-semibold mt-6 mb-3 text-indigo-400">1. Organización vs. Estructura</h3>
-                        <p>Todo sistema puede verse como una <span class="highlight">unidad</span> singular o como una red compleja de componentes. Su <span class="highlight">organización</span>—la trama relacional que une estas partes—lo convierte en un todo funcional y define su identidad. La <span class="highlight">estructura</span> son los componentes físicos que realizan esa organización.</p>
-                        
-                        <h3 class="text-xl sm:text-2xl font-semibold mt-6 mb-3 text-indigo-400">2. Organización Autopoiética</h3>
-                        <p>Un sistema autopoiético se caracteriza por una <span class="highlight">red de producción</span> donde los componentes se generan recursivamente a sí mismos, manteniendo la integridad de la red y estableciendo sus propios límites. <strong>Ejemplo:</strong> Una célula, con sus reacciones químicas renovando constantemente su estructura, encarna la autopoiesis.</p>
-                        
-                        <h3 class="text-xl sm:text-2xl font-semibold mt-6 mb-3 text-indigo-400">3. Modelo de Simulación</h3>
-                        <p>La simulación bidimensional del artículo, reflejada aquí, incluye:</p>
-                        <ul class="list-disc list-inside space-y-2 my-4">
-                            <li><span class="substrate">Sustratos (O)</span>: Materias primas que se mueven en el espacio.</li>
-                            <li><span class="catalyst">Catalizadores (*)</span>: Agentes que forman <span class="link">enlaces</span> entre sustratos, creando estructuras cerradas (membranas).</li>
-                            <li><strong>Autoreparación:</strong> Un catalizador atrapado en una membrana puede generar nuevos elementos, manteniendo la estructura y logrando autopoiesis.</li>
-                        </ul>
-                        
-                        <h3 class="text-xl sm:text-2xl font-semibold mt-6 mb-3 text-indigo-400">4. Conclusión</h3>
-                        <p>Un sistema autopoiético tiene límites definidos, contiene componentes internos, opera mecánicamente, y genera tanto sus propios límites como sus componentes. Este marco afina nuestra comprensión de lo vivo, conectando biología, IA y filosofía de la mente.</p>
-                    </div>
-                </section>
-            </main>
-        </div>
-        <footer class="footer text-center py-10 mt-8 border-t border-gray-700">
-            <p class="mt-2 text-gray-400">Explorando la Autopoiesis | 2025</p>
-        </footer>
-    </div>
+    <!-- Script de Navegación -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            setupNavigation();
-            setupScrollAnimations();
-            if (typeof THREE !== 'undefined') {
-                initThreeJSBackground();
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu-container');
+
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            mobileMenu.classList.toggle('flex');
+        });
+
+        function closeMobileMenu() {
+            if (window.innerWidth < 768) {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('flex');
             }
+        }
+    </script>
+
+    <!-- Contenido Principal -->
+    <div class="flex-grow pt-32 md:pt-48 pb-16 md:pb-24 px-6 md:px-12 w-full">
+        <main class="w-full mx-auto text-center">
+            
+            <!-- Bloque Hero -->
+            <header class="mb-24 relative animate-fade-in-up">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-amber-500/5 rounded-full blur-3xl -z-10"></div>
+                
+                <h1 class="text-4xl sm:text-5xl md:text-7xl font-black text-slate-100 mb-6 leading-none tracking-tighter drop-shadow-2xl break-words">
+                    AUTOPOIESIS<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-500 text-2xl md:text-4xl block mt-4 font-serif italic">La organización de lo vivo</span>
+                </h1>
+                
+                <p class="mt-8 text-sm md:text-base text-slate-400 font-medium tracking-wide max-w-2xl mx-auto">
+                    Un análisis interactivo basado en el paper fundacional de <strong>Varela, Maturana y Uribe (1974)</strong> que redefine la biología al separar la historia evolutiva de la organización individual.
+                </p>
+                
+                <div class="mt-16 flex justify-center">
+                    <div class="h-24 w-px bg-gradient-to-b from-amber-500/0 via-amber-500/50 to-amber-500/0"></div>
+                </div>
+            </header>
+
+            <!-- Sección de Simulación -->
+            <section id="simulacion" class="w-full mx-auto mb-24 text-left bg-slate-900/40 p-6 md:p-8 rounded-xl border border-white/5 shadow-xl backdrop-blur-sm">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b border-slate-800 pb-4">
+                    <h3 class="text-amber-500 font-bold uppercase tracking-widest text-xs">Simulación en Tiempo Real: Teselado Autopoiético</h3>
+                    <p class="text-[10px] text-slate-500 mt-2 md:mt-0 font-mono" id="status">Iniciando sistema...</p>
+                </div>
+                
+                <!-- Controles -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8 text-xs font-medium text-slate-400">
+                    <div class="bg-slate-950/50 p-3 rounded-lg border border-white/5">
+                        <label for="substrateDensity" class="block mb-2 text-slate-200">Densidad Sustrato <span class="sim-text-substrate">(O)</span>: <span id="substrateDensityValue" class="text-white">50</span>%</label>
+                        <input type="range" id="substrateDensity" min="10" max="70" value="50" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div class="bg-slate-950/50 p-3 rounded-lg border border-white/5">
+                        <label for="enzymeCount" class="block mb-2 text-slate-200">Enzimas <span class="sim-text-enzyme">(*)</span>: <span id="enzymeCountValue" class="text-white">20</span></label>
+                        <input type="range" id="enzymeCount" min="1" max="100" value="20" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div class="bg-slate-950/50 p-3 rounded-lg border border-white/5">
+                        <label for="substrateSpeed" class="block mb-2 text-slate-200">Velocidad: <span id="substrateSpeedValue" class="text-white">10</span></label>
+                        <input type="range" id="substrateSpeed" min="1" max="20" value="10" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div class="bg-slate-950/50 p-3 rounded-lg border border-white/5">
+                        <label for="decayRate" class="block mb-2 text-slate-200">Decaimiento: <span id="decayRateValue" class="text-white">0.0010</span></label>
+                        <input type="range" id="decayRate" min="0" max="0.05" step="0.001" value="0.001" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div class="flex items-center">
+                        <button onclick="resetSimulation()" class="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold uppercase tracking-widest text-[10px] rounded transition-colors shadow-lg shadow-amber-900/20">
+                            Reiniciar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Canvas de Visualización -->
+                <div id="visualization" class="w-full h-[50vh] min-h-[400px] rounded-lg relative overflow-hidden">
+                    <!-- SVG insertado por D3 aquí -->
+                </div>
+            </section>
+
+            <!-- 1. Fundamentos -->
+            <section id="fundamentos" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">1. El Problema de la Definición Biológica</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        La biología contemporánea ha tendido a enfatizar la genética y la evolución, confundiendo a menudo dos dominios distintos: los procesos que dependen de la historia (como la evolución y la filogénesis) y los procesos que dependen de la organización individual inmediata. Los autores postulan una tesis radical: la capacidad de reproducirse no es intrínseca a la definición fundamental de lo que es estar vivo.
+                    </p>
+                    
+                    <blockquote class="citation-modern">
+                        Afirmamos que la reproducción y la evolución no son rasgos constitutivos de la organización viva [...] En contraste, afirmamos que la organización viva solo puede caracterizarse sin ambigüedades especificando la red de interacciones de componentes que constituyen un sistema vivo como un todo.
+                        <span class="citation-source">Varela, Maturana & Uribe (1974), p. 187</span>
+                    </blockquote>
+
+                    <p>
+                        Para entender lo vivo, no debemos preguntar qué propiedades hacen que un sistema se reproduzca, sino <strong>"¿cuál es la organización necesaria y suficiente para que un sistema dado sea una unidad viva?"</strong>, independientemente de su capacidad para dejar descendencia o su historia evolutiva.
+                    </p>
+                </div>
+            </section>
+
+            <!-- 2. Organización vs Estructura -->
+            <section id="organizacion" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">2. Organización Autopoiética</h2>
+                
+                <div class="grid md:grid-cols-2 gap-8 mb-12">
+                    <div class="concept-card border-l-2 border-l-amber-500">
+                        <h3 class="text-amber-500 font-bold text-lg mb-2">Autopoiesis</h3>
+                        <p class="text-sm leading-relaxed text-slate-300">
+                            Sistemas cuya organización se mantiene invariante a través de un recambio constante de <span class="sim-text-substrate">componentes</span>. El producto de su operación es el propio sistema. Son autónomos en su esencia.
+                        </p>
+                    </div>
+                    <div class="concept-card">
+                        <h3 class="text-slate-400 font-bold text-lg mb-2">Alopoiesis</h3>
+                        <p class="text-sm leading-relaxed text-slate-400">
+                            Sistemas mecanísticos donde el producto de su operación es diferente del sistema mismo (como un ribosoma produciendo proteínas o una fábrica de autos). Su identidad depende del observador, no de su operación interna.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        La definición formal presentada en el paper es rigurosa y recursiva. Un sistema autopoiético es aquel que produce sus propios <span class="sim-text-substrate">componentes</span>, los cuales a su vez regeneran la red que los produjo.
+                    </p>
+
+                    <blockquote class="citation-modern">
+                        La organización autopoiética se define como una unidad por una red de producciones de componentes que (i) participan recursivamente en la misma red de producciones de componentes que produjo estos componentes, y (ii) realizan la red de producciones como una unidad en el espacio en el que existen los componentes.
+                        <span class="citation-source">Varela, Maturana & Uribe (1974), p. 188</span>
+                    </blockquote>
+
+                    <p>
+                        Esta fenomenología da lugar a la <strong>Autonomía</strong>. Mientras la red de producción de <span class="sim-text-link">enlaces</span> y <span class="sim-text-substrate">sustratos</span> no se interrumpa, el sistema compensa las perturbaciones externas y mantiene su identidad. Si la red se rompe, la unidad se desintegra (muerte).
+                    </p>
+                </div>
+            </section>
+
+            <!-- 3. El Modelo Computacional -->
+            <section id="modelo" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">3. El Modelo Mínimo (Teselado)</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        El paper presenta una encarnación simple de esta organización en un universo bidimensional, visualizado en la simulación superior. No es una simulación física realista, sino una abstracción lógica de la producción celular.
+                    </p>
+                    
+                    <h3 class="text-xl text-amber-500 font-bold mt-8 mb-4">Reglas de Interacción (Schema I)</h3>
+                    <ul class="space-y-4 font-mono text-sm bg-slate-900/80 p-6 rounded-lg border border-slate-800 shadow-inner">
+                        <li class="flex items-start">
+                            <span class="text-amber-500 min-w-[140px] font-bold tracking-wider">[1. Composición]</span>
+                            <span class="text-slate-300">
+                                <span class="sim-text-enzyme">Catalizador (*)</span> + 2 <span class="sim-text-substrate">Sustratos (O)</span> &rarr; <span class="sim-text-link">Enlace (L)</span>
+                            </span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-amber-500 min-w-[140px] font-bold tracking-wider">[2. Concatenación]</span>
+                            <span class="text-slate-300">
+                                <span class="sim-text-link">Enlace (L)</span> + <span class="sim-text-link">Enlace (L)</span> &rarr; Cadena <span class="sim-text-link">(L-L)</span>
+                            </span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-amber-500 min-w-[140px] font-bold tracking-wider">[3. Desintegración]</span>
+                            <span class="text-slate-300">
+                                <span class="sim-text-link">Enlace (L)</span> &rarr; 2 <span class="sim-text-substrate">Sustratos (O)</span>
+                            </span>
+                        </li>
+                    </ul>
+
+                    <p class="mt-6">
+                        La emergencia ocurre cuando una cadena de <span class="sim-text-link">enlaces (L)</span> se cierra sobre sí misma encerrando un <span class="sim-text-enzyme">catalizador (*)</span>. El catalizador, ahora "protegido" dentro de la membrana, tiene acceso a <span class="sim-text-substrate">sustratos (O)</span> que permean la membrana y produce nuevos <span class="sim-text-link">enlaces</span> que reparan las rupturas espontáneas.
+                    </p>
+
+                    <blockquote class="citation-modern">
+                        La organización autopoiética es [...] la que por definición implica la realización de una unidad dinámica. Los mismos componentes pueden generar otras organizaciones alopoiéticas; por ejemplo, una cadena de enlaces es claramente alopoiética ya que la producción de los componentes que la realizan como unidad no entra en su definición como unidad.
+                        <span class="citation-source">Varela, Maturana & Uribe (1974), p. 191</span>
+                    </blockquote>
+                </div>
+            </section>
+
+            <!-- 4. La Llave de 6 Puntos -->
+            <section id="criterios" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">4. La Llave de 6 Puntos</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        ¿Cómo determinamos si algo está vivo? Los autores proponen un algoritmo de decisión paso a paso para distinguir sistemas autopoiéticos de agregados físicos (como cristales) o sistemas alopoiéticos.
+                    </p>
+
+                    <div class="space-y-6 mt-8 bg-slate-900/30 p-8 rounded-xl border border-white/5">
+                        <div class="flex gap-4 items-start">
+                            <div class="text-4xl font-black text-slate-700 leading-none">1</div>
+                            <div>
+                                <strong class="text-slate-200 block mb-1">Identificación de Límites</strong>
+                                <p class="text-sm text-slate-400">¿Tiene la unidad límites identificables mediante interacciones preferenciales? Si no, la entidad es indescriptible en este dominio.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 items-start">
+                            <div class="text-4xl font-black text-slate-700 leading-none">2</div>
+                            <div>
+                                <strong class="text-slate-200 block mb-1">Componentes Constitutivos</strong>
+                                <p class="text-sm text-slate-400">¿Está compuesta por elementos constitutivos físicos? Si no, es un todo inanalizable abstracto.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 items-start">
+                            <div class="text-4xl font-black text-slate-700 leading-none">3</div>
+                            <div>
+                                <strong class="text-slate-200 block mb-1">Sistema Mecanístico</strong>
+                                <p class="text-sm text-slate-400">¿Es un sistema donde las propiedades dependen de las relaciones entre componentes (leyes termodinámicas/físicas)? Si no, no es autopoiético.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 items-start">
+                            <div class="text-4xl font-black text-slate-700 leading-none">4</div>
+                            <div>
+                                <strong class="text-slate-200 block mb-1">Límites por Vecindad</strong>
+                                <p class="text-sm text-slate-400">¿Los límites se constituyen por relaciones de vecindad preferencial determinadas por sus propiedades físicas (ej. tensión superficial, enlace químico)?</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 items-start">
+                            <div class="text-4xl font-black text-slate-700 leading-none">5</div>
+                            <div>
+                                <strong class="text-slate-200 block mb-1">Producción Interna</strong>
+                                <p class="text-sm text-slate-400">¿Son los componentes de los límites (<span class="sim-text-link">enlaces</span>) producidos por las interacciones dentro de la unidad?</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 items-start">
+                            <div class="text-4xl font-black text-amber-500 leading-none">6</div>
+                            <div>
+                                <strong class="text-amber-500 block mb-1">Producción Recursiva (El Criterio Final)</strong>
+                                <p class="text-sm text-slate-200">
+                                    Si todos los demás componentes de la unidad (ej. <span class="sim-text-enzyme">catalizadores</span>) también son producidos por interacciones internas o participan permanentemente en ellas, entonces tienes una <strong>Unidad Autopoiética</strong>.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Script de Simulación (D3.js Logic) - MANTENIDO INTEGRO -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
             initAutopoiesisSimulation();
         });
 
@@ -217,7 +447,7 @@
             if (!vizContainer) return;
 
             let width, height, cols, rows;
-            const cellSize = 10;
+            const cellSize = 12; // Un poco más grande para mejor visibilidad
             const svg = d3.select("#visualization")
                 .append("svg")
                 .attr("width", "100%")
@@ -231,6 +461,7 @@
             let decayRate = 0.001;
             let animationFrameId;
 
+            // Mapeo de inputs
             d3.select("#substrateDensity").on("input", function() {
                 substrateDensity = +this.value / 100;
                 d3.select("#substrateDensityValue").text(this.value);
@@ -248,15 +479,18 @@
                 d3.select("#decayRateValue").text(decayRate.toFixed(4));
             });
             
+            // Función global de reinicio
             window.resetSimulation = function() {
                 if (animationFrameId) cancelAnimationFrame(animationFrameId);
                 
                 width = vizContainer.clientWidth;
                 height = vizContainer.clientHeight;
+                
                 if (width < cellSize || height < cellSize) {
                     svg.selectAll("*").remove();
                     return;
                 }
+
                 cols = Math.floor(width / cellSize);
                 rows = Math.floor(height / cellSize);
                 svg.attr("viewBox", `0 0 ${width} ${height}`);
@@ -266,6 +500,7 @@
                 enzymes = [];
                 links = [];
 
+                // Inicializar Sustratos
                 const substrateCount = Math.floor(cols * rows * substrateDensity);
                 for (let i = 0; i < substrateCount; i++) {
                     let x, y;
@@ -277,6 +512,7 @@
                     substrates.push({ x, y });
                 }
 
+                // Inicializar Enzimas
                 for (let i = 0; i < enzymeCount; i++) {
                     let x, y;
                     do {
@@ -313,6 +549,7 @@
                         const s2 = substrateNeighbors[1];
                         grid[s1.x][s1.y] = 3;
                         grid[s2.x][s2.y] = 0;
+                        // Remover sustratos de la lista de libres
                         substrates = substrates.filter(s => !(s.x === s1.x && s.y === s1.y) && !(s.x === s2.x && s.y === s2.y));
                         links.push({ x: s1.x, y: s1.y });
                     }
@@ -337,6 +574,7 @@
                     ...enzymes.map(d => ({ type: "enzyme", id: `e-${d.x}-${d.y}`, x: d.x, y: d.y })),
                     ...links.map(d => ({ type: "link", id: `l-${d.x}-${d.y}`, x: d.x, y: d.y }))
                 ];
+                
                 const circles = svg.selectAll("circle").data(data, d => d.id);
                 
                 circles.exit().remove();
@@ -351,7 +589,7 @@
                     .attr("cx", d => d.x * cellSize + cellSize / 2)
                     .attr("cy", d => d.y * cellSize + cellSize / 2);
 
-                d3.select("#status").text(`Sustratos: ${substrates.length}, Enlaces: ${links.length}, Enzimas: ${enzymes.length}`);
+                d3.select("#status").text(`Sustratos: ${substrates.length} | Enlaces: ${links.length} | Enzimas: ${enzymes.length}`);
             }
 
             function getNeighbors(x, y) {
@@ -380,110 +618,19 @@
             window.addEventListener("resize", resetSimulation);
             resetSimulation();
         }
-
-        function initThreeJSBackground() {
-            let scene, camera, renderer, points, lines, mouseX = 0, mouseY = 0;
-            try {
-                scene = new THREE.Scene();
-                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
-                camera.position.z = 50;
-
-                renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("bg-canvas"), alpha: true });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-
-                const pointCount = 200;
-                const positions = new Float32Array(pointCount * 3);
-                const pointGeo = new THREE.BufferGeometry();
-                for (let i = 0; i < pointCount; i++) {
-                    positions[i * 3] = (Math.random() - 0.5) * 400;
-                    positions[i * 3 + 1] = (Math.random() - 0.5) * 400;
-                    positions[i * 3 + 2] = (Math.random() - 0.5) * 400;
-                }
-                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.5, transparent: true, opacity: 0.8 });
-                points = new THREE.Points(pointGeo, pointMaterial);
-                scene.add(points);
-
-                regenerateLines();
-
-                window.addEventListener("resize", onWindowResize, false);
-                document.addEventListener('mousemove', onMouseMove, false);
-                animate();
-            } catch (error) { console.error('Error initializing Three.js background:', error); }
-
-            function onWindowResize() {
-                if(camera && renderer) {
-                    camera.aspect = window.innerWidth / window.innerHeight;
-                    camera.updateProjectionMatrix();
-                    renderer.setSize(window.innerWidth, window.innerHeight);
-                }
-            }
-
-            function onMouseMove(event) {
-                mouseX = (event.clientX - window.innerWidth / 2) / 100;
-                mouseY = (event.clientY - window.innerHeight / 2) / 100;
-            }
-
-            function animate() {
-                requestAnimationFrame(animate);
-                if(scene && camera && renderer && points && lines) {
-                    points.rotation.y += 0.0005;
-                    lines.rotation.y += 0.0005;
-                    camera.position.x += (mouseX - camera.position.x) * 0.05;
-                    camera.position.y += (-mouseY - camera.position.y) * 0.05;
-                    camera.lookAt(scene.position);
-                    renderer.render(scene, camera);
-                }
-            }
-            
-            function regenerateLines() {
-                if (lines) scene.remove(lines);
-                const pointPositions = points.geometry.attributes.position.array;
-                const pointCount = pointPositions.length / 3;
-                const linePositions = [];
-                for (let i = 0; i < pointCount; i++) {
-                    for (let j = i + 1; j < pointCount; j++) {
-                        const dx = pointPositions[i*3] - pointPositions[j*3];
-                        const dy = pointPositions[i*3+1] - pointPositions[j*3+1];
-                        const dz = pointPositions[i*3+2] - pointPositions[j*3+2];
-                        if (Math.sqrt(dx*dx+dy*dy+dz*dz) < 50) {
-                            linePositions.push(pointPositions[i*3], pointPositions[i*3+1], pointPositions[i*3+2]);
-                            linePositions.push(pointPositions[j*3], pointPositions[j*3+1], pointPositions[j*3+2]);
-                        }
-                    }
-                }
-                const lineGeo = new THREE.BufferGeometry();
-                lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
-                const lineMaterial = new THREE.LineBasicMaterial({ color: 0x22d3ee, opacity: 0.3, transparent: true });
-                lines = new THREE.LineSegments(lineGeo, lineMaterial);
-                scene.add(lines);
-            }
-        }
-
-        function setupNavigation() {
-            const menuToggleBtn = document.getElementById('menu-toggle-btn');
-            menuToggleBtn.addEventListener('click', () => {
-                document.body.classList.toggle('menu-open');
-            });
-        }
-
-        function setupScrollAnimations() {
-            const animatedSections = document.querySelectorAll('[data-animate]');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .controls-grid, #visualization, ul, ol');
-                        elementsToAnimate.forEach((el, index) => {
-                           el.style.transitionDelay = `${index * 100}ms`;
-                        });
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.1 });
-            animatedSections.forEach(section => observer.observe(section));
-        }
     </script>
+
+    <!-- Footer Simple -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-6 md:py-8">
+        <div class="max-w-full mx-auto px-6 md:px-12 flex flex-col items-center justify-center gap-2">
+            <p class="text-[10px] md:text-[11px] font-medium text-slate-400 text-center">
+                Explorando la Autopoiesis a través de modelos computacionales.
+            </p>
+            <p class="text-[9px] md:text-[10px] text-slate-600 font-mono text-center text-slate-500">
+                Referencia: Varela, F.G., Maturana, H.R., & Uribe, R. (1974). Autopoiesis: The organization of living systems, its characterization and a model. <em>BioSystems, 5</em>, 187-196.
+            </p>
+        </div>
+    </footer>
+
 </body>
 </html>
