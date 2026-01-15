@@ -1,388 +1,509 @@
 <!DOCTYPE html>
-<html lang="es" class="scroll-smooth">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Infografía: La Mente Fragmentada | Francisco Varela</title>
+    <title>La Mente Fragmentada | Francisco Varela</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
     <style>
-        :root {
-            --primary: #818cf8;
-            --primary-dark: #6366f1;
-            --secondary: #22d3ee;
-            --primary-text: #e5e7eb;
-            --primary-glow: #818cf8;
-            --secondary-glow: #22d3ee;
-            --font-main: 'Inter', sans-serif;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        html { scroll-behavior: smooth; }
-
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+        
         body {
-            background-color: #000000;
-            color: var(--primary-text);
-            font-family: var(--font-main);
-            line-height: 1.8;
-            overflow-x: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #94a3b8; /* slate-400 */
+            scroll-behavior: smooth;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 70%);
+            background-attachment: fixed;
+        }
+
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* --- Estilos de Navegación Desktop --- */
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+            cursor: pointer;
+            display: block;
         }
         
-        #bg-canvas {
-            position: fixed;
-            top: 0;
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -2px;
             left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
+            background-color: #f59e0b;
+            transition: width 0.3s ease;
+        }
+        
+        /* Solo aplicar hover underline en desktop */
+        @media (min-width: 768px) {
+            .nav-item:hover .nav-link::after {
+                width: 100%;
+            }
+            
+            /* Dropdown Desktop: Absolute & Hover */
+            .nav-item:hover .dropdown-menu {
+                opacity: 1;
+                visibility: visible;
+                transform: translateX(-50%) translateY(0);
+            }
+            
+            .dropdown-menu {
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%) translateY(10px);
+                min-width: 220px;
+                opacity: 0;
+                visibility: hidden;
+            }
+            .dropdown-menu::before {
+                content: '';
+                position: absolute;
+                top: -6px;
+                left: 50%;
+                transform: translateX(-50%);
+                border-width: 0 6px 6px 6px;
+                border-style: solid;
+                border-color: transparent transparent rgba(255, 255, 255, 0.1) transparent;
+            }
+            .dropdown-menu::after {
+                content: '';
+                position: absolute;
+                top: -20px;
+                left: 0;
+                width: 100%;
+                height: 20px;
+                background: transparent;
+            }
         }
 
-        .glassmorphism {
-            background: rgba(17, 24, 39, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+        /* --- Estilos Comunes Dropdown --- */
+        .dropdown-menu {
+            background-color: rgba(2, 6, 23, 0.95);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 0.75rem;
-            padding: clamp(1.5rem, 5vw, 2.5rem);
-        }
-        
-        .content-section {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-        }
-        .content-section.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        h1, h2, h3, h4 {
-            pointer-events: auto;
-        }
-        
-        h1 {
-            font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight: 900; color: #fff;
-            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
-            animation: pulse-glow 3s infinite alternate;
-        }
-
-        h2.section-title {
-             font-size: clamp(1.8rem, 5vw, 2.5rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
-             border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
-        }
-
-        @keyframes pulse-glow {
-            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
-            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
-        }
-
-        .flowchart-box {
-            border: 2px solid;
+            backdrop-filter: blur(12px);
             padding: 1rem;
             border-radius: 0.5rem;
-            text-align: center;
-            min-height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0,0,0,0.2);
-        }
-        .flowchart-arrow {
-            font-size: 2rem;
-            line-height: 1;
-            align-self: center;
-        }
-        .circle-diagram {
-            position: relative;
-            width: 300px;
-            height: 300px;
-            border-radius: 50%;
-            border: 3px dashed var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .circle-node {
-            position: absolute;
-            width: 140px;
-            height: 80px;
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: var(--primary-text);
-        }
-        .chart-container {
-            position: relative;
-            margin: auto;
-            height: 300px;
-            width: 100%;
-            max-width: 300px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease-in-out;
+            z-index: 100;
         }
 
+        .dropdown-link {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            border-radius: 0.25rem;
+            line-height: 1.4;
+        }
+
+        .dropdown-link:hover {
+            color: #f59e0b; /* amber-500 */
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* --- Ajustes Móviles --- */
+        @media (max-width: 767px) {
+            #mobile-menu-container {
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+            
+            .nav-item {
+                width: 100%;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                padding: 0;
+            }
+
+            .nav-item-content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.5rem;
+            }
+
+            .dropdown-menu {
+                position: static;
+                transform: none;
+                opacity: 1;
+                visibility: visible;
+                width: 100%;
+                box-shadow: none;
+                background-color: rgba(0, 0, 0, 0.3);
+                border: none;
+                border-top: 1px solid rgba(255,255,255,0.05);
+                display: none;
+                margin-top: 0;
+            }
+            
+            .arrow-icon {
+                transition: transform 0.3s;
+            }
+            .nav-item.active .arrow-icon {
+                transform: rotate(180deg);
+            }
+        }
+
+        /* Ajustes scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* Ajustes Mermaid para tema oscuro y TAMAÑO */
+        .mermaid .node rect, .mermaid .node circle, .mermaid .node ellipse, .mermaid .node polygon, .mermaid .node path {
+            fill: #1e293b !important;
+            stroke: #f59e0b !important;
+            stroke-width: 2px !important;
+        }
+        .mermaid .label {
+            color: #e2e8f0 !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+        .mermaid .edgePath .path {
+            stroke: #64748b !important;
+            stroke-width: 2px !important;
+        }
+        .mermaid .marker {
+            fill: #64748b !important;
+            stroke: #64748b !important;
+        }
+
+        /* FORZAR TAMAÑO MERMAID */
+        .mermaid {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+        .mermaid svg {
+            width: 100% !important;
+            max-width: 1200px !important; /* Más grande */
+            height: auto !important;
+        }
     </style>
 </head>
-<body class="antialiased">
-    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+<body class="selection:bg-amber-500 selection:text-slate-900 min-h-screen flex flex-col overflow-x-hidden">
 
-    <div class="container mx-auto p-4 md:p-8 max-w-5xl">
+    <!-- Navegación Responsiva -->
+    <nav class="fixed w-full z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+            <div class="flex justify-between items-center h-16">
+                
+                <!-- Logo / Marca -->
+                <a href="#" class="flex items-center space-x-2 group">
+                    <div class="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-150 transition-transform"></div>
+                    <span class="text-[10px] md:text-xs font-bold tracking-widest uppercase text-slate-200 group-hover:text-white transition-colors">
+                        F. Varela <span class="text-slate-600 mx-1">|</span> La Mente Fragmentada
+                    </span>
+                </a>
 
-        <header class="text-center mb-16">
-            <h1 class="mb-2">La Mente Fragmentada</h1>
-            <p class="text-lg md:text-xl" style="color: var(--secondary-glow);">Una exploración visual de las ideas de Francisco Varela sobre la conciencia</p>
-        </header>
+                <!-- Botón Hamburguesa -->
+                <button id="menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
 
-        <main class="space-y-16">
+                <!-- Menú Desktop & Contenedor Móvil -->
+                <div id="mobile-menu-container" class="hidden md:flex absolute md:static top-16 left-0 w-full md:w-auto bg-slate-950 md:bg-transparent flex-col md:flex-row md:items-center overflow-y-auto md:overflow-visible max-h-[80vh] md:max-h-full transition-all">
+                    
+                    <ul class="flex flex-col md:flex-row md:items-center text-[11px] font-medium uppercase tracking-widest text-slate-400 w-full md:w-auto">
+                        
+                        <!-- Intro -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#resumen" class="nav-link hover:text-white" onclick="closeMobileMenu()">Intro</a>
+                            </div>
+                        </li>
 
-            <section id="mind-body" class="text-center content-section">
-                <h2 class="section-title">El Viejo Problema está Resuelto</h2>
-                <p class="max-w-3xl mx-auto mb-8">
-                    Varela comienza con una afirmación audaz: el tradicional problema "mente-cuerpo" está esencialmente resuelto. La ciencia cognitiva moderna, a través del estudio de sistemas complejos y propiedades emergentes, nos ha dado un marco para entender cómo las capacidades cognitivas pueden surgir de un sistema material como el cerebro.
+                        <!-- 1. El Viejo Problema -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#viejo-problema" class="nav-link text-amber-500 hover:text-amber-400" onclick="closeMobileMenu()">01. Mente-Cuerpo</a>
+                            </div>
+                        </li>
+
+                        <!-- 2. Mente-Mente -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#mente-mente" class="nav-link hover:text-white" onclick="closeMobileMenu()">02. El Desafío</a>
+                            </div>
+                        </li>
+
+                        <!-- 3. Ilusión -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#ilusion-yo" class="nav-link hover:text-white" onclick="closeMobileMenu()">03. El Yo</a>
+                            </div>
+                        </li>
+
+                        <!-- 4. Evidencia -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#evidencia" class="nav-link hover:text-white" onclick="closeMobileMenu()">04. Evidencia</a>
+                                <button class="md:hidden p-2 arrow-icon" onclick="toggleDropdown(this)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu md:w-48">
+                                <span class="block text-[9px] text-amber-500 mb-2 border-b border-white/10 pb-1">Perspectivas</span>
+                                <a href="#evidencia-cientifica" class="dropdown-link" onclick="closeMobileMenu()">Científica (Robótica)</a>
+                                <a href="#evidencia-experiencial" class="dropdown-link" onclick="closeMobileMenu()">Experiencial (Narrativa)</a>
+                            </div>
+                        </li>
+
+                        <!-- 5. Nuevo Modelo -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#nuevo-modelo" class="nav-link text-amber-500 hover:text-amber-400" onclick="closeMobileMenu()">05. Circularidad</a>
+                            </div>
+                        </li>
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Script de Navegación -->
+    <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu-container');
+
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            mobileMenu.classList.toggle('flex');
+        });
+
+        function toggleDropdown(button) {
+            const navItem = button.closest('.nav-item');
+            const dropdown = navItem.querySelector('.dropdown-menu');
+            navItem.classList.toggle('active');
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            } else {
+                dropdown.style.display = 'block';
+            }
+        }
+
+        function closeMobileMenu() {
+            if (window.innerWidth < 768) {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('flex');
+                document.querySelectorAll('.dropdown-menu').forEach(d => d.style.display = 'none');
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            }
+        }
+    </script>
+
+    <!-- Contenido Principal -->
+    <div class="flex-grow pt-32 md:pt-48 pb-16 md:pb-24 px-6 md:px-12 w-full">
+        <main class="w-full mx-auto text-center">
+            
+            <!-- Bloque Hero -->
+            <header class="mb-24 relative animate-fade-in-up">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-amber-500/5 rounded-full blur-3xl -z-10"></div>
+                
+                <h1 class="text-4xl sm:text-5xl md:text-7xl font-black text-slate-100 mb-6 leading-none tracking-tighter drop-shadow-2xl break-words">
+                    LA MENTE FRAGMENTADA<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-500 text-2xl md:text-4xl block mt-4 font-serif italic">Una exploración visual de las ideas de Francisco Varela</span>
+                </h1>
+                
+                <p class="mt-8 text-sm md:text-base text-slate-400 font-medium tracking-wide max-w-4xl mx-auto">
+                    Una síntesis de la conferencia en Lindisfarne sobre la naturaleza de la conciencia, el yo y la relación entre ciencia y experiencia directa.
                 </p>
-                <div class="glassmorphism max-w-md mx-auto">
-                    <div class="flex flex-col items-center justify-center space-y-4">
-                        <div class="text-6xl">🧠</div>
-                        <div class="text-2xl font-bold" style="color: var(--primary-glow);">Cerebro y Cuerpo</div>
-                        <div class="text-2xl" style="color: var(--secondary);">↓</div>
-                        <div class="text-xl font-semibold">Propiedades Emergentes</div>
-                        <div class="text-2xl" style="color: var(--secondary);">↓</div>
-                        <div class="flex flex-wrap justify-center gap-2">
-                            <span class="bg-indigo-500/30 text-indigo-200 px-3 py-1 rounded-full text-sm font-medium">Memoria</span>
-                            <span class="bg-cyan-500/30 text-cyan-200 px-3 py-1 rounded-full text-sm font-medium">Percepción</span>
-                            <span class="bg-sky-500/30 text-sky-200 px-3 py-1 rounded-full text-sm font-medium">Lenguaje</span>
+                
+                <div class="mt-8 flex flex-wrap justify-center gap-4 text-xs md:text-sm text-amber-500 uppercase tracking-widest font-bold">
+                    <span>Francisco Varela</span> • <span>Neurofenomenología</span> • <span>Ciencia Cognitiva</span>
+                </div>
+                
+                <div class="mt-16 flex justify-center">
+                    <div class="h-24 w-px bg-gradient-to-b from-amber-500/0 via-amber-500/50 to-amber-500/0"></div>
+                </div>
+            </header>
+
+            <!-- 1. El Viejo Problema -->
+            <section id="viejo-problema" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">1. El Viejo Problema está Resuelto</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify w-full">
+                    <p>
+                        Varela comienza con una afirmación audaz: el tradicional problema <strong>"mente-cuerpo"</strong> está esencialmente resuelto. La ciencia cognitiva moderna, a través del estudio de sistemas complejos y propiedades emergentes, nos ha dado un marco para entender cómo las capacidades cognitivas pueden surgir de un sistema material como el cerebro.
+                    </p>
+                    
+                    <!-- Mermaid Flowchart: Cerebro -> Emergencia -->
+                    <div class="my-12 p-6 bg-slate-900/50 border border-slate-800 rounded-lg flex justify-center w-full">
+                        <div class="mermaid">
+                            graph TD
+                            A[🧠 Cerebro y Cuerpo] --> B{Propiedades Emergentes};
+                            B --> C(Memoria);
+                            B --> D(Percepción);
+                            B --> E(Lenguaje);
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section id="mind-mind" class="content-section">
-                <h2 class="section-title text-center">El Verdadero Desafío: El Problema Mente-Mente</h2>
-                <p class="max-w-3xl mx-auto mb-8 text-center">
-                    El verdadero misterio no es cómo el cerebro produce cognición, sino cómo se relaciona la explicación científica (la mente cognitiva) con nuestra experiencia directa y vivida (la mente fenomenológica). Son dos dominios distintos pero interconectados.
-                </p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="glassmorphism flex flex-col items-center text-center">
-                        <div class="text-5xl mb-4">⚙️</div>
-                        <h3 class="text-2xl font-bold mb-2" style="color: var(--primary-glow);">La Mente Cognitiva</h3>
-                        <p>La explicación científica. Un sistema de procesos, módulos y redes neuronales que podemos estudiar y modelar.</p>
-                    </div>
-                    <div class="glassmorphism flex flex-col items-center text-center">
-                        <div class="text-5xl mb-4">🎨</div>
-                        <h3 class="text-2xl font-bold mb-2" style="color: var(--secondary-glow);">La Mente Fenomenológica</h3>
-                        <p>La experiencia directa. La textura de ver un color, sentir una emoción o escuchar una melodía, momento a momento.</p>
+            <!-- 2. Mente-Mente -->
+            <section id="mente-mente" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">2. El Verdadero Desafío: El Problema Mente-Mente</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify w-full">
+                    <p>
+                        El verdadero misterio no es cómo el cerebro produce cognición, sino cómo se relaciona la explicación científica (<strong class="text-white">la mente cognitiva</strong>) con nuestra experiencia directa y vivida (<strong class="text-white">la mente fenomenológica</strong>). Son dos dominios distintos pero interconectados.
+                    </p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12 w-full">
+                        <div class="bg-slate-900/40 p-8 rounded-xl border border-white/5 backdrop-blur-sm">
+                            <div class="text-4xl mb-4 text-center">⚙️</div>
+                            <h3 class="text-xl text-amber-500 font-bold mb-2 text-center">La Mente Cognitiva</h3>
+                            <p class="text-sm">La explicación científica. Un sistema de procesos, módulos y redes neuronales que podemos estudiar y modelar.</p>
+                        </div>
+                        <div class="bg-slate-900/40 p-8 rounded-xl border border-white/5 backdrop-blur-sm">
+                            <div class="text-4xl mb-4 text-center">🎨</div>
+                            <h3 class="text-xl text-amber-500 font-bold mb-2 text-center">La Mente Fenomenológica</h3>
+                            <p class="text-sm">La experiencia directa. La textura de ver un color, sentir una emoción o escuchar una melodía, momento a momento.</p>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <section id="disunity" class="content-section">
-                <h2 class="section-title text-center">La Ilusión de un Yo Unificado</h2>
-                <p class="max-w-3xl mx-auto mb-8 text-center">
-                    Tanto la ciencia como la fenomenología apuntan a una conclusión radical: nuestro sentido de un "yo" continuo y central es una ilusión. La experiencia no es un flujo constante, sino una sucesión de "fragmentos" o momentos cognitivos discretos.
-                </p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                    <div class="glassmorphism">
-                        <h3 class="text-xl font-bold text-center mb-4" style="color: var(--primary-glow);">Nuestra Experiencia es Discontinua</h3>
-                        <div class="flex justify-center items-center space-x-2 overflow-x-auto p-2">
-                            <div class="flex-shrink-0 w-24 h-24 bg-indigo-900/50 rounded-md flex flex-col items-center justify-center text-center border border-indigo-500">
-                                <span class="font-bold">Momento 1</span>
-                                <span class="text-xs text-indigo-300">~1/3 seg</span>
-                            </div>
-                            <div class="text-2xl text-indigo-400 font-bold">→</div>
-                             <div class="flex-shrink-0 w-24 h-24 bg-cyan-900/50 rounded-md flex flex-col items-center justify-center text-center border border-cyan-500">
-                                <span class="font-bold">Momento 2</span>
-                                <span class="text-xs text-cyan-300">~1/3 seg</span>
-                            </div>
-                            <div class="text-2xl text-cyan-400 font-bold">→</div>
-                             <div class="flex-shrink-0 w-24 h-24 bg-sky-900/50 rounded-md flex flex-col items-center justify-center text-center border border-sky-500">
-                                <span class="font-bold">Momento 3</span>
-                                <span class="text-xs text-sky-300">~1/3 seg</span>
+            <!-- 3. La Ilusión de un Yo Unificado -->
+            <section id="ilusion-yo" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">3. La Ilusión de un Yo Unificado</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify w-full">
+                    <p>
+                        Tanto la ciencia como la fenomenología apuntan a una conclusión radical: nuestro sentido de un "yo" continuo y central es una ilusión. La experiencia no es un flujo constante, sino una sucesión de "fragmentos" o momentos cognitivos discretos.
+                    </p>
+
+                    <h3 class="text-xl text-amber-500 font-bold mt-12 mb-4">Nuestra Experiencia es Discontinua</h3>
+                    <p>
+                        La cognición ocurre en "trozos" que duran una fracción de segundo. Lo que sentimos como un flujo es en realidad una rápida sucesión de estos instantes. Sentimos una continuidad perfecta, pero la evidencia sugiere que esta sensación es una reconstrucción constante.
+                    </p>
+
+                    <!-- Mermaid Sequence: Discontinuity -->
+                    <div class="my-12 p-6 bg-slate-900/50 border border-slate-800 rounded-lg flex justify-center w-full">
+                        <div class="mermaid">
+                            sequenceDiagram
+                                participant T as Tiempo
+                                participant C as Conciencia
+                                Note over T,C: Momento 1 (~1/3 seg)
+                                T->>C: Fragmento Cognitivo
+                                Note right of C: (Vacío)
+                                Note over T,C: Momento 2 (~1/3 seg)
+                                T->>C: Fragmento Cognitivo
+                                Note right of C: (Vacío)
+                                Note over T,C: Momento 3 (~1/3 seg)
+                                T->>C: Fragmento Cognitivo
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. Evidencia de Dos Mundos -->
+            <section id="evidencia" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">4. Evidencia de Dos Mundos</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify w-full">
+                    <p>
+                        La idea del yo fragmentado no es solo filosófica. Proviene tanto de la ingeniería de la inteligencia artificial como del examen profundo de la experiencia directa.
+                    </p>
+
+                    <div id="evidencia-cientifica" class="mt-12 w-full">
+                        <h3 class="text-xl text-amber-500 font-bold mb-4">La Evidencia Científica: Robótica Autónoma</h3>
+                        <p>
+                            Varela cita robots como "Hengiz", que demuestran ser más autónomos y efectivos cuando se diseñan sin un procesador central. En su lugar, múltiples "capas" o módulos compiten caóticamente para determinar la siguiente acción. Esto refleja cómo podría funcionar nuestro propio cerebro.
+                        </p>
+                        
+                        <!-- Mermaid Flowchart: Robotics -->
+                        <div class="my-8 p-6 bg-slate-900/50 border border-slate-800 rounded-lg flex justify-center w-full">
+                            <div class="mermaid">
+                                graph LR
+                                A[Estímulo Externo] --> B{Caos Modular};
+                                B -->|Competencia| C[Módulo Visión];
+                                B -->|Competencia| D[Módulo Motor];
+                                B -->|Competencia| E[Módulo Audio];
+                                C --> F[Acción Emergente];
+                                D --> F;
+                                E --> F;
                             </div>
                         </div>
-                        <p class="text-center mt-4">La cognición ocurre en "trozos" que duran una fracción de segundo. Lo que sentimos como un flujo es en realidad una rápida sucesión de estos instantes.</p>
                     </div>
-                    <div class="glassmorphism">
-                        <h3 class="text-xl font-bold text-center mb-4" style="color: var(--secondary-glow);">Sentimiento vs. Realidad</h3>
-                        <div class="chart-container">
-                            <canvas id="continuityChart"></canvas>
+
+                    <div id="evidencia-experiencial" class="mt-12 w-full">
+                        <h3 class="text-xl text-amber-500 font-bold mb-4">La Evidencia Experiencial: El Centro de Gravedad Narrativo</h3>
+                        <p>
+                            Nuestra sensación de continuidad proviene de una historia que nos contamos a nosotros mismos, un "centro de gravedad narrativo". No es una entidad sólida, sino una historia que se recrea momento a momento, tirando de nosotros y creando la ilusión de un yo estable y continuo.
+                        </p>
+                        <blockquote class="border-l-4 border-slate-600 pl-4 italic text-slate-400 my-6 bg-slate-900/30 p-4 rounded-r-lg w-full">
+                            "El sentimiento que tenemos de ser continuos y los mismos, es recreado momento a momento por nuestros propios dispositivos."
+                        </blockquote>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. Nuevo Modelo -->
+            <section id="nuevo-modelo" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">5. Un Nuevo Modelo: El Círculo de la Ambigüedad</h2>
+                <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify w-full">
+                    <p>
+                        En lugar de ver la experiencia como una simple "proyección" de la ciencia, Varela, inspirado en Merleau-Ponty, propone una relación circular. La mente cognitiva y la mente fenomenológica son dos polos inseparables. No podemos basarnos completamente en uno u otro; estamos en una oscilación constante y ambigua entre la explicación y la experiencia.
+                    </p>
+
+                    <!-- Mermaid State Diagram: Circularity -->
+                    <div class="my-12 p-6 bg-slate-900/50 border border-slate-800 rounded-lg flex justify-center w-full">
+                        <div class="mermaid">
+                            stateDiagram-v2
+                                direction LR
+                                [*] --> Cognitiva
+                                Cognitiva: Mente Cognitiva (Explicación)
+                                Fenomenologica: Mente Fenomenológica (Experiencia)
+                                
+                                Cognitiva --> Fenomenologica: Oscilación
+                                Fenomenologica --> Cognitiva: Ambigüedad
                         </div>
-                         <p class="text-center mt-4">Sentimos una continuidad perfecta, pero la evidencia sugiere que esta sensación es una reconstrucción constante.</p>
-                    </div>
-                </div>
-            </section>
-
-            <section id="evidence" class="content-section">
-                <h2 class="section-title text-center">Evidencia de Dos Mundos</h2>
-                <p class="max-w-3xl mx-auto mb-8 text-center">
-                    La idea del yo fragmentado no es solo filosófica. Proviene tanto de la ingeniería de la inteligencia artificial como del examen profundo de la experiencia directa.
-                </p>
-                <div class="glassmorphism mb-8">
-                    <h3 class="text-2xl font-bold mb-4" style="color: var(--primary-glow);">La Evidencia Científica: Robótica Autónoma</h3>
-                    <p class="mb-6">Varela cita robots como "Hengiz", que demuestran ser más autónomos y efectivos cuando se diseñan sin un procesador central. En su lugar, múltiples "capas" o módulos compiten caóticamente para determinar la siguiente acción. Esto refleja cómo podría funcionar nuestro propio cerebro.</p>
-                    <div class="flex flex-col md:flex-row items-center justify-center gap-4">
-                        <div class="flowchart-box" style="border-color: var(--primary);">Estímulo Externo (¡Boom!)</div>
-                        <div class="flowchart-arrow" style="color: var(--primary);">➔</div>
-                        <div class="flowchart-box" style="border-color: var(--secondary);">Módulos compiten en un "caos" dinámico</div>
-                        <div class="flowchart-arrow" style="color: var(--secondary);">➔</div>
-                        <div class="flowchart-box" style="border-color: var(--primary-text);">Una acción dominante emerge</div>
-                    </div>
-                </div>
-                <div class="glassmorphism">
-                    <h3 class="text-2xl font-bold mb-4" style="color: var(--secondary-glow);">La Evidencia Experiencial: El Centro de Gravedad Narrativo</h3>
-                    <p class="mb-6">Nuestra sensación de continuidad proviene de una historia que nos contamos a nosotros mismos, un "centro de gravedad narrativo". No es una entidad sólida, sino una historia que se recrea momento a momento, tirando de nosotros y creando la ilusión de un yo estable y continuo.</p>
-                    <blockquote class="border-l-4 pl-4 italic" style="border-color: var(--secondary);">
-                        "El sentimiento que tenemos de ser continuos y los mismos, es recreado momento a momento por nuestros propios dispositivos."
-                    </blockquote>
-                </div>
-            </section>
-
-            <section id="new-model" class="text-center content-section">
-                <h2 class="section-title">Un Nuevo Modelo: El Círculo de la Ambigüedad</h2>
-                <p class="max-w-3xl mx-auto mb-8">
-                    En lugar de ver la experiencia como una simple "proyección" de la ciencia, Varela, inspirado en Merleau-Ponty, propone una relación circular. La mente cognitiva y la mente fenomenológica son dos polos inseparables. No podemos basarnos completamente en uno u otro; estamos en una oscilación constante y ambigua entre la explicación y la experiencia.
-                </p>
-                <div class="flex justify-center">
-                    <div class="circle-diagram">
-                        <div class="circle-node" style="top: 0; left: 50%; transform: translate(-50%, -50%); background-color: rgba(129, 140, 248, 0.3); border: 1px solid var(--primary);">Mente Cognitiva (Explicación)</div>
-                        <div class="circle-node" style="bottom: 0; left: 50%; transform: translate(-50%, 50%); background-color: rgba(34, 211, 238, 0.3); border: 1px solid var(--secondary);">Mente Fenomenológica (Experiencia)</div>
-                        <div class="absolute text-4xl" style="color: var(--primary-glow); top: 50%; right: 0; transform: translate(50%, -50%) rotate(-45deg);">⟳</div>
-                        <div class="absolute text-4xl" style="color: var(--secondary-glow); top: 50%; left: 0; transform: translate(-50%, -50%) rotate(135deg);">⟳</div>
                     </div>
                 </div>
             </section>
 
         </main>
-
-        <footer class="text-center mt-16 pt-8 border-t border-gray-800">
-            <p style="color: var(--primary-glow);">Infografía basada en la conferencia de Francisco Varela en Lindisfarne.</p>
-        </footer>
-
     </div>
 
+    <!-- Mermaid Initialization -->
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // --- THREE.JS BACKGROUND ---
-            let scene, camera, renderer, points;
-            try {
-                scene = new THREE.Scene();
-                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
-                camera.position.z = 50;
-                renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("bg-canvas"), alpha: true });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                const pointCount = 200;
-                const positions = new Float32Array(pointCount * 3);
-                const pointGeo = new THREE.BufferGeometry();
-                for (let i = 0; i < pointCount; i++) {
-                    positions[i * 3] = (Math.random() - 0.5) * 400;
-                    positions[i * 3 + 1] = (Math.random() - 0.5) * 400;
-                    positions[i * 3 + 2] = (Math.random() - 0.5) * 400;
-                }
-                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.5, transparent: true, opacity: 0.8 });
-                points = new THREE.Points(pointGeo, pointMaterial);
-                scene.add(points);
-                window.addEventListener("resize", () => {
-                    if(camera && renderer) {
-                        camera.aspect = window.innerWidth / window.innerHeight;
-                        camera.updateProjectionMatrix();
-                        renderer.setSize(window.innerWidth, window.innerHeight);
-                    }
-                });
-                let mouseX = 0, mouseY = 0;
-                document.addEventListener('mousemove', (event) => {
-                    mouseX = (event.clientX - window.innerWidth / 2) / 100;
-                    mouseY = (event.clientY - window.innerHeight / 2) / 100;
-                });
-                function animate() {
-                    requestAnimationFrame(animate);
-                    if(scene && camera && renderer && points) {
-                        points.rotation.y += 0.0005;
-                        camera.position.x += (mouseX - camera.position.x) * 0.05;
-                        camera.position.y += (-mouseY - camera.position.y) * 0.05;
-                        camera.lookAt(scene.position);
-                        renderer.render(scene, camera);
-                    }
-                }
-                animate();
-            } catch (error) {
-                console.error('Error initializing Three.js:', error);
-            }
-
-            // --- SCROLL ANIMATION ---
-            const sections = document.querySelectorAll('.content-section');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('visible');
-                    }
-                });
-            }, { threshold: 0.1 });
-            sections.forEach(section => observer.observe(section));
-
-            // --- CHART.JS ---
-            const processLabel = (label) => {
-                const maxLength = 16;
-                if (label.length <= maxLength) return label;
-                const words = label.split(' ');
-                const lines = [];
-                let currentLine = '';
-                for (const word of words) {
-                    if ((currentLine + ' ' + word).trim().length > maxLength) {
-                        lines.push(currentLine.trim());
-                        currentLine = word;
-                    } else {
-                        currentLine = (currentLine + ' ' + word).trim();
-                    }
-                }
-                if (currentLine) lines.push(currentLine.trim());
-                return lines;
-            };
-
-            const ctx = document.getElementById('continuityChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: [processLabel('Lo que sentimos (Continuidad)'), processLabel('Lo que la ciencia sugiere (Discontinuidad)')],
-                    datasets: [{
-                        label: 'Percepción del Yo',
-                        data: [100, 100],
-                        backgroundColor: ['#818cf8', '#22d3ee'],
-                        borderColor: ['#111827'],
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: '#e5e7eb', // primary-text
-                                font: {
-                                    family: "'Inter', sans-serif"
-                                }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                title: function(tooltipItems) {
-                                    const item = tooltipItems[0];
-                                    let label = item.chart.data.labels[item.dataIndex];
-                                    return Array.isArray(label) ? label.join(' ') : label;
-                                }
-                            }
-                        }
-                    }
+        document.addEventListener('DOMContentLoaded', function() {
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'dark',
+                securityLevel: 'loose',
+                themeVariables: {
+                    primaryColor: '#0f172a',
+                    edgeLabelBackground: '#0f172a',
+                    tertiaryColor: '#1e293b',
+                    primaryTextColor: '#cbd5e1',
+                    lineColor: '#64748b',
+                    mainBkg: '#020617'
                 }
             });
         });
     </script>
+
+    <!-- Footer Simple -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-6 md:py-8">
+        <div class="max-w-full mx-auto px-6 md:px-12 flex flex-col items-center justify-center gap-2">
+            <p class="text-[10px] md:text-[11px] font-medium text-slate-400 text-center">
+                Infografía basada en la conferencia de Francisco Varela en Lindisfarne.
+            </p>
+            <p class="text-[9px] md:text-[10px] text-slate-600 font-mono text-center">
+                F. Varela | La Mente Fragmentada | 2025
+            </p>
+        </div>
+    </footer>
 
 </body>
 </html>
