@@ -5,674 +5,945 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Línea de Tiempo Histórica de la Ciencia Cognitiva | O.C.V.M.</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <!-- Popper y Tippy para los tooltips originales -->
     <script src="https://unpkg.com/@popperjs/core@2"></script>
     <script src="https://unpkg.com/tippy.js@6"></script>
+    
     <style>
-        /* Variables de CSS para colores y fuentes */
-        :root {
-            --primary: #818cf8;
-            --primary-dark: #6366f1;
-            --secondary: #22d3ee;
-            --primary-text: #e5e7eb;
-            --primary-glow: #818cf8;
-            --secondary-glow: #22d3ee;
-            --font-main: 'Inter', sans-serif;
-            --nav-height: 70px;
-        }
-
-        /* Estilos generales para el cuerpo de la página */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+        
         body {
-            background-color: #000000;
-            color: var(--primary-text);
-            font-family: var(--font-main);
-            line-height: 1.8;
-            overflow-x: hidden;
-            text-align: justify;
-        }
-        p {
-            text-align: justify;
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #94a3b8; /* slate-400 */
+            scroll-behavior: smooth;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 70%);
+            background-attachment: fixed;
         }
 
-        /* Canvas de fondo con animación Three.js */
-        #bg-canvas {
-            position: fixed;
-            top: 0;
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* --- Estilos de Navegación Desktop --- */
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+            cursor: pointer;
+            display: block;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -2px;
             left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            cursor: crosshair;
-        }
-
-        /* Estilo de glassmorphism para secciones y navegación */
-        .glassmorphism {
-            background: rgba(17, 24, 39, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Estilos para el menú de navegación en móviles */
-        body.menu-open { overflow: hidden; }
-        
-        nav {
-            position: fixed; top: 0; width: 100%; height: var(--nav-height);
-            z-index: 1000;
-            display: flex; justify-content: center; align-items: center;
-            padding: 0 5%;
-            pointer-events: auto;
-        }
-
-        .nav-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
+            background-color: #f59e0b;
+            transition: width 0.3s ease;
         }
         
-        .nav-logo a {
-            font-size: 1.3em;
-            font-weight: 700;
-            color: #fff;
-            text-decoration: none;
-            text-shadow: 0 0 8px var(--primary-glow);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
-        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
-        nav .nav-container > li > a {
-            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
-            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
-        }
-        nav .nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
-        
-        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
-
-        /* Sección del héroe o cabecera principal */
-        .hero {
-            min-height: 60vh;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            text-align: center; position: relative;
-            padding: 1rem;
-            margin-top: var(--nav-height);
-        }
-        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
-        .hero h1 {
-            font-size: clamp(2rem, 6vw, 4rem); font-weight: 700; color: #fff;
-            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
-            animation: pulse-glow 3s infinite alternate;
-        }
-        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
-        @keyframes pulse-glow {
-            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
-            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Contenedor principal para el contenido */
-        .main-container { 
-            width: 100%;
-            margin: 0 auto; 
-            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
-            pointer-events: none;
-        }
-        
-        main, .footer, .section, .hero-content {
-            pointer-events: auto;
-        }
-
-        main p, .footer p {
-            user-select: text;
-            cursor: default;
-        }
-        
-        .section {
-            padding: clamp(1.5rem, 5vw, 2.5rem);
-            border-radius: 12px; margin-bottom: 2rem; position: relative;
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
-        }
-        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
-        
-        /* Animación de aparición para las secciones con scroll */
-        .section h2, .section h3, .section p, .timeline-card, .filter-button-container, .legend-container {
-             opacity: 0;
-             transform: translateY(20px);
-             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-        }
-
-        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .timeline-card, .section.is-visible .filter-button-container, .section.is-visible .legend-container {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        h2 {
-            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
-            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
-        }
-        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
-        
-        /* Pie de página */
-        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid rgba(229, 231, 235, 0.5); margin-top: 2rem; }
-
-        /* Estilos específicos para la línea de tiempo */
-        .decade-marker {
-            background-color: rgba(129, 140, 248, 0.9);
-            text-shadow: 0 0 8px #000;
-        }
-        .timeline-card {
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-            background-color: rgba(30, 41, 59, 0.8);
-            border-left-width: 4px;
-        }
-        .timeline-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
-        }
-        .legend-color {
-            min-width: 18px;
-            width: 18px;
-            height: 18px;
-        }
-        .filter-button {
-            transition: background-color 0.2s ease, color 0.2s ease;
-            background-color: #4b5563;
-            color: #e2e8f0;
-        }
-        .filter-button.active {
-            background-color: var(--primary);
-            color: #000;
-            font-weight: bold;
-        }
-        .search-input {
-            transition: border-color 0.2s ease;
-            background-color: #111827;
-            color: #e2e8f0;
-            border-color: #4b5563;
-        }
-        .search-input:focus {
-            border-color: var(--primary);
-            outline: none;
-        }
-        .search-input::placeholder {
-            color: #9ca3af;
-        }
-        .timeline-item {
-            transition: opacity 0.5s ease, max-height 0.5s ease, margin 0.5s ease, padding 0.5s ease;
-            overflow: hidden;
-            max-height: 500px; /* Altura suficiente para el contenido */
-        }
-        .timeline-item.hidden {
-            opacity: 0;
-            max-height: 0;
-            margin-top: 0;
-            margin-bottom: 0;
-            padding-top: 0;
-            padding-bottom: 0;
-        }
-
-        /* Media queries para dispositivos móviles */
-        @media (max-width: 768px) {
-            .nav-container {
-                position: fixed;
-                top: var(--nav-height);
+        @media (min-width: 768px) {
+            .nav-item:hover .nav-link::after {
+                width: 100%;
+            }
+            
+            .nav-item:hover .dropdown-menu {
+                opacity: 1;
+                visibility: visible;
+                transform: translateX(-50%) translateY(0);
+            }
+            
+            .dropdown-menu {
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%) translateY(10px);
+                min-width: 220px;
+                opacity: 0;
+                visibility: hidden;
+            }
+            .dropdown-menu::before {
+                content: '';
+                position: absolute;
+                top: -6px;
+                left: 50%;
+                transform: translateX(-50%);
+                border-width: 0 6px 6px 6px;
+                border-style: solid;
+                border-color: transparent transparent rgba(255, 255, 255, 0.1) transparent;
+            }
+            .dropdown-menu::after {
+                content: '';
+                position: absolute;
+                top: -20px;
                 left: 0;
                 width: 100%;
-                height: calc(100vh - var(--nav-height));
-                background: rgba(17, 24, 39, 0.95);
-                backdrop-filter: blur(15px);
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-                transform: translateY(-110%);
-                overflow-y: auto;
-                padding: 2rem;
+                height: 20px;
+                background: transparent;
             }
-            body.menu-open .nav-container {
-                transform: translateY(0);
-            }
+        }
 
-            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
-            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
+        /* --- Estilos Comunes Dropdown --- */
+        .dropdown-menu {
+            background-color: rgba(2, 6, 23, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease-in-out;
+            z-index: 100;
+        }
+
+        .dropdown-link {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            border-radius: 0.25rem;
+            line-height: 1.4;
+        }
+
+        .dropdown-link:hover {
+            color: #f59e0b; /* amber-500 */
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* --- Ajustes Móviles --- */
+        @media (max-width: 767px) {
+            #mobile-menu-container {
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
             
-            .menu-toggle {
-                display: block; position: relative; z-index: 1001;
-                width: 30px; height: 22px;
-                background: none; border: none; cursor: pointer;
-            }
-            .icon-bar {
-                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
-                margin: 6px 0; transition: all 0.3s ease-in-out;
-                border-radius: 2px;
+            .nav-item {
+                width: 100%;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                padding: 0;
             }
 
-            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
-            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
-            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+            .nav-item-content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.5rem;
+            }
+
+            .dropdown-menu {
+                position: static;
+                transform: none;
+                opacity: 1;
+                visibility: visible;
+                width: 100%;
+                box-shadow: none;
+                background-color: rgba(0, 0, 0, 0.3);
+                border: none;
+                border-top: 1px solid rgba(255,255,255,0.05);
+                display: none;
+                margin-top: 0;
+            }
+            
+            .arrow-icon {
+                transition: transform 0.3s;
+            }
+            .nav-item.active .arrow-icon {
+                transform: rotate(180deg);
+            }
         }
-        @media (min-width: 769px) {
-            .menu-toggle { display: none; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* Timeline Items Animation */
+        .timeline-item {
+            transition: opacity 0.5s ease, transform 0.3s ease;
         }
+        .timeline-item.hidden {
+            display: none;
+        }
+        
+        /* Filter Button Active State Override */
+        .filter-button.active {
+            background-color: #f59e0b;
+            color: #0f172a;
+            font-weight: 700;
+            border-color: #f59e0b;
+        }
+        
+        /* Custom Tooltip Style based on Theme */
+        .tippy-box[data-theme~='dark'] {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            border: 1px solid rgba(255,255,255,0.1);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+        }
+        
+        /* Highlight Utility */
+        .hl-amber { @apply text-amber-400 font-semibold; }
+        .hl-cyan { @apply text-cyan-400 font-semibold; }
+        .hl-pink { @apply text-pink-400 font-semibold; }
+        .hl-lime { @apply text-lime-400 font-semibold; }
+        .hl-indigo { @apply text-indigo-400 font-semibold; }
     </style>
 </head>
-<body>
-    <!-- Canvas de fondo con animación Three.js -->
-    <canvas id="bg-canvas" aria-hidden="true"></canvas>
-    <nav class="glassmorphism">
-        <div class="nav-content">
-            <div class="nav-logo">
-                <a href="#inicio">
-                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
-                    <span>O.C.V.M.</span>
+<body class="selection:bg-amber-500 selection:text-slate-900 min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- Navegación Responsiva -->
+    <nav class="fixed w-full z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
+        <div class="w-full px-6 md:px-12">
+            <div class="flex justify-between items-center h-16">
+                
+                <!-- Logo / Marca -->
+                <a href="#" class="flex items-center space-x-2 group">
+                    <div class="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-150 transition-transform"></div>
+                    <span class="text-[10px] md:text-xs font-bold tracking-widest uppercase text-slate-200 group-hover:text-white transition-colors">
+                        O.C.V.M. <span class="text-slate-600 mx-1">|</span> Ciencia Cognitiva
+                    </span>
                 </a>
+
+                <!-- Botón Hamburguesa -->
+                <button id="menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+
+                <!-- Menú Desktop & Contenedor Móvil -->
+                <div id="mobile-menu-container" class="hidden md:flex absolute md:static top-16 left-0 w-full md:w-auto bg-slate-950 md:bg-transparent flex-col md:flex-row md:items-center overflow-y-auto md:overflow-visible max-h-[80vh] md:max-h-full transition-all">
+                    
+                    <ul class="flex flex-col md:flex-row md:items-center text-[11px] font-medium uppercase tracking-widest text-slate-400 w-full md:w-auto">
+                        
+                        <!-- Inicio -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#" class="nav-link hover:text-white" onclick="closeMobileMenu()">Inicio</a>
+                            </div>
+                        </li>
+
+                        <!-- Filtros -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#filtros" class="nav-link text-amber-500 hover:text-amber-400" onclick="closeMobileMenu()">Filtros</a>
+                            </div>
+                        </li>
+
+                        <!-- Línea de Tiempo Dropdown -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#timeline-content" class="nav-link hover:text-white" onclick="closeMobileMenu()">Línea de Tiempo</a>
+                                <button class="md:hidden p-2 arrow-icon" onclick="toggleDropdown(this)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu md:w-48">
+                                <span class="block text-[9px] text-amber-500 mb-2 border-b border-white/10 pb-1">Eras</span>
+                                <a href="#era-prehistoria" class="dropdown-link" onclick="closeMobileMenu()">Prehistoria - s.XIX</a>
+                                <a href="#era-1900" class="dropdown-link" onclick="closeMobileMenu()">1900s - 1940s</a>
+                                <a href="#era-1950" class="dropdown-link" onclick="closeMobileMenu()">1950s - 1970s</a>
+                                <a href="#era-1980" class="dropdown-link" onclick="closeMobileMenu()">1980s - 1990s</a>
+                                <a href="#era-2000" class="dropdown-link" onclick="closeMobileMenu()">2000s - Presente</a>
+                                <a href="#era-futuro" class="dropdown-link text-amber-200" onclick="closeMobileMenu()">Futuro</a>
+                            </div>
+                        </li>
+
+                        <!-- Bibliografía -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#bibliografia" class="nav-link hover:text-white" onclick="closeMobileMenu()">Bibliografía</a>
+                            </div>
+                        </li>
+
+                    </ul>
+                </div>
             </div>
-            <ul class="nav-container" id="nav-menu">
-                <li><a href="#inicio">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
-                    Inicio</a></li>
-                <li><a href="#filtros">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.572a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" /></svg>
-                    Filtros</a></li>
-                <li><a href="#bibliografia">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
-                    Bibliografía</a></li>
-            </ul>
-            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
-                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
-            </button>
         </div>
     </nav>
 
-    <div class="main-container" id="inicio">
-        <!-- Sección Hero -->
-        <div class="hero">
-            <div class="hero-content">
-                <h1>Línea de Tiempo Histórica de la Ciencia Cognitiva</h1>
-                <p class="text-lg text-gray-400 mt-2">Un viaje transdisciplinario a través de los hitos que dan forma a nuestra comprensión de la mente.</p>
-                <p class="text-sm text-gray-500 mt-1">Por Leolib | <a href=" wwww" class="text-indigo-300 hover:underline">Feedback</a> | Contacto: leolib</p>
-            </div>
-        </div>
+    <!-- Script Navegación -->
+    <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu-container');
 
-        <main class="content">
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            mobileMenu.classList.toggle('flex');
+        });
+
+        function toggleDropdown(button) {
+            const navItem = button.closest('.nav-item');
+            const dropdown = navItem.querySelector('.dropdown-menu');
+            navItem.classList.toggle('active');
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            } else {
+                dropdown.style.display = 'block';
+            }
+        }
+
+        function closeMobileMenu() {
+            if (window.innerWidth < 768) {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('flex');
+                document.querySelectorAll('.dropdown-menu').forEach(d => d.style.display = 'none');
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            }
+        }
+    </script>
+
+    <!-- Contenido Principal -->
+    <div class="flex-grow pt-32 md:pt-48 pb-16 md:pb-24 px-4 md:px-8 w-full">
+        <main class="w-full mx-auto text-center">
             
-            <!-- FILTROS Y LEYENDA -->
-            <section id="filtros" class="glassmorphism section" data-animate>
-                <h2>Filtros y Leyenda</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Bloque Hero -->
+            <header class="mb-24 relative animate-fade-in-up">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-amber-500/5 rounded-full blur-3xl -z-10"></div>
+                
+                <h1 class="text-4xl sm:text-5xl md:text-7xl font-black text-slate-100 mb-6 leading-none tracking-tighter drop-shadow-2xl break-words">
+                    HISTORIA DE LA<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-500 text-3xl md:text-5xl block mt-4 font-serif italic">Ciencia Cognitiva</span>
+                </h1>
+                
+                <p class="mt-8 text-sm md:text-base text-slate-400 font-medium tracking-wide max-w-2xl mx-auto">
+                    Un viaje transdisciplinario a través de los hitos que dan forma a nuestra comprensión de la mente.
+                </p>
+                
+                <div class="mt-8 flex flex-wrap justify-center gap-4 text-xs md:text-sm text-amber-500 uppercase tracking-widest font-bold">
+                    <span>Por Leolib</span> • <span>Feedback</span>
+                </div>
+                
+                <div class="mt-16 flex justify-center">
+                    <div class="h-24 w-px bg-gradient-to-b from-amber-500/0 via-amber-500/50 to-amber-500/0"></div>
+                </div>
+            </header>
+
+            <!-- Filtros y Leyenda -->
+            <section id="filtros" class="w-full mx-auto mb-20 text-left bg-slate-900/40 p-8 md:p-12 rounded-xl border border-white/5 shadow-xl backdrop-blur-sm">
+                <h2 class="text-2xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">Filtros y Leyenda</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <!-- Botones de Filtro -->
                     <div>
-                        <h3 class="font-bold text-center mb-3 text-gray-100">Filtrar por Paradigma</h3>
-                        <div class="flex flex-wrap justify-center gap-2 filter-button-container">
-                            <button class="filter-button px-3 py-1 rounded-md text-sm active" data-filter="all">Todos</button>
-                            <button class="filter-button px-3 py-1 rounded-md text-sm" data-filter="cognitivism">Cognitivismo</button>
-                            <button class="filter-button px-3 py-1 rounded-md text-sm" data-filter="symbolism">Simbolismo/IA</button>
-                            <button class="filter-button px-3 py-1 rounded-md text-sm" data-filter="connectionism">Conexionismo</button>
-                            <button class="filter-button px-3 py-1 rounded-md text-sm" data-filter="embodied">Corporeizado/4E</button>
-                            <button class="filter-button px-3 py-1 rounded-md text-sm" data-filter="neuroscience">Neurociencia</button>
-                            <button class="filter-button px-3 py-1 rounded-md text-sm" data-filter="rationality">Racionalidad/Bayes</button>
-                            <button class="filter-button px-3 py-1 rounded-md text-sm" data-filter="behaviorism">Conductismo</button>
-                            <button class="filter-button px-3 py-1 rounded-md text-sm" data-filter="dynamical">Sistemas Dinámicos</button>
-                            <button class="filter-button px-3 py-1 rounded-md text-sm" data-filter="future">Futuro</button>
+                        <h3 class="text-amber-500 font-bold uppercase tracking-widest text-xs mb-6 border-b border-slate-800 pb-2">Filtrar por Paradigma</h3>
+                        <div class="flex flex-wrap gap-2 filter-button-container">
+                            <button class="filter-button px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wider transition-colors border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 active" data-filter="all">Todos</button>
+                            <button class="filter-button px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wider transition-colors border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700" data-filter="cognitivism">Cognitivismo</button>
+                            <button class="filter-button px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wider transition-colors border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700" data-filter="symbolism">Simbolismo/IA</button>
+                            <button class="filter-button px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wider transition-colors border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700" data-filter="connectionism">Conexionismo</button>
+                            <button class="filter-button px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wider transition-colors border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700" data-filter="embodied">Corporeizado/4E</button>
+                            <button class="filter-button px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wider transition-colors border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700" data-filter="neuroscience">Neurociencia</button>
+                            <button class="filter-button px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wider transition-colors border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700" data-filter="rationality">Racionalidad</button>
+                            <button class="filter-button px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wider transition-colors border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700" data-filter="behaviorism">Conductismo</button>
+                            <button class="filter-button px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wider transition-colors border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700" data-filter="dynamical">Dinámicos</button>
+                            <button class="filter-button px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wider transition-colors border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700" data-filter="future">Futuro</button>
                         </div>
                     </div>
+
+                    <!-- Leyenda Visual -->
                     <div>
-                        <h3 class="font-bold text-center mb-3 text-gray-100">Leyenda de Corrientes</h3>
-                        <div class="grid grid-cols-2 gap-2 text-sm legend-container">
-                            <div class="flex items-center gap-2"><div class="legend-color rounded-full border-4 border-purple-400"></div><span>Cognitivismo</span></div>
-                            <div class="flex items-center gap-2"><div class="legend-color rounded-full border-4 border-red-400"></div><span>Simbolismo/IA</span></div>
-                            <div class="flex items-center gap-2"><div class="legend-color rounded-full border-4 border-green-400"></div><span>Conexionismo</span></div>
-                            <div class="flex items-center gap-2"><div class="legend-color rounded-full border-4 border-orange-400"></div><span>Corporeizado/4E</span></div>
-                            <div class="flex items-center gap-2"><div class="legend-color rounded-full border-4 border-yellow-400"></div><span>Neurociencia</span></div>
-                            <div class="flex items-center gap-2"><div class="legend-color rounded-full border-4 border-blue-400"></div><span>Racionalidad/Bayes</span></div>
-                            <div class="flex items-center gap-2"><div class="legend-color rounded-full border-4 border-cyan-400"></div><span>Conductismo</span></div>
-                            <div class="flex items-center gap-2"><div class="legend-color rounded-full border-4 border-teal-400"></div><span>Sistemas Dinámicos</span></div>
-                            <div class="flex items-center gap-2"><div class="legend-color rounded-full border-4 border-pink-400"></div><span>Futuro/Especulativo</span></div>
+                        <h3 class="text-amber-500 font-bold uppercase tracking-widest text-xs mb-6 border-b border-slate-800 pb-2">Guía Visual</h3>
+                        <div class="grid grid-cols-2 gap-3 text-xs text-slate-400">
+                            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full border border-purple-500/50 bg-purple-500/10"></div><span>Cognitivismo</span></div>
+                            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full border border-red-500/50 bg-red-500/10"></div><span>Simbolismo/IA</span></div>
+                            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full border border-green-500/50 bg-green-500/10"></div><span>Conexionismo</span></div>
+                            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full border border-orange-500/50 bg-orange-500/10"></div><span>Corporeizado/4E</span></div>
+                            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full border border-yellow-500/50 bg-yellow-500/10"></div><span>Neurociencia</span></div>
+                            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full border border-blue-500/50 bg-blue-500/10"></div><span>Racionalidad/Bayes</span></div>
+                            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full border border-cyan-500/50 bg-cyan-500/10"></div><span>Conductismo</span></div>
+                            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full border border-teal-500/50 bg-teal-500/10"></div><span>Sistemas Dinámicos</span></div>
+                            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full border border-pink-500/50 bg-pink-500/10"></div><span>Futuro/Especulativo</span></div>
                         </div>
                     </div>
                 </div>
             </section>
 
             <!-- LÍNEA DE TIEMPO -->
-            <div id="timeline-content">
-                <!-- PREHISTORIA -->
-                <section class="glassmorphism section" data-animate>
-                    <h2 class="decade-marker text-white font-bold py-2 px-6 rounded-full inline-block mb-6">Prehistoria y Siglo XIX</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div class="timeline-item" data-paradigm="philosophy"><div class="timeline-card border-gray-400 p-4 rounded-lg" data-tippy-content="Filósofos como Aristóteles, Descartes, Kant, Locke, Hume y Wittgenstein sentaron las primeras bases para la comprensión de la cognición y la mente."><h3 class="font-bold text-gray-100">Filosofía (Antigüedad - Ilustración)</h3><p class="text-sm text-gray-400">Los primeros pensadores sentaron las bases para las teorías de la mente y el razonamiento.</p></div></div>
-                        <div class="timeline-item" data-paradigm="mathematics"><div class="timeline-card border-gray-400 p-4 rounded-lg" data-tippy-content="La lógica booleana y los sistemas formales de Frege influyeron en los modelos computacionales de la cognición."><h3 class="font-bold text-gray-100">Matemáticas (Boole, Frege, Bayes)</h3><p class="text-sm text-gray-400">Los sistemas formales y la teoría de la probabilidad dieron forma a la cognición computacional.</p></div></div>
-                        <div class="timeline-item" data-paradigm="neuroscience"><div class="timeline-card border-yellow-400 p-4 rounded-lg" data-tippy-content="Hipócrates, Galeno y Vesalio contribuyeron a la comprensión temprana del cerebro y el sistema nervioso."><h3 class="font-bold text-yellow-200">Neurociencia Temprana (Hipócrates, Galeno)</h3><p class="text-sm text-gray-400">Primeras ideas sobre la función del cerebro y el sistema nervioso.</p></div></div>
-                        <div class="timeline-item" data-paradigm="neuroscience"><div class="timeline-card border-yellow-400 p-4 rounded-lg" data-tippy-content="La psicofísica de Fechner cuantificó la percepción sensorial, uniendo psicología y neurociencia."><h3 class="font-bold text-yellow-200">Psicofísica (Fechner, 1860)</h3><p class="text-sm text-gray-400">Cuantifica la percepción sensorial, fundamental para la neurociencia cognitiva.</p></div></div>
-                        <div class="timeline-item" data-paradigm="cognitivism"><div class="timeline-card border-purple-400 p-4 rounded-lg" data-tippy-content="Wundt estableció el primer laboratorio de psicología, centrándose en la introspección y los procesos mentales."><h3 class="font-bold text-purple-200">Laboratorio de Psicología (Wundt, 1879)</h3><p class="text-sm text-gray-400">Primer laboratorio de psicología experimental, enfatizando la introspección.</p></div></div>
+            <div id="timeline-content" class="w-full">
+                
+                <!-- Prehistoria -->
+                <section id="era-prehistoria" class="w-full mx-auto mb-16 text-left">
+                    <h3 class="text-xl text-slate-200 font-bold mb-6 flex items-center">
+                        <span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-md border border-amber-500/20 text-sm mr-4">Era</span>
+                        Prehistoria y Siglo XIX
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                        <div class="timeline-item group" data-paradigm="all">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-gray-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Debate fundamental sobre el origen del conocimiento. Racionalismo (Descartes, Kant): conocimiento innato/a priori. Empirismo (Locke, Hume): mente como tabula rasa.">
+                                <h4 class="font-bold text-gray-200 text-lg mb-2 font-serif">Racionalismo vs Empirismo</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed"><span class="hl-indigo">Descartes</span>, <span class="hl-indigo">Kant</span>, <span class="hl-indigo">Locke</span>, <span class="hl-indigo">Hume</span>. Bases <span class="hl-amber">epistemológicas</span> de la mente.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="rationality">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-blue-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="George Boole (1854) formaliza las leyes del pensamiento lógico. Gottlob Frege (1879) desarrolla la lógica de predicados.">
+                                <h4 class="font-bold text-blue-300 text-lg mb-2 font-serif">Lógica Formal (s.XIX)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed"><span class="hl-cyan">Boole</span> y <span class="hl-cyan">Frege</span> establecen los fundamentos matemáticos del <span class="hl-amber">razonamiento</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="neuroscience">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-yellow-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Desde la teoría ventricular de Galeno hasta la anatomía precisa de Vesalio. Paul Broca (1861) descubre la localización del área del habla.">
+                                <h4 class="font-bold text-yellow-300 text-lg mb-2 font-serif">Localizacionismo Temprano</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed"><span class="hl-lime">Galeno</span>, <span class="hl-lime">Vesalio</span>, <span class="hl-lime">Broca</span>. Primeros mapas funcionales del <span class="hl-amber">cerebro</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="neuroscience">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-yellow-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Gustav Fechner publica 'Elementos de Psicofísica' (1860), estableciendo la primera ley matemática (S = K log R) que une estímulo físico y sensación mental.">
+                                <h4 class="font-bold text-yellow-300 text-lg mb-2 font-serif">Psicofísica (Fechner, 1860)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Primera relación <span class="hl-cyan">matemática</span> entre <span class="hl-amber">mente</span> y <span class="hl-amber">materia</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="cognitivism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-purple-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Wilhelm Wundt funda el primer laboratorio en Leipzig (1879). Utiliza la introspección experimental para medir 'átomos de la mente'.">
+                                <h4 class="font-bold text-purple-300 text-lg mb-2 font-serif">Primer Lab. Psicología (1879)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed"><span class="hl-indigo">Wundt</span>: Nacimiento de la psicología <span class="hl-amber">experimental</span>.</p>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
-                <!-- 1900s-1920s -->
-                <section class="glassmorphism section" data-animate>
-                    <h2 class="decade-marker text-white font-bold py-2 px-6 rounded-full inline-block mb-6">1900s - 1920s</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div class="timeline-item" data-paradigm="cognitivism"><div class="timeline-card border-purple-400 p-4 rounded-lg" data-tippy-content="El estructuralismo se centró en analizar las estructuras mentales a través de la introspección."><h3 class="font-bold text-purple-200">Estructuralismo (Wundt, Titchener, 1910)</h3><p class="text-sm text-gray-400">Analiza las estructuras mentales mediante la introspección.</p></div></div>
-                        <div class="timeline-item" data-paradigm="neuroscience"><div class="timeline-card border-yellow-400 p-4 rounded-lg" data-tippy-content="El EEG de Berger permitió el registro no invasivo de la actividad cerebral."><h3 class="font-bold text-yellow-200">EEG (Berger, 1929)</h3><p class="text-sm text-gray-400">El registro no invasivo de la actividad cerebral avanza la neurociencia.</p></div></div>
-                        <div class="timeline-item" data-paradigm="cognitivism"><div class="timeline-card border-purple-400 p-4 rounded-lg" data-tippy-content="El psicoanálisis de Freud exploró las influencias inconscientes en el comportamiento."><h3 class="font-bold text-purple-200">Psicoanálisis (Freud, 1922)</h3><p class="text-sm text-gray-400">Explora los determinantes inconscientes del comportamiento.</p></div></div>
-                        <div class="timeline-item" data-paradigm="behaviorism"><div class="timeline-card border-cyan-400 p-4 rounded-lg" data-tippy-content="El conductismo, liderado por Watson y Skinner, dominó la psicología, centrándose en el comportamiento observable."><h3 class="font-bold text-cyan-200">Auge del Conductismo (Watson, Skinner)</h3><p class="text-sm text-gray-400">Enfoque en estímulo-respuesta, rechazando los procesos mentales internos.</p></div></div>
+                <!-- 1900s - 1920s -->
+                <section id="era-1900" class="w-full mx-auto mb-16 text-left border-t border-slate-800 pt-10">
+                    <h3 class="text-xl text-slate-200 font-bold mb-6 flex items-center">
+                        <span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-md border border-amber-500/20 text-sm mr-4">Era</span>
+                        1900s - 1920s
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                        <div class="timeline-item" data-paradigm="cognitivism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-purple-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Edward Titchener lleva las ideas de Wundt a EE.UU., intentando clasificar las estructuras de la mente como elementos químicos.">
+                                <h4 class="font-bold text-purple-300 text-lg mb-2 font-serif">Estructuralismo</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed"><span class="hl-indigo">Titchener</span>: Descomposición analítica de la <span class="hl-amber">conciencia</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="neuroscience">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-yellow-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Hans Berger registra las primeras ondas cerebrales humanas (ondas alfa), demostrando la actividad eléctrica continua del cerebro.">
+                                <h4 class="font-bold text-yellow-300 text-lg mb-2 font-serif">Invención del EEG (1924)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed"><span class="hl-lime">Berger</span>: Registro eléctrico <span class="hl-cyan">no invasivo</span> del cerebro humano.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="cognitivism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-purple-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Sigmund Freud publica 'El Yo y el Ello' (1923). Aunque no es ciencia cognitiva moderna, introdujo la importancia de procesos mentales ocultos.">
+                                <h4 class="font-bold text-purple-300 text-lg mb-2 font-serif">Psicoanálisis (Freud)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Teorización de procesos <span class="hl-pink">inconscientes</span> y reprimidos.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="behaviorism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-cyan-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="John B. Watson publica el manifiesto conductista (1913). Experimento del 'Pequeño Albert'. Rechazo total a la introspección.">
+                                <h4 class="font-bold text-cyan-300 text-lg mb-2 font-serif">Auge del Conductismo (1913)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed"><span class="hl-cyan">Watson</span>: La mente como <span class="hl-amber">'caja negra'</span>. Solo importa la conducta.</p>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
                 <!-- 1930s -->
-                <section class="glassmorphism section" data-animate>
-                    <h2 class="decade-marker text-white font-bold py-2 px-6 rounded-full inline-block mb-6">1930s</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div class="timeline-item" data-paradigm="symbolism"><div class="timeline-card border-red-400 p-4 rounded-lg" data-tippy-content="Turing y Gödel formalizaron la computación, permitiendo la IA y el modelado cognitivo."><h3 class="font-bold text-red-200">Máquina de Turing y Teorema de Incompletitud (1936)</h3><p class="text-sm text-gray-400">Formaliza la computación, fundamental para la IA.</p></div></div>
-                        <div class="timeline-item" data-paradigm="connectionism"><div class="timeline-card border-green-400 p-4 rounded-lg" data-tippy-content="Los modelos neuronales de Rashevsky fueron un precursor temprano de los enfoques conexionistas."><h3 class="font-bold text-green-200">Modelado Neuronal (Rashevsky, 1930s)</h3><p class="text-sm text-gray-400">Los primeros modelos de redes neuronales influyen en el conexionismo.</p></div></div>
-                        <div class="timeline-item" data-paradigm="cognitivism"><div class="timeline-card border-purple-400 p-4 rounded-lg" data-tippy-content="Las teorías de Piaget describieron las etapas del desarrollo cognitivo en los niños."><h3 class="font-bold text-purple-200">Desarrollo Cognitivo (Piaget, 1930)</h3><p class="text-sm text-gray-400">Describe las etapas del crecimiento cognitivo en los niños.</p></div></div>
+                <section class="w-full mx-auto mb-16 text-left border-t border-slate-800 pt-10">
+                    <h3 class="text-xl text-slate-200 font-bold mb-6 flex items-center">
+                        <span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-md border border-amber-500/20 text-sm mr-4">Era</span>
+                        1930s
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                        <div class="timeline-item" data-paradigm="symbolism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-red-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Alan Turing publica 'On Computable Numbers' (1936), definiendo la máquina universal. Gödel (1931) demuestra los límites de los sistemas formales.">
+                                <h4 class="font-bold text-red-300 text-lg mb-2 font-serif">Computabilidad (Turing, 1936)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Definición matemática del <span class="hl-pink">algoritmo</span> y la computación universal.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="connectionism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-green-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Nicolas Rashevsky funda la biología matemática. Precursor de McCulloch y Pitts (1943) que modelarían la neurona como una puerta lógica.">
+                                <h4 class="font-bold text-green-300 text-lg mb-2 font-serif">Biofísica Matemática (Rashevsky)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Primeros intentos de modelar <span class="hl-lime">matemáticamente</span> el sistema nervioso.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="cognitivism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-purple-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Jean Piaget comienza a publicar sobre el desarrollo de la inteligencia, proponiendo que los niños construyen activamente modelos mentales (constructivismo).">
+                                <h4 class="font-bold text-purple-300 text-lg mb-2 font-serif">Epistemología Genética (Piaget)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">El desarrollo cognitivo como <span class="hl-amber">construcción</span> de esquemas mentales.</p>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
                 <!-- 1940s -->
-                <section class="glassmorphism section" data-animate>
-                    <h2 class="decade-marker text-white font-bold py-2 px-6 rounded-full inline-block mb-6">1940s</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="timeline-item" data-paradigm="symbolism"><div class="timeline-card border-red-400 p-4 rounded-lg" data-tippy-content="La cibernética de Wiener introdujo sistemas de retroalimentación, influyendo en la IA y la ciencia de sistemas."><h3 class="font-bold text-red-200">Cibernética (Wiener, 1948)</h3><p class="text-sm text-gray-400">Introduce la retroalimentación y la autoorganización en los sistemas.</p></div></div>
-                        <div class="timeline-item" data-paradigm="behaviorism"><div class="timeline-card border-cyan-400 p-4 rounded-lg" data-tippy-content="Los mapas cognitivos de Tolman mostraron representaciones mentales en animales, desafiando al conductismo."><h3 class="font-bold text-cyan-200">Mapas Cognitivos (Tolman, 1948)</h3><p class="text-sm text-gray-400">Demuestra representaciones mentales en ratas.</p></div></div>
-                        <div class="timeline-item" data-paradigm="neuroscience"><div class="timeline-card border-yellow-400 p-4 rounded-lg" data-tippy-content="La teoría de la plasticidad sináptica de Hebb influyó en los modelos de redes neuronales."><h3 class="font-bold text-yellow-200">Aprendizaje Hebbiano (Hebb, 1949)</h3><p class="text-sm text-gray-400">Las neuronas que se disparan juntas, se conectan juntas.</p></div></div>
-                        <div class="timeline-item" data-paradigm="symbolism"><div class="timeline-card border-red-400 p-4 rounded-lg" data-tippy-content="La teoría de la información de Shannon formalizó la transmisión de datos, impactando la ciencia cognitiva."><h3 class="font-bold text-red-200">Teoría de la Información (Shannon, 1948)</h3><p class="text-sm text-gray-400">Formaliza la transmisión y el procesamiento de datos.</p></div></div>
+                <section class="w-full mx-auto mb-16 text-left border-t border-slate-800 pt-10">
+                    <h3 class="text-xl text-slate-200 font-bold mb-6 flex items-center">
+                        <span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-md border border-amber-500/20 text-sm mr-4">Era</span>
+                        1940s
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                        <div class="timeline-item" data-paradigm="symbolism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-red-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Norbert Wiener publica 'Cybernetics' (1948). Introduce conceptos de feedback (retroalimentación) y control en sistemas biológicos y mecánicos.">
+                                <h4 class="font-bold text-red-300 text-lg mb-2 font-serif">Cibernética (Wiener, 1948)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Estudio del <span class="hl-pink">control</span>, comunicación y bucles de <span class="hl-amber">retroalimentación</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="behaviorism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-cyan-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Edward Tolman demuestra que las ratas crean 'mapas cognitivos' de laberintos, desafiando la visión simplista de estímulo-respuesta.">
+                                <h4 class="font-bold text-cyan-300 text-lg mb-2 font-serif">Mapas Cognitivos (Tolman, 1948)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Evidencia de <span class="hl-indigo">representaciones internas</span> latentes en animales.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="neuroscience">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-yellow-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Donald Hebb publica 'The Organization of Behavior' (1949). Propone que 'las neuronas que se disparan juntas, se conectan juntas' (Asambleas Celulares).">
+                                <h4 class="font-bold text-yellow-300 text-lg mb-2 font-serif">Aprendizaje Hebbiano (1949)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Base neural del aprendizaje <span class="hl-lime">asociativo</span> y la plasticidad.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="symbolism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-red-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Claude Shannon publica 'A Mathematical Theory of Communication' (1948). Define el bit y separa la información del significado semántico.">
+                                <h4 class="font-bold text-red-300 text-lg mb-2 font-serif">Teoría de la Información (Shannon)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Cuantificación matemática de la <span class="hl-cyan">transmisión de señales</span>.</p>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
                 <!-- 1950s -->
-                <section class="glassmorphism section" data-animate>
-                    <h2 class="decade-marker text-white font-bold py-2 px-6 rounded-full inline-block mb-6">1950s</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div class="timeline-item" data-paradigm="cognitivism"><div class="timeline-card border-purple-400 p-4 rounded-lg" data-tippy-content="El Simposio del MIT de 1956 unió psicología, lingüística e IA, lanzando la ciencia cognitiva."><h3 class="font-bold text-purple-200">Nacimiento de la Ciencia Cognitiva (1956)</h3><p class="text-sm text-gray-400">El Simposio del MIT une a Chomsky, Newell, Simon.</p></div></div>
-                        <div class="timeline-item" data-paradigm="symbolism"><div class="timeline-card border-red-400 p-4 rounded-lg" data-tippy-content="El Taller de Dartmouth acuñó 'inteligencia artificial', centrándose en métodos simbólicos."><h3 class="font-bold text-red-200">Inteligencia Artificial (McCarthy, 1956)</h3><p class="text-sm text-gray-400">El Taller de Dartmouth lanza la IA simbólica.</p></div></div>
-                        <div class="timeline-item" data-paradigm="cognitivism"><div class="timeline-card border-purple-400 p-4 rounded-lg" data-tippy-content="La crítica de Chomsky al conductismo y las teorías sintácticas reformaron la lingüística."><h3 class="font-bold text-purple-200">Estructuras Sintácticas (Chomsky, 1957)</h3><p class="text-sm text-gray-400">Desafía el conductismo, da forma a la lingüística cognitiva.</p></div></div>
-                        <div class="timeline-item" data-paradigm="connectionism"><div class="timeline-card border-green-400 p-4 rounded-lg" data-tippy-content="Los perceptrones de Rosenblatt fueron las primeras redes neuronales, fundamentales para el conexionismo."><h3 class="font-bold text-green-200">Perceptrones (Rosenblatt, 1958)</h3><p class="text-sm text-gray-400">Las primeras redes neuronales avanzan las ideas conexionistas.</p></div></div>
-                        <div class="timeline-item" data-paradigm="cognitivism"><div class="timeline-card border-purple-400 p-4 rounded-lg" data-tippy-content="El trabajo de Miller sobre la capacidad de la memoria a corto plazo influyó en la psicología cognitiva."><h3 class="font-bold text-purple-200">El Mágico Número Siete (Miller, 1956)</h3><p class="text-sm text-gray-400">Define los límites de la capacidad de la memoria a corto plazo.</p></div></div>
-                        <div class="timeline-item" data-paradigm="neuroscience"><div class="timeline-card border-yellow-400 p-4 rounded-lg" data-tippy-content="El modelo de Hodgkin y Huxley sobre el potencial de acción neuronal fue un hito en neurociencia."><h3 class="font-bold text-yellow-200">Modelo de Potencial de Acción (Hodgkin & Huxley, 1952)</h3><p class="text-sm text-gray-400">Describe cómo se generan y propagan las señales nerviosas.</p></div></div>
+                <section id="era-1950" class="w-full mx-auto mb-16 text-left border-t border-slate-800 pt-10">
+                    <h3 class="text-xl text-slate-200 font-bold mb-6 flex items-center">
+                        <span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-md border border-amber-500/20 text-sm mr-4">Era</span>
+                        1950s
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                        <div class="timeline-item" data-paradigm="cognitivism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-purple-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="11 de septiembre de 1956. Simposio en el MIT. Chomsky (lingüística), Miller (psicología), Newell y Simon (IA) presentan trabajos fundacionales.">
+                                <h4 class="font-bold text-purple-300 text-lg mb-2 font-serif">Revolución Cognitiva (1956)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Nacimiento oficial del <span class="hl-amber">campo interdisciplinario</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="symbolism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-red-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Conferencia de Dartmouth organizada por McCarthy, Minsky, Rochester y Shannon. Nace el término 'Inteligencia Artificial'. Se presenta el 'Logic Theorist'.">
+                                <h4 class="font-bold text-red-300 text-lg mb-2 font-serif">Nacimiento de la IA (1956)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Conferencia de Dartmouth y el <span class="hl-pink">enfoque simbólico</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="cognitivism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-purple-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Noam Chomsky publica 'Syntactic Structures' (1957). Argumenta contra Skinner que el lenguaje es innato y generativo, no solo aprendido por refuerzo.">
+                                <h4 class="font-bold text-purple-300 text-lg mb-2 font-serif">Gramática Generativa (1957)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed"><span class="hl-indigo">Chomsky</span> refuta al conductismo en la lingüística.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="connectionism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-green-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Frank Rosenblatt inventa el Perceptrón Mark I (1958), la primera red neuronal artificial capaz de aprender a clasificar patrones visuales simples.">
+                                <h4 class="font-bold text-green-300 text-lg mb-2 font-serif">El Perceptrón (Rosenblatt, 1958)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Primera máquina neuronal capaz de <span class="hl-lime">aprendizaje supervisado</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="cognitivism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-purple-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="George Miller publica 'The Magical Number Seven, Plus or Minus Two'. Establece límites cuantificables en la capacidad de procesamiento de información humana.">
+                                <h4 class="font-bold text-purple-300 text-lg mb-2 font-serif">El Número Mágico 7 (Miller, 1956)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Límites de capacidad en la <span class="hl-cyan">memoria de trabajo</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="neuroscience">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-yellow-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Hodgkin y Huxley ganan el Nobel por describir matemáticamente las corrientes iónicas que generan el potencial de acción en el axón gigante del calamar.">
+                                <h4 class="font-bold text-yellow-300 text-lg mb-2 font-serif">Modelo Hodgkin-Huxley (1952)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Descripción biofísica precisa de la <span class="hl-lime">transmisión neuronal</span>.</p>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
                 <!-- 1960s -->
-                <section class="glassmorphism section" data-animate>
-                    <h2 class="decade-marker text-white font-bold py-2 px-6 rounded-full inline-block mb-6">1960s</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div class="timeline-item" data-paradigm="embodied"><div class="timeline-card border-orange-400 p-4 rounded-lg" data-tippy-content="La psicología ecológica de Gibson enfatizó la percepción directa a través de las 'affordances'."><h3 class="font-bold text-orange-200">Psicología Ecológica (Gibson, 1966)</h3><p class="text-sm text-gray-400">Las 'affordances' vinculan la percepción con la interacción ambiental.</p></div></div>
-                        <div class="timeline-item" data-paradigm="symbolism"><div class="timeline-card border-red-400 p-4 rounded-lg" data-tippy-content="La crítica de Minsky y Papert a los perceptrones condujo al primer invierno de la IA."><h3 class="font-bold text-red-200">Crítica a los Perceptrones (Minsky & Papert, 1969)</h3><p class="text-sm text-gray-400">Expone las limitaciones de las redes neuronales, causando el invierno de la IA.</p></div></div>
-                        <div class="timeline-item" data-paradigm="neuroscience"><div class="timeline-card border-yellow-400 p-4 rounded-lg" data-tippy-content="Los descubrimientos de Hubel y Wiesel en el procesamiento del córtex visual avanzaron la neurociencia."><h3 class="font-bold text-yellow-200">Campos Receptivos (Hubel & Wiesel, 1961)</h3><p class="text-sm text-gray-400">Descubrimientos en el córtex visual avanzan la investigación del procesamiento neural.</p></div></div>
-                        <div class="timeline-item" data-paradigm="symbolism"><div class="timeline-card border-red-400 p-4 rounded-lg" data-tippy-content="El Solucionador General de Problemas de Newell y Simon modeló la resolución de problemas humanos."><h3 class="font-bold text-red-200">Solucionador General de Problemas (Newell & Simon, 1961)</h3><p class="text-sm text-gray-400">Modela la resolución de problemas humanos con IA simbólica.</p></div></div>
-                        <div class="timeline-item" data-paradigm="cognitivism"><div class="timeline-card border-purple-400 p-4 rounded-lg" data-tippy-content="El modelo de Atkinson y Shiffrin formalizó los procesos de la memoria humana."><h3 class="font-bold text-purple-200">Modelo de Memoria Humana (Atkinson & Shiffrin, 1968)</h3><p class="text-sm text-gray-400">Formaliza el modelo multialmacén de la memoria humana.</p></div></div>
+                <section class="w-full mx-auto mb-16 text-left border-t border-slate-800 pt-10">
+                    <h3 class="text-xl text-slate-200 font-bold mb-6 flex items-center">
+                        <span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-md border border-amber-500/20 text-sm mr-4">Era</span>
+                        1960s
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                        <div class="timeline-item" data-paradigm="embodied">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-orange-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="J.J. Gibson publica 'The Senses Considered as Perceptual Systems' (1966). Introduce 'Affordances': percibimos posibilidades de acción, no solo datos sensoriales.">
+                                <h4 class="font-bold text-orange-300 text-lg mb-2 font-serif">Psicología Ecológica (Gibson)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Percepción directa y acoplamiento con el <span class="hl-amber">entorno</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="symbolism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-red-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Marvin Minsky y Seymour Papert publican 'Perceptrons' (1969), demostrando matemáticamente que redes simples no pueden resolver problemas no lineales (XOR).">
+                                <h4 class="font-bold text-red-300 text-lg mb-2 font-serif">Minsky & Papert (1969)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">El problema XOR y el inicio del <span class="hl-pink">'Invierno de la IA'</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="neuroscience">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-yellow-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="David Hubel y Torsten Wiesel mapean la corteza visual del gato, descubriendo células simples y complejas que detectan bordes y movimiento.">
+                                <h4 class="font-bold text-yellow-300 text-lg mb-2 font-serif">Córtex Visual (Hubel & Wiesel)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Descubrimiento de la <span class="hl-lime">jerarquía</span> de procesamiento visual.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="symbolism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-red-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Newell y Simon desarrollan el 'General Problem Solver' (GPS), un programa capaz de resolver puzles mediante análisis medios-fines.">
+                                <h4 class="font-bold text-red-300 text-lg mb-2 font-serif">General Problem Solver</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Modelado de la resolución de problemas humana mediante <span class="hl-pink">símbolos</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="cognitivism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-purple-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Atkinson y Shiffrin proponen el modelo modal de la memoria: Almacén Sensorial -> Memoria a Corto Plazo -> Memoria a Largo Plazo.">
+                                <h4 class="font-bold text-purple-300 text-lg mb-2 font-serif">Modelo Modal de Memoria (1968)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Arquitectura de procesamiento de información <span class="hl-cyan">secuencial</span>.</p>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
                 <!-- 1970s -->
-                <section class="glassmorphism section" data-animate>
-                    <h2 class="decade-marker text-white font-bold py-2 px-6 rounded-full inline-block mb-6">1970s</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div class="timeline-item" data-paradigm="embodied"><div class="timeline-card border-orange-400 p-4 rounded-lg" data-tippy-content="La teoría de la autopoiesis de Maturana y Varela influyó en la cognición corporeizada y el enactivismo."><h3 class="font-bold text-orange-200">Autopoiesis (Maturana & Varela, 1972)</h3><p class="text-sm text-gray-400">Los sistemas autoorganizados dan forma a la cognición corporeizada.</p></div></div>
-                        <div class="timeline-item" data-paradigm="rationality"><div class="timeline-card border-blue-400 p-4 rounded-lg" data-tippy-content="El trabajo de Kahneman y Tversky reveló sesgos cognitivos en la toma de decisiones."><h3 class="font-bold text-blue-200">Juicios bajo Incertidumbre (Kahneman & Tversky, 1974)</h3><p class="text-sm text-gray-400">Revela sesgos cognitivos, dando forma a la economía conductual.</p></div></div>
-                        <div class="timeline-item" data-paradigm="symbolism"><div class="timeline-card border-red-400 p-4 rounded-lg" data-tippy-content="La hipótesis de Newell y Simon propuso la cognición como manipulación de símbolos."><h3 class="font-bold text-red-200">Hipótesis del Sistema de Símbolos Físicos (Newell & Simon, 1976)</h3><p class="text-sm text-gray-400">La cognición como manipulación de símbolos avanza la IA simbólica.</p></div></div>
-                        <div class="timeline-item" data-paradigm="cognitivism"><div class="timeline-card border-purple-400 p-4 rounded-lg" data-tippy-content="La teoría del aprendizaje social de Bandura enfatizó el aprendizaje observacional."><h3 class="font-bold text-purple-200">Aprendizaje Social (Bandura, 1977)</h3><p class="text-sm text-gray-400">Enfatiza el aprendizaje observacional en la cognición.</p></div></div>
-                        <div class="timeline-item" data-paradigm="neuroscience"><div class="timeline-card border-yellow-400 p-4 rounded-lg" data-tippy-content="Los estudios de Kandel en Aplysia revelaron mecanismos de aprendizaje y memoria."><h3 class="font-bold text-yellow-200">Habituación en Aplysia (Kandel, 1970)</h3><p class="text-sm text-gray-400">Revela mecanismos neurales de aprendizaje y memoria.</p></div></div>
-                        <div class="timeline-item" data-paradigm="cognitivism"><div class="timeline-card border-purple-400 p-4 rounded-lg" data-tippy-content="El Informe Sloan formalizó la ciencia cognitiva como un campo interdisciplinario."><h3 class="font-bold text-purple-200">Informe Sloan (1978)</h3><p class="text-sm text-gray-400">Formaliza la ciencia cognitiva como un campo.</p></div></div>
+                <section class="w-full mx-auto mb-16 text-left border-t border-slate-800 pt-10">
+                    <h3 class="text-xl text-slate-200 font-bold mb-6 flex items-center">
+                        <span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-md border border-amber-500/20 text-sm mr-4">Era</span>
+                        1970s
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                        <div class="timeline-item" data-paradigm="embodied">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-orange-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Maturana y Varela definen la vida como sistemas que se autoproducen. La cognición es la adaptación necesaria para mantener esta organización.">
+                                <h4 class="font-bold text-orange-300 text-lg mb-2 font-serif">Autopoiesis (1972)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed"><span class="hl-amber">Maturana & Varela</span>: Biología de la cognición y autoorganización.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="rationality">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-blue-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Kahneman y Tversky publican 'Judgment under Uncertainty'. Introducen heurísticos (atajos mentales) y sesgos, desafiando el modelo de actor racional.">
+                                <h4 class="font-bold text-blue-300 text-lg mb-2 font-serif">Heurísticos y Sesgos (1974)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Psicología del juicio: La mente no es <span class="hl-cyan">estadística perfecta</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="symbolism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-red-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Newell y Simon reciben el premio Turing. Formulan que 'todo sistema de símbolos físicos tiene los medios necesarios y suficientes para la acción inteligente general'.">
+                                <h4 class="font-bold text-red-300 text-lg mb-2 font-serif">Sistema de Símbolos Físicos</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">La hipótesis central de la <span class="hl-pink">IA clásica (GOFAI)</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="cognitivism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-purple-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Albert Bandura demuestra que el aprendizaje ocurre por observación (muñeco Bobo), integrando procesos cognitivos al conductismo (teoría cognitivo-social).">
+                                <h4 class="font-bold text-purple-300 text-lg mb-2 font-serif">Aprendizaje Social (Bandura)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Puente entre conductismo y cognitivismo: <span class="hl-indigo">aprendizaje vicario</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="neuroscience">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-yellow-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Eric Kandel estudia la babosa marina Aplysia, descubriendo que la memoria implica cambios químicos en las sinapsis (habituación y sensibilización).">
+                                <h4 class="font-bold text-yellow-300 text-lg mb-2 font-serif">Memoria en Aplysia (Kandel)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Bases <span class="hl-lime">moleculares</span> de la memoria y el aprendizaje.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="cognitivism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-purple-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="El Informe de la Fundación Sloan define el hexágono cognitivo: Psicología, Lingüística, Antropología, Neurociencia, Computación y Filosofía.">
+                                <h4 class="font-bold text-purple-300 text-lg mb-2 font-serif">Informe Sloan (1978)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Consolidación <span class="hl-amber">institucional</span> de la Ciencia Cognitiva.</p>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
                 <!-- 1980s -->
-                <section class="glassmorphism section" data-animate>
-                    <h2 class="decade-marker text-white font-bold py-2 px-6 rounded-full inline-block mb-6">1980s</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div class="timeline-item" data-paradigm="connectionism"><div class="timeline-card border-green-400 p-4 rounded-lg" data-tippy-content="El libro PDP de Rumelhart y McClelland revivió la investigación de redes neuronales."><h3 class="font-bold text-green-200">Procesamiento Distribuido en Paralelo (Rumelhart & McClelland, 1986)</h3><p class="text-sm text-gray-400">Revive el conexionismo con redes neuronales multicapa.</p></div></div>
-                        <div class="timeline-item" data-paradigm="cognitivism"><div class="timeline-card border-purple-400 p-4 rounded-lg" data-tippy-content="Norman fundó la usabilidad aplicando la ciencia cognitiva al diseño."><h3 class="font-bold text-purple-200">Diseño Cognitivo (Norman, 1988)</h3><p class="text-sm text-gray-400">Aplica la ciencia cognitiva al diseño centrado en el usuario.</p></div></div>
-                        <div class="timeline-item" data-paradigm="embodied"><div class="timeline-card border-orange-400 p-4 rounded-lg" data-tippy-content="Los robots de Brooks enfatizaron la interacción ambiental directa sin representaciones."><h3 class="font-bold text-orange-200">Robótica Corporeizada (Brooks, 1986)</h3><p class="text-sm text-gray-400">IA sin representaciones a través de la interacción ambiental.</p></div></div>
-                        <div class="timeline-item" data-paradigm="cognitivism"><div class="timeline-card border-purple-400 p-4 rounded-lg" data-tippy-content="La teoría de la modularidad de Fodor propuso módulos cognitivos distintos, en oposición al conexionismo."><h3 class="font-bold text-purple-200">Modularidad de la Mente (Fodor, 1983)</h3><p class="text-sm text-gray-400">Propone módulos cognitivos distintos.</p></div></div>
-                        <div class="timeline-item" data-paradigm="neuroscience"><div class="timeline-card border-yellow-400 p-4 rounded-lg" data-tippy-content="Los niveles de análisis de Marr proporcionaron un marco para estudiar la visión y la cognición."><h3 class="font-bold text-yellow-200">Niveles de Análisis (Marr, 1982)</h3><p class="text-sm text-gray-400">Marco para estudiar la visión y la cognición.</p></div></div>
-                        <div class="timeline-item" data-paradigm="dynamical"><div class="timeline-card border-teal-400 p-4 rounded-lg" data-tippy-content="La teoría de sistemas dinámicos aplicó la dinámica no lineal a los procesos cognitivos."><h3 class="font-bold text-teal-200">Teoría de Sistemas Dinámicos (Thelen, Smith, 1980s)</h3><p class="text-sm text-gray-400">Aplica la dinámica no lineal a la cognición.</p></div></div>
+                <section id="era-1980" class="w-full mx-auto mb-16 text-left border-t border-slate-800 pt-10">
+                    <h3 class="text-xl text-slate-200 font-bold mb-6 flex items-center">
+                        <span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-md border border-amber-500/20 text-sm mr-4">Era</span>
+                        1980s
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                        <div class="timeline-item" data-paradigm="connectionism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-green-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Rumelhart y McClelland publican 'Parallel Distributed Processing'. Popularizan el algoritmo de Backpropagation, superando las limitaciones expuestas por Minsky.">
+                                <h4 class="font-bold text-green-300 text-lg mb-2 font-serif">Grupo PDP (1986)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Renacimiento de las redes neuronales: <span class="hl-lime">Conexionismo</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="cognitivism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-purple-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Donald Norman publica 'The Psychology of Everyday Things'. Aplica modelos mentales y affordances al diseño de tecnología.">
+                                <h4 class="font-bold text-purple-300 text-lg mb-2 font-serif">Ingeniería Cognitiva (Norman)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Nacimiento de la Experiencia de Usuario <span class="hl-pink">(UX)</span> basada en cognición.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="embodied">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-orange-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Rodney Brooks construye robots (Subsumption Architecture) que caminan sin representar el mundo. 'La inteligencia sin representación'.">
+                                <h4 class="font-bold text-orange-300 text-lg mb-2 font-serif">Robótica Situada (Brooks)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">IA basada en el <span class="hl-amber">comportamiento</span>, no en modelos internos.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="cognitivism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-purple-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Jerry Fodor publica 'The Modularity of Mind'. Propone que la mente tiene módulos innatos, rápidos y encapsulados (ej. lenguaje, visión).">
+                                <h4 class="font-bold text-purple-300 text-lg mb-2 font-serif">Modularidad (Fodor, 1983)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Teoría de sistemas cognitivos <span class="hl-indigo">encapsulados</span> y específicos.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="neuroscience">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-yellow-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="David Marr publica 'Vision' (1982). Establece los 3 niveles de análisis: Computacional (qué/por qué), Algorítmico (cómo) e Implementacional (físico).">
+                                <h4 class="font-bold text-yellow-300 text-lg mb-2 font-serif">Niveles de Marr (1982)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Marco teórico esencial para la <span class="hl-lime">neurociencia computacional</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="dynamical">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-teal-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Esther Thelen y Linda Smith aplican la teoría del caos y sistemas dinámicos al desarrollo motor infantil, desafiando el programa motor estático.">
+                                <h4 class="font-bold text-teal-300 text-lg mb-2 font-serif">Sistemas Dinámicos</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Cognición como <span class="hl-cyan">evolución temporal</span> continua, no pasos discretos.</p>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
                 <!-- 1990s -->
-                <section class="glassmorphism section" data-animate>
-                    <h2 class="decade-marker text-white font-bold py-2 px-6 rounded-full inline-block mb-6">1990s</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div class="timeline-item" data-paradigm="embodied"><div class="timeline-card border-orange-400 p-4 rounded-lg" data-tippy-content="El libro de Varela, Thompson y Rosch estableció el enactivismo y la cognición 4E."><h3 class="font-bold text-orange-200">La Mente Corporeizada (Varela, Thompson, Rosch, 1991)</h3><p class="text-sm text-gray-400">Fundamental para el enactivismo y la cognición 4E.</p></div></div>
-                        <div class="timeline-item" data-paradigm="rationality"><div class="timeline-card border-blue-400 p-4 rounded-lg" data-tippy-content="Las redes bayesianas de Pearl formalizaron el razonamiento probabilístico en la IA."><h3 class="font-bold text-blue-200">Redes Bayesianas (Pearl, 1988)</h3><p class="text-sm text-gray-400">Formaliza el razonamiento probabilístico en la IA.</p></div></div>
-                        <div class="timeline-item" data-paradigm="neuroscience"><div class="timeline-card border-yellow-400 p-4 rounded-lg" data-tippy-content="La fMRI permitió la obtención de imágenes cerebrales no invasivas, revolucionando la neurociencia cognitiva."><h3 class="font-bold text-yellow-200">Desarrollo de fMRI (Ogawa et al., 1990)</h3><p class="text-sm text-gray-400">La imagen cerebral no invasiva revoluciona la neurociencia.</p></div></div>
-                        <div class="timeline-item" data-paradigm="embodied"><div class="timeline-card border-orange-400 p-4 rounded-lg" data-tippy-content="Hutchins integró la antropología y la ciencia cognitiva, enfatizando la cognición distribuida."><h3 class="font-bold text-orange-200">Cognición en la Naturaleza (Hutchins, 1995)</h3><p class="text-sm text-gray-400">Explora la cognición distribuida en entornos del mundo real.</p></div></div>
-                        <div class="timeline-item" data-paradigm="neuroscience"><div class="timeline-card border-yellow-400 p-4 rounded-lg" data-tippy-content="El descubrimiento de las neuronas espejo por Rizzolatti vinculó la acción y la percepción."><h3 class="font-bold text-yellow-200">Neuronas Espejo (Rizzolatti, 1996)</h3><p class="text-sm text-gray-400">Vincula la acción y la percepción en el procesamiento neural.</p></div></div>
-                        <div class="timeline-item" data-paradigm="dynamical"><div class="timeline-card border-teal-400 p-4 rounded-lg" data-tippy-content="El trabajo de Port y van Gelder aplicó sistemas dinámicos a los procesos cognitivos."><h3 class="font-bold text-teal-200">La Mente como Movimiento (Port & van Gelder, 1995)</h3><p class="text-sm text-gray-400">Enfoque de sistemas dinámicos para la cognición.</p></div></div>
-                        <div class="timeline-item" data-paradigm="symbolism"><div class="timeline-card border-red-400 p-4 rounded-lg" data-tippy-content="La victoria de Deep Blue de IBM sobre Kasparov fue un hito para la IA en el ajedrez."><h3 class="font-bold text-red-200">Deep Blue vs. Kasparov (1997)</h3><p class="text-sm text-gray-400">La IA simbólica derrota al campeón mundial de ajedrez.</p></div></div>
-                        <div class="timeline-item" data-paradigm="rationality"><div class="timeline-card border-blue-400 p-4 rounded-lg" data-tippy-content="El trabajo de Rao y Ballard sobre el Córtex Visual fue un precursor clave del procesamiento predictivo."><h3 class="font-bold text-blue-200">Codificación Predictiva (Rao & Ballard, 1999)</h3><p class="text-sm text-gray-400">Modelo temprano de codificación predictiva en el sistema visual.</p></div></div>
+                <section class="w-full mx-auto mb-16 text-left border-t border-slate-800 pt-10">
+                    <h3 class="text-xl text-slate-200 font-bold mb-6 flex items-center">
+                        <span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-md border border-amber-500/20 text-sm mr-4">Era</span>
+                        1990s
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                        <div class="timeline-item" data-paradigm="embodied">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-orange-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Varela, Thompson y Rosch publican 'The Embodied Mind'. Introducen el Enactivismo: la cognición surge de la acción vivida y el cuerpo biológico.">
+                                <h4 class="font-bold text-orange-300 text-lg mb-2 font-serif">Enactivismo (1991)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">La mente no está en la cabeza, está en la <span class="hl-amber">interacción cuerpo-mundo</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="rationality">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-blue-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Judea Pearl desarrolla las Redes Bayesianas, permitiendo a la IA razonar bajo incertidumbre y causalidad, rompiendo con la lógica rígida.">
+                                <h4 class="font-bold text-blue-300 text-lg mb-2 font-serif">Revolución Bayesiana (Pearl)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Formalización del razonamiento <span class="hl-cyan">probabilístico</span> y causal.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="neuroscience">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-yellow-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Seiji Ogawa descubre el contraste BOLD (Blood Oxygen Level Dependent), permitiendo la Resonancia Magnética Funcional (fMRI).">
+                                <h4 class="font-bold text-yellow-300 text-lg mb-2 font-serif">Era de la fMRI (1990)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Visualización de la actividad cerebral <span class="hl-lime">en vivo</span> y no invasiva.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="embodied">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-orange-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Edwin Hutchins publica 'Cognition in the Wild'. Analiza cómo la tripulación de un barco procesa información colectivamente (Cognición Distribuida).">
+                                <h4 class="font-bold text-orange-300 text-lg mb-2 font-serif">Cognición Distribuida (1995)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">La cognición se extiende a <span class="hl-amber">herramientas</span> y grupos sociales.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="neuroscience">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-yellow-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Giacomo Rizzolatti descubre neuronas en macacos que disparan tanto al actuar como al observar la misma acción. Base de la empatía.">
+                                <h4 class="font-bold text-yellow-300 text-lg mb-2 font-serif">Neuronas Espejo (1996)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Vínculo neural directo entre <span class="hl-lime">percepción</span> y <span class="hl-lime">acción social</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="dynamical">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-teal-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Tim van Gelder propone la 'Hipótesis Dinámica', argumentando que las ecuaciones diferenciales describen la cognición mejor que las computadoras.">
+                                <h4 class="font-bold text-teal-300 text-lg mb-2 font-serif">Mind as Motion (1995)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Desafío radical al <span class="hl-cyan">computacionalismo</span> simbólico.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="symbolism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-red-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Deep Blue de IBM derrota a Garry Kasparov. Hito de la IA simbólica basada en búsqueda bruta y heurísticas, no en aprendizaje profundo.">
+                                <h4 class="font-bold text-red-300 text-lg mb-2 font-serif">Deep Blue vs Kasparov (1997)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">La fuerza bruta <span class="hl-pink">simbólica</span> supera la maestría humana.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="rationality">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-blue-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Rao y Ballard proponen un modelo jerárquico de la corteza visual donde las conexiones feedback llevan predicciones y las feedforward errores.">
+                                <h4 class="font-bold text-blue-300 text-lg mb-2 font-serif">Codificación Predictiva (1999)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Precursor clave del <span class="hl-cyan">cerebro bayesiano</span>.</p>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
                 <!-- 2000s -->
-                <section class="glassmorphism section" data-animate>
-                    <h2 class="decade-marker text-white font-bold py-2 px-6 rounded-full inline-block mb-6">2000s</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div class="timeline-item" data-paradigm="rationality"><div class="timeline-card border-blue-400 p-4 rounded-lg" data-tippy-content="El Premio Nobel de Kahneman por sus trabajos sobre sesgos y la defensa de Gigerenzer de la racionalidad ecológica marcaron un intenso debate."><h3 class="font-bold text-blue-200">Debate sobre la Racionalidad (Kahneman vs. Gigerenzer, 2002)</h3><p class="text-sm text-gray-400">Kahneman gana el Nobel por sesgos; Gigerenzer defiende la racionalidad ecológica.</p></div></div>
-                        <div class="timeline-item" data-paradigm="neuroscience"><div class="timeline-card border-yellow-400 p-4 rounded-lg" data-tippy-content="El Premio Nobel de Kandel avanzó en la comprensión de la plasticidad neural en el aprendizaje."><h3 class="font-bold text-yellow-200">Plasticidad Neural (Kandel, 2000)</h3><p class="text-sm text-gray-400">Premio Nobel por transducción de señales en el aprendizaje.</p></div></div>
-                        <div class="timeline-item" data-paradigm="embodied"><div class="timeline-card border-orange-400 p-4 rounded-lg" data-tippy-content="El trabajo de Thompson extendió el enactivismo, integrando biología y cognición."><h3 class="font-bold text-orange-200">Mente en la Vida (Thompson, 2007)</h3><p class="text-sm text-gray-400">Extiende el enactivismo con perspectivas biológicas.</p></div></div>
-                        <div class="timeline-item" data-paradigm="dynamical"><div class="timeline-card border-teal-400 p-4 rounded-lg" data-tippy-content="Los enfoques de sistemas complejos modelaron la cognición como emergente de interacciones."><h3 class="font-bold text-teal-200">Enfoque de Sistemas Complejos (Orden, Turvey, 2000s)</h3><p class="text-sm text-gray-400">Modela la cognición como emergente de interacciones.</p></div></div>
-                        <div class="timeline-item" data-paradigm="rationality"><div class="timeline-card border-blue-400 p-4 rounded-lg" data-tippy-content="Los modelos de Tenenbaum y Griffiths avanzaron la ciencia cognitiva computacional con enfoques bayesianos."><h3 class="font-bold text-blue-200">Modelos Probabilísticos (Tenenbaum, Griffiths, 2000s)</h3><p class="text-sm text-gray-400">Avanza la ciencia cognitiva computacional.</p></div></div>
+                <section id="era-2000" class="w-full mx-auto mb-16 text-left border-t border-slate-800 pt-10">
+                    <h3 class="text-xl text-slate-200 font-bold mb-6 flex items-center">
+                        <span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-md border border-amber-500/20 text-sm mr-4">Era</span>
+                        2000s
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                        <div class="timeline-item" data-paradigm="rationality">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-blue-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Daniel Kahneman gana el Nobel (2002) por su trabajo en sesgos. Gerd Gigerenzer contraataca con la 'Racionalidad Ecológica': los heurísticos son adaptativos.">
+                                <h4 class="font-bold text-blue-300 text-lg mb-2 font-serif">Guerra de la Racionalidad</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">¿Somos <span class="hl-pink">irracionales</span> (Kahneman) o <span class="hl-lime">ecológicamente adaptados</span> (Gigerenzer)?</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="neuroscience">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-yellow-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Eric Kandel recibe el Nobel (2000). Se consolida la idea de que la memoria a largo plazo requiere síntesis de proteínas y cambio estructural sináptico.">
+                                <h4 class="font-bold text-yellow-300 text-lg mb-2 font-serif">Consolidación Sináptica</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Mecanismos <span class="hl-lime">moleculares</span> de la memoria establecidos.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="embodied">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-orange-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Evan Thompson publica 'Mind in Life' (2007). Propone la 'continuidad vida-mente': donde hay vida, hay cognición.">
+                                <h4 class="font-bold text-orange-300 text-lg mb-2 font-serif">Continuidad Vida-Mente</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Biología y <span class="hl-amber">fenomenología</span> profunda (Thompson).</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="dynamical">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-teal-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Uso de 'redes de mundo pequeño' y teoría de grafos para mapear el conectoma humano y las dinámicas cerebrales a gran escala.">
+                                <h4 class="font-bold text-teal-300 text-lg mb-2 font-serif">Ciencia de Redes (2000s)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">El cerebro como <span class="hl-cyan">sistema complejo</span> y red de redes.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="rationality">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-blue-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Josh Tenenbaum y Tom Griffiths lideran el enfoque bayesiano en psicología cognitiva, modelando el aprendizaje infantil como inferencia estadística óptima.">
+                                <h4 class="font-bold text-blue-300 text-lg mb-2 font-serif">Modelos Bayesianos</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">La cognición como <span class="hl-indigo">inferencia probabilística</span> racional.</p>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
                 <!-- 2010s -->
-                <section class="glassmorphism section" data-animate>
-                    <h2 class="decade-marker text-white font-bold py-2 px-6 rounded-full inline-block mb-6">2010s</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div class="timeline-item" data-paradigm="rationality"><div class="timeline-card border-blue-400 p-4 rounded-lg" data-tippy-content="El procesamiento predictivo de Clark y Friston ve el cerebro como un motor de predicción que minimiza errores."><h3 class="font-bold text-blue-200">Procesamiento Predictivo (Clark & Friston, 2013)</h3><p class="text-sm text-gray-400">El cerebro como minimizador de errores de predicción.</p></div></div>
-                        <div class="timeline-item" data-paradigm="connectionism"><div class="timeline-card border-green-400 p-4 rounded-lg" data-tippy-content="La victoria del equipo de Hinton en ImageNet marcó la revolución del aprendizaje profundo."><h3 class="font-bold text-green-200">Revolución del Aprendizaje Profundo (Hinton, 2012)</h3><p class="text-sm text-gray-400">La victoria en ImageNet muestra las redes neuronales profundas.</p></div></div>
-                        <div class="timeline-item" data-paradigm="connectionism"><div class="timeline-card border-green-400 p-4 rounded-lg" data-tippy-content="AlphaGo de DeepMind combinó aprendizaje profundo y aprendizaje por refuerzo."><h3 class="font-bold text-green-200">Victoria de AlphaGo (2016)</h3><p class="text-sm text-gray-400">La IA de DeepMind derrota al campeón de Go Lee Sedol.</p></div></div>
-                        <div class="timeline-item" data-paradigm="neuroscience"><div class="timeline-card border-yellow-400 p-4 rounded-lg" data-tippy-content="El descubrimiento de las células de lugar de O'Keefe avanzó la investigación de la cognición espacial."><h3 class="font-bold text-yellow-200">Células de Lugar (O'Keefe, 2014)</h3><p class="text-sm text-gray-400">Premio Nobel por el sistema de posicionamiento del cerebro.</p></div></div>
-                        <div class="timeline-item" data-paradigm="neuroscience"><div class="timeline-card border-yellow-400 p-4 rounded-lg" data-tippy-content="El trabajo de Kriegeskorte integró modelos computacionales con la neurociencia."><h3 class="font-bold text-yellow-200">Neurociencia Cognitiva Computacional (Kriegeskorte, 2018)</h3><p class="text-sm text-gray-400">Integra modelos computacionales con la neurociencia.</p></div></div>
-                        <div class="timeline-item" data-paradigm="connectionism"><div class="timeline-card border-green-400 p-4 rounded-lg" data-tippy-content="El desarrollo de arquitecturas como las GANs (Goodfellow, 2014) y los Transformers (Vaswani et al., 2017) revolucionó la IA generativa y el NLP."><h3 class="font-bold text-green-200">Nuevas Arquitecturas de Redes (GANs, Transformers)</h3><p class="text-sm text-gray-400">Avances clave en IA generativa y procesamiento del lenguaje.</p></div></div>
+                <section class="w-full mx-auto mb-16 text-left border-t border-slate-800 pt-10">
+                    <h3 class="text-xl text-slate-200 font-bold mb-6 flex items-center">
+                        <span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-md border border-amber-500/20 text-sm mr-4">Era</span>
+                        2010s
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                        <div class="timeline-item" data-paradigm="rationality">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-blue-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Karl Friston populariza el 'Free Energy Principle'. Andy Clark publica 'Surfing Uncertainty'. El cerebro es una máquina de predicción activa.">
+                                <h4 class="font-bold text-blue-300 text-lg mb-2 font-serif">Procesamiento Predictivo</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed"><span class="hl-cyan">Friston & Clark</span>: Minimización de error de predicción como teoría unificada.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="connectionism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-green-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="AlexNet (2012) de Hinton arrasa en ImageNet. El Deep Learning (Redes Neuronales Profundas + GPUs) domina la IA.">
+                                <h4 class="font-bold text-green-300 text-lg mb-2 font-serif">Explosión del Deep Learning</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed"><span class="hl-lime">Geoffrey Hinton</span> y la supremacía de las redes profundas.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="connectionism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-green-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="AlphaGo (DeepMind, 2016) vence a Lee Sedol. Usa Aprendizaje por Refuerzo Profundo y búsqueda Monte Carlo, superando la intuición humana en Go.">
+                                <h4 class="font-bold text-green-300 text-lg mb-2 font-serif">AlphaGo (2016)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Hito histórico: IA domina el <span class="hl-pink">juego más complejo</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="neuroscience">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-yellow-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="John O'Keefe y los Moser ganan el Nobel (2014) por descubrir el 'GPS del cerebro': células de lugar y células de red en el hipocampo.">
+                                <h4 class="font-bold text-yellow-300 text-lg mb-2 font-serif">GPS Cerebral (2014)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Mapeo espacial y memoria en el <span class="hl-amber">hipocampo</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="neuroscience">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-yellow-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Nikolaus Kriegeskorte impulsa la 'Neurociencia Cognitiva Computacional'. Usa redes neuronales artificiales como modelos directos del cerebro biológico.">
+                                <h4 class="font-bold text-yellow-300 text-lg mb-2 font-serif">Neurociencia Computacional (2018)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Fusión total entre <span class="hl-lime">IA</span> y modelado cerebral.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="connectionism">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-green-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Vaswani et al. (2017) publican 'Attention is All You Need'. Los Transformers revolucionan el procesamiento del lenguaje (base de GPT).">
+                                <h4 class="font-bold text-green-300 text-lg mb-2 font-serif">Transformers (2017)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Mecanismos de <span class="hl-pink">atención</span> revolucionan la IA generativa.</p>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
-                <!-- FUTURO -->
-                <section class="glassmorphism section" data-animate>
-                    <h2 class="decade-marker text-white font-bold py-2 px-6 rounded-full inline-block mb-6">Futuro (2020s y más allá)</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="timeline-item" data-paradigm="future"><div class="timeline-card border-pink-400 p-4 rounded-lg" data-tippy-content="La investigación futura tiene como objetivo desarrollar la IA general y comprender la conciencia."><h3 class="font-bold text-pink-200">IA General y Conciencia</h3><p class="text-sm text-gray-400">Búsqueda de IA flexible y conciencia computacional.</p></div></div>
-                        <div class="timeline-item" data-paradigm="future"><div class="timeline-card border-pink-400 p-4 rounded-lg" data-tippy-content="La computación cuántica y las tecnologías convergentes pueden transformar la ciencia cognitiva."><h3 class="font-bold text-pink-200">Computación Cuántica y Tecnologías Convergentes</h3><p class="text-sm text-gray-400">Potencial para mejorar el modelado cognitivo y la IA.</p></div></div>
-                        <div class="timeline-item" data-paradigm="future"><div class="timeline-card border-pink-400 p-4 rounded-lg" data-tippy-content="Proyectos a gran escala como el Human Brain Project buscan simular el cerebro humano."><h3 class="font-bold text-pink-200">Proyectos Cerebrales a Gran Escala</h3><p class="text-sm text-gray-400">Iniciativas para mapear y simular la actividad cerebral completa.</p></div></div>
+                <!-- Futuro -->
+                <section id="era-futuro" class="w-full mx-auto mb-20 text-left border-t border-slate-800 pt-10">
+                    <h3 class="text-xl text-slate-200 font-bold mb-6 flex items-center">
+                        <span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-md border border-amber-500/20 text-sm mr-4">Era</span>
+                        Futuro (2020s+)
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                        <div class="timeline-item" data-paradigm="future">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-pink-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Proyectos de 'Adversarial Collaboration' (2023-2025) testean Teoría de Información Integrada (IIT) vs Espacio de Trabajo Global (GNWT). Resultados mixtos desafían ambas.">
+                                <h4 class="font-bold text-pink-300 text-lg mb-2 font-serif">Teorías de la Conciencia</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed"><span class="hl-pink">IIT vs GNWT</span>: Colaboración adversaria para resolver el misterio.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="future">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-pink-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Avances 2025 en 'Inteligencia Organoide': cultivos de células cerebrales humanas (organoides) integrados con chips de silicio para computación biológica.">
+                                <h4 class="font-bold text-pink-300 text-lg mb-2 font-serif">Inteligencia Organoide</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Computación biológica híbrida <span class="hl-lime">(Wetware + Hardware)</span>.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="future">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-pink-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Transición de LLMs pasivos a 'Agentic AI': sistemas autónomos capaces de planificar, usar herramientas y actuar en el mundo digital/físico.">
+                                <h4 class="font-bold text-pink-300 text-lg mb-2 font-serif">IA Agéntica y General (AGI)</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">De modelos de lenguaje a <span class="hl-amber">agentes autónomos</span> funcionales.</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" data-paradigm="future">
+                            <div class="h-full bg-slate-900/50 p-5 rounded-lg border border-pink-500/30 hover:bg-slate-800 transition-all cursor-help" data-tippy-content="Sinergia entre aprendizaje profundo y codificación predictiva. Búsqueda de algoritmos de aprendizaje más eficientes y biológicamente plausibles que el Backpropagation.">
+                                <h4 class="font-bold text-pink-300 text-lg mb-2 font-serif">Post-Backpropagation</h4>
+                                <p class="text-sm text-slate-400 leading-relaxed">Algoritmos de aprendizaje inspirados en el <span class="hl-cyan">cerebro real</span>.</p>
+                            </div>
+                        </div>
                     </div>
                 </section>
+
             </div>
 
-            <!-- BIBLIOGRAFÍA -->
-            <section id="bibliografia" class="glassmorphism section" data-animate>
-                <h2>Bibliografía</h2>
-                <input type="text" id="biblio-search" class="search-input w-full p-2 mb-4 border rounded-md" placeholder="Buscar en la bibliografía...">
-                 <ul id="biblio-list" class="text-sm text-gray-400 space-y-2 list-disc list-inside">
-                    <li>Bermudez, J. L. (2014). <i>Cognitive Science: An Introduction to the Science of the Mind</i> (2nd ed.). Cambridge University Press.</li>
-                    <li>Boden, M. A. (2006). <i>Mind as Machine: A History of Cognitive Science</i>. Oxford University Press.</li>
-                    <li>Castellani, B. (2018). Map of the Complexity Sciences. <i>Complexity</i>.</li>
-                    <li>Cheney, D. L., & Seyfarth, R. M. (1990). <i>How Monkeys See the World</i>. University of Chicago Press.</li>
-                    <li>Clark, A. (2013). Whatever next? Predictive brains, situated agents, and the future of cognitive science. <i>Behavioral and Brain Sciences</i>, 36(3), 181-204.</li>
-                    <li>Ekman, P. (1999). Basic emotions. <i>Handbook of Cognition and Emotion</i>, 45-60.</li>
-                    <li>Friston, K. (2010). The free-energy principle: A unified brain theory? <i>Nature Reviews Neuroscience</i>, 11, 127-138.</li>
-                    <li>Barsalou, L. W. (1999). Perceptual symbol systems. <i>Behavioral and Brain Sciences</i>, 22(4), 577-660.</li>
-                    <li>Bear, M. F., Connors, B. W., & Paradiso, M. A. (2007). <i>Neuroscience: Exploring the Brain</i>. Lippincott Williams & Wilkins.</li>
-                    <li>Heider, F., & Simmel, M. (1944). An experimental study of apparent behavior. <i>The American Journal of Psychology</i>, 57, 243-259.</li>
-                    <li>Hutchins, E. (1995). <i>Cognition in the Wild</i>. MIT Press.</li>
-                    <li>Kahneman, D. (2011). <i>Thinking, Fast and Slow</i>. Farrar, Straus and Giroux.</li>
-                    <li>Kriegeskorte, N., & Douglas, P. K. (2018). Computational Cognitive Neuroscience. <i>Nature Reviews Neuroscience</i>, 19, 255-267.</li>
-                    <li>Miller, G. A. (2003). The cognitive revolution: A historical perspective. <i>Trends in Cognitive Sciences</i>, 7(3), 141-144.</li>
-                    <li>Miller, G. A., et al. (1978). <i>Cognitive Science: Report to the Sloan Foundation</i>. Alfred P. Sloan Foundation.</li>
-                    <li>Port, R., & van Gelder, T. J. (1995). <i>Mind as Motion: Explorations in the Dynamics of Cognition</i>. MIT Press.</li>
-                    <li>Roth, W. M. (2013). Situated cognition. <i>Wiley Interdisciplinary Reviews: Cognitive Science</i>, 4(5), 463-478.</li>
-                    <li>Russell, S. J., & Norvig, P. (2009). <i>Artificial Intelligence: A Modern Approach</i> (3rd ed.). Prentice Hall.</li>
-                    <li>Sternberg, R. J., & Sternberg, K. (2016). <i>Cognitive Psychology</i>. Cengage Learning.</li>
-                    <li>Thompson, E. (2007). <i>Mind in Life</i>. Harvard University Press.</li>
-                    <li>Varela, F. J., Thompson, E., & Rosch, E. (1991). <i>The Embodied Mind</i>. MIT Press.</li>
+            <!-- Referencias -->
+            <section id="bibliografia" class="w-full mx-auto mb-24 text-left border-t border-slate-800 pt-12">
+                <h2 class="text-2xl font-serif font-bold text-white mb-8">Bibliografía</h2>
+                <input type="text" id="biblio-search" class="w-full bg-slate-900 border border-slate-700 text-slate-300 p-3 rounded-lg mb-8 focus:outline-none focus:border-amber-500 transition-colors text-sm" placeholder="Buscar referencia...">
+                <ul id="biblio-list" class="text-sm text-slate-400 space-y-3 font-light list-disc pl-5">
+                    <li><span class="text-amber-500 font-bold">Bermúdez, J. L.</span> (2014). <i>Cognitive Science: An Introduction to the Science of the Mind</i>. Cambridge University Press.</li>
+                    <li><span class="text-amber-500 font-bold">Boden, M. A.</span> (2006). <i>Mind as Machine: A History of Cognitive Science</i>. Oxford University Press.</li>
+                    <li><span class="text-amber-500 font-bold">Clark, A.</span> (2016). <i>Surfing Uncertainty: Prediction, Action, and the Embodied Mind</i>. Oxford University Press.</li>
+                    <li><span class="text-amber-500 font-bold">Friston, K.</span> (2010). The free-energy principle: A unified brain theory? <i>Nature Reviews Neuroscience</i>, 11, 127-138.</li>
+                    <li><span class="text-amber-500 font-bold">Hebb, D. O.</span> (1949). <i>The Organization of Behavior</i>. Wiley.</li>
+                    <li><span class="text-amber-500 font-bold">Hutchins, E.</span> (1995). <i>Cognition in the Wild</i>. MIT Press.</li>
+                    <li><span class="text-amber-500 font-bold">Kahneman, D.</span> (2011). <i>Thinking, Fast and Slow</i>. Farrar, Straus and Giroux.</li>
+                    <li><span class="text-amber-500 font-bold">Marr, D.</span> (1982). <i>Vision: A Computational Investigation</i>. W.H. Freeman.</li>
+                    <li><span class="text-amber-500 font-bold">Maturana, H., & Varela, F.</span> (1980). <i>Autopoiesis and Cognition</i>. Reidel.</li>
+                    <li><span class="text-amber-500 font-bold">Miller, G. A.</span> (1956). The magical number seven, plus or minus two. <i>Psychological Review</i>.</li>
+                    <li><span class="text-amber-500 font-bold">Minsky, M., & Papert, S.</span> (1969). <i>Perceptrons</i>. MIT Press.</li>
+                    <li><span class="text-amber-500 font-bold">Rumelhart, D. E., & McClelland, J. L.</span> (1986). <i>Parallel Distributed Processing</i>. MIT Press.</li>
+                    <li><span class="text-amber-500 font-bold">Turing, A. M.</span> (1936). On Computable Numbers. <i>Proceedings of the London Mathematical Society</i>.</li>
+                    <li><span class="text-amber-500 font-bold">Varela, F., Thompson, E., & Rosch, E.</span> (1991). <i>The Embodied Mind</i>. MIT Press.</li>
+                    <li><span class="text-amber-500 font-bold">Vaswani, A., et al.</span> (2017). Attention Is All You Need. <i>NIPS</i>.</li>
+                    <li><span class="text-amber-500 font-bold">Wiener, N.</span> (1948). <i>Cybernetics: Or Control and Communication in the Animal and the Machine</i>. MIT Press.</li>
                 </ul>
             </section>
-        </main>
 
-        <footer class="footer">
-            <p style="text-align:center;">Línea de tiempo interactiva adaptada al estilo O.C.V.M.</p>
-            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
-        </footer>
+        </main>
     </div>
 
+    <!-- Footer Simple -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-6 md:py-8">
+        <div class="max-w-full mx-auto px-6 md:px-12 flex flex-col items-center justify-center gap-2">
+            <p class="text-[10px] md:text-[11px] font-medium text-slate-400 text-center">
+                Línea de tiempo interactiva adaptada al estilo O.C.V.M.
+            </p>
+            <p class="text-[9px] md:text-[10px] text-slate-600 font-mono text-center">
+                La vida es terriblemente bella cuando los jugadores juegan. | 2025
+            </p>
+        </div>
+    </footer>
+
+    <!-- Lógica de Filtros, Búsqueda y Tooltips -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Inicialización de Three.js Background
-            if (typeof THREE !== 'undefined') {
-                initThreeJS();
-            } else {
-                console.error("Three.js not loaded");
-            }
-
-            // Configuración de la navegación y animaciones
-            setupNavigation();
-            setupScrollAnimations();
             
-            // Inicialización de tooltips
+            // 1. Inicializar Tooltips (Tippy.js)
             tippy('[data-tippy-content]', {
-                content: (reference) => reference.getAttribute('data-tippy-content'),
                 theme: 'dark',
-                maxWidth: 300,
+                arrow: true,
+                animation: 'scale',
+                maxWidth: 300, // Aumentado para mejor lectura
+                allowHTML: true
             });
 
-            // Funcionalidad de filtros
-            setupFilters();
-
-            // Búsqueda en bibliografía
-            setupBibliographySearch();
-        });
-
-        // --- CÓDIGO DE ANIMACIÓN THREE.JS DE FONDO ---
-        let scene, camera, renderer, points;
-        function initThreeJS() {
-            try {
-                scene = new THREE.Scene();
-                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
-                camera.position.z = 50;
-
-                renderer = new THREE.WebGLRenderer({
-                    canvas: document.getElementById("bg-canvas"),
-                    alpha: true
-                });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-
-                const pointCount = 250;
-                const positions = new Float32Array(pointCount * 3);
-                const pointGeo = new THREE.BufferGeometry();
-                for (let i = 0; i < pointCount; i++) {
-                    positions[i * 3] = (Math.random() - 0.5) * 300;
-                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
-                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
-                }
-                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
-                points = new THREE.Points(pointGeo, pointMaterial);
-                scene.add(points);
-
-                window.addEventListener("resize", onWindowResize, false);
-                document.addEventListener('mousemove', onMouseMove, false);
-                animate();
-            } catch (error) {
-                console.error('Error initializing Three.js:', error);
-            }
-        }
-
-        function onWindowResize() {
-            if(camera && renderer) {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            }
-        }
-
-        let mouseX = 0, mouseY = 0;
-        function onMouseMove(event) {
-            mouseX = (event.clientX - window.innerWidth / 2) / 100;
-            mouseY = (event.clientY - window.innerHeight / 2) / 100;
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            if(scene && camera && renderer && points) {
-                points.rotation.y += 0.0003;
-                points.rotation.x += 0.0002;
-                camera.position.x += (mouseX - camera.position.x) * 0.05;
-                camera.position.y += (-mouseY - camera.position.y) * 0.05;
-                camera.lookAt(scene.position);
-                renderer.render(scene, camera);
-            }
-        }
-
-        // --- CÓDIGO DE NAVEGACIÓN ---
-        function setupNavigation() {
-            const menuToggleBtn = document.getElementById('menu-toggle-btn');
-            const navMenu = document.getElementById('nav-menu');
-
-            menuToggleBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                document.body.classList.toggle('menu-open');
-            });
-
-            navMenu.addEventListener('click', (e) => {
-                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
-                   document.body.classList.remove('menu-open');
-                }
-            });
-        }
-
-        // --- CÓDIGO DE ANIMACIÓN POR SCROLL ---
-        function setupScrollAnimations() {
-            const animatedSections = document.querySelectorAll('[data-animate]');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                        
-                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .timeline-card, .filter-button-container, .legend-container');
-                        elementsToAnimate.forEach((el, index) => {
-                           el.style.transitionDelay = `${index * 50}ms`;
-                        });
-
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.1 });
-            animatedSections.forEach(section => observer.observe(section));
-        }
-
-        // --- CÓDIGO DE FILTROS ---
-        function setupFilters() {
+            // 2. Lógica de Filtros
             const filterButtons = document.querySelectorAll('.filter-button');
             const timelineItems = document.querySelectorAll('.timeline-item');
 
             filterButtons.forEach(button => {
                 button.addEventListener('click', () => {
                     const filter = button.getAttribute('data-filter');
+                    
+                    // Actualizar estado activo de botones
                     filterButtons.forEach(btn => btn.classList.remove('active'));
                     button.classList.add('active');
 
+                    // Filtrar items
                     timelineItems.forEach(item => {
-                        if (filter === 'all' || item.getAttribute('data-paradigm') === filter) {
+                        const paradigm = item.getAttribute('data-paradigm');
+                        if (filter === 'all' || paradigm === filter) {
                             item.classList.remove('hidden');
+                            item.style.opacity = '1';
+                            item.style.transform = 'translateY(0)';
+                            item.style.display = 'block'; // Asegurar display
                         } else {
                             item.classList.add('hidden');
+                            item.style.opacity = '0';
+                            item.style.transform = 'translateY(10px)';
+                            setTimeout(() => {
+                                if(item.classList.contains('hidden')) item.style.display = 'none'; 
+                            }, 500); // Esperar transición
                         }
                     });
                 });
             });
-        }
 
-        // --- CÓDIGO DE BÚSQUEDA EN BIBLIOGRAFÍA ---
-        function setupBibliographySearch() {
+            // 3. Lógica de Búsqueda Bibliográfica
             const searchInput = document.getElementById('biblio-search');
             const biblioList = document.getElementById('biblio-list');
             const biblioItems = biblioList.getElementsByTagName('li');
@@ -684,9 +955,8 @@
                     item.style.display = text.includes(query) ? 'list-item' : 'none';
                 });
             });
-        }
+        });
     </script>
+
 </body>
 </html>
-
-
