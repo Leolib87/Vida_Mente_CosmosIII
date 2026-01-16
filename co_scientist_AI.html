@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training AI Co-Scientists Using Rubric Rewards | Guía de Replicación Técnica</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    
+    <!-- Configuración Avanzada de MathJax para renderizado LaTeX perfecto -->
+    <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        tags: 'ams'
+      },
+      options: {
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+      }
+    };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #cbd5e1; /* slate-300 */
+            scroll-behavior: smooth;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 70%);
+            background-attachment: fixed;
+        }
+
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Estilos de Prompt Code Block (Replicación Exacta) */
+        .prompt-container {
+            position: relative;
+            margin-bottom: 2rem;
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            background-color: #0f172a;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .prompt-header {
+            background-color: #1e293b;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .prompt-title {
+            color: #f59e0b; /* amber-500 */
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .prompt-content {
+            padding: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        /* Highlight para variables en prompts */
+        .prompt-var { color: #f472b6; } /* pink-400 */
+        .prompt-tag { color: #60a5fa; } /* blue-400 */
+
+        /* Tablas Técnicas */
+        .tech-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 1.5rem 0;
+            font-size: 0.875rem;
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        .tech-table th {
+            background-color: #1e293b;
+            color: #f59e0b;
+            font-weight: 600;
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #334155;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        .tech-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #1e293b;
+            background-color: rgba(15, 23, 42, 0.5);
+        }
+        .tech-table tr:last-child td { border-bottom: none; }
+        .tech-table tr:hover td { background-color: rgba(30, 41, 59, 0.8); }
+
+        /* Navegación */
+        .nav-link { position: relative; transition: color 0.3s ease; }
+        .nav-link::after {
+            content: ''; position: absolute; width: 0; height: 1px; bottom: -2px; left: 0;
+            background-color: #f59e0b; transition: width 0.3s ease;
+        }
+        .nav-item:hover .nav-link::after { width: 100%; }
+
+        /* Mermaid Fixes */
+        .mermaid { background: transparent !important; display: flex; justify-content: center; }
+        
+        /* Mobile Menu */
+        .dropdown-menu {
+            position: absolute; top: 100%; left: 50%; transform: translateX(-50%) translateY(10px);
+            min-width: 240px; opacity: 0; visibility: hidden;
+            background-color: rgba(2, 6, 23, 0.98); border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px); padding: 0.5rem; border-radius: 0.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); z-index: 50;
+        }
+        .nav-item:hover .dropdown-menu { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+        
+        @media (max-width: 768px) {
+            .dropdown-menu { position: static; transform: none; opacity: 1; visibility: visible; width: 100%; display: none; background: rgba(0,0,0,0.3); border:none; }
+            .nav-item.active .dropdown-menu { display: block; }
+        }
+    </style>
+</head>
+<body class="selection:bg-amber-500/30 selection:text-amber-200 min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- Navegación -->
+    <nav class="fixed w-full z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+            <div class="flex justify-between items-center h-16">
+                <a href="#" class="flex items-center space-x-3 group">
+                    <div class="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-150 transition-transform duration-300"></div>
+                    <span class="text-xs font-bold tracking-[0.2em] uppercase text-slate-200 group-hover:text-white transition-colors">
+                        Meta AI Labs <span class="text-slate-600 mx-2">|</span> Co-Scientists
+                    </span>
+                </a>
+
+                <button id="menu-btn" class="md:hidden text-slate-300 p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                </button>
+
+                <div id="mobile-menu-container" class="hidden md:flex absolute md:static top-16 left-0 w-full md:w-auto bg-slate-950 md:bg-transparent flex-col md:flex-row md:items-center">
+                    <ul class="flex flex-col md:flex-row md:items-center text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                        <li class="nav-item group md:mx-4 py-2"><a href="#framework" class="nav-link hover:text-amber-400">Framework</a></li>
+                        <li class="nav-item group md:mx-4 py-2 relative">
+                            <span class="nav-link hover:text-amber-400 cursor-pointer flex items-center gap-1">Pipeline de Datos <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span>
+                            <div class="dropdown-menu">
+                                <a href="#insight-extraction" class="block p-3 hover:bg-white/5 rounded text-slate-300 hover:text-amber-400 transition-colors">1. Extracción de Insights</a>
+                                <a href="#rubric-generation" class="block p-3 hover:bg-white/5 rounded text-slate-300 hover:text-amber-400 transition-colors">2. Metas y Rúbricas</a>
+                                <a href="#data-filtering" class="block p-3 hover:bg-white/5 rounded text-slate-300 hover:text-amber-400 transition-colors">3. Filtrado de Calidad</a>
+                            </div>
+                        </li>
+                        <li class="nav-item group md:mx-4 py-2"><a href="#rl-training" class="nav-link hover:text-amber-400">Entrenamiento RL</a></li>
+                        <li class="nav-item group md:mx-4 py-2"><a href="#prompts" class="nav-link text-amber-500 hover:text-amber-300">System Prompts (Full)</a></li>
+                        <li class="nav-item group md:mx-4 py-2"><a href="#results" class="nav-link hover:text-amber-400">Resultados</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <div class="flex-grow pt-32 md:pt-48 pb-24 px-6 md:px-12 w-full max-w-7xl mx-auto">
+        
+        <!-- Header -->
+        <header class="mb-32 relative text-center">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-3xl -z-10"></div>
+            <h1 class="text-5xl md:text-8xl font-black text-slate-100 mb-8 leading-tight tracking-tighter drop-shadow-2xl">
+                TRAINING AI<br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-600 font-serif italic pr-4">Co-Scientists</span>
+            </h1>
+            <p class="text-sm md:text-lg text-slate-400 font-light tracking-wide max-w-2xl mx-auto leading-relaxed">
+                Replicación técnica del framework <span class="text-amber-500 font-mono">RUBRIC-RL</span> para la generación de planes de investigación científica. Basado en el paper arXiv:2512.23707.
+            </p>
+            <div class="mt-10 flex flex-wrap justify-center gap-6 text-[10px] md:text-xs text-amber-500/80 uppercase tracking-[0.2em] font-bold">
+                <span>Goel et al.</span> <span>•</span> <span>Meta GenAI</span> <span>•</span> <span>2025</span>
+            </div>
+        </header>
+
+        <!-- 1. Framework Overview -->
+        <section id="framework" class="mb-32">
+            <div class="flex items-center gap-4 mb-10 border-b border-slate-800 pb-4">
+                <span class="text-amber-500 font-mono text-xl">01</span>
+                <h2 class="text-3xl font-serif font-bold text-white">Visión General del Framework</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+                <div class="prose prose-invert prose-lg text-slate-300 leading-relaxed text-justify">
+                    <p>
+                        El objetivo central es entrenar una política $\pi_\theta$ (Generador de Planes) capaz de producir un plan de investigación riguroso $p$ dado un objetivo abierto $g$. La innovación principal radica en evitar la supervisión humana costosa mediante un pipeline automatizado de generación de datos y recompensas.
+                    </p>
+                    <ul class="list-none space-y-4 mt-6">
+                        <li class="flex gap-4">
+                            <span class="text-amber-500 font-mono">A.</span>
+                            <div>
+                                <strong class="text-white block mb-1">Extracción Escalable (RUBRIC-PLAN)</strong>
+                                Se utiliza un modelo "Sample Creator" ($\mathcal{M}_C$, Llama-4-Maverick) para leer papers existentes y extraer tuplas de entrenamiento: $(g, R_g, s_{ref})$, donde $R_g$ son rúbricas específicas.
+                            </div>
+                        </li>
+                        <li class="flex gap-4">
+                            <span class="text-amber-500 font-mono">B.</span>
+                            <div>
+                                <strong class="text-white block mb-1">Auto-Evaluación (RUBRIC-REWARD)</strong>
+                                Durante el entrenamiento RL, una copia congelada del modelo ($\theta_r$) actúa como juez. Utiliza las rúbricas $R_g$ como <em>información privilegiada</em> para evaluar los planes generados, creando un "gap generador-verificador".
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="bg-slate-900/50 p-8 rounded-xl border border-slate-800">
+                    <h3 class="text-amber-500 font-bold mb-6 uppercase text-xs tracking-widest text-center">Arquitectura del Sistema</h3>
+                    <div class="mermaid">
+                        graph TD
+                        subgraph Data_Pipeline [Data Collection Pipeline]
+                            D["Paper Científico (D)"] -->|Llama-4-Maverick| INS["Insights Extracted (I)"]
+                            INS -->|Llama-4-Maverick| TUPLE["Tuplas Candidatas (g, R, s_ref)"]
+                            TUPLE -->|Claude-4-Sonnet| FILTER["Filtro de Calidad"]
+                            FILTER --> DATA["Dataset Final (RUBRIC-PLAN)"]
+                        end
+                        
+                        subgraph RL_Training [RL Training Loop]
+                            DATA --> POLICY["Policy π_θ (Actor)"]
+                            DATA --> JUDGE["Judge θ_r (Reward Model)"]
+                            POLICY -->|Genera Plan p| PLANS["Generated Plans"]
+                            PLANS & DATA -->|Evalúa con Rubrics R_g| JUDGE
+                            JUDGE -->|Reward Score| GRPO["GRPO Update"]
+                            GRPO --> POLICY
+                        end
+                        
+                        Data_Pipeline -.-> RL_Training
+                        
+                        classDef default fill:#1e293b,stroke:#64748b,stroke-width:1px,color:#e2e8f0;
+                        classDef active fill:#0f172a,stroke:#f59e0b,stroke-width:2px,color:#f59e0b;
+                        class DATA,POLICY,JUDGE active;
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Data Pipeline Detailed -->
+        <section id="data-collection" class="mb-32">
+            <div class="flex items-center gap-4 mb-10 border-b border-slate-800 pb-4">
+                <span class="text-amber-500 font-mono text-xl">02</span>
+                <h2 class="text-3xl font-serif font-bold text-white">Pipeline de Datos: Replicación Paso a Paso</h2>
+            </div>
+
+            <div class="space-y-16">
+                <!-- Paso 1 -->
+                <div id="insight-extraction">
+                    <h3 class="text-xl text-white font-bold mb-4 flex items-center gap-3">
+                        <span class="bg-amber-500/10 text-amber-500 px-2 py-1 rounded text-sm font-mono border border-amber-500/20">PASO 1</span>
+                        Extracción de Insights
+                    </h3>
+                    <p class="text-slate-400 mb-6">
+                        Se utiliza el modelo $\mathcal{M}_C$ (Llama-4-Maverick) para identificar "insights" novedosos en el paper. No es un resumen, sino una extracción de razonamientos creativos.
+                    </p>
+                    <div class="prompt-container">
+                        <div class="prompt-header">
+                            <span class="prompt-title">Prompt: Extract Insights (Appendix D.1.1)</span>
+                            <button class="text-xs text-slate-500 hover:text-white" onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText)">COPY</button>
+                        </div>
+                        <div class="prompt-content">I will provide you with a document. Read it carefully and reflect on the ideas and reasoning it contains. Your task is to identify any truly novel ideas, new ways of reasoning, or insightful solutions, that you haven't encountered before such as original arguments, creative insights, unique reasoning approaches, or previously unseen logical structures.
+
+Focus on:
+• Original lines of reasoning: How does the author connect ideas, build arguments, or infer conclusions?
+• Inventive perspectives: Are there surprising framings, analogies, or mental models?
+• New type of problem: Are solutions to a challenging problem that you hadn't seen before presented?
+• New ways of solving a problem: Are there creative or innovative approaches to solving an important problem?
+
+Ignore:
+• Specific facts, events, names, or examples tied to the document.
+• Ideas or logic that are merely rewordings of familiar concepts.
+• Anything you already knew or had seen in similar form.
+
+DOCUMENT
+<span class="prompt-var">{article}</span>
+
+Instructions: First collect your thoughts. What novel ideas or new ways of reasoning did you encounter in the document?
+After thinking, pick the final insights. Guidelines:
+• Write between 0 to 3 insights. Only write down the most salient, important insights.
+• Ensure all the insights you note down are different from each other.
+• Write the insight in first person as what you found interesting, NOT in third person i.e. "the authors..."
+• Do not write generic praise of the insight. Instead, explain it in detail, what it is, why it was needed, how it works, the reasoning behind it, what it achieves etc.
+• If you found no new ideas or reasoning, leave the <span class="prompt-tag">&lt;insights&gt; &lt;/insights&gt;</span> tags empty.
+
+Output inside <span class="prompt-tag">&lt;insights&gt; &lt;/insights&gt;</span> tags:
+<span class="prompt-tag">&lt;insight num=1&gt;</span> Describe the essence of the thinking in the reasoning or idea clearly and generally in a self-contained manner. <span class="prompt-tag">&lt;/insight&gt;</span></div>
+                    </div>
+                </div>
+
+                <!-- Paso 2 -->
+                <div id="rubric-generation">
+                    <h3 class="text-xl text-white font-bold mb-4 flex items-center gap-3">
+                        <span class="bg-amber-500/10 text-amber-500 px-2 py-1 rounded text-sm font-mono border border-amber-500/20">PASO 2</span>
+                        Generación de Escenarios y Rúbricas
+                    </h3>
+                    <p class="text-slate-400 mb-6">
+                        Para cada insight, se genera una meta de investigación $g$ (el problema antes de ser resuelto) y una rúbrica $R'_k$ con 15 ítems iniciales.
+                    </p>
+                    <div class="prompt-container">
+                        <div class="prompt-header">
+                            <span class="prompt-title">Prompt: Generate Scenarios & Rubrics (Appendix D.1.2)</span>
+                            <button class="text-xs text-slate-500 hover:text-white" onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText)">COPY</button>
+                        </div>
+                        <div class="prompt-content">I will provide you with a document and a list of insights extracted from it. Your task is to create research scenarios and grading rubrics for each insight.
+
+DOCUMENT
+<span class="prompt-var">{article}</span>
+
+INSIGHTS EXTRACTED FROM THE DOCUMENT
+<span class="prompt-tag">&lt;insights&gt;</span> <span class="prompt-var">{insights_text}</span> <span class="prompt-tag">&lt;/insights&gt;</span>
+
+Instructions: For each insight above, I want you to create a question that describes the Scenario that the authors of the document were in when they used the insight. I will use these questions to test expert researchers, so I also want you to provide a grading rubric for each scenario containing <span class="prompt-var">{num_rubric_items}</span> distinct grading items.
+
+Scenario Guidelines:
+• The scenario should be phrased as a challenging research problem, that tests another researcher's ability to come up with the specific insight.
+• The scenario should contain specific details about the goals, constraints, and key uncertainties.
+• The scenario should be self-contained. It should not be vague or ambiguous about the requirements.
+• The scenario MUST NOT give UNNECESSARY HINTS for the solution. It should be open-ended.
+• The scenario should not ask for guarantees on final results or performance.
+
+Grading Rubric Guidelines:
+• Each grading item should be specific to the scenario, and based on the document.
+• It should be easy and unambiguous for a grader to grade each item.
+• Include items about must-have important features of a good solution to the scenario.
+• Include items about nuances that are important but easy to miss.
+• Do not include any grading items about the final results observed.
+
+Output inside <span class="prompt-tag">&lt;questions&gt; &lt;/questions&gt;</span> tags:
+<span class="prompt-tag">&lt;question insight_num=1&gt;</span>
+  <span class="prompt-tag">&lt;scenario&gt;</span> Detailed, self-contained description of the scenario... <span class="prompt-tag">&lt;/scenario&gt;</span>
+  <span class="prompt-tag">&lt;grading&gt;</span>
+    <span class="prompt-tag">&lt;item num=1&gt;</span> Make the rubric items as challenging to satisfy as possible... <span class="prompt-tag">&lt;/item&gt;</span>
+  <span class="prompt-tag">&lt;/grading&gt;</span>
+<span class="prompt-tag">&lt;/question&gt;</span></div>
+                    </div>
+                </div>
+
+                <!-- Paso 3 -->
+                <div id="data-filtering">
+                    <h3 class="text-xl text-white font-bold mb-4 flex items-center gap-3">
+                        <span class="bg-amber-500/10 text-amber-500 px-2 py-1 rounded text-sm font-mono border border-amber-500/20">PASO 3</span>
+                        Filtrado y Selección (Quality Check)
+                    </h3>
+                    <p class="text-slate-400 mb-6">
+                        Se utiliza un modelo $\mathcal{M}_S$ (Claude-4-Sonnet) para validar la calidad. Se seleccionan los 10 mejores ítems de rúbrica ($R_g$) de los 15 iniciales y se escoge la mejor tupla de las 3 candidatas generadas por paper.
+                    </p>
+                    <table class="tech-table">
+                        <thead>
+                            <tr>
+                                <th>Dominio</th>
+                                <th>Muestras Totales</th>
+                                <th>Seleccionadas</th>
+                                <th>Score Calidad (0-1)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="font-bold text-slate-200">ML (NeurIPS/ICLR)</td>
+                                <td>21,796</td>
+                                <td>7,374</td>
+                                <td class="text-amber-400 font-mono">0.892</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold text-slate-200">ArXiv (Multi-disciplina)</td>
+                                <td>21,439</td>
+                                <td>7,344</td>
+                                <td class="text-amber-400 font-mono">0.912</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold text-slate-200">Medical (PubMed)</td>
+                                <td>20,225</td>
+                                <td>7,319</td>
+                                <td class="text-amber-400 font-mono">0.920</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. RL Training & Grading -->
+        <section id="rl-training" class="mb-32">
+            <div class="flex items-center gap-4 mb-10 border-b border-slate-800 pb-4">
+                <span class="text-amber-500 font-mono text-xl">03</span>
+                <h2 class="text-3xl font-serif font-bold text-white">Entrenamiento RL y Evaluación</h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <div>
+                    <h3 class="text-xl text-white font-bold mb-4">El Juez Automatizado ($\theta_r$)</h3>
+                    <p class="text-slate-400 mb-4">
+                        El juez utiliza una estructura jerárquica: verifica cada ítem de la rúbrica específica ($r \in R_g$) contra 7 directrices generales ($\Gamma$). Un ítem solo cuenta si no viola ninguna directriz.
+                    </p>
+                    <div class="bg-slate-900 p-6 rounded-lg border border-slate-800">
+                        <h4 class="text-xs font-bold text-amber-500 uppercase mb-4 tracking-widest">General Guidelines (Γ)</h4>
+                        <ul class="space-y-2 text-sm text-slate-300 font-mono">
+                            <li>1. HANDLES ALL CRITERIA</li>
+                            <li>2. DETAILED, SPECIFIC SOLUTION</li>
+                            <li>3. NO OVERLOOKED FLAWS OR WEAKNESSES</li>
+                            <li>4. WELL JUSTIFIED RATIONALE</li>
+                            <li>5. COST AND EFFORT EFFICIENT</li>
+                            <li>6. NO ETHICAL ISSUES</li>
+                            <li>7. CONSISTENT WITH OVERALL PLAN</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xl text-white font-bold mb-4">Función de Pérdida (GRPO)</h3>
+                    <p class="text-slate-400 mb-4">
+                        Se utiliza Group Relative Policy Optimization. En la configuración final, se desactiva la penalización KL ($\beta=0$) para fomentar exploración.
+                    </p>
+                    <div class="bg-slate-900 p-6 rounded-lg border border-slate-800 flex flex-col justify-center min-h-[200px]">
+                        $$ J(\theta) = \mathbb{E}_{q \sim P(Q), \{o_i\}_{i=1}^G \sim \pi_\theta(q)} \left[ \frac{1}{G} \sum_{i=1}^G \left( \hat{A}_i \right) \frac{\pi_\theta(o_i|q)}{\pi_{old}(o_i|q)} \right] $$
+                        <p class="text-center text-xs text-slate-500 mt-4 font-mono">
+                            Donde $\hat{A}_i$ es la ventaja normalizada basada en la recompensa.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-12">
+                <h3 class="text-xl text-white font-bold mb-4">Prompt del Juez (Rubric Judge)</h3>
+                <div class="prompt-container">
+                    <div class="prompt-header">
+                        <span class="prompt-title">Prompt: Automated Grader (Appendix D.2.1)</span>
+                        <button class="text-xs text-slate-500 hover:text-white" onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText)">COPY</button>
+                    </div>
+                    <div class="prompt-content">Evaluate if the Proposed Research Plan satisfies the Research Scenario based on the provided evaluation criteria.
+
+# Research Scenario
+<span class="prompt-var">{scenario}</span>
+
+You have to evaluate each of the rubric items provided below.
+# Rubric
+Item 1: <span class="prompt-var">{rubric_item_1}</span>
+...
+
+# Reference Solution
+Here is a reference solution written by an expert:
+<span class="prompt-var">{reference_solution}</span>
+
+# Proposed Research Plan
+<span class="prompt-var">{proposed_plan}</span>
+
+# Instructions
+First, come up with weaknesses of the proposed plan specific to the scenario.
+Then, return the following nested XML block for each of the grading items:
+
+<span class="prompt-tag">&lt;rubric&gt;</span>
+  <span class="prompt-tag">&lt;item num=1&gt;</span>
+    <span class="prompt-tag">&lt;criteria&gt;</span> Repeat the rubric item string you are checking here. <span class="prompt-tag">&lt;/criteria&gt;</span>
+    <span class="prompt-tag">&lt;reasoning&gt;</span>
+      Analyze if the proposed plan violates any of the below desiderata with respect to the rubric item.
+      **DESIDERATA**
+      1. HANDLES ALL CRITERIA...
+      2. DETAILED, SPECIFIC SOLUTION...
+      3. NO OVERLOOKED FLAWS OR WEAKNESSES...
+      4. WELL JUSTIFIED RATIONALE...
+      5. COST AND EFFORT EFFICIENT...
+      6. NO ETHICAL ISSUES...
+      7. CONSISTENT WITH OVERALL PLAN...
+      
+      Based on the above analysis, list the desiderata numbers that are violated.
+    <span class="prompt-tag">&lt;/reasoning&gt;</span>
+    <span class="prompt-tag">&lt;errors&gt;</span> [comma-separated list of desiderata numbers that are violated or "none"] <span class="prompt-tag">&lt;/errors&gt;</span>
+  <span class="prompt-tag">&lt;/item&gt;</span>
+<span class="prompt-tag">&lt;/rubric&gt;</span></div>
+                </div>
+            </div>
+
+            <!-- Hyperparameters Table -->
+            <div class="mt-12 bg-slate-900/30 border border-slate-800 rounded-lg p-6">
+                <h3 class="text-amber-500 font-bold uppercase text-xs tracking-widest mb-4">Replication Hyperparameters (Appendix A.2)</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 font-mono text-sm text-slate-300">
+                    <div>
+                        <span class="block text-slate-500 text-xs mb-1">Base Model</span>
+                        Qwen-3-30B-Instruct
+                    </div>
+                    <div>
+                        <span class="block text-slate-500 text-xs mb-1">Optimizer</span>
+                        AdamW
+                    </div>
+                    <div>
+                        <span class="block text-slate-500 text-xs mb-1">Learning Rate</span>
+                        1e-6
+                    </div>
+                    <div>
+                        <span class="block text-slate-500 text-xs mb-1">Batch Size</span>
+                        64
+                    </div>
+                    <div>
+                        <span class="block text-slate-500 text-xs mb-1">KL Penalty (β)</span>
+                        0.0 (Disabled)
+                    </div>
+                    <div>
+                        <span class="block text-slate-500 text-xs mb-1">Group Size (G)</span>
+                        8
+                    </div>
+                    <div>
+                        <span class="block text-slate-500 text-xs mb-1">Max Output Tokens</span>
+                        2048 (Actor) / 8192 (Judge)
+                    </div>
+                    <div>
+                        <span class="block text-slate-500 text-xs mb-1">Hardware</span>
+                        2x A100 80GB Nodes
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Results -->
+        <section id="results" class="mb-24">
+            <div class="flex items-center gap-4 mb-10 border-b border-slate-800 pb-4">
+                <span class="text-amber-500 font-mono text-xl">04</span>
+                <h2 class="text-3xl font-serif font-bold text-white">Resultados y Ablación</h2>
+            </div>
+
+            <h3 class="text-xl text-white font-bold mb-6">Comparativa con Modelos Frontier (Automated Eval)</h3>
+            <p class="text-slate-400 mb-4">
+                Resultados promediados de 3 jueces (Claude-4-Sonnet, Gemini-2.5-Pro, GPT-5-Thinking) sobre el porcentaje de ítems de rúbrica satisfechos. (Basado en Figura 3 y Tabla 16).
+            </p>
+            <div class="overflow-x-auto">
+                <table class="tech-table">
+                    <thead>
+                        <tr>
+                            <th>Modelo</th>
+                            <th>Dominio ML</th>
+                            <th>Dominio ArXiv</th>
+                            <th>Dominio Medical</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="font-bold text-slate-200">Qwen-3-30B (Base)</td>
+                            <td>37.4%</td>
+                            <td>28.3%</td>
+                            <td>27.3%</td>
+                        </tr>
+                        <tr class="bg-amber-500/10">
+                            <td class="font-bold text-amber-400">RUBRIC-RL (Ours)</td>
+                            <td class="font-bold text-amber-400">46.5%</td>
+                            <td class="font-bold text-amber-400">33.0%</td>
+                            <td class="font-bold text-amber-400">44.9%</td>
+                        </tr>
+                        <tr>
+                            <td>Claude-4-Sonnet</td>
+                            <td>49.7%</td>
+                            <td>32.7%</td>
+                            <td>41.2%</td>
+                        </tr>
+                        <tr>
+                            <td>GPT-5-Thinking</td>
+                            <td>59.0%</td>
+                            <td>49.3%</td>
+                            <td>63.2%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-xl text-white font-bold mb-4">Estudio de Ablación (Qwen-3-4B)</h3>
+                    <p class="text-sm text-slate-400 mb-4">Validación en el set ML usando Claude-4-Sonnet como juez.</p>
+                    <ul class="space-y-3 text-sm">
+                        <li class="flex justify-between p-3 bg-slate-900 border border-slate-800 rounded">
+                            <span>Modelo Base (Instruct)</span>
+                            <span class="font-mono text-slate-400">12.0%</span>
+                        </li>
+                        <li class="flex justify-between p-3 bg-red-900/20 border border-red-500/30 rounded">
+                            <span>SFT en Referencia</span>
+                            <span class="font-mono text-red-400">3.4% (Degradación)</span>
+                        </li>
+                        <li class="flex justify-between p-3 bg-slate-900 border border-slate-800 rounded">
+                            <span>RL con KL Penalty</span>
+                            <span class="font-mono text-slate-400">23.3%</span>
+                        </li>
+                        <li class="flex justify-between p-3 bg-green-900/20 border border-green-500/30 rounded">
+                            <span class="font-bold text-green-400">RL sin KL Penalty (Final)</span>
+                            <span class="font-mono text-green-400">29.7%</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="p-6 bg-slate-900 border border-slate-800 rounded-lg">
+                    <h3 class="text-amber-500 font-bold uppercase text-xs tracking-widest mb-4">Insight Crítico: Fallo del SFT</h3>
+                    <p class="text-slate-300 text-sm leading-relaxed mb-4">
+                        El <strong>Supervised Fine-Tuning (SFT)</strong> con las soluciones de referencia generadas por Llama-4 empeoró drásticamente el rendimiento (3.4% vs 12.0% base).
+                    </p>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        <strong>Razón:</strong> El modelo aprendía a imitar el "estilo" superficial de las referencias (que a veces eran vagas) pero perdía la capacidad de razonar sobre los requisitos específicos de la rúbrica. RL, en cambio, optimiza directamente la satisfacción de restricciones.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="border-t border-slate-800 pt-12 mt-12 text-center md:text-left flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 font-mono">
+            <div class="mb-4 md:mb-0">
+                <p>GENERADO POR OCVM BOOK GEM | REPLICACIÓN EXACTA | 2025</p>
+                <p class="mt-1 text-slate-600">Basado en el trabajo de Meta Superintelligence Labs</p>
+            </div>
+            <div class="flex gap-4">
+                <a href="#" class="hover:text-amber-500 transition-colors">Dataset: Research PlanGen</a>
+                <a href="#" class="hover:text-amber-500 transition-colors">arXiv:2512.23707</a>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Mermaid Init
+        document.addEventListener('DOMContentLoaded', () => {
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'dark',
+                securityLevel: 'loose',
+                fontFamily: 'Inter',
+                flowchart: { curve: 'basis' }
+            });
+        });
+
+        // Mobile Menu Logic
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu-container');
+
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            mobileMenu.classList.toggle('flex');
+        });
+    </script>
+</body>
+</html>
