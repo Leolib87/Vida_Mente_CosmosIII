@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motivación Intrínseca: El Compendio Matemático | O.C.V.M.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- MathJax para renderizado de ecuaciones LaTeX de alta calidad -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #94a3b8; /* slate-400 */
+            scroll-behavior: smooth;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(245, 158, 11, 0.04) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.04) 0%, transparent 20%);
+            background-attachment: fixed;
+        }
+
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* --- UI Components --- */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+            transition: border-color 0.3s ease;
+        }
+        .glass-panel:hover {
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+            cursor: pointer;
+            display: block;
+            letter-spacing: 0.05em;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -2px;
+            left: 0;
+            background-color: #f59e0b;
+            transition: width 0.3s ease;
+        }
+        .nav-item:hover .nav-link::after { width: 100%; }
+
+        /* --- Math Library Styles --- */
+        .math-card {
+            background: rgba(2, 6, 23, 0.6);
+            border-left: 2px solid #334155;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .math-card:hover {
+            border-left-color: #f59e0b;
+            background: rgba(2, 6, 23, 0.9);
+        }
+        .variable-badge {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        /* --- D3 Tooltip --- */
+        .d3-tooltip {
+            position: absolute;
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid #3b82f6;
+            color: #fff;
+            border-radius: 8px;
+            pointer-events: none;
+            font-size: 11px;
+            z-index: 50;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            max-width: 260px;
+            line-height: 1.5;
+        }
+        
+        /* --- Mermaid Overrides --- */
+        .mermaid .node rect, .mermaid .node circle, .mermaid .node polygon {
+            fill: #1e293b !important;
+            stroke: #475569 !important;
+        }
+        .mermaid .edgePath .path { stroke: #64748b !important; stroke-width: 1.5px; }
+        .mermaid .label { color: #cbd5e1 !important; font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="selection:bg-amber-500/20 selection:text-amber-100 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 glass-panel border-b-0 border-b-white/5 transition-all duration-300 top-0">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex justify-between items-center">
+            <a href="#" class="flex items-center space-x-3 group">
+                <div class="w-2 h-2 bg-amber-500 group-hover:bg-amber-400 transition-colors"></div>
+                <span class="text-xs font-bold tracking-[0.2em] uppercase text-slate-300 group-hover:text-white transition-colors">
+                    O.C.V.M. <span class="text-slate-600 mx-2">|</span> Biblioteca Matemática
+                </span>
+            </a>
+            
+            <div class="hidden md:flex space-x-8 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                <a href="#homungoalus" class="nav-item nav-link hover:text-amber-500">Homungoalus</a>
+                <a href="#math-lib" class="nav-item nav-link hover:text-amber-500">Ecuaciones</a>
+                <a href="#constants" class="nav-item nav-link hover:text-amber-500">Constantes</a>
+                <a href="#neuro" class="nav-item nav-link hover:text-amber-500">Neuro</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow pt-32 pb-20 px-6">
+        <div class="max-w-6xl mx-auto">
+
+            <!-- Hero Section -->
+            <header class="mb-32 relative text-center md:text-left">
+                <div class="absolute -top-32 -left-32 w-96 h-96 bg-amber-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+                
+                <div class="inline-block px-3 py-1 mb-6 border border-amber-500/30 rounded-full bg-amber-500/5">
+                    <p class="text-amber-500 text-[10px] font-mono tracking-widest uppercase">arXiv:2601.10276v1 • q-bio.NC</p>
+                </div>
+                
+                <h1 class="text-5xl md:text-7xl font-black text-slate-100 leading-tight tracking-tight uppercase mb-8">
+                    El Motor Matemático del<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-amber-600">Comportamiento Abierto</span>
+                </h1>
+                
+                <p class="text-lg text-slate-400 font-serif italic max-w-3xl leading-relaxed mb-12 md:mx-0 mx-auto">
+                    "La presencia de un único objetivo de motivación intrínseca rompe el regreso al infinito. Las recompensas extrínsecas no constituyen el fin último, sino un medio para sustentar al agente y permitirle continuar maximizando la entropía de su trayectoria acción-estado."
+                </p>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-slate-800 pt-8 text-left">
+                    <div>
+                        <span class="block text-[10px] uppercase text-slate-500 font-bold tracking-wider mb-1">Concepto Central</span>
+                        <span class="text-sm text-slate-200 font-medium">Entropía de Trayectoria Acción-Estado</span>
+                    </div>
+                    <div>
+                        <span class="block text-[10px] uppercase text-slate-500 font-bold tracking-wider mb-1">Marco Teórico</span>
+                        <span class="text-sm text-slate-200 font-medium">Principio de Máxima Ocupación</span>
+                    </div>
+                    <div>
+                        <span class="block text-[10px] uppercase text-slate-500 font-bold tracking-wider mb-1">Restricciones</span>
+                        <span class="text-sm text-slate-200 font-medium">Cognición Limitada & Embodiment</span>
+                    </div>
+                    <div>
+                        <span class="block text-[10px] uppercase text-slate-500 font-bold tracking-wider mb-1">Aplicación</span>
+                        <span class="text-sm text-slate-200 font-medium">Comportamiento Generativo Abierto</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 01. Homungoalus Solution -->
+            <section id="homungoalus" class="mb-32">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-100 mb-6 flex items-center gap-3">
+                            <span class="text-amber-500 font-mono text-xl">01.</span> 
+                            La Solución al "Homungoalus"
+                        </h2>
+                        <div class="prose prose-invert prose-sm text-slate-400 text-justify">
+                            <p>
+                                Las teorías clásicas del comportamiento se enfrentan a un obstáculo lógico conocido como la <strong>regresión infinita</strong> o problema del <em>"Homungoalus"</em>: si asumimos que toda acción es motivada por una meta o recompensa, ¿qué o quién define esa meta? Y a su vez, ¿qué define al definidor de la meta? La teoría de la Motivación Intrínseca (MI) resuelve este dilema al establecer un <strong>objetivo único e inmutable</strong> en la cúspide de la jerarquía conductual: la maximización de la ocupación del espacio de trayectorias futuras.
+                            </p>
+                            <div class="my-6 p-4 bg-slate-900/50 rounded border-l-2 border-amber-500">
+                                <p class="italic text-slate-300 text-xs">
+                                    "Las recompensas extrínsecas (como el azúcar o el dinero) no son el objetivo final del comportamiento, sino herramientas instrumentales para mantener la viabilidad del agente, permitiéndole así continuar con su misión primordial de maximizar la entropía."
+                                </p>
+                            </div>
+                            <ul class="custom-list space-y-2 text-xs">
+                                <li><strong>Nivel Superior (Objetivo):</strong> Maximizar Entropía de Trayectoria (Permanente).</li>
+                                <li><strong>Nivel Medio (Impulsos):</strong> Hambre, Sed, Curiosidad (Señales Temporales).</li>
+                                <li><strong>Nivel Inferior (Metas):</strong> Ir al pozo, comer, explorar (Acciones Instrumentales).</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-8 rounded-xl">
+                        <div class="mermaid text-center">
+                            graph TD
+                                H[Problema del Homungoalus<br/>¿Quién vigila al vigilante?] -->|Fallo Lógico| REGRESS[Regresión Infinita]
+                                
+                                MI[Solución MI<br/>Objetivo Único: Entropía] --> DRIVES[Impulsos Temporales]
+                                DRIVES --> GOALS[Metas Concretas]
+                                GOALS --> BEH[Comportamiento]
+                                
+                                BEH -.->|Satisface| DRIVES
+                                BEH -->|Sustenta| MI
+                                
+                                style MI fill:#f59e0b11,stroke:#f59e0b,stroke-width:2px
+                                style H fill:#ef444411,stroke:#ef4444,stroke-width:2px,stroke-dasharray: 5 5
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 02. Bibliotheca Mathematica -->
+            <section id="math-lib" class="mb-32">
+                <div class="flex items-baseline justify-between mb-12 border-b border-white/10 pb-4">
+                    <h2 class="text-3xl font-bold text-slate-100 flex items-center gap-3">
+                        <span class="text-amber-500 font-mono text-xl">02.</span> 
+                        Bibliotheca Mathematica
+                    </h2>
+                    <span class="text-xs font-mono text-slate-500 uppercase tracking-widest">Ecs. 1-4 | Núcleo del Paper</span>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Columna Izquierda: Ecuaciones -->
+                    <div class="lg:col-span-2 space-y-6">
+                        
+                        <!-- Eq 1: Master Equation -->
+                        <div class="math-card group">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-white font-bold text-sm uppercase tracking-wide">Ecuación 1: La Ecuación Maestra (MOP/ASPE)</h3>
+                                <span class="text-[10px] text-slate-500 font-mono">Valor de Motivación Intrínseca</span>
+                            </div>
+                            <div class="text-lg text-slate-200 overflow-x-auto py-4">
+                                $$ V_{\pi}(s) = \sum_{t=0}^{\infty} \gamma^{t} \mathbb{E}_{\pi, p} \left[ \mathcal{H}(\pi(\cdot|s_{t})) + \alpha \mathcal{H}(p(\cdot|s_{t},a_{t})) \right] $$
+                            </div>
+                            <p class="text-xs text-slate-400 mt-2 leading-relaxed text-justify">
+                                Esta ecuación define el valor intrínseco $V_{\pi}(s)$ como la suma descontada futura de dos componentes entrópicos. El primer término, $\mathcal{H}(\pi)$, representa la <strong>entropía de acción</strong>, fomentando la diversidad en la toma de decisiones. El segundo término, $\mathcal{H}(p)$, ponderado por <span class="variable-badge">α</span>, representa la <strong>entropía de transición</strong>, incentivando la búsqueda de estados que ofrecen transiciones ricas o sorprendentes.
+                            </p>
+                        </div>
+
+                        <!-- Eq 2: Extrinsic Reward -->
+                        <div class="math-card group">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-white font-bold text-sm uppercase tracking-wide">Ecuación 2: Recompensa Extrínseca Clásica</h3>
+                                <span class="text-[10px] text-slate-500 font-mono">Aprendizaje por Refuerzo Estándar</span>
+                            </div>
+                            <div class="text-lg text-slate-200 overflow-x-auto py-4">
+                                $$ V_{\pi}(s) = \sum_{t=0}^{\infty} \gamma^{t} \mathbb{E}_{\pi, p} \left[ r(s_{t},a_{t}) \right] $$
+                            </div>
+                            <p class="text-xs text-slate-400 mt-2 leading-relaxed text-justify">
+                                Representa la formulación clásica donde el agente busca maximizar una señal de recompensa externa fija $r(s,a)$ (utilidad). Este enfoque, si se usa exclusivamente, tiende a producir un colapso conductual hacia patrones repetitivos y deterministas.
+                            </p>
+                        </div>
+
+                        <!-- Eq 3 & 4: Additivity -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="math-card !mb-0 border-l-red-500/50 hover:border-l-red-500">
+                                <h3 class="text-white font-bold text-xs uppercase mb-2">Ec. 3: Información Mutua (No Aditiva)</h3>
+                                <div class="text-sm text-slate-300 py-2 overflow-x-auto">
+                                    $$ MI(s,a) \neq MI(s_A) + MI(s_B|s_t) $$
+                                </div>
+                                <p class="text-[10px] text-slate-500 mt-2 text-justify">
+                                    La Información Mutua carece de la propiedad de aditividad en trayectorias. Esto hace que su optimización recursiva sea computacionalmente intratable para horizontes temporales largos.
+                                </p>
+                            </div>
+                            <div class="math-card !mb-0 border-l-green-500/50 hover:border-l-green-500">
+                                <h3 class="text-white font-bold text-xs uppercase mb-2">Ec. 4: Entropía (Aditiva)</h3>
+                                <div class="text-sm text-slate-300 py-2 overflow-x-auto">
+                                    $$ \mathcal{H}(s,a) = \mathcal{H}(s_A) + \mathcal{H}(s_B|s_t) $$
+                                </div>
+                                <p class="text-[10px] text-slate-500 mt-2 text-justify">
+                                    La Entropía de Shannon sí es aditiva. Esta propiedad es crucial pues permite el uso de Ecuaciones de Bellman recursivas, facilitando la planificación óptima en problemas de comportamiento abierto.
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Columna Derecha: Números Especiales -->
+                    <div id="constants" class="lg:col-span-1">
+                        <div class="glass-panel p-6 rounded-xl h-full">
+                            <h3 class="text-amber-500 font-bold uppercase text-xs tracking-widest mb-6">Constantes y Variables</h3>
+                            
+                            <ul class="space-y-6">
+                                <li>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-xl font-serif italic text-white">α</span>
+                                        <span class="text-[10px] text-slate-500 uppercase">Alpha</span>
+                                    </div>
+                                    <p class="text-xs text-slate-400 leading-tight text-justify">
+                                        Ponderación de la entropía de transición. Define el "sabor" de la motivación:
+                                        <br><span class="text-amber-500">α > 0:</span> Búsqueda de novedad y sorpresa (Curiosidad).
+                                        <br><span class="text-blue-500">α < 0:</span> Búsqueda de control y previsibilidad (Empowerment).
+                                    </p>
+                                </li>
+                                <li class="border-t border-white/5 pt-4">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-xl font-serif italic text-white">γ</span>
+                                        <span class="text-[10px] text-slate-500 uppercase">Gamma</span>
+                                    </div>
+                                    <p class="text-xs text-slate-400 leading-tight text-justify">
+                                        Factor de descuento temporal.
+                                        <br><span class="text-purple-500">γ → 1:</span> Horizonte temporal infinito. Crucial para el comportamiento "Open-Ended" y fenómenos como el movimiento colectivo.
+                                    </p>
+                                </li>
+                                <li class="border-t border-white/5 pt-4">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-xl font-serif italic text-white">π</span>
+                                        <span class="text-[10px] text-slate-500 uppercase">Política</span>
+                                    </div>
+                                    <p class="text-xs text-slate-400 leading-tight text-justify">
+                                        La política conductual $\pi(a|s)$. Bajo la influencia de la motivación intrínseca, esta evoluciona para ser estocástica y diversa, evitando el determinismo rígido.
+                                    </p>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 03. Mapa de Teorías (Interactive D3) -->
+            <section class="mb-32">
+                <h2 class="text-3xl font-bold text-slate-100 mb-8 flex items-center gap-3">
+                    <span class="text-amber-500 font-mono text-xl">03.</span> 
+                    El Paisaje Teórico Unificado
+                </h2>
+                
+                <div class="glass-panel rounded-xl p-2 relative h-[450px]">
+                    <div class="absolute top-4 left-4 z-10 bg-slate-900/80 px-4 py-2 rounded border border-white/10 backdrop-blur-md">
+                        <h3 class="text-xs font-bold text-white uppercase tracking-widest">Espacio de Parámetros (α vs γ)</h3>
+                        <p class="text-[10px] text-slate-400 mt-1">Visualización de cómo diversas teorías emergen de la Ecuación 1</p>
+                    </div>
+                    <div id="theory-chart" class="w-full h-full"></div>
+                </div>
+            </section>
+
+            <!-- 04. Neurociencia y Paradojas -->
+            <section id="neuro" class="mb-32 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Neuro -->
+                <div class="glass-panel p-8 rounded-xl">
+                    <h3 class="text-white font-bold uppercase text-sm mb-6 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span> Sustrato Neurobiológico
+                    </h3>
+                    <div class="mermaid">
+                        graph LR
+                            ZI[Zona Incerta<br/>Búsqueda de Novedad] -->|Inhibición GABA| STR
+                            VTA[VTA / SNc<br/>RPE + Sorpresa + Incertidumbre] -->|Señal Dopamina| STR
+                            STR[Estriado<br/>Selección de Acción] --> MOTOR[Salida Motora]
+                            VTA -->|Señal de Valor| OFC[Orbitofrontal<br/>Valor Económico de la Info]
+                            PPC[Parietal Posterior<br/>Saliencia Visual] <--> ZI
+                            
+                            style ZI fill:#3b82f611,stroke:#3b82f6
+                            style VTA fill:#f59e0b11,stroke:#f59e0b
+                    </div>
+                    <div class="mt-6 text-xs text-slate-400 space-y-2 text-justify">
+                        <p><strong>• Dopamina Espontánea:</strong> Se ha observado liberación de dopamina en el estriado dorsolateral coincidiendo con el "balbuceo motor", lo que refuerza la variabilidad conductual sin recompensa externa.</p>
+                        <p><strong>• Zona Incerta (ZI):</strong> Esta estructura subcortical es crítica para impulsar comportamientos de investigación compulsiva y búsqueda de novedad, conectando la motivación con la acción motora.</p>
+                    </div>
+                </div>
+
+                <!-- Paradojas -->
+                <div class="glass-panel p-8 rounded-xl">
+                    <h3 class="text-white font-bold uppercase text-sm mb-6 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-red-500"></span> Paradojas Teóricas y Límites
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="p-3 bg-slate-900/50 rounded border-l-2 border-red-500">
+                            <h4 class="text-slate-200 text-xs font-bold uppercase">The Dark Room (FEP)</h4>
+                            <p class="text-[10px] text-slate-500 text-justify">Si el objetivo es minimizar la sorpresa, el agente óptimo se encerraría en una habitación oscura y predecible. Solución: Añadir "priors" de exploración ad-hoc.</p>
+                        </div>
+                        <div class="p-3 bg-slate-900/50 rounded border-l-2 border-amber-500">
+                            <h4 class="text-slate-200 text-xs font-bold uppercase">Grand Roulette (MOP)</h4>
+                            <p class="text-[10px] text-slate-500 text-justify">Si el objetivo es maximizar la diversidad, el agente se quedaría apostando al azar infinito. Solución: La cognición limitada nos aleja del azar puro no estructurado.</p>
+                        </div>
+                        <div class="p-3 bg-slate-900/50 rounded border-l-2 border-purple-500">
+                            <h4 class="text-slate-200 text-xs font-bold uppercase">Noisy TV (IGM)</h4>
+                            <p class="text-[10px] text-slate-500 text-justify">Si el objetivo es maximizar la ganancia de información, el agente miraría estática en una TV para siempre. Solución: Buscar patrones comprimibles, no ruido aleatorio.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer class="border-t border-slate-800 pt-16 pb-24 text-center">
+                <div class="max-w-2xl mx-auto">
+                    <h3 class="text-white font-serif text-2xl mb-6">Conclusión</h3>
+                    <p class="text-slate-400 text-sm italic leading-relaxed mb-8">
+                        "La motivación intrínseca no es un complemento opcional, sino el fundamento del comportamiento inteligente. Asegura la diversidad y adaptabilidad mientras integra recompensas externas, la realidad del cuerpo (embodiment) y los límites cognitivos. Promete ser el modelo generativo de comportamiento abierto más exitoso de la ciencia moderna."
+                    </p>
+                    <div class="flex justify-center gap-4 text-[10px] text-slate-600 font-mono uppercase">
+                        <span>O.C.V.M. 2026</span>
+                        <span>•</span>
+                        <span>Moreno-Bote et al.</span>
+                    </div>
+                </div>
+            </footer>
+
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            mermaid.initialize({ 
+                startOnLoad: true, 
+                theme: 'dark',
+                fontFamily: 'Inter',
+                securityLevel: 'loose'
+            });
+            initTheoryChart();
+        });
+
+        function initTheoryChart() {
+            const container = document.getElementById('theory-chart');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            
+            const svg = d3.select("#theory-chart").append("svg")
+                .attr("width", width).attr("height", height);
+
+            // Datos Teóricos
+            const data = [
+                { id: "MOP", x: 60, y: 70, color: "#f59e0b", label: "MOP", desc: "Principio de Máxima Ocupación.<br>Equilibrio perfecto entre diversidad de acción y estado (α=1)." },
+                { id: "FEP", x: 80, y: 85, color: "#10b981", label: "FEP", desc: "Inferencia Activa.<br>Minimiza sorpresa (α >> 1), tiende a la homeostasis." },
+                { id: "IGM", x: 90, y: 40, color: "#ec4899", label: "IGM", desc: "Maximización de Ganancia de Info.<br>Busca novedad pura (α maximizado)." },
+                { id: "EMP", x: 20, y: 60, color: "#3b82f6", label: "MPOW", desc: "Empowerment.<br>Busca control determinista sobre el futuro (α < 0)." },
+                { id: "COL", x: 60, y: 95, color: "#8b5cf6", label: "Collective", desc: "Movimiento Colectivo.<br>Comportamiento de enjambre en horizonte infinito (γ → 1)." },
+                { id: "CEF", x: 60, y: 15, color: "#ef4444", label: "Causal Entropy", desc: "Fuerzas Entrópicas Causales.<br>Maximiza entropía solo en el estado final (Horizonte T fijo)." }
+            ];
+
+            const xScale = d3.scaleLinear().domain([0, 100]).range([60, width - 60]);
+            const yScale = d3.scaleLinear().domain([0, 100]).range([height - 60, 60]);
+
+            // Grid y Ejes
+            const defs = svg.append("defs");
+            const gridPattern = defs.append("pattern")
+                .attr("id", "grid")
+                .attr("width", 40).attr("height", 40)
+                .attr("patternUnits", "userSpaceOnUse");
+            gridPattern.append("path").attr("d", "M 40 0 L 0 0 0 40").attr("fill", "none").attr("stroke", "rgba(255,255,255,0.05)").attr("stroke-width", 1);
+            svg.append("rect").attr("width", width).attr("height", height).attr("fill", "url(#grid)");
+
+            // Ejes conceptuales
+            svg.append("line").attr("x1", 60).attr("y1", height/2).attr("x2", width-60).attr("y2", height/2)
+                .attr("stroke", "#475569").attr("stroke-dasharray", "4");
+            svg.append("line").attr("x1", width/2).attr("y1", 60).attr("x2", width/2).attr("y2", height-60)
+                .attr("stroke", "#475569").attr("stroke-dasharray", "4");
+
+            // Etiquetas de Ejes
+            const labelStyle = { fill: "#64748b", fontSize: "10px", fontFamily: "Inter" };
+            svg.append("text").attr("x", width-70).attr("y", height/2 - 10).text("Novedad (α > 0)").attr("fill", "#64748b").attr("text-anchor", "end").style("font-size", "10px");
+            svg.append("text").attr("x", 70).attr("y", height/2 - 10).text("Control (α < 0)").attr("fill", "#64748b").style("font-size", "10px");
+            svg.append("text").attr("x", width/2 + 10).attr("y", 70).text("Horizonte Corto").attr("fill", "#64748b").style("font-size", "10px");
+            svg.append("text").attr("x", width/2 + 10).attr("y", height-70).text("Horizonte Infinito (γ→1)").attr("fill", "#64748b").style("font-size", "10px");
+
+            // Tooltip
+            const tooltip = d3.select("body").append("div").attr("class", "d3-tooltip").style("opacity", 0);
+
+            // Nodos
+            const nodes = svg.selectAll("g.node").data(data).enter().append("g")
+                .attr("transform", d => `translate(${xScale(d.x)},${yScale(d.y)})`)
+                .style("cursor", "pointer");
+
+            // Glow effect
+            nodes.append("circle")
+                .attr("r", 25)
+                .attr("fill", d => d.color)
+                .attr("opacity", 0.15)
+                .append("animate")
+                .attr("attributeName", "r")
+                .attr("values", "20;28;20")
+                .attr("dur", "3s")
+                .attr("repeatCount", "indefinite");
+
+            // Core circle
+            nodes.append("circle")
+                .attr("r", 8)
+                .attr("fill", "#0f172a")
+                .attr("stroke", d => d.color)
+                .attr("stroke-width", 2);
+
+            // Labels
+            nodes.append("text")
+                .attr("dy", -35)
+                .attr("text-anchor", "middle")
+                .text(d => d.label)
+                .attr("fill", "#fff")
+                .attr("font-weight", "bold")
+                .attr("font-size", "12px")
+                .style("text-shadow", "0 2px 4px rgba(0,0,0,0.5)");
+
+            // Interaction
+            nodes.on("mouseover", function(event, d) {
+                d3.select(this).select("circle:nth-child(2)").attr("fill", d.color);
+                
+                tooltip.transition().duration(200).style("opacity", 1);
+                tooltip.html(`<strong style="color:${d.color}">${d.label}</strong><br>${d.desc}`)
+                    .style("left", (event.pageX + 15) + "px")
+                    .style("top", (event.pageY - 28) + "px")
+                    .style("border-color", d.color);
+            })
+            .on("mouseout", function(event, d) {
+                d3.select(this).select("circle:nth-child(2)").attr("fill", "#0f172a");
+                tooltip.transition().duration(500).style("opacity", 0);
+            });
+        }
+    </script>
+</body>
+</html>
