@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+ <title>LabMate Pro: Soluciones y Cálculos</title>
+ <script src="https://cdn.tailwindcss.com"></script>
+ <script src="https://unpkg.com/lucide@latest"></script>
+ <style>
+ @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+ @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
+
+ body { font-family: 'Inter', sans-serif; }
+ .hide-scrollbar::-webkit-scrollbar { display: none; }
+ .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+ .fade-in { animation: fadeIn 0.3s ease-in-out; }
+ @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+ 
+ /* Custom Dark Scrollbar */
+ ::-webkit-scrollbar { width: 6px; }
+ ::-webkit-scrollbar-track { background: #0f172a; }
+ ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+ ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+ /* Mobile Fixes */
+ .mobile-height { height: 100dvh; }
+
+ /* Math & Chemical Formatting */
+ .math-font { font-family: 'Fira Code', monospace; letter-spacing: -0.5px; }
+ .chem-formula { font-family: 'Inter', sans-serif; font-feature-settings: "subs"; }
+ 
+ /* Fraction CSS Implementation */
+ .frac { display: inline-block; position: relative; vertical-align: middle; letter-spacing: 0.001em; text-align: center; }
+ .frac > span { display: block; padding: 0.1em; }
+ .frac span.bottom { border-top: thin solid white; }
+ .frac span.symbol { display: none; } 
+ </style>
+</head>
+<body class="bg-slate-950 text-slate-300 mobile-height overflow-hidden flex flex-col md:flex-row selection:bg-teal-500 selection:text-white">
+
+ <!-- Mobile Header (Solo visible en móviles) -->
+ <div class="md:hidden bg-slate-900 p-4 border-b border-slate-800 flex justify-between items-center z-30 flex-shrink-0">
+ <div class="flex items-center gap-2">
+ <i data-lucide="flask-conical" class="w-5 h-5 text-teal-400"></i>
+ <span class="font-bold text-lg text-slate-100 tracking-tight">LabMate Pro</span>
+ </div>
+ <button onclick="toggleSidebar()" class="p-2 text-slate-400 hover:text-white bg-slate-800 rounded-lg border border-slate-700">
+ <i data-lucide="menu" class="w-5 h-5"></i>
+ </button>
+ </div>
+
+ <!-- Sidebar / Lista de Soluciones -->
+ <aside id="sidebar" class="fixed inset-0 z-20 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform transform -translate-x-full md:translate-x-0 md:relative md:w-80 w-full md:h-full shadow-2xl pt-0 md:pt-0">
+ 
+ <!-- Botón cerrar móvil -->
+ <div class="md:hidden p-4 flex justify-end">
+ <button onclick="toggleSidebar()" class="p-2 text-slate-400">
+ <i data-lucide="x" class="w-6 h-6"></i>
+ </button>
+ </div>
+
+ <div class="p-5 border-b border-slate-800 bg-slate-950 text-white hidden md:block flex-shrink-0">
+ <div class="flex items-center gap-2 mb-1">
+ <i data-lucide="flask-conical" class="w-6 h-6 text-teal-400"></i>
+ <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-teal-400 to-emerald-400 bg-clip-text text-transparent">LabMate Pro</h1>
+ </div>
+ <p class="text-xs text-slate-500">Suite de Cálculos de Laboratorio</p>
+ </div>
+ 
+ <div class="p-3 flex-shrink-0">
+ <div class="relative group">
+ <i data-lucide="search" class="absolute left-3 top-3 w-4 h-4 text-slate-500 group-focus-within:text-teal-400 transition-colors"></i>
+ <input type="text" id="searchInput" placeholder="Buscar (ej. PBS, HCl)..." 
+ class="w-full pl-9 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-200 focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 outline-none transition-all placeholder:text-slate-600">
+ </div>
+ <div class="flex gap-2 mt-3 overflow-x-auto pb-2 hide-scrollbar">
+ <button onclick="filterCategory('all')" class="filter-btn active px-3 py-1 text-xs font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded-full whitespace-nowrap hover:bg-teal-500/30 transition">Todos</button>
+ <button onclick="filterCategory('buffer')" class="filter-btn px-3 py-1 text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700 rounded-full whitespace-nowrap hover:bg-slate-700 transition">Buffers</button>
+ <button onclick="filterCategory('acid-base')" class="filter-btn px-3 py-1 text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700 rounded-full whitespace-nowrap hover:bg-slate-700 transition">Ácidos</button>
+ <button onclick="filterCategory('salt')" class="filter-btn px-3 py-1 text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700 rounded-full whitespace-nowrap hover:bg-slate-700 transition">Sales</button>
+ </div>
+ </div>
+
+ <div id="solutionList" class="flex-1 overflow-y-auto p-2 space-y-1 pb-20 md:pb-2">
+ <!-- Items generados por JS -->
+ </div>
+ </aside>
+
+ <!-- Área Principal -->
+ <main class="flex-1 h-full overflow-y-auto bg-slate-950 relative w-full flex flex-col">
+ 
+ <!-- Navbar Tabs -->
+ <div class="sticky top-0 z-10 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-4 md:px-6 py-3 flex justify-between items-center shadow-sm flex-shrink-0">
+ <h2 id="currentTitle" class="text-sm md:text-lg font-bold text-slate-100 truncate pr-2">Selecciona una Solución</h2>
+ <div class="flex gap-1 md:gap-2 shrink-0">
+ <button onclick="switchView('recipe')" id="btn-recipe" class="p-2 rounded-lg bg-teal-500/10 text-teal-400 hover:bg-teal-500/20 transition border border-teal-500/20" title="Ver Receta">
+ <i data-lucide="scroll-text" class="w-5 h-5"></i>
+ </button>
+ <button onclick="switchView('calc-solid')" id="btn-calc-solid" class="p-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition border border-transparent" title="Calculadora Molaridad (Sólidos)">
+ <i data-lucide="calculator" class="w-5 h-5"></i>
+ </button>
+ <button onclick="switchView('calc-liquid')" id="btn-calc-liquid" class="p-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition border border-transparent" title="Calculadora Dilución (Líquidos)">
+ <i data-lucide="droplets" class="w-5 h-5"></i>
+ </button>
+ <button onclick="switchView('equations')" id="btn-equations" class="p-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition border border-transparent" title="Librería de Ecuaciones">
+ <i data-lucide="book-open" class="w-5 h-5"></i>
+ </button>
+ </div>
+ </div>
+
+ <div class="p-4 md:p-6 max-w-5xl mx-auto pb-24 w-full flex-grow">
+ 
+ <!-- VISTA: RECETA -->
+ <div id="view-recipe" class="fade-in space-y-4 md:space-y-6">
+ <!-- Header Card -->
+ <div id="recipeHeader" class="bg-slate-900 p-5 md:p-6 rounded-xl shadow-lg border border-slate-800 hidden relative overflow-hidden">
+ <div class="absolute top-0 right-0 w-32 h-32 bg-teal-500/5 rounded-full blur-3xl pointer-events-none"></div>
+ <div class="flex flex-col md:flex-row justify-between items-start gap-4 relative z-10">
+ <div>
+ <div class="flex items-center gap-2 mb-3">
+ <span id="r-type" class="px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded bg-slate-800 text-slate-400 border border-slate-700">TIPO</span>
+ <span id="r-mw" class="text-xs text-teal-400 font-mono bg-teal-500/10 px-2 py-1 rounded">MW: -- g/mol</span>
+ </div>
+ <h2 id="r-name" class="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight break-words">Nombre</h2>
+ <p id="r-desc" class="text-slate-400 leading-relaxed text-sm md:text-base max-w-2xl">Descripción</p>
+ 
+ <!-- Ecuación Química de la Reacción -->
+ <div id="r-reaction-container" class="mt-4 p-3 bg-slate-950/50 rounded-lg border border-slate-800 inline-block hidden max-w-full overflow-x-auto">
+ <span class="text-[10px] text-slate-500 uppercase tracking-widest font-bold block mb-1">Ecuación Química:</span>
+ <div id="r-reaction" class="text-teal-300 font-mono text-sm md:text-base whitespace-nowrap">
+ <!-- Injected JS -->
+ </div>
+ </div>
+
+ </div>
+ <div class="bg-red-500/10 border border-red-500/20 p-3 rounded-lg max-w-full md:max-w-xs w-full shrink-0">
+ <h4 class="text-red-400 font-bold text-sm flex items-center gap-2 mb-2">
+ <i data-lucide="triangle-alert" class="w-4 h-4"></i> Seguridad
+ </h4>
+ <p id="r-safety" class="text-xs text-red-200/80 leading-snug">Precauciones...</p>
+ </div>
+ </div>
+ </div>
+
+ <!-- Panel de Control de Receta -->
+ <div id="recipeControls" class="bg-slate-800/50 p-3 md:p-4 rounded-xl border border-slate-700/50 hidden backdrop-blur-sm sticky top-0 z-0">
+ <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
+ 
+ <!-- Control Volumen -->
+ <div class="w-full sm:w-auto">
+ <span class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Volumen Final:</span>
+ <div class="flex bg-slate-900 rounded-lg p-1 border border-slate-700 w-full sm:w-auto overflow-x-auto">
+ <button onclick="updateRecipeCalc(250)" class="vol-btn flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-medium transition-all text-center whitespace-nowrap" data-vol="250">250 mL</button>
+ <button onclick="updateRecipeCalc(500)" class="vol-btn flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-medium transition-all text-center whitespace-nowrap" data-vol="500">500 mL</button>
+ <button onclick="updateRecipeCalc(1000)" class="vol-btn flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-medium bg-teal-600 text-white shadow-sm text-center whitespace-nowrap" data-vol="1000">1 L</button>
+ </div>
+ </div>
+
+ <!-- Control Concentración -->
+ <div class="w-full sm:w-auto sm:text-right">
+ <span class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Concentración (Stock):</span>
+ <div class="flex bg-slate-900 rounded-lg p-1 border border-slate-700 w-full sm:w-auto justify-end">
+ <button onclick="updateConcentration(1)" class="conc-btn flex-1 sm:flex-none px-4 py-1.5 rounded-md text-xs font-medium bg-teal-600 text-white shadow-sm transition-all text-center whitespace-nowrap" data-conc="1">1X <span class="text-[9px] opacity-70 ml-1">(Uso)</span></button>
+ <button onclick="updateConcentration(10)" class="conc-btn flex-1 sm:flex-none px-4 py-1.5 rounded-md text-xs font-medium transition-all hover:text-white text-center whitespace-nowrap" data-conc="10">10X <span class="text-[9px] opacity-70 ml-1">(Stock)</span></button>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <!-- Pasos e Ingredientes -->
+ <div id="recipeSteps" class="bg-slate-900 p-5 md:p-6 rounded-xl shadow-lg border border-slate-800 hidden">
+ 
+ <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+ <!-- Columna Ingredientes -->
+ <div class="md:col-span-1 bg-slate-950/50 rounded-lg p-4 md:p-5 border border-slate-800 h-fit">
+ <h3 class="text-xs font-bold text-teal-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+ <i data-lucide="flask-conical" class="w-4 h-4"></i> Ingredientes
+ </h3>
+ <ul id="ingredientsList" class="space-y-3 text-sm">
+ <!-- JS Injected -->
+ </ul>
+ <div id="volumeWarning" class="mt-4 hidden p-2 bg-yellow-500/10 border border-yellow-500/20 rounded text-xs text-yellow-200/80 leading-relaxed">
+ <i data-lucide="alert-circle" class="w-3 h-3 inline mr-1"></i> Verifica solubilidad para concentraciones 10X.
+ </div>
+ </div>
+
+ <!-- Columna Pasos -->
+ <div class="md:col-span-2">
+ <h3 class="text-xs font-bold text-slate-200 uppercase tracking-widest mb-4 flex items-center gap-2">
+ <i data-lucide="list-checks" class="w-4 h-4 text-teal-500"></i> Protocolo
+ </h3>
+ <div id="stepsList" class="space-y-5">
+ <!-- Steps Injected -->
+ </div>
+ </div>
+ </div>
+ 
+ <div class="mt-8 p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+ <h4 class="text-blue-400 font-bold text-xs uppercase tracking-wider mb-2 flex items-center gap-2">
+ <i data-lucide="lightbulb" class="w-3 h-3"></i> Tips de Experto, Recipiente & Almacenamiento
+ </h4>
+ <ul id="r-tips" class="list-disc list-inside text-sm text-blue-200/70 space-y-2 pl-1">
+ <!-- Tips -->
+ </ul>
+ </div>
+ </div>
+
+ <!-- Estado Vacío -->
+ <div id="emptyState" class="text-center py-20 md:py-32 px-4">
+ <div class="bg-slate-900 w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-teal-900/10 border border-slate-800 animate-pulse">
+ <i data-lucide="flask-conical" class="w-10 h-10 text-teal-500"></i>
+ </div>
+ <h3 class="text-xl md:text-2xl font-bold text-white">LabMate Pro</h3>
+ <p class="text-slate-500 mt-3 max-w-md mx-auto text-sm md:text-base">Selecciona una solución de la barra lateral para comenzar a preparar tus reactivos con cálculos de molaridad en tiempo real.</p>
+ </div>
+ </div>
+
+ <!-- VISTA: LIBRERÍA DE ECUACIONES -->
+ <div id="view-equations" class="hidden fade-in space-y-6">
+ <div class="bg-slate-900 p-6 rounded-xl shadow-lg border border-slate-800">
+ <div class="flex items-center gap-3 mb-6 border-b border-slate-800 pb-4">
+ <div class="bg-purple-500/10 p-2 rounded-lg border border-purple-500/20">
+ <i data-lucide="book-open" class="w-6 h-6 text-purple-400"></i>
+ </div>
+ <div>
+ <h3 class="text-lg font-bold text-white">Librería de Ecuaciones y Referencias</h3>
+ <p class="text-sm text-slate-500">Fórmulas fundamentales para el laboratorio</p>
+ </div>
+ </div>
+
+ <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+ <!-- Fórmulas Básicas -->
+ <div class="bg-slate-950 p-5 rounded-lg border border-slate-800">
+ <h4 class="text-sm font-bold text-purple-400 uppercase tracking-wider mb-4">Concentración</h4>
+ <div class="space-y-6">
+ <div class="flex justify-between items-center border-b border-slate-800 pb-3 last:border-0">
+ <span class="text-slate-300 text-sm">Molaridad (M)</span>
+ <div class="text-white font-mono text-lg text-right">
+ M = <div class="frac"><span>moles</span><span class="symbol">/</span><span class="bottom">L</span></div> = <div class="frac"><span>g</span><span class="symbol">/</span><span class="bottom">MW &times; V</span></div>
+ </div>
+ </div>
+ <div class="flex justify-between items-center border-b border-slate-800 pb-3 last:border-0">
+ <span class="text-slate-300 text-sm">Normalidad (N)</span>
+ <div class="text-white font-mono text-lg text-right">
+ N = M &times; &theta;
+ </div>
+ </div>
+ <div class="flex justify-between items-center pb-3">
+ <span class="text-slate-300 text-sm">Molalidad (m)</span>
+ <div class="text-white font-mono text-lg text-right">
+ m = <div class="frac"><span>moles</span><span class="symbol">/</span><span class="bottom">kg solv.</span></div>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <!-- Dilución y Porcentajes -->
+ <div class="bg-slate-950 p-5 rounded-lg border border-slate-800">
+ <h4 class="text-sm font-bold text-purple-400 uppercase tracking-wider mb-4">Diluciones y %</h4>
+ <div class="space-y-6">
+ <div class="flex justify-between items-center border-b border-slate-800 pb-3 last:border-0">
+ <span class="text-slate-300 text-sm">Ecuación Dilución</span>
+ <div class="text-white font-mono text-lg text-right">
+ C<sub>1</sub>V<sub>1</sub> = C<sub>2</sub>V<sub>2</sub>
+ </div>
+ </div>
+ <div class="flex justify-between items-center border-b border-slate-800 pb-3 last:border-0">
+ <span class="text-slate-300 text-sm">% Peso/Volumen</span>
+ <div class="text-white font-mono text-lg text-right">
+ % w/v = <div class="frac"><span>g</span><span class="symbol">/</span><span class="bottom">mL</span></div> &times; 100
+ </div>
+ </div>
+ <div class="flex justify-between items-center pb-3">
+ <span class="text-slate-300 text-sm">pH (Buffers)</span>
+ <div class="text-white font-mono text-sm text-right">
+ pH = pKa + log<div class="frac"><span>[A<sup>-</sup>]</span><span class="symbol">/</span><span class="bottom">[HA]</span></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <!-- Caracteres Especiales -->
+ <div class="mt-6 bg-slate-950 p-5 rounded-lg border border-slate-800">
+ <h4 class="text-sm font-bold text-teal-400 uppercase tracking-wider mb-4">Símbolos y Caracteres Comunes</h4>
+ <div class="grid grid-cols-4 md:grid-cols-8 gap-3 text-center">
+ <div class="p-2 bg-slate-900 rounded border border-slate-800 hover:border-teal-500 cursor-pointer transition group" onclick="copyChar('µ')">
+ <span class="text-xl text-white block">µ</span>
+ <span class="text-[10px] text-slate-500 group-hover:text-teal-400">micro</span>
+ </div>
+ <div class="p-2 bg-slate-900 rounded border border-slate-800 hover:border-teal-500 cursor-pointer transition group" onclick="copyChar('∆')">
+ <span class="text-xl text-white block">∆</span>
+ <span class="text-[10px] text-slate-500 group-hover:text-teal-400">delta</span>
+ </div>
+ <div class="p-2 bg-slate-900 rounded border border-slate-800 hover:border-teal-500 cursor-pointer transition group" onclick="copyChar('α')">
+ <span class="text-xl text-white block">α</span>
+ <span class="text-[10px] text-slate-500 group-hover:text-teal-400">alpha</span>
+ </div>
+ <div class="p-2 bg-slate-900 rounded border border-slate-800 hover:border-teal-500 cursor-pointer transition group" onclick="copyChar('β')">
+ <span class="text-xl text-white block">β</span>
+ <span class="text-[10px] text-slate-500 group-hover:text-teal-400">beta</span>
+ </div>
+ <div class="p-2 bg-slate-900 rounded border border-slate-800 hover:border-teal-500 cursor-pointer transition group" onclick="copyChar('λ')">
+ <span class="text-xl text-white block">λ</span>
+ <span class="text-[10px] text-slate-500 group-hover:text-teal-400">lambda</span>
+ </div>
+ <div class="p-2 bg-slate-900 rounded border border-slate-800 hover:border-teal-500 cursor-pointer transition group" onclick="copyChar('ρ')">
+ <span class="text-xl text-white block">ρ</span>
+ <span class="text-[10px] text-slate-500 group-hover:text-teal-400">rho</span>
+ </div>
+ <div class="p-2 bg-slate-900 rounded border border-slate-800 hover:border-teal-500 cursor-pointer transition group" onclick="copyChar('≈')">
+ <span class="text-xl text-white block">≈</span>
+ <span class="text-[10px] text-slate-500 group-hover:text-teal-400">aprox</span>
+ </div>
+ <div class="p-2 bg-slate-900 rounded border border-slate-800 hover:border-teal-500 cursor-pointer transition group" onclick="copyChar('°C')">
+ <span class="text-xl text-white block">°C</span>
+ <span class="text-[10px] text-slate-500 group-hover:text-teal-400">celsius</span>
+ </div>
+ </div>
+ <p id="copy-feedback" class="text-center text-xs text-teal-400 mt-2 h-4 opacity-0 transition-opacity">Copiado al portapapeles</p>
+ </div>
+ </div>
+ </div>
+
+ <!-- VISTA: CALCULADORA MOLARIDAD (Sólidos) -->
+ <div id="view-calc-solid" class="hidden fade-in">
+ <div class="bg-slate-900 p-5 md:p-6 rounded-xl shadow-lg border border-slate-800">
+ <div class="flex items-center gap-3 mb-6 border-b border-slate-800 pb-4">
+ <div class="bg-indigo-500/10 p-2 rounded-lg border border-indigo-500/20">
+ <i data-lucide="scale" class="w-6 h-6 text-indigo-400"></i>
+ </div>
+ <div>
+ <h3 class="text-lg font-bold text-white">Calculadora de Molaridad (Sólidos)</h3>
+ <p class="text-sm text-slate-500 font-mono">masa = M &times; V &times; MW</p>
+ </div>
+ </div>
+
+ <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+ <div class="space-y-5">
+ <div>
+ <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5">Peso Molecular (MW)</label>
+ <div class="relative group">
+ <input type="number" id="mw-input" class="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-white transition-all placeholder:text-slate-700" placeholder="ej. 58.44">
+ <span class="absolute right-3 top-3 text-slate-500 text-sm font-mono">g/mol</span>
+ </div>
+ </div>
+
+ <div>
+ <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5">Concentración (Molaridad)</label>
+ <div class="relative group">
+ <input type="number" id="molarity-input" class="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-white transition-all placeholder:text-slate-700" placeholder="ej. 0.5">
+ <span class="absolute right-3 top-3 text-slate-500 text-sm font-mono">M</span>
+ </div>
+ </div>
+
+ <div>
+ <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5">Volumen Final</label>
+ <div class="flex gap-2">
+ <input type="number" id="volume-input" class="w-2/3 p-3 bg-slate-950 border border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-white placeholder:text-slate-700" placeholder="ej. 500">
+ <select id="volume-unit" class="w-1/3 p-3 bg-slate-950 border border-slate-700 rounded-lg outline-none text-white focus:border-indigo-500 bg-slate-900">
+ <option value="1">L</option>
+ <option value="0.001" selected>mL</option>
+ </select>
+ </div>
+ <div class="flex gap-2 mt-2">
+ <button onclick="setQuickVol(250)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded border border-slate-700 transition">250 mL</button>
+ <button onclick="setQuickVol(500)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded border border-slate-700 transition">500 mL</button>
+ <button onclick="setQuickVol(1000)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded border border-slate-700 transition">1 L</button>
+ </div>
+ </div>
+
+ <button onclick="calculateMass()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-lg transition shadow-lg shadow-indigo-900/20 active:scale-95 transform">
+ Calcular Masa
+ </button>
+ </div>
+
+ <div class="bg-indigo-900/10 rounded-xl p-8 flex flex-col justify-center items-center text-center border border-indigo-500/20 relative overflow-hidden mt-4 md:mt-0">
+ <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent pointer-events-none"></div>
+ <span class="text-indigo-400 font-bold mb-3 uppercase tracking-wider text-xs z-10">Resultado: Masa Requerida</span>
+ <div class="z-10 flex items-baseline gap-2 mb-2">
+ <div id="mass-result" class="text-5xl md:text-6xl font-black text-white tracking-tight">0.00</div>
+ <span class="text-xl text-indigo-300 font-medium">g</span>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <!-- VISTA: CALCULADORA DILUCIÓN (Líquidos) -->
+ <div id="view-calc-liquid" class="hidden fade-in">
+ <div class="bg-slate-900 p-5 md:p-6 rounded-xl shadow-lg border border-slate-800">
+ <div class="flex items-center gap-3 mb-6 border-b border-slate-800 pb-4">
+ <div class="bg-teal-500/10 p-2 rounded-lg border border-teal-500/20">
+ <i data-lucide="flask-round" class="w-6 h-6 text-teal-400"></i>
+ </div>
+ <div>
+ <h3 class="text-lg font-bold text-white">Calculadora de Dilución</h3>
+ <p class="text-sm text-slate-500 font-mono">C<sub>1</sub>V<sub>1</sub> = C<sub>2</sub>V<sub>2</sub></p>
+ </div>
+ </div>
+
+ <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+ <!-- Columna Izquierda: Inputs -->
+ <div class="space-y-6">
+ <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 relative group focus-within:border-red-500/30 transition-colors">
+ <h4 class="text-xs font-bold text-slate-400 uppercase mb-4 flex items-center gap-2">
+ <span class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></span> Solución Stock (Inicial)
+ </h4>
+ <div>
+ <label class="block text-xs font-medium text-slate-500 mb-1.5">Concentración Inicial (C<sub>1</sub>)</label>
+ <input type="number" id="c1-input" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded focus:ring-1 focus:ring-teal-500 outline-none text-white" placeholder="ej. 37% o 12M">
+ </div>
+ </div>
+
+ <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 relative group focus-within:border-teal-500/30 transition-colors">
+ <h4 class="text-xs font-bold text-slate-400 uppercase mb-4 flex items-center gap-2">
+ <span class="w-2 h-2 rounded-full bg-teal-500 shadow-[0_0_8px_rgba(20,184,166,0.5)]"></span> Solución Final (Objetivo)
+ </h4>
+ <div class="grid grid-cols-2 gap-4">
+ <div>
+ <label class="block text-xs font-medium text-slate-500 mb-1.5">Conc. Deseada (C<sub>2</sub>)</label>
+ <input type="number" id="c2-input" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded focus:ring-1 focus:ring-teal-500 outline-none text-white" placeholder="ej. 1">
+ </div>
+ <div>
+ <label class="block text-xs font-medium text-slate-500 mb-1.5">Volumen Final (V<sub>2</sub>)</label>
+ <div class="relative">
+ <input type="number" id="v2-input" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded focus:ring-1 focus:ring-teal-500 outline-none text-white pr-8" placeholder="ej. 1000">
+ <span class="absolute right-2 top-2.5 text-slate-500 text-xs font-bold">mL</span>
+ </div>
+ <div class="flex gap-1 mt-2 justify-end">
+ <button onclick="setQuickVolLiquid(250)" class="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700 hover:text-white">250</button>
+ <button onclick="setQuickVolLiquid(1000)" class="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700 hover:text-white">1L</button>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <button onclick="calculateDilution()" class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-3.5 rounded-lg transition shadow-lg shadow-teal-900/20 active:scale-95 transform">
+ Calcular Volumen a Tomar (V<sub>1</sub>)
+ </button>
+ </div>
+
+ <!-- Columna Derecha: Resultado Visual -->
+ <div class="flex flex-col justify-center">
+ <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 relative overflow-hidden shadow-inner mt-4 lg:mt-0">
+ <div class="absolute -top-4 -right-4 text-slate-800 opacity-20 transform rotate-12">
+ <i data-lucide="beaker" class="w-40 h-40"></i>
+ </div>
+ <h4 class="text-sm font-bold text-slate-300 mb-5 uppercase tracking-widest">Protocolo Seguro:</h4>
+ 
+ <ol class="relative border-l border-slate-700 ml-3 space-y-7 z-10"> 
+ <li class="ml-6 relative">
+ <div class="absolute w-4 h-4 bg-teal-900 rounded-full mt-0.5 -left-[31px] border-2 border-teal-500 z-10"></div>
+ <h3 class="text-sm font-bold text-white">1. Agregar Agua (Base)</h3>
+ <p class="text-sm text-slate-400 mt-1">Añade aprox <span id="water-approx" class="font-mono text-teal-400 font-bold">--</span> mL de agua destilada al matraz.</p>
+ </li>
+ <li class="ml-6 relative">
+ <div class="absolute w-4 h-4 bg-red-900 rounded-full mt-0.5 -left-[31px] border-2 border-red-500 z-10"></div>
+ <h3 class="text-sm font-bold text-white">2. Agregar Stock</h3>
+ <p class="text-sm text-slate-400 mt-1">Pipetear <span id="v1-result" class="text-xl font-bold text-red-400 font-mono mx-1">0.00</span> mL de la solución concentrada y verter suavemente.</p>
+ </li>
+ <li class="ml-6 relative">
+ <div class="absolute w-4 h-4 bg-slate-800 rounded-full mt-0.5 -left-[31px] border-2 border-slate-500 z-10"></div>
+ <h3 class="text-sm font-bold text-white">3. Aforar</h3>
+ <p class="text-sm text-slate-400 mt-1">Completar con agua hasta la marca de <span id="v2-display" class="font-bold text-white">--</span> mL.</p>
+ </li>
+ </ol>
+ </div>
+ <div class="mt-4 p-3 bg-orange-900/20 text-orange-200 text-xs rounded border border-orange-500/20 flex items-start gap-2">
+ <i data-lucide="flame" class="w-4 h-4 mt-0.5 shrink-0 text-orange-500"></i>
+ <span><strong>Regla de Oro:</strong> "EL ÁCIDO AL AGUA". La reacción es exotérmica.</span>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ </div>
+ </main>
+
+ <!-- Overlay para móvil -->
+ <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-10 hidden md:hidden glass"></div>
+
+ <script>
+ // --- BASE DE DATOS DE RECETAS (Actualizada con Molaridad Base y Ecuaciones) ---
+ // Se usa HTML explícito para asegurar perfección en los subíndices
+ const solutions = [
+ {
+ id: 'pbs-10x',
+ name: 'PBS (Phosphate Buffered Saline)',
+ mw: null,
+ type: 'buffer',
+ desc: 'Buffer isotónico estándar para cultivo celular. Se suele preparar stock 10X.',
+ reaction: 'Disociación: Salts<sub>(s)</sub> &#8594; Na<sup>+</sup> + K<sup>+</sup> + Cl<sup>-</sup> + PO<sub>4</sub><sup>3-</sup>',
+ safety: 'Usa guantes y gafas de seguridad.',
+ ingredients: [
+ { name: 'NaCl', value: 8.0, unit: 'g', baseMolarity: 0.137 },
+ { name: 'KCl', value: 0.2, unit: 'g', baseMolarity: 0.0027 },
+ { name: 'Na₂HPO₄', value: 1.44, unit: 'g', baseMolarity: 0.010 },
+ { name: 'KH₂PO₄', value: 0.24, unit: 'g', baseMolarity: 0.0018 }
+ ],
+ steps: [
+ 'Disolver las sales en el 80% del volumen final de agua destilada.',
+ 'Ajustar el pH a 7.4 usando HCl (si está básico) o NaOH (si está ácido).',
+ 'Aforar al volumen final con agua destilada.',
+ 'Esterilizar en autoclave (121°C, 15 PSI, 20 min).'
+ ],
+ tips: [
+ '<strong>Recipiente Prep:</strong> Matraz Erlenmeyer de vidrio o vaso de precipitado (Beaker).',
+ '<strong>Almacenamiento:</strong> Botella de vidrio o plástico autoclavable.',
+ '<strong>Concentración Final (1X):</strong> 137mM NaCl, 2.7mM KCl, 10mM Na2HPO4, 1.8mM KH2PO4. (El 10X es 10 veces más concentrado).',
+ 'Si preparas 10X, el pH cambiará ligeramente al diluir a 1X. Verifica el pH final.'
+ ]
+ },
+ {
+ id: 'tris-hcl',
+ name: 'Tris-HCl (pH 7.4 - 8.0)',
+ mw: 121.14,
+ type: 'buffer',
+ desc: 'Buffer fundamental en biología molecular para estabilizar ADN/ARN.',
+ reaction: 'Tris<sub>(aq)</sub> + HCl<sub>(aq)</sub> &#8594; Tris-H<sup>+</sup><sub>(aq)</sub> + Cl<sup>-</sup><sub>(aq)</sub>',
+ safety: 'Polvo irritante. Evitar inhalación.',
+ ingredients: [
+ { name: 'Tris Base', value: 121.1, unit: 'g', baseMolarity: 1.0 }, // 1M Base
+ { name: 'HCl conc.', value: 'Adjust pH', unit: '' }
+ ],
+ steps: [
+ 'Disolver Tris Base en el 70-80% del volumen final de agua.',
+ 'Ajustar pH con HCl concentrado gota a gota bajo agitación constante (EXOTÉRMICO).',
+ 'Dejar enfriar a temperatura ambiente (25°C) antes de medir el pH final.',
+ 'Aforar al volumen final.'
+ ],
+ tips: [
+ '<strong>Recipiente Prep:</strong> Vaso de precipitado (Beaker) de vidrio (resistente a cambios térmicos).',
+ '<strong>Almacenamiento:</strong> Botella de vidrio o plástico.',
+ '<strong>Concentración Final:</strong> Solución Stock 1M (generalmente se diluye a 10mM-50mM para uso final).',
+ 'El pH del Tris varía aprox -0.03 unidades por cada °C de aumento. Ajustar a temperatura de uso.'
+ ]
+ },
+ {
+ id: 'edta',
+ name: 'EDTA 0.5M (pH 8.0)',
+ mw: 372.24,
+ type: 'buffer',
+ desc: 'Agente quelante de iones divalentes. Esencial para inhibir nucleasas.',
+ reaction: 'EDTA-Na<sub>2</sub> + NaOH &#8594; EDTA-Na<sub>3</sub><sup>+</sup> (Soluble pH 8.0)',
+ safety: 'Irritante. No ingerir.',
+ ingredients: [
+ { name: 'EDTA Disódico', value: 186.1, unit: 'g', baseMolarity: 0.5 },
+ { name: 'NaOH (Pellets)', value: 20, unit: 'g (aprox)', baseMolarity: null }
+ ],
+ steps: [
+ 'Añadir EDTA al 80% del agua bajo agitación magnética vigorosa.',
+ 'El EDTA NO se disolverá hasta que el pH sea cercano a 8.0.',
+ 'Agregar NaOH sólido (lentejas) poco a poco hasta que la solución se aclare y el pH sea 8.0.',
+ 'Aforar al volumen final.'
+ ],
+ tips: [
+ '<strong>Recipiente Prep:</strong> Vaso de precipitado de vidrio. Requiere agitación magnética vigorosa.',
+ '<strong>Almacenamiento:</strong> Botella de vidrio o plástico.',
+ '<strong>Concentración Final:</strong> 0.5M (500mM). Se suele usar a 1mM-10mM.',
+ 'Ten paciencia, la disolución puede tardar varios minutos.'
+ ]
+ },
+ {
+ id: 'naoh',
+ name: 'NaOH 1M (Ajuste de pH - Alcalinizar)',
+ mw: 40.00,
+ type: 'acid-base',
+ desc: 'Base fuerte estándar. Comúnmente preparada como stock 1M o 10M.',
+ reaction: 'NaOH<sub>(s)</sub> &#8594; Na<sup>+</sup><sub>(aq)</sub> + OH<sup>-</sup><sub>(aq)</sub> + &#916;Calor',
+ safety: '¡CORROSIVO! Usa guantes, bata y gafas. Genera mucho calor.',
+ ingredients: [
+ { name: 'NaOH (Lentejas)', value: 40.0, unit: 'g', baseMolarity: 1.0 } // 1M Base
+ ],
+ steps: [
+ 'Pesar rápidamente el NaOH (es higroscópico).',
+ 'Añadir lentamente a un vaso Pyrex con 80% del agua.',
+ 'Agitar hasta disolución completa (la solución se calentará).',
+ 'Dejar enfriar antes de aforar en matraz (preferiblemente plástico).'
+ ],
+ tips: [
+ '<strong>Recipiente Prep:</strong> Vaso de precipitado de vidrio Pyrex/Borosilicato (Genera calor).',
+ '<strong>Almacenamiento:</strong> SOLO Plástico (Polietileno/Polipropileno). El vidrio se corroe.',
+ '<strong>Concentración Final:</strong> 1M (o 10M si se seleccionó 10X).',
+ 'El NaOH ataca el vidrio con el tiempo. Almacenar stocks >1M en recipientes de plástico.'
+ ]
+ },
+ {
+ id: 'hcl',
+ name: 'HCl 1M (Ajuste de pH - Acidificar)',
+ mw: 36.46,
+ type: 'acid-base',
+ desc: 'Solución ácida preparada a partir de HCl concentrado (37%).',
+ reaction: 'HCl<sub>(l)</sub> + H<sub>2</sub>O &#8594; H<sub>3</sub>O<sup>+</sup> + Cl<sup>-</sup>',
+ safety: 'Vapores tóxicos. ¡Usar campana extractora!',
+ ingredients: [
+ { name: 'HCl Conc. (37%)', value: 83.3, unit: 'mL', baseMolarity: 1.0 } // ~1M
+ ],
+ steps: [
+ 'Colocar el 80% del agua en el recipiente primero.',
+ 'Medir el ácido concentrado dentro de la campana.',
+ 'Verter lentamente el ácido al agua (por las paredes).',
+ 'Aforar al volumen final.'
+ ],
+ tips: [
+ '<strong>Recipiente Prep:</strong> Matraz aforado de vidrio (agregar ácido al agua).',
+ '<strong>Almacenamiento:</strong> Botella de vidrio ámbar o plástico resistente a ácidos (Gabinete Ácidos).',
+ '<strong>Concentración Final:</strong> 1M (aprox). Útil para ajustar pH.',
+ 'REGLA DE ORO: Ácido al Agua (AAA).'
+ ]
+ },
+ {
+ id: 'tae',
+ name: 'TAE (Tris-Acetato-EDTA)',
+ mw: null,
+ type: 'buffer',
+ desc: 'Buffer de corrida para electroforesis de ácidos nucleicos. Usualmente stock 50X.',
+ reaction: 'Mezcla Buffer: Tris-Base + Ác. Acético + EDTA',
+ safety: 'Ácido acético glacial es inflamable y corrosivo.',
+ ingredients: [
+ { name: 'Tris Base', value: 4.84, unit: 'g', baseMolarity: 0.04 }, // 40mM (1X)
+ { name: 'Ác. Acético Glacial', value: 1.14, unit: 'mL', baseMolarity: null }, // ~20mM Acetate
+ { name: 'EDTA 0.5M (pH 8.0)', value: 2.0, unit: 'mL', baseMolarity: 0.001 } // 1mM
+ ],
+ steps: [
+ 'Disolver Tris Base en el 90% del agua.',
+ 'Añadir Ácido Acético Glacial y la solución de EDTA 0.5M.',
+ 'Aforar al volumen final.',
+ 'El pH debería estar alrededor de 8.3 (no se suele ajustar).'
+ ],
+ tips: [
+ '<strong>Recipiente Prep:</strong> Matraz o botella de vidrio.',
+ '<strong>Almacenamiento:</strong> Botella de vidrio o plástico.',
+ '<strong>Concentración Final (1X):</strong> 40mM Tris, 20mM Acético, 1mM EDTA. El stock 50X es 50 veces esto.',
+ 'Para preparar el stock estándar 50X, selecciona el botón "10X" y multiplica mentalmente por 5, o usa la calculadora.'
+ ]
+ },
+ {
+ id: 'kcl',
+ name: 'KCl 3M (Storage Electrodo)',
+ mw: 74.55,
+ type: 'salt',
+ desc: 'Solución saturada para mantenimiento de electrodos de pH.',
+ reaction: 'KCl<sub>(s)</sub> &#8594; K<sup>+</sup><sub>(aq)</sub> + Cl<sup>-</sup><sub>(aq)</sub>',
+ safety: 'Seguro.',
+ ingredients: [
+ { name: 'KCl', value: 223.65, unit: 'g', baseMolarity: 3.0 } // 3M
+ ],
+ steps: [
+ 'Calentar ligeramente el agua para facilitar la disolución.',
+ 'Añadir KCl y agitar vigorosamente hasta disolver.',
+ 'Aforar al enfriar.'
+ ],
+ tips: [
+ '<strong>Recipiente Prep:</strong> Vaso de precipitado o matraz de vidrio.',
+ '<strong>Almacenamiento:</strong> Botella de vidrio o plástico bien sellada (Se forman cristales).',
+ '<strong>Concentración Final:</strong> 3M (Saturada).',
+ 'Es normal ver cristales en el fondo o en la tapa con el tiempo (solución saturada).'
+ ]
+ },
+ {
+ id: 'sds',
+ name: 'SDS (Sodium Dodecyl Sulfate)',
+ mw: 288.37,
+ type: 'salt',
+ desc: 'Detergente aniónico desnaturalizante.',
+ reaction: 'NaC<sub>12</sub>H<sub>25</sub>SO<sub>4</sub> &#8594; Na<sup>+</sup> + C<sub>12</sub>H<sub>25</sub>SO<sub>4</sub><sup>-</sup>',
+ safety: 'Polvo fino muy irritante para vías respiratorias. ¡Usar mascarilla N95!',
+ ingredients: [
+ { name: 'SDS', value: 10, unit: 'g', baseMolarity: 0.0347 } // 1% (1X) -> 10X = 10%
+ ],
+ steps: [
+ 'Calentar agua a 60°C.',
+ 'Añadir SDS cuidadosamente para evitar polvo en el aire.',
+ 'Agitar suavemente para no generar espuma.',
+ 'Aforar.'
+ ],
+ tips: [
+ '<strong>Recipiente Prep:</strong> Vaso de precipitado de vidrio. Requiere calentar.',
+ '<strong>Almacenamiento:</strong> Botella de vidrio o plástico (Temp. ambiente).',
+ '<strong>Concentración Final:</strong> 1X = 1%. 10X = 10%.',
+ 'Si precipita en días fríos, calentar suavemente antes de usar.'
+ ]
+ }
+ ];
+
+ // --- VARIABLES DE ESTADO ---
+ let currentRecipe = null;
+ let currentVol = 1000; // mL
+ let currentConc = 1; // X
+
+ // Inicializar iconos
+ lucide.createIcons();
+ const listContainer = document.getElementById('solutionList');
+ const sidebar = document.getElementById('sidebar');
+ const overlay = document.getElementById('overlay');
+ 
+ // --- Sidebar Mobile Logic ---
+ function toggleSidebar() {
+ sidebar.classList.toggle('-translate-x-full');
+ if (sidebar.classList.contains('-translate-x-full')) {
+ overlay.classList.add('hidden');
+ } else {
+ overlay.classList.remove('hidden');
+ }
+ }
+
+ function closeSidebarMobile() {
+ if (window.innerWidth < 768) {
+ sidebar.classList.add('-translate-x-full');
+ overlay.classList.add('hidden');
+ }
+ }
+
+ // Renderizar Lista Lateral
+ function renderList(filter = 'all') {
+ listContainer.innerHTML = '';
+ const filtered = solutions.filter(s => filter === 'all' || s.type === filter);
+ 
+ filtered.forEach(sol => {
+ const item = document.createElement('div');
+ item.className = 'group p-3 mb-1 hover:bg-slate-800 rounded-lg cursor-pointer transition border border-transparent hover:border-slate-700 flex items-center justify-between';
+ item.onclick = () => loadRecipe(sol);
+ item.innerHTML = `
+ <div>
+ <h4 class="font-medium text-slate-300 group-hover:text-teal-400 text-sm transition-colors">${formatChemical(sol.name)}</h4>
+ <span class="text-[10px] text-slate-500 uppercase font-bold tracking-wider group-hover:text-slate-400">${sol.type}</span>
+ </div>
+ <i data-lucide="chevron-right" class="w-4 h-4 text-slate-600 group-hover:text-teal-500 transition-colors"></i>
+ `;
+ listContainer.appendChild(item);
+ });
+ lucide.createIcons();
+ }
+
+ // Helper para formato químico simple en Lista (regex seguro para subíndices básicos)
+ function formatChemical(text) {
+ return text.replace(/([a-zA-Z])(\d+)/g, '$1<sub>$2</sub>');
+ }
+
+ // Cargar Receta Principal
+ function loadRecipe(sol) {
+ currentRecipe = sol;
+ currentVol = 1000; 
+ currentConc = 1; 
+ 
+ // Textos básicos
+ document.getElementById('r-name').innerHTML = formatChemical(sol.name); 
+ document.getElementById('r-desc').innerText = sol.desc;
+ document.getElementById('r-mw').innerText = sol.mw ? `MW: ${sol.mw} g/mol` : '';
+ document.getElementById('r-type').innerText = sol.type;
+ document.getElementById('r-safety').innerText = sol.safety;
+ document.getElementById('currentTitle').innerText = sol.name;
+ document.getElementById('mw-input').value = sol.mw || '';
+
+ // Cargar reacción química si existe
+ const rxnContainer = document.getElementById('r-reaction-container');
+ if (sol.reaction) {
+ document.getElementById('r-reaction').innerHTML = sol.reaction;
+ rxnContainer.classList.remove('hidden');
+ } else {
+ rxnContainer.classList.add('hidden');
+ }
+
+ // Renderizar Pasos estáticos
+ const stepsHtml = sol.steps.map((step, idx) => `
+ <div class="flex gap-4 group">
+ <div class="flex-shrink-0 w-6 h-6 md:w-8 md:h-8 bg-slate-800 text-teal-500 border border-slate-700 rounded-full flex items-center justify-center font-bold text-xs md:text-sm group-hover:border-teal-500/50 transition-colors mt-0.5">
+ ${idx + 1}
+ </div>
+ <p class="text-slate-300 mt-0.5 text-sm leading-relaxed">${step}</p>
+ </div>
+ `).join('');
+ document.getElementById('stepsList').innerHTML = stepsHtml;
+ document.getElementById('r-tips').innerHTML = sol.tips.map(t => `<li>${t}</li>`).join('');
+
+ // UI Changes
+ document.getElementById('emptyState').classList.add('hidden');
+ document.getElementById('recipeHeader').classList.remove('hidden');
+ document.getElementById('recipeSteps').classList.remove('hidden');
+ document.getElementById('recipeControls').classList.remove('hidden');
+ 
+ // Actualizar botones visualmente
+ updateRecipeCalc(1000, true); 
+ updateConcentration(1, true);
+
+ switchView('recipe');
+ closeSidebarMobile();
+ }
+
+ // --- LÓGICA DE ACTUALIZACIÓN DE RECETA (CORE) ---
+ function updateRecipeCalc(volmL, skipRender = false) {
+ currentVol = volmL;
+ 
+ document.querySelectorAll('.vol-btn').forEach(btn => {
+ const isSelected = parseInt(btn.dataset.vol) === volmL;
+ btn.className = isSelected 
+ ? 'vol-btn flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-medium bg-teal-600 text-white shadow-sm transition-all text-center whitespace-nowrap'
+ : 'vol-btn flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-medium text-slate-400 hover:text-white transition-all text-center whitespace-nowrap';
+ });
+
+ if (!skipRender) renderIngredients();
+ }
+
+ function updateConcentration(factor, skipRender = false) {
+ currentConc = factor;
+
+ document.querySelectorAll('.conc-btn').forEach(btn => {
+ const isSelected = parseInt(btn.dataset.conc) === factor;
+ const baseClass = 'conc-btn flex-1 sm:flex-none px-4 py-1.5 rounded-md text-xs font-medium transition-all text-center whitespace-nowrap';
+ 
+ btn.className = isSelected
+ ? `${baseClass} bg-teal-600 text-white shadow-sm`
+ : `${baseClass} text-slate-400 hover:text-white`;
+ });
+
+ if (!skipRender) renderIngredients();
+ }
+
+ function formatMolarity(molarValue) {
+ if (!molarValue) return '';
+ if (molarValue >= 1.0) return `(${molarValue.toFixed(1).replace('.0', '')} M)`;
+ if (molarValue >= 0.001) return `(${(molarValue * 1000).toFixed(1).replace('.0', '')} mM)`;
+ return `(${(molarValue * 1000000).toFixed(0)} µM)`;
+ }
+
+ function renderIngredients() {
+ if (!currentRecipe) return;
+
+ const list = document.getElementById('ingredientsList');
+ list.innerHTML = '';
+
+ const factorVol = currentVol / 1000; // 0.25, 0.5, 1
+ const factorConc = currentConc; // 1 or 10
+
+ currentRecipe.ingredients.forEach(ing => {
+ let amountDisplay = '';
+ let molarityDisplay = '';
+ 
+ if (typeof ing.value === 'number') {
+ // Cálculo: Base (para 1L 1X) * proporción volumen * factor concentración
+ let val = ing.value * factorVol * factorConc;
+ 
+ // Formateo bonito
+ if (val < 0.1) val = val.toPrecision(2);
+ else if (val % 1 !== 0) val = val.toFixed(2);
+ 
+ amountDisplay = `<span class="font-mono font-bold text-teal-400 text-base">${val}</span> <span class="text-xs text-teal-500/80">${ing.unit}</span>`;
+
+ if (ing.baseMolarity) {
+ let currentMolarity = ing.baseMolarity * factorConc;
+ molarityDisplay = `<span class="text-[10px] text-slate-500 ml-2 font-mono">${formatMolarity(currentMolarity)}</span>`;
+ }
+
+ } else {
+ amountDisplay = `<span class="text-xs italic text-slate-500">${ing.value}</span>`;
+ }
+
+ const li = document.createElement('li');
+ li.className = 'flex justify-between items-center border-b border-slate-800 pb-2 last:border-0';
+ li.innerHTML = `
+ <span class="text-slate-300 font-medium text-sm chem-formula">${ing.name.replace(/(\d)/g, '<sub>$1</sub>')}</span>
+ <div class="text-right flex items-center justify-end">
+ ${amountDisplay}
+ ${molarityDisplay}
+ </div>
+ `;
+ list.appendChild(li);
+ });
+
+ // Warn logic simple
+ const warning = document.getElementById('volumeWarning');
+ if (currentConc === 10) {
+ warning.classList.remove('hidden');
+ if(currentRecipe.id === 'sds') {
+ warning.innerHTML = `<i data-lucide="alert-circle" class="w-3 h-3 inline mr-1"></i> Estás calculando SDS al 10%.`;
+ } else {
+ warning.innerHTML = `<i data-lucide="alert-circle" class="w-3 h-3 inline mr-1"></i> Preparando Stock 10X en ${currentVol}mL.`;
+ }
+ } else {
+ warning.classList.add('hidden');
+ }
+ lucide.createIcons();
+ }
+
+
+ // --- UI UTILS ---
+ function switchView(viewName) {
+ ['recipe', 'calc-solid', 'calc-liquid', 'equations'].forEach(v => {
+ document.getElementById(`view-${v}`).classList.add('hidden');
+ document.getElementById(`btn-${v}`).classList.remove('bg-teal-500/10', 'text-teal-400', 'border-teal-500/20');
+ document.getElementById(`btn-${v}`).classList.add('text-slate-400', 'border-transparent');
+ });
+
+ document.getElementById(`view-${viewName}`).classList.remove('hidden');
+ const btn = document.getElementById(`btn-${viewName}`);
+ btn.classList.add('bg-teal-500/10', 'text-teal-400', 'border-teal-500/20');
+ btn.classList.remove('text-slate-400', 'border-transparent');
+ }
+
+ // --- Copy to Clipboard Utility ---
+ function copyChar(char) {
+ const el = document.createElement('textarea');
+ el.value = char;
+ document.body.appendChild(el);
+ el.select();
+ document.execCommand('copy');
+ document.body.removeChild(el);
+ 
+ const feedback = document.getElementById('copy-feedback');
+ feedback.innerText = `Copiado "${char}"`;
+ feedback.classList.remove('opacity-0');
+ setTimeout(() => feedback.classList.add('opacity-0'), 1500);
+ }
+
+ function filterCategory(cat) {
+ document.querySelectorAll('.filter-btn').forEach(btn => {
+ btn.classList.remove('bg-teal-500/20', 'text-teal-300', 'border-teal-500/30');
+ btn.classList.add('bg-slate-800', 'text-slate-400', 'border-slate-700');
+ });
+ event.target.classList.remove('bg-slate-800', 'text-slate-400', 'border-slate-700');
+ event.target.classList.add('bg-teal-500/20', 'text-teal-300', 'border-teal-500/30');
+ renderList(cat);
+ }
+
+ document.getElementById('searchInput').addEventListener('input', (e) => {
+ const term = e.target.value.toLowerCase();
+ const items = listContainer.children;
+ Array.from(items).forEach(item => {
+ item.style.display = item.innerText.toLowerCase().includes(term) ? 'flex' : 'none';
+ });
+ });
+
+ // --- CALCULADORA LOGIC ---
+ function setQuickVol(ml) {
+ document.getElementById('volume-input').value = ml;
+ document.getElementById('volume-unit').value = '0.001'; // mL
+ calculateMass();
+ }
+
+ function setQuickVolLiquid(ml) {
+ document.getElementById('v2-input').value = ml;
+ calculateDilution();
+ }
+
+ function calculateMass() {
+ const mw = parseFloat(document.getElementById('mw-input').value);
+ const molarity = parseFloat(document.getElementById('molarity-input').value);
+ const volVal = parseFloat(document.getElementById('volume-input').value);
+ const volUnit = parseFloat(document.getElementById('volume-unit').value);
+
+ if (!mw || !molarity || !volVal) return;
+
+ const mass = molarity * (volVal * volUnit) * mw;
+ document.getElementById('mass-result').innerText = mass < 1 ? mass.toPrecision(3) : mass.toFixed(2);
+ }
+
+ function calculateDilution() {
+ const c1 = parseFloat(document.getElementById('c1-input').value);
+ const c2 = parseFloat(document.getElementById('c2-input').value);
+ const v2 = parseFloat(document.getElementById('v2-input').value);
+
+ if (!c1 || !c2 || !v2) return;
+
+ const v1 = (c2 * v2) / c1;
+ document.getElementById('v1-result').innerText = v1 < 1 ? v1.toPrecision(3) : v1.toFixed(2);
+ }
+
+ // Init
+ renderList();
+ </script>
+</body>
+</html>
