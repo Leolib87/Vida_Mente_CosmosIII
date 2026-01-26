@@ -6,6 +6,7 @@
     <title>Capítulo 1 | Erwin Schrödinger</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
         
@@ -178,19 +179,6 @@
         .dropdown-menu::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
         .dropdown-menu::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
 
-        /* Estilo para las figuras */
-        .figure-placeholder {
-            border: 1px dashed rgba(255, 255, 255, 0.2);
-            background-color: rgba(0, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 200px;
-            color: #64748b;
-            font-size: 0.8rem;
-            font-style: italic;
-            border-radius: 0.5rem;
-        }
         
         figcaption {
             margin-top: 1rem;
@@ -198,6 +186,159 @@
             font-size: 0.9rem;
             font-weight: 300;
         }
+
+        /* --- Estilos Simulación Intercalada --- */
+        .sim-container {
+            width: 100%;
+            height: 450px;
+            position: relative;
+            background: #0f172a;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .sim-ui {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 600px;
+            background: rgba(2, 6, 23, 0.90);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            opacity: 0.95;
+            transition: opacity 0.3s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        .sim-container:hover .sim-ui { opacity: 1; }
+
+        .sim-controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 640px) {
+            .sim-controls-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+            .sim-container { height: 400px; }
+        }
+
+        /* --- Sliders Rehechos (Estilo OCVM Alto Contraste) --- */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            margin: 8px 0;
+        }
+        
+        /* Pista (Track) - Blanco puro para contraste */
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 2px;
+            cursor: pointer;
+            background: #ffffff;
+            border-radius: 1px;
+            box-shadow: 0 0 2px rgba(0,0,0,0.5);
+        }
+        
+        input[type="range"]::-moz-range-track {
+            width: 100%;
+            height: 2px;
+            cursor: pointer;
+            background: #ffffff;
+            border-radius: 1px;
+            box-shadow: 0 0 2px rgba(0,0,0,0.5);
+        }
+
+        /* Botón (Thumb) - Ámbar OCVM con borde oscuro */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            border: 2px solid #0f172a; /* Slate oscuro para separar */
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #f59e0b; /* Amber 500 */
+            cursor: pointer;
+            margin-top: -7px; /* Centrado: (16px thumb - 2px track) / -2 */
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.6); /* Glow ámbar */
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            border: 2px solid #0f172a;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #f59e0b;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]:hover::-webkit-slider-thumb {
+            transform: scale(1.1);
+            background: #fbbf24; /* Amber 400 */
+        }
+        
+        input[type="range"]:focus { outline: none; }
+
+        .sim-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: #94a3b8; /* Slate 400 */
+            font-weight: 800;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        
+        .sim-value {
+            color: #f59e0b; /* Amber 500 */
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 0.9rem;
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+        }
+        
+        .sim-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .restart-btn-mini {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid #f59e0b;
+            color: #f59e0b;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+        .restart-btn-mini:hover {
+            background: #f59e0b;
+            color: #020617;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+
     </style>
 </head>
 <body class="selection:bg-amber-500 selection:text-slate-900 min-h-screen flex flex-col overflow-x-hidden">
@@ -424,13 +565,35 @@
 
                     <p>Éste es un ejemplo especialmente claro de una ley puramente estadística. La orientación que el campo magnético intenta provocar es contrarrestada de continuo por el movimiento térmico, que trata de imponer una orientación al azar. El efecto de esta tensión solo es, de hecho, una ligera preferencia por los ángulos agudos sobre los obtusos entre los ejes de los dipolos y la dirección del campo magnético. A pesar de que los átomos individuales cambian su orientación incesantemente, manifiestan por término medio (debido a su enorme número) una pequeña preponderancia constante de la orientación en la dirección del campo magnético, proporcional a la intensidad de éste. Esta ingeniosa explicación se debe al físico francés P. Langevin.</p>
 
-                    <!-- Figura 1 -->
+                    <!-- Figura 1: Paramagnetismo -->
                     <figure class="my-8">
-                        <div class="figure-placeholder">
-                            <p class="text-center p-6">[Ilustración esquemática del paramagnetismo: dipolos orientándose]</p>
+                        <div id="sim-1" class="sim-container">
+                            <button id="restart-1" class="restart-btn-mini">Reiniciar</button>
+                            <!-- Etiqueta BAJO LA FLECHA - AJUSTE POSICIÓN -->
+                            <div style="position: absolute; top: 18%; left: 0; width: 100%; text-align: center; pointer-events: none; z-index: 5;">
+                                <span class="text-[10px] uppercase tracking-widest text-amber-500 font-bold bg-slate-900/50 px-2 rounded">Dirección del campo magnético</span>
+                            </div>
+                            <div class="sim-ui">
+                                <div class="sim-controls-grid">
+                                    <div>
+                                        <div class="sim-header">
+                                            <span class="sim-label">Fuerza Magnética (B)</span>
+                                            <span id="val-1-a" class="sim-value">1.5</span>
+                                        </div>
+                                        <input type="range" id="slider-1-a" min="0" max="10" step="0.1" value="1.5">
+                                    </div>
+                                    <div>
+                                        <div class="sim-header">
+                                            <span class="sim-label">Entropía Térmica (T)</span>
+                                            <span id="val-1-b" class="sim-value">0.80</span>
+                                        </div>
+                                        <input type="range" id="slider-1-b" min="0.01" max="5" step="0.05" value="0.8">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <figcaption class="text-center mt-3 text-sm text-slate-400">
-                            <span class="font-bold text-amber-500">FIGURA 1.</span> Paramagnetismo. <span class="italic">Dirección del campo magnético.</span>
+                            <span class="font-bold text-amber-500">FIGURA 1.</span> Paramagnetismo. <span class="italic">Dirección del campo magnético (flecha hacia la derecha).</span>
                         </figcaption>
                     </figure>
 
@@ -443,10 +606,28 @@
 
                     <p>Si llenamos de vapor, formado por minúsculas gotas, la parte inferior de un recipiente de cristal cerrado, veremos que el límite superior del vapor se hunde gradualmente con una velocidad bien definida, determinada por la viscosidad del aire y el tamaño y peso específico de las gotitas. Pero, si observamos una de estas partículas con un microscopio, veremos que no baja continuamente a una velocidad constante, sino que sigue un movimiento muy irregular, el llamado <span class="text-amber-500 font-semibold">movimiento browniano</span>, [7] que corresponde a un descenso regular solo cuando se considera el término medio de todas las partículas.</p>
 
-                    <!-- Figura 2 -->
+                    <!-- Figura 2: Browniano -->
                     <figure class="my-8">
-                        <div class="figure-placeholder">
-                            <p class="text-center p-6">[Esquema de trayectoria irregular]</p>
+                        <div id="sim-2" class="sim-container">
+                            <button id="restart-2" class="restart-btn-mini">Reiniciar</button>
+                            <div class="sim-ui">
+                                <div class="sim-controls-grid">
+                                    <div>
+                                        <div class="sim-header">
+                                            <span class="sim-label">Sedimentación (G)</span>
+                                            <span id="val-2-a" class="sim-value">0.07</span>
+                                        </div>
+                                        <input type="range" id="slider-2-a" min="0" max="0.4" step="0.01" value="0.07">
+                                    </div>
+                                    <div>
+                                        <div class="sim-header">
+                                            <span class="sim-label">Agitación Térmica (T)</span>
+                                            <span id="val-2-b" class="sim-value">0.80</span>
+                                        </div>
+                                        <input type="range" id="slider-2-b" min="0.01" max="3" step="0.05" value="0.8">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <figcaption class="text-center mt-3 text-sm text-slate-400">
                             <span class="font-bold text-amber-500">FIGURA 2.</span> Vapor sedimentándose y movimiento browniano seguido por una partícula de vapor.
@@ -459,10 +640,28 @@
 
                     <p>Un fenómeno muy similar al movimiento browniano es la <span class="text-amber-500 font-semibold">difusión</span>. Imaginemos un recipiente lleno de un fluido, por ejemplo agua, en el que introducimos una pequeña cantidad de sustancia disuelta, por ejemplo permanganato potásico, en concentración no uniforme, sino más bien como en la figura 3, donde los círculos indican las moléculas de la sustancia disuelta (permanganato) y la concentración disminuye de izquierda a derecha. Si dejamos este sistema en reposo, se inicia un proceso muy lento de «difusión», en el cual el permanganato se extiende de izquierda a derecha, es decir, de los lugares con mayor concentración a los de concentración menor, hasta que su distribución en el agua se hace uniforme.</p>
 
-                    <!-- Figura 3 -->
+                    <!-- Figura 3: Difusión -->
                     <figure class="my-8">
-                        <div class="figure-placeholder">
-                            <p class="text-center p-6">[Esquema de dispersión de moléculas]</p>
+                        <div id="sim-3" class="sim-container">
+                            <button id="restart-3" class="restart-btn-mini">Reiniciar</button>
+                            <div class="sim-ui">
+                                <div class="sim-controls-grid">
+                                    <div>
+                                        <div class="sim-header">
+                                            <span class="sim-label">Velocidad Difusión</span>
+                                            <span id="val-3-a" class="sim-value">1.0</span>
+                                        </div>
+                                        <input type="range" id="slider-3-a" min="0.1" max="3.0" step="0.1" value="1.0">
+                                    </div>
+                                    <div>
+                                        <div class="sim-header">
+                                            <span class="sim-label">Temperatura (T)</span>
+                                            <span id="val-3-b" class="sim-value">0.8</span>
+                                        </div>
+                                        <input type="range" id="slider-3-b" min="0.1" max="5.0" step="0.1" value="0.8">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <figcaption class="text-center mt-3 text-sm text-slate-400">
                             <span class="font-bold text-amber-500">FIGURA 3.</span> Difusión, de izquierda a derecha, en una disolución de concentración variable.
@@ -515,5 +714,379 @@
         </div>
     </footer>
 
+    <!-- LOGICA DE SIMULACIÓN -->
+    <script>
+        class PhysicsSimulation {
+            constructor(containerId, mode, controlIds) {
+                this.container = document.getElementById(containerId);
+                this.mode = mode; // 'dipoles', 'brownian', 'diffusion'
+                this.controlIds = controlIds;
+                
+                // Parámetros por defecto según modo
+                this.params = {
+                    fieldStrength: 1.5,
+                    temperature: 0.8,
+                    gravity: 0.07,
+                    diffusionSpeed: 1.0
+                };
+                
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.objects = [];
+                this.particles = [];
+                this.gasParticles = [];
+                this.trailPoints = [];
+                this.specialParticle = null;
+                this.particleTrail = null;
+                
+                this.animationId = null;
+                
+                this.init();
+            }
+
+            init() {
+                if (!this.container) return;
+
+                // Scene Setup
+                this.scene = new THREE.Scene();
+                
+                const width = this.container.clientWidth;
+                const height = this.container.clientHeight;
+                const aspect = width / height;
+                const d = 11;
+
+                this.camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
+                this.camera.position.set(0, 0, 20);
+                this.camera.lookAt(0, 0, 0);
+
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                this.renderer.setSize(width, height);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.container.appendChild(this.renderer.domElement);
+
+                // Setup specific content
+                if (this.mode === 'dipoles') this.setupDipoles();
+                else if (this.mode === 'brownian') this.setupBrownian();
+                else if (this.mode === 'diffusion') this.setupDiffusion();
+
+                // Listeners
+                this.setupControls();
+                window.addEventListener('resize', () => this.onResize());
+                
+                // Start Loop
+                this.animate();
+            }
+
+            setupControls() {
+                const s1 = document.getElementById(this.controlIds.sliderA);
+                const v1 = document.getElementById(this.controlIds.valA);
+                const s2 = document.getElementById(this.controlIds.sliderB);
+                const v2 = document.getElementById(this.controlIds.valB);
+                const restartBtn = document.getElementById(this.controlIds.restart);
+
+                if(s1) {
+                    s1.addEventListener('input', (e) => {
+                        const val = parseFloat(e.target.value);
+                        if (this.mode === 'dipoles') this.params.fieldStrength = val;
+                        else if (this.mode === 'brownian') this.params.gravity = val;
+                        else if (this.mode === 'diffusion') this.params.diffusionSpeed = val;
+                        v1.innerText = val.toFixed(this.mode === 'brownian' ? 2 : 1);
+                    });
+                }
+
+                if(s2) {
+                    s2.addEventListener('input', (e) => {
+                        const val = parseFloat(e.target.value);
+                        this.params.temperature = val;
+                        v2.innerText = val.toFixed(this.mode === 'diffusion' ? 1 : 2);
+                    });
+                }
+
+                if(restartBtn) {
+                    restartBtn.addEventListener('click', () => {
+                        this.reset();
+                    });
+                }
+            }
+
+            clearScene() {
+                while(this.scene.children.length > 0) this.scene.remove(this.scene.children[0]);
+                this.objects = []; this.particles = []; this.gasParticles = []; this.trailPoints = [];
+            }
+
+            reset() {
+                this.clearScene();
+                if (this.mode === 'dipoles') this.setupDipoles();
+                else if (this.mode === 'brownian') this.setupBrownian();
+                else if (this.mode === 'diffusion') this.setupDiffusion();
+            }
+
+            // --- MODO 1: DIPOLOS ---
+            setupDipoles() {
+                // Flecha de campo (MOVIDA A Y=7.5 para dejar espacio a la elipse y texto)
+                const arrowDir = new THREE.Vector3(1, 0, 0);
+                const arrowOrigin = new THREE.Vector3(-4, 7.5, 0);
+                const arrowLength = 8;
+                const arrowHex = 0xf59e0b;
+                const arrowHelper = new THREE.ArrowHelper(arrowDir, arrowOrigin, arrowLength, arrowHex, 0.5, 0.5);
+                this.scene.add(arrowHelper);
+
+                // Add Ellipse Border (Blanco y visible)
+                const curve = new THREE.EllipseCurve(0, 0, 9, 5, 0, 2 * Math.PI, false, 0);
+                const points = curve.getPoints(100);
+                const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
+                const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: false, opacity: 1 });
+                this.scene.add(new THREE.Line(lineGeom, lineMat));
+
+                const circleGeom = new THREE.RingGeometry(0.24, 0.30, 48);
+                const circleMat = new THREE.MeshBasicMaterial({ color: 0xe2e8f0, transparent: true, opacity: 0.85 });
+                const coneGeom = new THREE.ConeGeometry(0.09, 0.28, 12);
+                const coneMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+
+                const placedPositions = [];
+                const minDistance = 0.85; // slightly increased to avoid overlap with higher density
+
+                // Loop para llenar la elipse (Intento de 100 partículas para llenar bien el espacio)
+                for (let i = 0; i < 100; i++) {
+                    let x, y, invalid;
+                    let attempts = 0;
+                    do {
+                        invalid = false;
+                        // Generar en rango de la bounding box de la elipse (9x5)
+                        x = (Math.random() - 0.5) * 17.5; 
+                        y = (Math.random() - 0.5) * 9.5;  
+                        
+                        // Check elipse estricta con margen interno pequeño: (x^2 / 8.5^2) + (y^2 / 4.5^2) <= 1
+                        if ( (x*x)/(8.2*8.2) + (y*y)/(4.2*4.2) > 1 ) {
+                            invalid = true;
+                        }
+
+                        if (!invalid) {
+                            for (let pos of placedPositions) {
+                                const dist = Math.sqrt((x - pos.x)**2 + (y - pos.y)**2);
+                                if (dist < minDistance) { invalid = true; break; }
+                            }
+                        }
+                        attempts++;
+                    } while (invalid && attempts < 500); 
+
+                    if (attempts >= 500) continue;
+                    placedPositions.push({x, y});
+
+                    const group = new THREE.Group();
+                    group.add(new THREE.Mesh(circleGeom, circleMat.clone()));
+                    const cone = new THREE.Mesh(coneGeom, coneMat);
+                    cone.position.y = 0.4;
+                    group.add(cone);
+                    
+                    group.position.set(x, y, 0);
+                    group.userData = { angle: Math.random() * Math.PI * 2, seed: Math.random() * 1000 };
+                    this.scene.add(group);
+                    this.objects.push(group);
+                }
+            }
+
+            // --- MODO 2: BROWNIANO ---
+            setupBrownian() {
+                // Left Box (Sedimentation) - Centered at x=-5
+                const rectLeft = [
+                    new THREE.Vector3(-8, 5, 0), new THREE.Vector3(-2, 5, 0),
+                    new THREE.Vector3(-2, -5, 0), new THREE.Vector3(-8, -5, 0),
+                    new THREE.Vector3(-8, 5, 0)
+                ];
+                this.scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rectLeft), new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.4 })));
+
+                // Right Box (Brownian Path) - Centered at x=5
+                const rectRight = [
+                    new THREE.Vector3(2, 5, 0), new THREE.Vector3(8, 5, 0),
+                    new THREE.Vector3(8, -5, 0), new THREE.Vector3(2, -5, 0),
+                    new THREE.Vector3(2, 5, 0)
+                ];
+                this.scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rectRight), new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.4 })));
+
+                // Particles for Sedimentation (Left)
+                const dotMat = new THREE.MeshBasicMaterial({ color: 0x334155, transparent: true, opacity: 0.6 });
+                for (let i = 0; i < 200; i++) {
+                    const dot = new THREE.Mesh(new THREE.CircleGeometry(0.06, 8), dotMat);
+                    // Random position within Left Box (-8 to -2 in X, -5 to 5 in Y)
+                    dot.position.set(-8 + Math.random() * 6, -5 + Math.random() * 10, 0);
+                    this.scene.add(dot);
+                    this.particles.push(dot);
+                }
+
+                // Particles for Right Box (Gradient context) - ADDED AS REQUESTED
+                for (let i = 0; i < 200; i++) {
+                    const dot = new THREE.Mesh(new THREE.CircleGeometry(0.06, 8), dotMat);
+                    // Random position within Right Box (2 to 8 in X, -5 to 5 in Y)
+                    dot.position.set(2 + Math.random() * 6, -5 + Math.random() * 10, 0);
+                    this.scene.add(dot);
+                    this.particles.push(dot); // Reuse same array so they animate with the same logic
+                }
+
+                // Special Particle for Brownian Path (Right) - START FROM TOP (y=4.5)
+                this.specialParticle = new THREE.Mesh(new THREE.CircleGeometry(0.2, 16), new THREE.MeshBasicMaterial({ color: 0xf59e0b }));
+                this.specialParticle.position.set(5, 4.5, 0.1); // Top of box
+                this.scene.add(this.specialParticle);
+
+                this.particleTrail = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.8 }));
+                this.scene.add(this.particleTrail);
+            }
+
+            // --- MODO 3: DIFUSIÓN ---
+            setupDiffusion() {
+                // Agregar Borde del Contenedor
+                const boundsX = 14;
+                const boundsY = 6;
+                const rectPoints = [
+                    new THREE.Vector3(-boundsX, boundsY, 0),
+                    new THREE.Vector3(boundsX, boundsY, 0),
+                    new THREE.Vector3(boundsX, -boundsY, 0),
+                    new THREE.Vector3(-boundsX, -boundsY, 0),
+                    new THREE.Vector3(-boundsX, boundsY, 0)
+                ];
+                const lineGeom = new THREE.BufferGeometry().setFromPoints(rectPoints);
+                const lineMat = new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.5 });
+                this.scene.add(new THREE.Line(lineGeom, lineMat));
+
+                const matA = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.8 });
+                const geom = new THREE.CircleGeometry(0.06, 8);
+                
+                for (let i = 0; i < 200; i++) {
+                    const p = new THREE.Mesh(geom, matA);
+                    // Concentrados a la izquierda (ajustado para estar dentro del borde)
+                    // Borde izquierdo es -14. Los ponemos entre -13.5 y -10.5
+                    p.position.set(-12 + (Math.random() - 0.5) * 3.0, (Math.random()-0.5)*10, 0); 
+                    
+                    p.userData = { 
+                        vx: (Math.random()-0.5) * 0.1 + 0.05, // Tendencia derecha inicial
+                        vy: (Math.random()-0.5) * 0.1 
+                    };
+                    this.scene.add(p);
+                    this.gasParticles.push(p);
+                }
+            }
+
+            animate() {
+                this.animationId = requestAnimationFrame(() => this.animate());
+                const time = Date.now() * 0.001;
+
+                if (this.mode === 'dipoles') {
+                    this.objects.forEach(d => {
+                        const noise = (Math.sin(time * 2.5 + d.userData.seed) + Math.cos(time * 1.8 + d.userData.seed)) * this.params.temperature;
+                        // Campo magnético intenta alinear a 0 grados (vertical en ThreeJS coords relativas al cono)
+                        // Ajustamos target para que apunten a la derecha (Rotación -PI/2)
+                        const target = noise / (this.params.fieldStrength + 0.45);
+                        d.userData.angle += (target - d.userData.angle) * 0.1;
+                        d.rotation.z = d.userData.angle - Math.PI / 2;
+                    });
+                } else if (this.mode === 'brownian') {
+                    // 1. Sedimentation (Both Left and Right Boxes logic merged)
+                    this.particles.forEach(p => {
+                        // Fall down
+                        p.position.y -= (this.params.gravity * 0.1); // Scale gravity
+                        // Thermal jitter
+                        p.position.x += (Math.random() - 0.5) * this.params.temperature * 0.05;
+                        p.position.y += (Math.random() - 0.5) * this.params.temperature * 0.05;
+
+                        // Check boundaries based on X position to keep them in their respective boxes
+                        let minX, maxX;
+                        if (p.position.x < 0) { // Left Box
+                            minX = -8; maxX = -2;
+                        } else { // Right Box
+                            minX = 2; maxX = 8;
+                        }
+
+                        // Reset if bottom reached
+                        if (p.position.y < -5) {
+                            p.position.y = 5;
+                            // Reset X randomly within its box
+                            p.position.x = minX + Math.random() * (maxX - minX);
+                        }
+                        
+                        // Wall bounce
+                        if (p.position.x < minX) p.position.x = minX;
+                        if (p.position.x > maxX) p.position.x = maxX;
+                    });
+
+                    // 2. Brownian Path (Right Box: x [2, 8], y [-5, 5])
+                    if(this.specialParticle) {
+                        const jitter = this.params.temperature * 0.2;
+                        this.specialParticle.position.x += (Math.random() - 0.5) * jitter;
+                        this.specialParticle.position.y += (Math.random() - 0.5) * jitter - (this.params.gravity * 0.05); 
+
+                        // Bounds check for Right Box
+                        if (this.specialParticle.position.y < -5 || this.specialParticle.position.y > 5 || 
+                            this.specialParticle.position.x < 2 || this.specialParticle.position.x > 8) {
+                            
+                            // Reset to TOP center
+                            this.specialParticle.position.set(5, 4.5, 0.1);
+                            this.trailPoints = [];
+                        }
+
+                        this.trailPoints.push(this.specialParticle.position.clone());
+                        if (this.trailPoints.length > 400) this.trailPoints.shift();
+                        this.particleTrail.geometry.setFromPoints(this.trailPoints);
+                    }
+                } else if (this.mode === 'diffusion') {
+                    const speedFactor = this.params.diffusionSpeed * (0.5 + this.params.temperature * 0.5);
+                    const boundsX = 14; // Un poco menos que ancho pantalla
+                    const boundsY = 6;
+
+                    this.gasParticles.forEach(p => {
+                        p.userData.vx += (Math.random() - 0.5) * 0.01 * this.params.temperature;
+                        p.userData.vy += (Math.random() - 0.5) * 0.01 * this.params.temperature;
+                        
+                        p.position.x += p.userData.vx * speedFactor;
+                        p.position.y += p.userData.vy * speedFactor;
+
+                        if (p.position.x > boundsX) { p.position.x = boundsX; p.userData.vx *= -1; }
+                        if (p.position.x < -boundsX) { p.position.x = -boundsX; p.userData.vx *= -1; }
+                        if (p.position.y > boundsY) { p.position.y = boundsY; p.userData.vy *= -1; }
+                        if (p.position.y < -boundsY) { p.position.y = -boundsY; p.userData.vy *= -1; }
+                    });
+                }
+
+                this.renderer.render(this.scene, this.camera);
+            }
+
+            onResize() {
+                if (!this.container) return;
+                const width = this.container.clientWidth;
+                const height = this.container.clientHeight;
+                const aspect = width / height;
+                const d = 11;
+                
+                this.camera.left = -d * aspect; 
+                this.camera.right = d * aspect;
+                this.camera.top = d; 
+                this.camera.bottom = -d;
+                this.camera.updateProjectionMatrix();
+                
+                this.renderer.setSize(width, height);
+            }
+        }
+
+        // Inicializar Simulaciones
+        window.addEventListener('load', () => {
+            new PhysicsSimulation('sim-1', 'dipoles', { 
+                sliderA: 'slider-1-a', valA: 'val-1-a',
+                sliderB: 'slider-1-b', valB: 'val-1-b',
+                restart: 'restart-1'
+            });
+
+            new PhysicsSimulation('sim-2', 'brownian', { 
+                sliderA: 'slider-2-a', valA: 'val-2-a',
+                sliderB: 'slider-2-b', valB: 'val-2-b',
+                restart: 'restart-2'
+            });
+
+            new PhysicsSimulation('sim-3', 'diffusion', { 
+                sliderA: 'slider-3-a', valA: 'val-3-a',
+                sliderB: 'slider-3-b', valB: 'val-3-b',
+                restart: 'restart-3'
+            });
+        });
+    </script>
 </body>
 </html>
