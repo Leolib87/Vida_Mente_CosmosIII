@@ -6,6 +6,8 @@
     <title>Capítulo 4 | Erwin Schrödinger</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
         
@@ -41,11 +43,12 @@
             transition: width 0.3s ease;
         }
         
+        /* Solo aplicar hover underline en desktop */
         @media (min-width: 768px) {
             .nav-item:hover .nav-link::after {
                 width: 100%;
             }
-
+            
             /* Dropdown Desktop: Absolute & Hover */
             .nav-item:hover .dropdown-menu {
                 opacity: 1;
@@ -58,13 +61,11 @@
                 top: 100%;
                 left: 50%;
                 transform: translateX(-50%) translateY(10px);
-                min-width: 320px;
-                max-height: 70vh; /* Altura máxima para scroll */
-                overflow-y: auto; /* Scroll si es muy largo */
+                min-width: 260px;
                 opacity: 0;
                 visibility: hidden;
+                /* Flechita superior solo en desktop */
             }
-
             .dropdown-menu::before {
                 content: '';
                 position: absolute;
@@ -75,7 +76,7 @@
                 border-style: solid;
                 border-color: transparent transparent rgba(255, 255, 255, 0.1) transparent;
             }
-            
+            /* Puente invisible para mejorar UX */
             .dropdown-menu::after {
                 content: '';
                 position: absolute;
@@ -97,6 +98,24 @@
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
             transition: all 0.2s ease-in-out;
             z-index: 100;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .dropdown-link {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            border-radius: 0.25rem;
+            line-height: 1.4;
+            text-align: left;
+        }
+
+        .dropdown-link:hover {
+            color: #f59e0b; /* amber-500 */
+            background-color: rgba(255, 255, 255, 0.05);
         }
 
         .dropdown-group-title {
@@ -115,33 +134,18 @@
             margin-top: 0;
         }
 
-        .dropdown-link {
-            display: block;
-            padding: 0.35rem 0.5rem;
-            color: #94a3b8;
-            font-size: 0.75rem;
-            transition: all 0.2s;
-            border-radius: 0.25rem;
-            line-height: 1.3;
-            text-align: left;
-        }
-
-        .dropdown-link:hover {
-            color: #f8fafc;
-            background-color: rgba(255, 255, 255, 0.05);
-            padding-left: 0.75rem;
-        }
-
         /* --- Ajustes Móviles --- */
         @media (max-width: 767px) {
             #mobile-menu-container {
                 border-bottom: 1px solid rgba(255,255,255,0.1);
             }
+            
             .nav-item {
                 width: 100%;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.05);
                 padding: 0;
             }
+
             .nav-item-content {
                 display: flex;
                 justify-content: space-between;
@@ -149,20 +153,18 @@
                 padding: 1rem 1.5rem;
             }
 
-             .dropdown-menu {
+            .dropdown-menu {
                 position: static;
                 transform: none;
                 opacity: 1;
                 visibility: visible;
                 width: 100%;
-                max-height: none; /* En móvil dejamos que expanda el menú */
                 box-shadow: none;
                 background-color: rgba(0, 0, 0, 0.3);
                 border: none;
                 border-top: 1px solid rgba(255,255,255,0.05);
                 display: none;
                 margin-top: 0;
-                padding-left: 1.5rem;
             }
             
             .arrow-icon {
@@ -173,23 +175,57 @@
             }
         }
 
-        /* Ajustes scrollbar para el dropdown */
+        /* Ajustes scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        
         .dropdown-menu::-webkit-scrollbar { width: 4px; }
         .dropdown-menu::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
         .dropdown-menu::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
 
-        /* Estilo para las figuras */
-        .figure-placeholder {
-            border: 1px dashed rgba(255, 255, 255, 0.2);
-            background-color: rgba(0, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 250px;
-            color: #64748b;
-            font-size: 0.8rem;
-            font-style: italic;
-            border-radius: 0.5rem;
+        /* Estilos Nuevas Figuras */
+        .model-container {
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.5s ease;
+        }
+
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+        
+        .glow-sphere {
+            animation: pulse-slow 8s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        .atom-label {
+            font-weight: 800;
+            font-size: 18px;
+            user-select: none;
+        }
+
+        /* Estilos específicos para D3 */
+        .energy-path {
+            fill: none;
+            stroke: #94a3b8;
+            stroke-width: 3;
+            stroke-linecap: round;
+        }
+        
+        .energy-point {
+            fill: #020617;
+            stroke: #f59e0b;
+            stroke-width: 2;
+        }
+
+        .energy-label {
+            font-weight: 700;
+            fill: #e2e8f0;
+            font-size: 16px;
         }
         
         figcaption {
@@ -202,9 +238,9 @@
 </head>
 <body class="selection:bg-amber-500 selection:text-slate-900 min-h-screen flex flex-col overflow-x-hidden">
 
-    <!-- Navegación Responsiva (Full Width) -->
+    <!-- Navegación Responsiva -->
     <nav class="fixed w-full z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
-        <div class="w-full px-4 md:px-8">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
             <div class="flex justify-between items-center h-16">
                 
                 <!-- Logo / Marca -->
@@ -234,44 +270,36 @@
                             </div>
                         </li>
 
-                        <!-- Índice Desplegable -->
+                        <!-- Índice -->
                         <li class="nav-item group md:mx-3">
                             <div class="nav-item-content">
-                                <a href="#" class="nav-link text-amber-500 hover:text-amber-400">Índice</a>
+                                <a href="#capitulo-4" class="nav-link text-amber-500 hover:text-amber-400">Índice</a>
                                 <button class="md:hidden p-2 arrow-icon" onclick="toggleDropdown(this)">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                 </button>
                             </div>
-                            
-                            <!-- Contenido del Índice -->
-                            <div class="dropdown-menu">
-                                <!-- Prefacio -->
+                            <div class="dropdown-menu md:w-64">
                                 <a href="#prefacio" class="dropdown-link" onclick="closeMobileMenu()">PREFACIO</a>
 
-                                <!-- Capítulo 1 -->
                                 <div class="dropdown-group-title">Cap. 1: Perspectiva Física Clásica</div>
                                 <a href="#cap1-1" class="dropdown-link" onclick="closeMobileMenu()">1.1. Propósito de la investigación</a>
-                                <!-- ... resto del indice ... -->
 
-                                <!-- Capítulo 2 -->
                                 <div class="dropdown-group-title">Cap. 2: Mecanismo de la Herencia</div>
                                 <a href="#cap2-1" class="dropdown-link" onclick="closeMobileMenu()">2.1. Suposición del físico clásico</a>
-                                <!-- ... resto del indice ... -->
 
-                                <!-- Capítulo 3 -->
                                 <div class="dropdown-group-title">Cap. 3: Mutaciones</div>
                                 <a href="#cap3-1" class="dropdown-link" onclick="closeMobileMenu()">3.1. Mutaciones discontinuas</a>
-                                <!-- ... resto del indice ... -->
 
-                                <!-- Capítulo 4 -->
                                 <div class="dropdown-group-title">Cap. 4: Evidencia Mecánica Cuántica</div>
-                                <a href="#cap4-1" class="dropdown-link" onclick="closeMobileMenu()">4.1. Inexplicable por física clásica</a>
+                                <a href="#cap4-1" class="dropdown-link text-white" onclick="closeMobileMenu()">4.1. Inexplicable por física clásica</a>
                                 <a href="#cap4-2" class="dropdown-link" onclick="closeMobileMenu()">4.2. Explicable por teoría cuántica</a>
                                 <a href="#cap4-3" class="dropdown-link" onclick="closeMobileMenu()">4.3. Estados discretos y saltos</a>
+                                <a href="#cap4-4" class="dropdown-link" onclick="closeMobileMenu()">4.4. Moléculas</a>
                                 <a href="#cap4-5" class="dropdown-link" onclick="closeMobileMenu()">4.5. Estabilidad y temperatura</a>
-                                <a href="#cap4-8" class="dropdown-link" onclick="closeMobileMenu()">4.8. Corrección isomérica</a>
+                                <a href="#cap4-6" class="dropdown-link" onclick="closeMobileMenu()">4.6. Interludio matemático</a>
+                                <a href="#cap4-7" class="dropdown-link" onclick="closeMobileMenu()">4.7. Primera corrección</a>
+                                <a href="#cap4-8" class="dropdown-link" onclick="closeMobileMenu()">4.8. Segunda corrección</a>
 
-                                <!-- Resto del índice omitido por brevedad visual -->
                                 <div class="mt-2 border-t border-white/10 pt-2"></div>
                                 <a href="#epilogo" class="dropdown-link" onclick="closeMobileMenu()">EPÍLOGO</a>
                             </div>
@@ -296,9 +324,7 @@
         function toggleDropdown(button) {
             const navItem = button.closest('.nav-item');
             const dropdown = navItem.querySelector('.dropdown-menu');
-            
             navItem.classList.toggle('active');
-            
             if (dropdown.style.display === 'block') {
                 dropdown.style.display = 'none';
             } else {
@@ -316,14 +342,14 @@
         }
     </script>
 
-    <!-- Contenido Principal (Full Width) -->
-    <div class="flex-grow pt-32 md:pt-48 pb-16 md:pb-24 w-full">
-        <main class="w-full text-center px-4 md:px-8">
+    <!-- Contenido Principal -->
+    <div class="flex-grow pt-32 md:pt-48 pb-16 md:pb-24 px-6 md:px-12 w-full">
+        <main class="w-full mx-auto text-center">
             
             <!-- Bloque Hero -->
             <header class="mb-24 relative animate-fade-in-up">
                 <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-amber-500/5 rounded-full blur-3xl -z-10"></div>
-
+                
                 <h1 class="text-4xl sm:text-5xl md:text-7xl font-black text-slate-100 mb-6 leading-none tracking-tighter drop-shadow-2xl break-words">
                     CAPÍTULO 4<br>
                     <span class="text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-500 text-2xl md:text-4xl block mt-4 font-serif italic">LA EVIDENCIA SEGÚN LA MECÁNICA CUÁNTICA</span>
@@ -334,115 +360,193 @@
                 </div>
             </header>
 
-             <!-- Contenido del Capítulo 4 -->
-            <section id="capitulo-4" class="w-full mx-auto mb-24 text-left bg-slate-900/40 p-4 md:p-12 rounded-xl border border-white/5 shadow-xl backdrop-blur-sm">
+            <!-- Contenido del Capítulo -->
+            <section id="capitulo-4" class="w-full mx-auto mb-24 text-left bg-slate-900/40 p-8 md:p-12 rounded-xl border border-white/5 shadow-xl backdrop-blur-sm">
                 
                 <!-- Epígrafe -->
                 <div class="flex justify-center mb-12">
-                    <blockquote class="border-l-4 border-amber-500 pl-4 italic text-slate-400">
+                    <blockquote class="border-l-4 border-amber-500 pl-4 italic text-slate-400 max-w-2xl">
                         <p class="mb-2">Und deines Geistes höchster Feuerflug Hat schon am Gleichnis, hat am Bild genug.</p>
                         <p class="mb-2 text-sm text-slate-500 font-normal">«Y el vuelo ardiente de imaginación de tu espíritu se complace en una imagen, en una parábola».</p>
-                        <footer class="text-xs mt-2 not-italic text-slate-500">— Goethe [20]</footer>
+                        <footer class="text-xs mt-2 not-italic text-slate-500 text-right">— Goethe [20]</footer>
                     </blockquote>
                 </div>
 
                 <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
                     
                     <!-- 4.1 -->
-                    <h3 id="cap4-1" class="text-amber-500 font-bold text-xl mt-8 mb-4">4.1. Permanencia inexplicable por la Física clásica</h3>
+                    <h3 id="cap4-1" class="text-amber-500 font-bold text-xl mt-8 mb-4 border-b border-slate-800 pb-2">4.1. Permanencia inexplicable por la Física clásica</h3>
                     
-                    <p>Con la ayuda del instrumento maravillosamente sutil de los <span class="text-amber-500 font-semibold">rayos X</span> (el cual, según recuerdan los físicos, reveló a principios de siglo la detallada estructura atómica reticulada de los cristales), los esfuerzos conjuntos de biólogos y físicos han conseguido reducir el límite superior del tamaño de la estructura microscópica responsable de una característica macroscópica del individuo (el tamaño de un <span class="text-amber-500 font-semibold">gen</span>) reduciéndola a tamaños mucho menores que las estimaciones indicadas en el capítulo 2. Ahora debemos enfrentarnos seriamente con esta pregunta: ¿cómo podemos, desde el punto de vista de la <span class="text-slate-100 font-semibold">Física estadística</span>, reconciliar los hechos de que la estructura del gen parece comprender solo un número pequeño de átomos (del orden de 1000, y posiblemente menor) a pesar de lo cual despliega una actividad muy regular y ordenada (con una <span class="text-amber-500 font-semibold">durabilidad</span> o permanencia que raya en lo milagroso)?</p>
+                    <p>Con la ayuda del instrumento maravillosamente sutil de los <span class="text-amber-500 font-bold">rayos X</span> (el cual, según recuerdan los físicos, reveló a principios de siglo la detallada estructura atómica reticulada de los cristales), los esfuerzos conjuntos de biólogos y físicos han conseguido reducir el límite superior del tamaño de la estructura microscópica responsable de una característica macroscópica del individuo (el tamaño de un <span class="text-amber-500 font-bold">gen</span>) reduciéndola a tamaños mucho menores que las estimaciones indicadas en el capítulo 2. Ahora debemos enfrentarnos seriamente con esta pregunta: ¿cómo podemos, desde el punto de vista de la <strong class="text-white">Física estadística</strong>, reconciliar los hechos de que la estructura del gen parece comprender solo un número pequeño de átomos (del orden de 1000, y posiblemente menor) a pesar de lo cual despliega una actividad muy regular y ordenada (con una <span class="text-amber-500 font-bold">durabilidad</span> o permanencia que raya en lo milagroso)?</p>
 
-                    <p>Permítaseme destacar de nuevo esta situación verdaderamente asombrosa. Diversos miembros de la dinastía de los <span class="text-slate-100 font-semibold">Habsburgo</span> presentan una desfiguración particular del labio inferior (labio de los Habsburgo). Su herencia ha sido cuidadosamente estudiada, publicándose los resultados, completados con retratos históricos, por la Academia Imperial de Viena, bajo el patrocinio de la familia. Ese carácter distintivo demuestra ser un genuino <span class="text-amber-500 font-semibold">alelo mendeliano</span> de la forma normal del labio. Si fijamos nuestra atención en los retratos de un miembro de la familia perteneciente al siglo XVI, y uno de sus descendientes del siglo XIX, podemos suponer sin dudar que la <span class="text-amber-500 font-semibold">estructura material del gen</span>, responsable del carácter anormal, ha sido transportada de generación en generación a través de los siglos, reproducida fielmente en cada una de las no muy numerosas divisiones celulares que ocurrían mientras tanto. Por otra parte, el número de átomos que integran el gen responsable es probablemente del mismo orden de magnitud que en los casos comprobados con los rayos X. El gen fue conservado a <span class="text-slate-100 font-semibold">36,5 °C</span> durante todo el tiempo. ¿Cómo explicar, entonces, que se haya mantenido durante siglos imperturbado ante la tendencia desordenante del movimiento calorífico?</p>
+                    <p>Permítaseme destacar de nuevo esta situación verdaderamente asombrosa. Diversos miembros de la dinastía de los <strong class="text-white">Habsburgo</strong> presentan una desfiguración particular del labio inferior (labio de los Habsburgo). Su herencia ha sido cuidadosamente estudiada, publicándose los resultados, completados con retratos históricos, por la Academia Imperial de Viena, bajo el patrocinio de la familia. Ese carácter distintivo demuestra ser un genuino <span class="text-amber-500 font-bold">alelo mendeliano</span> de la forma normal del labio. Si fijamos nuestra atención en los retratos de un miembro de la familia perteneciente al siglo XVI, y uno de sus descendientes del siglo XIX, podemos suponer sin dudar que la <span class="text-amber-500 font-bold">estructura material del gen</span>, responsable del carácter anormal, ha sido transportada de generación en generación a través de los siglos, reproducida fielmente en cada una de las no muy numerosas divisiones celulares que ocurrían mientras tanto. Por otra parte, el número de átomos que integran el gen responsable es probablemente del mismo orden de magnitud que en los casos comprobados con los rayos X. El gen fue conservado a <strong class="text-white">36,5 °C</strong> durante todo el tiempo. ¿Cómo explicar, entonces, que se haya mantenido durante siglos imperturbado ante la tendencia desordenante del movimiento calorífico?</p>
 
-                    <p>Un físico de finales del siglo se habría visto en apuros para contestar esta pregunta, si intentaba basarse solo en aquellas leyes de la naturaleza que él podía explicar y que realmente comprendía. Tal vez, después de una breve reflexión sobre la situación estadística, habría respondido (y con acierto, como veremos): Esas estructuras materiales no pueden ser otra cosa que <span class="text-amber-500 font-semibold">moléculas</span>. En aquella época, la Química había ya adquirido un extenso conocimiento acerca de la existencia y gran estabilidad de esas asociaciones de átomos. Pero ese conocimiento era puramente empírico. No se comprendía entonces la naturaleza de la molécula (el fuerte enlace mutuo de los átomos que mantiene la forma de la molécula era un completo misterio para todos). En realidad, la respuesta era correcta. Pero tenía un valor limitado, ya que la enigmática estabilidad biológica solo podía remontarse a una estabilidad química igualmente enigmática. La evidencia de que dos características, de apariencia similar, están basadas en el mismo principio es siempre precaria mientras que el principio en sí permanezca desconocido.</p>
+                    <p>Un físico de finales del siglo se habría visto en apuros para contestar esta pregunta, si intentaba basarse solo en aquellas leyes de la naturaleza que él podía explicar y que realmente comprendía. Tal vez, después de una breve reflexión sobre la situación estadística, habría respondido (y con acierto, como veremos): Esas estructuras materiales no pueden ser otra cosa que <span class="text-amber-500 font-bold">moléculas</span>. En aquella época, la Química había ya adquirido un extenso conocimiento acerca de la existencia y gran estabilidad de esas asociaciones de átomos. Pero ese conocimiento era puramente empírico. No se comprendía entonces la naturaleza de la molécula (el fuerte enlace mutuo de los átomos que mantiene la forma de la molécula era un completo misterio para todos). En realidad, la respuesta era correcta. Pero tenía un valor limitado, ya que la enigmática estabilidad biológica solo podía remontarse a una estabilidad química igualmente enigmática. La evidencia de que dos características, de apariencia similar, están basadas en el mismo principio es siempre precaria mientras que el principio en sí permanezca desconocido.</p>
 
                     <!-- 4.2 -->
-                    <h3 id="cap4-2" class="text-amber-500 font-bold text-xl mt-12 mb-4">4.2. Explicable por la teoría cuántica</h3>
+                    <h3 id="cap4-2" class="text-amber-500 font-bold text-xl mt-12 mb-4 border-b border-slate-800 pb-2">4.2. Explicable por la teoría cuántica</h3>
 
-                    <p>La respuesta en este caso nos la proporciona la <span class="text-amber-500 font-semibold">teoría cuántica</span>. A la luz de los conocimientos actuales, el mecanismo de la herencia está íntimamente relacionado, si no fundamentado, sobre la base misma de la teoría cuántica. Esta teoría fue descubierta por <span class="text-slate-100 font-semibold">Max Planck</span> en 1900. La genética moderna se inicia con el redescubrimiento del artículo de Mendel por De Vries, Correns y Tschermak (1900) y con el trabajo inicial de De Vries sobre las mutaciones (1901-1903). De esta forma, casi coincide el nacimiento de esas dos grandes teorías, y poco puede extrañarnos que ambas tuvieran que alcanzar cierta madurez antes de que se estableciera la conexión entre ellas. Se necesitó más de un cuarto de siglo para que, en 1926-1927, <span class="text-slate-100 font-semibold">W. Heitler</span> y <span class="text-slate-100 font-semibold">F. London</span> desarrollasen los principios generales de la teoría cuántica del enlace químico. La teoría de Heitler y London incluye los conceptos más sutiles e intrincados del último desarrollo de la teoría cuántica (que se denomina <span class="text-amber-500 font-semibold">mecánica cuántica</span> o mecánica ondulatoria). Su presentación sin utilizar el cálculo matemático es poco menos que imposible, o, al menos, requeriría otro librito como éste. Pero, afortunadamente, ahora que todo el trabajo está hecho y que ha servido para clarificar nuestro pensamiento, parece posible señalar de manera más directa la conexión existente entre <span class="text-amber-500 font-semibold">saltos cuánticos</span> y <span class="text-amber-500 font-semibold">mutaciones</span> para elegir, por el momento, el punto más destacado. Esto es lo que intentamos hacer aquí.</p>
+                    <p>La respuesta en este caso nos la proporciona la <span class="text-amber-500 font-bold">teoría cuántica</span>. A la luz de los conocimientos actuales, el mecanismo de la herencia está íntimamente relacionado, si no fundamentado, sobre la base misma de la teoría cuántica. Esta teoría fue descubierta por <strong class="text-white">Max Planck</strong> en 1900. La genética moderna se inicia con el redescubrimiento del artículo de Mendel por De Vries, Correns y Tschermak (1900) y con el trabajo inicial de De Vries sobre las mutaciones (1901-1903). De esta forma, casi coincide el nacimiento de esas dos grandes teorías, y poco puede extrañarnos que ambas tuvieran que alcanzar cierta madurez antes de que se estableciera la conexión entre ellas. Se necesitó más de un cuarto de siglo para que, en 1926-1927, <strong class="text-white">W. Heitler</strong> y <strong class="text-white">F. London</strong> desarrollasen los principios generales de la teoría cuántica del enlace químico. La teoría de Heitler y London incluye los conceptos más sutiles e intrincados del último desarrollo de la teoría cuántica (que se denomina <span class="text-amber-500 font-bold">mecánica cuántica</span> o mecánica ondulatoria). Su presentación sin utilizar el cálculo matemático es poco menos que imposible, o, al menos, requeriría otro librito como éste. Pero, afortunadamente, ahora que todo el trabajo está hecho y que ha servido para clarificar nuestro pensamiento, parece posible señalar de manera más directa la conexión existente entre <span class="text-amber-500 font-bold">saltos cuánticos</span> y <span class="text-amber-500 font-bold">mutaciones</span> para elegir, por el momento, el punto más destacado. Esto es lo que intentamos hacer aquí.</p>
 
                     <!-- 4.3 -->
-                    <h3 id="cap4-3" class="text-amber-500 font-bold text-xl mt-12 mb-4">4.3. Teoría cuántica. Estados discretos, saltos cuánticos</h3>
+                    <h3 id="cap4-3" class="text-amber-500 font-bold text-xl mt-12 mb-4 border-b border-slate-800 pb-2">4.3. Teoría cuántica. Estados discretos, saltos cuánticos</h3>
 
-                    <p>La gran revelación de la teoría cuántica fue el descubrimiento de <span class="text-amber-500 font-semibold">estados discretos</span> en el libro de la Naturaleza, en un contexto en el cual todo lo que no fuera continuidad parecía absurdo, de acuerdo con los puntos de vista mantenidos hasta entonces.</p>
+                    <p>La gran revelación de la teoría cuántica fue el descubrimiento de <span class="text-amber-500 font-bold">estados discretos</span> en el libro de la Naturaleza, en un contexto en el cual todo lo que no fuera continuidad parecía absurdo, de acuerdo con los puntos de vista mantenidos hasta entonces.</p>
 
-                    <p>El primer caso de este tipo se refería a la energía. Considerado macroscópicamente, un cuerpo cambia su energía de modo continuo. Un péndulo, por ejemplo, después de ser puesto en movimiento, es retardado gradualmente por la resistencia del aire. Por extraño que parezca, resulta necesario admitir que un sistema, cuyas dimensiones son del orden de la escala atómica, se comporta de modo diferente. Por razones que no podemos detallar aquí, tenemos que suponer que un sistema pequeño de tal índole solo puede, por su propia naturaleza, poseer ciertas cantidades discretas de energía, denominadas sus <span class="text-amber-500 font-semibold">niveles energéticos peculiares</span>. La transición de un estado a otro es un acontecimiento bastante misterioso y se llama habitualmente <span class="text-amber-500 font-semibold">salto cuántico</span>.</p>
+                    <p>El primer caso de este tipo se refería a la energía. Considerado macroscópicamente, un cuerpo cambia su energía de modo continuo. Un péndulo, por ejemplo, después de ser puesto en movimiento, es retardado gradualmente por la resistencia del aire. Por extraño que parezca, resulta necesario admitir que un sistema, cuyas dimensiones son del orden de la escala atómica, se comporta de modo diferente. Por razones que no podemos detallar aquí, tenemos que suponer que un sistema pequeño de tal índole solo puede, por su propia naturaleza, poseer ciertas cantidades discretas de energía, denominadas sus <span class="text-amber-500 font-bold">niveles energéticos peculiares</span>. La transición de un estado a otro es un acontecimiento bastante misterioso y se llama habitualmente <span class="text-amber-500 font-bold">salto cuántico</span>.</p>
 
                     <p>Pero la energía no es la única característica de un sistema. Tomemos de nuevo nuestro péndulo, pero pensemos en uno que pueda hacer diferentes tipos de movimiento, como una bola pesada suspendida del techo por una cuerda. Puede hacerse que oscile en dirección norte-sur, o este-oeste, o en cualquier otra, o girar describiendo un círculo o una elipse. Soplando con un fuelle sobre la bola, puede conseguirse que esta pase continuamente de un estado de movimiento a cualquier otro.</p>
 
-                    <p>En los sistemas de dimensiones muy reducidas, la mayoría de esas o similares características (no podemos entrar bien en detalles) cambian de forma discontinua. Están <span class="text-amber-500 font-semibold">cuantizados</span>, lo mismo que la energía.</p>
+                    <p>En los sistemas de dimensiones muy reducidas, la mayoría de esas o similares características (no podemos entrar bien en detalles) cambian de forma discontinua. Están <span class="text-amber-500 font-bold">cuantizados</span>, lo mismo que la energía.</p>
 
-                    <p>El resultado es que cierto número de núcleos atómicos, incluyendo sus acompañantes, los electrones, cuando se encuentran cerca unos de otros, formando un sistema, son incapaces por su misma naturaleza de asumir cualquier configuración arbitraria imaginable. Su propia índole les deja solo una serie, numerosa pero discreta, de <span class="text-amber-500 font-semibold">estados</span> para escoger [21], a los que denominamos simplemente niveles o niveles energéticos, porque la energía es una parte muy destacada de su caracterización. Pero debe tenerse presente que una completa descripción comprende muchas otras cosas además de la energía. Es virtualmente correcto imaginar un estado como una determinada <span class="text-amber-500 font-semibold">configuración</span> de todos los corpúsculos. La transición de una de esas configuraciones a otra es un salto cuántico. Cuando la segunda configuración tiene mayor energía (es un nivel superior), el sistema debe recibir del exterior al menos la diferencia entre esas dos energías para hacer posible la transición. El cambio puede hacerse espontáneamente cuando es hacia un nivel inferior, gastando en radiación el exceso de energía.</p>
+                    <p>El resultado es que cierto número de núcleos atómicos, incluyendo sus acompañantes, los electrones, cuando se encuentran cerca unos de otros, formando un sistema, son incapaces por su misma naturaleza de asumir cualquier configuración arbitraria imaginable. Su propia índole les deja solo una serie, numerosa pero discreta, de <span class="text-amber-500 font-bold">estados</span> para escoger [21], a los que denominamos simplemente niveles o niveles energéticos, porque la energía es una parte muy destacada de su caracterización. Pero debe tenerse presente que una completa descripción comprende muchas otras cosas además de la energía. Es virtualmente correcto imaginar un estado como una determinada <span class="text-amber-500 font-bold">configuración</span> de todos los corpúsculos. La transición de una de esas configuraciones a otra es un salto cuántico. Cuando la segunda configuración tiene mayor energía (es un nivel superior), el sistema debe recibir del exterior al menos la diferencia entre esas dos energías para hacer posible la transición. El cambio puede hacerse espontáneamente cuando es hacia un nivel inferior, gastando en radiación el exceso de energía.</p>
 
                     <!-- 4.4 -->
-                    <h3 id="cap4-4" class="text-amber-500 font-bold text-xl mt-12 mb-4">4.4. Moléculas</h3>
+                    <h3 id="cap4-4" class="text-amber-500 font-bold text-xl mt-12 mb-4 border-b border-slate-800 pb-2">4.4. Moléculas</h3>
 
-                    <p>Entre el conjunto discreto de estados de una selección dada de átomos puede existir, aunque no necesariamente, un nivel inferior a todos, lo cual implica un estrecho acercamiento de los núcleos entre sí. En tal estado los átomos forman una <span class="text-amber-500 font-semibold">molécula</span>. Es importante resaltar que la molécula tendría necesariamente cierta estabilidad; la configuración no puede cambiar, a menos que se le suministre desde el exterior un mínimo de energía equivalente a la diferencia que se necesita para elevarla al nivel energético inmediatamente superior. Por consiguiente, esta diferencia de nivel, que es una característica bien definida, determina cuantitativamente el grado de estabilidad de la molécula. Puede observarse lo íntimamente que está ligado este hecho a la base misma de la teoría cuántica, es decir, con el esquema de niveles discretos.</p>
+                    <p>Entre el conjunto discreto de estados de una selección dada de átomos puede existir, aunque no necesariamente, un nivel inferior a todos, lo cual implica un estrecho acercamiento de los núcleos entre sí. En tal estado los átomos forman una <span class="text-amber-500 font-bold">molécula</span>. Es importante resaltar que la molécula tendría necesariamente cierta estabilidad; la configuración no puede cambiar, a menos que se le suministre desde el exterior un mínimo de energía equivalente a la diferencia que se necesita para elevarla al nivel energético inmediatamente superior. Por consiguiente, esta diferencia de nivel, que es una característica bien definida, determina cuantitativamente el grado de estabilidad de la molécula. Puede observarse lo íntimamente que está ligado este hecho a la base misma de la teoría cuántica, es decir, con el esquema de niveles discretos.</p>
 
                     <p>Debo pedir al lector que admita sin dudar que este orden de ideas ha sido exhaustivamente comprobado por fenómenos químicos; y que ha demostrado su utilidad en la explicación del hecho básico de la valencia química y en muchos detalles sobre la estructura de las moléculas, sus energías de enlace, sus estabilidades a diferentes temperaturas, etc. Me refiero solo a la teoría de Heitler-London, la cual, como ya he dicho, no puede ser examinada con detalle en este lugar.</p>
 
                     <!-- 4.5 -->
-                    <h3 id="cap4-5" class="text-amber-500 font-bold text-xl mt-12 mb-4">4.5. La estabilidad de las moléculas depende de la temperatura</h3>
+                    <h3 id="cap4-5" class="text-amber-500 font-bold text-xl mt-12 mb-4 border-b border-slate-800 pb-2">4.5. La estabilidad de las moléculas depende de la temperatura</h3>
 
-                    <p>Tendremos que contentarnos con examinar el punto de máximo interés para nuestro problema biológico, que es la estabilidad de una molécula a diferentes temperaturas. Supongamos que nuestro sistema de átomos está realmente en su estado de menor energía. El físico lo denominaría una molécula en el <span class="text-slate-100 font-semibold">cero absoluto</span> de temperatura. Para elevarlo al estado o nivel inmediatamente superior, se requiere un definido aporte de energía. El modo más simple de intentar hacerlo es calentar la molécula. Puede ponérsela en un ambiente de mayor temperatura (baño térmico), permitiendo así que otros sistemas (átomos, moléculas) golpeen sobre ella. Debido a la completa irregularidad del movimiento térmico, no existe un límite preciso de temperatura al cual se logre la elevación con certeza y de inmediato. En vez de ello, a cualquier temperatura (distinta del cero absoluto) existe cierta probabilidad más o menos grande de que se produzca la elevación, y esta probabilidad aumenta con la temperatura del baño térmico. La mejor manera de expresar esta probabilidad es indicar el tiempo medio que debe esperarse hasta que se produce el ascenso, el <span class="text-amber-500 font-semibold">tiempo de expectación</span>.</p>
+                    <p>Tendremos que contentarnos con examinar el punto de máximo interés para nuestro problema biológico, que es la estabilidad de una molécula a diferentes temperaturas. Supongamos que nuestro sistema de átomos está realmente en su estado de menor energía. El físico lo denominaría una molécula en el <strong class="text-white">cero absoluto</strong> de temperatura. Para elevarlo al estado o nivel inmediatamente superior, se requiere un definido aporte de energía. El modo más simple de intentar hacerlo es calentar la molécula. Puede ponérsela en un ambiente de mayor temperatura (baño térmico), permitiendo así que otros sistemas (átomos, moléculas) golpeen sobre ella. Debido a la completa irregularidad del movimiento térmico, no existe un límite preciso de temperatura al cual se logre la elevación con certeza y de inmediato. En vez de ello, a cualquier temperatura (distinta del cero absoluto) existe cierta probabilidad más o menos grande de que se produzca la elevación, y esta probabilidad aumenta con la temperatura del baño térmico. La mejor manera de expresar esta probabilidad es indicar el tiempo medio que debe esperarse hasta que se produce el ascenso, el <span class="text-amber-500 font-bold">tiempo de expectación</span>.</p>
 
-                    <p>Según una investigación, debida a M. Polanyi y E. Wigner [22], el tiempo de expectación depende en gran manera del cociente entre dos energías, siendo la primera la diferencia misma de energía requerida para efectuar la elevación (simbolicémosla como <span class="text-white">W</span>), mientras que la segunda caracteriza la intensidad del movimiento térmico a la temperatura en cuestión (simbolicemos la temperatura absoluta como T y la energía característica como <span class="text-white">kT</span>) [23]. Se sobreentiende que la probabilidad de efectuar una elevación será menor, y en consecuencia que el tiempo de expectación será mayor, cuanto mayor sea la elevación comparada con la energía térmica media, es decir, cuanto mayor sea el cociente <span class="text-white">W/kT</span>. Lo que es sorprendente es lo mucho que depende el tiempo de expectación de cambios comparativamente pequeños del cociente W/kT. Podemos expresarlo con un ejemplo (tomado de Delbrück): para W treinta veces kT, el tiempo de expectación podría ser tan breve como 1/10 de segundo, pero se elevaría a 16 meses cuando W fuera cincuenta veces kT y ¡a 30 000 años cuando W fuera sesenta veces kT!</p>
+                    <p>Según una investigación, debida a M. Polanyi y E. Wigner [22], el tiempo de expectación depende en gran manera del cociente entre dos energías, siendo la primera la diferencia misma de energía requerida para efectuar la elevación (simbolicémosla como <strong class="text-white">W</strong>), mientras que la segunda caracteriza la intensidad del movimiento térmico a la temperatura en cuestión (simbolicemos la temperatura absoluta como T y la energía característica como <strong class="text-white">kT</strong>) [23]. Se sobreentiende que la probabilidad de efectuar una elevación será menor, y en consecuencia que el tiempo de expectación será mayor, cuanto mayor sea la elevación comparada con la energía térmica media, es decir, cuanto mayor sea el cociente <strong class="text-white">W/kT</strong>. Lo que es sorprendente es lo mucho que depende el tiempo de expectación de cambios comparativamente pequeños del cociente W/kT. Podemos expresarlo con un ejemplo (tomado de Delbrück): para W treinta veces kT, el tiempo de expectación podría ser tan breve como 1/10 de segundo, pero se elevaría a 16 meses cuando W fuera cincuenta veces kT y ¡a 30 000 años cuando W fuera sesenta veces kT!</p>
 
                     <!-- 4.6 -->
-                    <h3 id="cap4-6" class="text-amber-500 font-bold text-xl mt-12 mb-4">4.6. Interludio matemático</h3>
+                    <h3 id="cap4-6" class="text-amber-500 font-bold text-xl mt-12 mb-4 border-b border-slate-800 pb-2">4.6. Interludio matemático</h3>
 
-                    <p>También con lenguaje matemático (para los lectores que gusten de él) puede expresarse la razón de esta enorme sensibilidad a los cambios del valor W o de la temperatura, T, agregando unas pocas precisiones físicas de índole similar. La razón es que el tiempo de expectación, llamémoslo <span class="text-white">t</span>, depende del cociente W/kT según una <span class="text-amber-500 font-semibold">función exponencial</span>, que es</p>
+                    <p>También con lenguaje matemático (para los lectores que gusten de él) puede expresarse la razón de esta enorme sensibilidad a los cambios del valor W o de la temperatura, T, agregando unas pocas precisiones físicas de índole similar. La razón es que el tiempo de expectación, llamémoslo <strong class="text-white">t</strong>, depende del cociente W/kT según una <span class="text-amber-500 font-bold">función exponencial</span>, que es</p>
 
-                    <p class="text-center text-xl font-mono my-6 text-amber-500">
+                    <p class="text-center text-xl font-mono my-6 text-amber-500 bg-slate-900/50 p-4 rounded-lg border border-slate-800 shadow-inner">
                         t = &tau; e<sup>W/kT</sup>
                         <br>
-                        <span class="text-sm text-slate-500">(4.1)</span>
+                        <span class="text-sm text-slate-500 block mt-2 font-sans">(4.1)</span>
                     </p>
 
-                    <p>(donde &tau; es una cierta constante pequeña del orden de 10<sup>-13</sup> o 10<sup>-14</sup> segundos). Ahora bien, esta función exponencial particular no es un hecho accidental. Vuelve a aparecer una y otra vez en la teoría estadística del calor, constituyendo algo así como su columna vertebral. Es una medida de la <span class="text-amber-500 font-semibold">improbabilidad</span> de que una cantidad de energía tan grande como W se acumule accidentalmente en una parte particular del sistema, y es esta improbabilidad la que aumenta tan enormemente cuando se requiere un múltiplo considerable de la energía media kT.</p>
+                    <p>(donde &tau; es una cierta constante pequeña del orden de 10<sup>-13</sup> o 10<sup>-14</sup> segundos). Ahora bien, esta función exponencial particular no es un hecho accidental. Vuelve a aparecer una y otra vez en la teoría estadística del calor, constituyendo algo así como su columna vertebral. Es una medida de la <span class="text-amber-500 font-bold">improbabilidad</span> de que una cantidad de energía tan grande como W se acumule accidentalmente en una parte particular del sistema, y es esta improbabilidad la que aumenta tan enormemente cuando se requiere un múltiplo considerable de la energía media kT.</p>
 
                     <p>En la realidad, un W = 30 kT (véase el ejemplo citado anteriormente) es ya muy raro. Si, a pesar de ello, esto no determina un tiempo de expectación enormemente largo (en nuestro ejemplo, solo 1/10 de segundo), se debe, por supuesto, a la pequeñez del factor &tau;. Este factor tiene un significado físico. Es del orden del período de las vibraciones que en todo momento tienen lugar en el sistema. Este factor podría describirse, de un modo muy general, como significando que la probabilidad de acumular la cantidad requerida W, aunque muy pequeña, vuelve una y otra vez con cada vibración, o lo que es lo mismo, unas 10<sup>13</sup> o 10<sup>14</sup> veces cada segundo.</p>
 
                     <!-- 4.7 -->
-                    <h3 id="cap4-7" class="text-amber-500 font-bold text-xl mt-12 mb-4">4.7. Primera corrección</h3>
+                    <h3 id="cap4-7" class="text-amber-500 font-bold text-xl mt-12 mb-4 border-b border-slate-800 pb-2">4.7. Primera corrección</h3>
 
-                    <p>Al presentar estas consideraciones como una teoría de la estabilidad de la molécula, se ha admitido tácitamente que el salto cuántico al que llamábamos elevación conduce, si no a una completa desintegración, sí al menos a una configuración esencialmente diferente de los mismos átomos, a una <span class="text-amber-500 font-semibold">molécula isomérica</span>, como dirían los químicos, es decir, a una molécula compuesta por los mismos átomos con diferente distribución (lo cual, al aplicarlo a la Biología, representaría un alelo diferente en el mismo locus; y el salto cuántico, una mutación).</p>
+                    <p>Al presentar estas consideraciones como una teoría de la estabilidad de la molécula, se ha admitido tácitamente que el salto cuántico al que llamábamos elevación conduce, si no a una completa desintegración, sí al menos a una configuración esencialmente diferente de los mismos átomos, a una <span class="text-amber-500 font-bold">molécula isomérica</span>, como dirían los químicos, es decir, a una molécula compuesta por los mismos átomos con diferente distribución (lo cual, al aplicarlo a la Biología, representaría un alelo diferente en el mismo locus; y el salto cuántico, una mutación).</p>
 
                     <p>Para poder admitir esta interpretación, deben corregirse en nuestra explicación dos puntos que yo había simplificado para hacerla más inteligible. Por la manera en que lo dije, podría imaginarse que solo en los estados más bajos nuestros átomos muestran lo que llamamos moléculas, y que el estado inmediatamente superior es ya otra cosa. Esto no es así. En realidad, el estado más bajo viene seguido de una numerosa serie de niveles que no implican cambios en la configuración global, sino que corresponden a aquellas pequeñas vibraciones entre átomos que hemos mencionado en el apartado anterior. También ellas están cuantizadas, pero con saltos comparativamente pequeños entre un nivel y el siguiente. En consecuencia, los impactos de las partículas del baño térmico pueden bastar para provocar vibraciones ya a una temperatura bastante baja. Si la molécula es una estructura extensa, podemos imaginar esas vibraciones como ondas sonoras de alta frecuencia que cruzan la molécula sin alterarla.</p>
 
                     <p>La primera corrección no es, pues, muy seria: debemos pasar por alto la microestructura vibratoria del esquema de niveles. El término nivel inmediatamente superior debe entenderse como indicación del próximo nivel que corresponde a un cambio significativo de configuración.</p>
 
                     <!-- 4.8 -->
-                    <h3 id="cap4-8" class="text-amber-500 font-bold text-xl mt-12 mb-4">4.8. Segunda corrección</h3>
+                    <h3 id="cap4-8" class="text-amber-500 font-bold text-xl mt-12 mb-4 border-b border-slate-800 pb-2">4.8. Segunda corrección</h3>
 
                     <p>La segunda corrección es mucho más difícil de explicar, porque hace referencia a ciertas características esenciales, pero harto complicadas, del esquema de los niveles significativamente diferentes. La libre transición entre dos de ellos puede ser obtenida de forma totalmente independiente del requerido suministro energético. En efecto, puede ser obstruida incluso desde un estado más elevado a un estado más bajo.</p>
 
-                    <!-- Figura 1 -->
-                    <figure class="my-8">
-                        <div class="figure-placeholder">
-                            <p class="text-center p-6">[Espacio para imagen: Isómeros del alcohol propílico]</p>
-                        </div>
-                        <figcaption class="text-center mt-3 text-sm text-slate-400">
-                            <span class="font-bold text-amber-500">FIGURA 1.</span>
-                        </figcaption>
-                    </figure>
+                    <!-- FIGURA 1: ISÓMEROS DEL PROPANOL -->
+                    <div class="relative my-16 text-center">
+                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-amber-500/5 rounded-full blur-3xl -z-10 glow-sphere"></div>
+                        
+                        <div class="model-container p-8 md:p-12 rounded-3xl shadow-2xl inline-block w-full max-w-4xl mx-auto">
+                            <h2 class="text-amber-500 font-bold uppercase tracking-[0.3em] text-[10px] mb-12">01. Estructura Molecular e Isomería</h2>
+                            
+                            <div class="flex flex-col items-center space-y-16 mb-8">
+                                <!-- Isómero 1 -->
+                                <div class="w-full max-w-lg">
+                                    <svg viewBox="0 0 500 180" class="w-full h-auto drop-shadow-2xl">
+                                        <g stroke="#475569" stroke-width="2">
+                                            <line x1="60" y1="90" x2="120" y2="90" />
+                                            <line x1="160" y1="90" x2="220" y2="90" />
+                                            <line x1="260" y1="90" x2="320" y2="90" />
+                                            <line x1="360" y1="90" x2="390" y2="90" stroke="#f59e0b" stroke-width="3" />
+                                            <line x1="415" y1="90" x2="430" y2="90" stroke="#f59e0b" stroke-width="2" />
+                                            <line x1="140" y1="40" x2="140" y2="70" />
+                                            <line x1="140" y1="110" x2="140" y2="140" />
+                                            <line x1="240" y1="40" x2="240" y2="70" />
+                                            <line x1="240" y1="110" x2="240" y2="140" />
+                                            <line x1="340" y1="40" x2="340" y2="70" />
+                                            <line x1="340" y1="110" x2="340" y2="140" />
+                                        </g>
+                                        <g fill="#e2e8f0" class="atom-label">
+                                            <text x="40" y="97" text-anchor="middle">H</text>
+                                            <text x="140" y="97" text-anchor="middle">C</text>
+                                            <text x="240" y="97" text-anchor="middle">C</text>
+                                            <text x="340" y="97" text-anchor="middle">C</text>
+                                            <text x="405" y="97" text-anchor="middle" fill="#f59e0b">O</text>
+                                            <text x="445" y="97" text-anchor="middle" fill="#f59e0b">H</text>
+                                            <text x="140" y="35" text-anchor="middle">H</text> <text x="140" y="155" text-anchor="middle">H</text>
+                                            <text x="240" y="35" text-anchor="middle">H</text> <text x="240" y="155" text-anchor="middle">H</text>
+                                            <text x="340" y="35" text-anchor="middle">H</text> <text x="340" y="155" text-anchor="middle">H</text>
+                                        </g>
+                                    </svg>
+                                </div>
+                                <!-- Isómero 2 -->
+                                <div class="w-full max-w-lg">
+                                    <svg viewBox="0 0 500 220" class="w-full h-auto drop-shadow-2xl">
+                                        <g stroke="#475569" stroke-width="2">
+                                            <line x1="100" y1="120" x2="160" y2="120" />
+                                            <line x1="200" y1="120" x2="260" y2="120" />
+                                            <line x1="300" y1="120" x2="360" y2="120" />
+                                            <line x1="400" y1="120" x2="430" y2="120" />
+                                            <line x1="180" y1="70" x2="180" y2="100" />
+                                            <line x1="180" y1="140" x2="180" y2="170" />
+                                            <line x1="280" y1="50" x2="280" y2="100" stroke="#f59e0b" stroke-width="3" />
+                                            <line x1="280" y1="140" x2="280" y2="170" />
+                                            <line x1="380" y1="70" x2="380" y2="100" />
+                                            <line x1="380" y1="140" x2="380" y2="170" />
+                                        </g>
+                                        <g fill="#e2e8f0" class="atom-label">
+                                            <text x="80" y="127" text-anchor="middle">H</text>
+                                            <text x="180" y="127" text-anchor="middle">C</text>
+                                            <text x="280" y="127" text-anchor="middle">C</text>
+                                            <text x="380" y="127" text-anchor="middle">C</text>
+                                            <text x="445" y="127" text-anchor="middle">H</text>
+                                            <text x="280" y="45" text-anchor="middle" fill="#f59e0b">O</text>
+                                            <text x="315" y="45" text-anchor="middle" fill="#f59e0b">H</text>
+                                            <line x1="290" y1="38" x2="305" y2="38" stroke="#f59e0b" stroke-width="2" />
+                                            <text x="180" y="65" text-anchor="middle">H</text> <text x="180" y="185" text-anchor="middle">H</text>
+                                            <text x="280" y="185" text-anchor="middle">H</text>
+                                            <text x="380" y="65" text-anchor="middle">H</text> <text x="380" y="185" text-anchor="middle">H</text>
+                                        </g>
+                                    </svg>
+                                </div>
+                            </div>
 
-                    <p>Empecemos por los hechos empíricos. Los químicos saben que el mismo grupo de átomos puede unirse de más de una manera para formar una molécula. Tales moléculas son denominadas <span class="text-amber-500 font-semibold">isómeros</span> (formadas por las mismas partes; &iota;&sigma;&omicron;&sigmaf; = igual, &mu;&epsilon;&rho;&omicron;&sigmaf; = parte). La isomería no es una excepción, sino la regla. Cuanto mayor es la molécula, más alternativas isoméricas se le ofrecen. En la figura 1 se muestra uno de los casos más simples, los dos tipos de alcohol propílico o propanol, cuyas moléculas tienen ambas 3 carbonos (C), 8 hidrógenos (H), y un oxígeno (O). Este último puede ser interpuesto entre cualquier hidrógeno y su carbono, pero solamente los dos casos mostrados en la figura son sustancias diferentes. Y lo son en la realidad. Todas sus constantes físicas y químicas son claramente diferenciables. También sus energías son distintas, representan niveles diferentes.</p>
+                            <div class="mt-8 pt-8 border-t border-white/5 text-left md:text-center">
+                                <p class="text-base md:text-lg font-serif italic text-slate-100 max-w-3xl mx-auto leading-relaxed">
+                                    <span class="text-amber-500 font-sans font-black not-italic tracking-widest mr-3 text-sm uppercase">FIGURA 1.</span>
+                                    Isómeros químicos. La disposición espacial de los átomos determina propiedades diferenciadas.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p>Empecemos por los hechos empíricos. Los químicos saben que el mismo grupo de átomos puede unirse de más de una manera para formar una molécula. Tales moléculas son denominadas <span class="text-amber-500 font-bold">isómeros</span> (formadas por las mismas partes; &iota;&sigma;&omicron;&sigmaf; = igual, &mu;&epsilon;&rho;&omicron;&sigmaf; = parte). La isomería no es una excepción, sino la regla. Cuanto mayor es la molécula, más alternativas isoméricas se le ofrecen. En la figura 1 se muestra uno de los casos más simples, los dos tipos de alcohol propílico o propanol, cuyas moléculas tienen ambas 3 carbonos (C), 8 hidrógenos (H), y un oxígeno (O). Este último puede ser interpuesto entre cualquier hidrógeno y su carbono, pero solamente los dos casos mostrados en la figura son sustancias diferentes. Y lo son en la realidad. Todas sus constantes físicas y químicas son claramente diferenciables. También sus energías son distintas, representan niveles diferentes.</p>
 
                     <p>El hecho notable es que ambas moléculas son perfectamente estables, comportándose ambas como si fueran los estados más bajos. No existen transiciones espontáneas de un estado al otro.</p>
 
                     <p>La razón estriba en que las dos configuraciones no son configuraciones vecinas. La transición de una a otra puede tener lugar solo a través de configuraciones intermedias que tienen una energía mayor que cualquiera de ellas. Para expresarlo rotundamente: el oxígeno tiene que ser extraído de una posición e insertado en la otra. No parece existir un medio de hacer eso sin pasar a través de configuraciones con energías considerablemente superiores. Lo que sucede se ilustra a veces como en la figura 2, en la cual 1 y 2 representan los dos isómeros, 3 el umbral entre ellos y las dos flechas las elevaciones, es decir, los aportes de energía requeridos para producir la transición del estado 1 al estado 2, o viceversa. Ahora podemos proceder ya a nuestra segunda corrección, consistente en que las transiciones de este tipo isomérico son las únicas que nos interesan para la aplicación biológica. Eso era lo que pensábamos al explicar la estabilidad en las págs. 31 y 32. El salto cuántico al que nos referimos es la transición desde una configuración molecular relativamente estable a otra. El aporte energético requerido para la transición (cantidad que indicamos por W) no es la verdadera diferencia de niveles, sino el paso desde el nivel inicial hasta el umbral. (Véanse las flechas de la figura 2.)</p>
 
-                    <!-- Figura 2 -->
-                    <figure class="my-8">
-                        <div class="figure-placeholder">
-                            <p class="text-center p-6">[Espacio para imagen: Umbral de energía]</p>
+                    <!-- FIGURA 2: UMBRAL DE ENERGÍA -->
+                    <div class="relative my-16 text-center">
+                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-amber-500/5 rounded-full blur-3xl -z-10 glow-sphere"></div>
+                        
+                        <div class="model-container p-8 md:p-12 rounded-3xl shadow-2xl inline-block w-full max-w-4xl mx-auto">
+                            <h2 class="text-amber-500 font-bold uppercase tracking-[0.3em] text-[10px] mb-12">02. Termodinámica e Isomería</h2>
+                            
+                            <div id="energy-chart" class="flex justify-center w-full overflow-hidden mb-12">
+                                <!-- D3 generará el gráfico aquí -->
+                            </div>
+
+                            <div class="mt-8 pt-8 border-t border-white/5 text-left md:text-center">
+                                <p class="text-base md:text-lg font-serif italic text-slate-100 max-w-3xl mx-auto leading-relaxed">
+                                    <span class="text-amber-500 font-sans font-black not-italic tracking-widest mr-3 text-sm uppercase">FIGURA 2.</span>
+                                    Umbral de energía entre los niveles isoméricos 1 y 2. Las flechas indican los mínimos de energía, representando los estados estables de la molécula.
+                                </p>
+                            </div>
                         </div>
-                        <figcaption class="text-center mt-3 text-sm text-slate-400">
-                            <span class="font-bold text-amber-500">FIGURA 2.</span> Umbral de energía entre los niveles isoméricos 1 y 2. Las flechas indican los mínimos de energía.
-                        </figcaption>
-                    </figure>
+                    </div>
 
                     <p>Las transiciones en las que no existe un umbral interpuesto entre los estados inicial y final carecen totalmente de interés, y no solo para nuestra aplicación biológica. De hecho, no tienen nada con que contribuir a la estabilidad química de la molécula. ¿Por qué? Porque su efecto no es duradero, pasan inadvertidas. Porque, cuando se producen, son seguidas casi inmediatamente por una vuelta al estado inicial, ya que nada impide su retroceso.</p>
 
@@ -464,5 +568,101 @@
         </div>
     </footer>
 
+    <script>
+        (function() {
+            // Dimensiones
+            const width = 600;
+            const height = 400;
+            const margin = {top: 50, right: 50, bottom: 50, left: 50};
+
+            const svg = d3.select("#energy-chart")
+                .append("svg")
+                .attr("viewBox", `0 0 ${width} ${height}`)
+                .attr("class", "max-w-full h-auto overflow-visible");
+
+            // Curva de energía (S-shape spline)
+            const points = [
+                [50, 300],    // Inicio
+                [150, 350],   // Mínimo 1 (Isómero 1)
+                [300, 80],    // Pico (Estado de Transición 3)
+                [450, 250],   // Mínimo 2 (Isómero 2)
+                [550, 180]    // Final
+            ];
+
+            const lineGenerator = d3.line()
+                .curve(d3.curveNatural);
+
+            // Dibujar la curva
+            svg.append("path")
+                .datum(points)
+                .attr("class", "energy-path")
+                .attr("d", lineGenerator);
+
+            // Línea de umbral (dashed)
+            svg.append("line")
+                .attr("x1", 50)
+                .attr("y1", 80)
+                .attr("x2", 550)
+                .attr("y2", 80)
+                .attr("stroke", "#475569")
+                .attr("stroke-width", 1)
+                .attr("stroke-dasharray", "5,5");
+
+            // Puntos críticos
+            const markers = [
+                {x: 150, y: 350, label: "1"},
+                {x: 450, y: 250, label: "2"},
+                {x: 300, y: 80, label: "3"}
+            ];
+
+            svg.selectAll(".point-group")
+                .data(markers)
+                .enter()
+                .append("g")
+                .attr("transform", d => `translate(${d.x}, ${d.y})`)
+                .each(function(d) {
+                    d3.select(this).append("circle").attr("r", 6).attr("class", "energy-point");
+                    d3.select(this).append("text")
+                        .attr("y", 25)
+                        .attr("text-anchor", "middle")
+                        .attr("class", "energy-label")
+                        .text(d.label);
+                });
+
+            // Flechas de energía
+            const arrowDef = svg.append("defs").append("marker")
+                .attr("id", "arrowhead")
+                .attr("viewBox", "0 0 10 10")
+                .attr("refX", 5)
+                .attr("refY", 5)
+                .attr("markerWidth", 6)
+                .attr("markerHeight", 6)
+                .attr("orient", "auto")
+                .append("path")
+                .attr("d", "M 0 0 L 10 5 L 0 10 z")
+                .attr("fill", "#f59e0b");
+
+            // Flecha 1 -> 3
+            svg.append("line")
+                .attr("x1", 150)
+                .attr("y1", 340)
+                .attr("x2", 150)
+                .attr("y2", 85)
+                .attr("stroke", "#f59e0b")
+                .attr("stroke-width", 2)
+                .attr("marker-end", "url(#arrowhead)");
+
+            // Flecha 2 -> 3
+            svg.append("line")
+                .attr("x1", 450)
+                .attr("y1", 240)
+                .attr("x2", 450)
+                .attr("y2", 85)
+                .attr("stroke", "#f59e0b")
+                .attr("stroke-width", 2)
+                .attr("marker-end", "url(#arrowhead)");
+                
+        })();
+    </script>
 </body>
 </html>
