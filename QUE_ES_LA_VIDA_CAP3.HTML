@@ -6,6 +6,7 @@
     <title>Capítulo 3 | Erwin Schrödinger</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
         
@@ -41,11 +42,12 @@
             transition: width 0.3s ease;
         }
         
+        /* Solo aplicar hover underline en desktop */
         @media (min-width: 768px) {
             .nav-item:hover .nav-link::after {
                 width: 100%;
             }
-
+            
             /* Dropdown Desktop: Absolute & Hover */
             .nav-item:hover .dropdown-menu {
                 opacity: 1;
@@ -58,13 +60,12 @@
                 top: 100%;
                 left: 50%;
                 transform: translateX(-50%) translateY(10px);
-                min-width: 320px;
-                max-height: 70vh; /* Altura máxima para scroll */
-                overflow-y: auto; /* Scroll si es muy largo */
+                min-width: 280px;
+                max-height: 80vh; /* Para manejar índices largos */
+                overflow-y: auto;
                 opacity: 0;
                 visibility: hidden;
             }
-
             .dropdown-menu::before {
                 content: '';
                 position: absolute;
@@ -75,7 +76,7 @@
                 border-style: solid;
                 border-color: transparent transparent rgba(255, 255, 255, 0.1) transparent;
             }
-            
+            /* Puente invisible */
             .dropdown-menu::after {
                 content: '';
                 position: absolute;
@@ -99,11 +100,27 @@
             z-index: 100;
         }
 
+        .dropdown-link {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            border-radius: 0.25rem;
+            line-height: 1.4;
+            text-align: left;
+        }
+
+        .dropdown-link:hover {
+            color: #f59e0b; /* amber-500 */
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
         .dropdown-group-title {
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: #f59e0b; /* amber-500 */
+            color: #f59e0b;
             margin-top: 0.75rem;
             margin-bottom: 0.25rem;
             padding-bottom: 0.25rem;
@@ -115,33 +132,18 @@
             margin-top: 0;
         }
 
-        .dropdown-link {
-            display: block;
-            padding: 0.35rem 0.5rem;
-            color: #94a3b8;
-            font-size: 0.75rem;
-            transition: all 0.2s;
-            border-radius: 0.25rem;
-            line-height: 1.3;
-            text-align: left;
-        }
-
-        .dropdown-link:hover {
-            color: #f8fafc;
-            background-color: rgba(255, 255, 255, 0.05);
-            padding-left: 0.75rem;
-        }
-
         /* --- Ajustes Móviles --- */
         @media (max-width: 767px) {
             #mobile-menu-container {
                 border-bottom: 1px solid rgba(255,255,255,0.1);
             }
+            
             .nav-item {
                 width: 100%;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.05);
                 padding: 0;
             }
+
             .nav-item-content {
                 display: flex;
                 justify-content: space-between;
@@ -149,20 +151,18 @@
                 padding: 1rem 1.5rem;
             }
 
-             .dropdown-menu {
+            .dropdown-menu {
                 position: static;
                 transform: none;
                 opacity: 1;
                 visibility: visible;
                 width: 100%;
-                max-height: none; /* En móvil dejamos que expanda el menú */
                 box-shadow: none;
                 background-color: rgba(0, 0, 0, 0.3);
                 border: none;
                 border-top: 1px solid rgba(255,255,255,0.05);
                 display: none;
                 margin-top: 0;
-                padding-left: 1.5rem;
             }
             
             .arrow-icon {
@@ -173,38 +173,56 @@
             }
         }
 
-        /* Ajustes scrollbar para el dropdown */
+        /* Ajustes scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        
         .dropdown-menu::-webkit-scrollbar { width: 4px; }
         .dropdown-menu::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
         .dropdown-menu::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
 
-        /* Estilo para las figuras */
-        .figure-placeholder {
-            border: 1px dashed rgba(255, 255, 255, 0.2);
-            background-color: rgba(0, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 250px;
-            color: #64748b;
-            font-size: 0.8rem;
-            font-style: italic;
-            border-radius: 0.5rem;
+        /* --- Estilos Nuevas Figuras --- */
+        .chart-container, .model-container {
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.5s ease;
+            position: relative;
+            z-index: 10;
+        }
+
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
         }
         
+        .glow-sphere {
+            animation: pulse-slow 8s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        .bar {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .bar:hover { filter: brightness(1.3); }
+
         figcaption {
             margin-top: 1rem;
             color: #94a3b8;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 300;
+            text-align: center;
         }
     </style>
 </head>
 <body class="selection:bg-amber-500 selection:text-slate-900 min-h-screen flex flex-col overflow-x-hidden">
 
-    <!-- Navegación Responsiva (Full Width) -->
+    <!-- Navegación Responsiva -->
     <nav class="fixed w-full z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
-        <div class="w-full px-4 md:px-8">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
             <div class="flex justify-between items-center h-16">
                 
                 <!-- Logo / Marca -->
@@ -243,24 +261,18 @@
                                 </button>
                             </div>
                             
-                            <!-- Contenido del Índice -->
                             <div class="dropdown-menu">
                                 <!-- Prefacio -->
                                 <a href="#prefacio" class="dropdown-link" onclick="closeMobileMenu()">PREFACIO</a>
 
-                                <!-- Capítulo 1 -->
-                                <div class="dropdown-group-title">Cap. 1: Perspectiva Física Clásica</div>
-                                <a href="#cap1-1" class="dropdown-link" onclick="closeMobileMenu()">1.1. Propósito de la investigación</a>
-                                <!-- ... resto del indice ... -->
-
-                                <!-- Capítulo 2 -->
-                                <div class="dropdown-group-title">Cap. 2: Mecanismo de la Herencia</div>
-                                <a href="#cap2-1" class="dropdown-link" onclick="closeMobileMenu()">2.1. Suposición del físico clásico</a>
-                                <!-- ... resto del indice ... -->
+                                <!-- Capítulos anteriores (Placeholder para mantener estructura) -->
+                                <div class="dropdown-group-title">Contexto</div>
+                                <a href="#cap1-1" class="dropdown-link" onclick="closeMobileMenu()">1. Perspectiva Física Clásica</a>
+                                <a href="#cap2-1" class="dropdown-link" onclick="closeMobileMenu()">2. Mecanismo de la Herencia</a>
 
                                 <!-- Capítulo 3 -->
                                 <div class="dropdown-group-title">Cap. 3: Mutaciones</div>
-                                <a href="#cap3-1" class="dropdown-link" onclick="closeMobileMenu()">3.1. Mutaciones discontinuas</a>
+                                <a href="#cap3-1" class="dropdown-link text-amber-500" onclick="closeMobileMenu()">3.1. Mutaciones discontinuas</a>
                                 <a href="#cap3-2" class="dropdown-link" onclick="closeMobileMenu()">3.2. Herencia de mutaciones</a>
                                 <a href="#cap3-3" class="dropdown-link" onclick="closeMobileMenu()">3.3. Dominancia y recesividad</a>
                                 <a href="#cap3-5" class="dropdown-link" onclick="closeMobileMenu()">3.5. Cruces consanguíneos</a>
@@ -268,7 +280,6 @@
                                 <a href="#cap3-9" class="dropdown-link" onclick="closeMobileMenu()">3.9. Primera ley: evento aislado</a>
                                 <a href="#cap3-10" class="dropdown-link" onclick="closeMobileMenu()">3.10. Segunda ley: localización</a>
 
-                                <!-- Resto del índice omitido por brevedad visual -->
                                 <div class="mt-2 border-t border-white/10 pt-2"></div>
                                 <a href="#epilogo" class="dropdown-link" onclick="closeMobileMenu()">EPÍLOGO</a>
                             </div>
@@ -293,9 +304,7 @@
         function toggleDropdown(button) {
             const navItem = button.closest('.nav-item');
             const dropdown = navItem.querySelector('.dropdown-menu');
-            
             navItem.classList.toggle('active');
-            
             if (dropdown.style.display === 'block') {
                 dropdown.style.display = 'none';
             } else {
@@ -313,40 +322,40 @@
         }
     </script>
 
-    <!-- Contenido Principal (Full Width) -->
-    <div class="flex-grow pt-32 md:pt-48 pb-16 md:pb-24 w-full">
-        <main class="w-full text-center px-4 md:px-8">
+    <!-- Contenido Principal -->
+    <div class="flex-grow pt-32 md:pt-48 pb-16 md:pb-24 px-6 md:px-12 w-full">
+        <main class="w-full mx-auto text-center">
             
             <!-- Bloque Hero -->
             <header class="mb-24 relative animate-fade-in-up">
                 <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-amber-500/5 rounded-full blur-3xl -z-10"></div>
-
+                
                 <h1 class="text-4xl sm:text-5xl md:text-7xl font-black text-slate-100 mb-6 leading-none tracking-tighter drop-shadow-2xl break-words">
                     CAPÍTULO 3<br>
                     <span class="text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-500 text-2xl md:text-4xl block mt-4 font-serif italic">MUTACIONES</span>
                 </h1>
                 
-                <div class="mt-8 flex justify-center">
+                <div class="mt-16 flex justify-center">
                     <div class="h-24 w-px bg-gradient-to-b from-amber-500/0 via-amber-500/50 to-amber-500/0"></div>
                 </div>
             </header>
 
-             <!-- Contenido del Capítulo 3 -->
-            <section id="capitulo-3" class="w-full mx-auto mb-24 text-left bg-slate-900/40 p-4 md:p-12 rounded-xl border border-white/5 shadow-xl backdrop-blur-sm">
+            <!-- Contenido del Capítulo -->
+            <section id="capitulo-3" class="w-full mx-auto mb-24 text-left bg-slate-900/40 p-8 md:p-12 rounded-xl border border-white/5 shadow-xl backdrop-blur-sm">
                 
                 <!-- Epígrafe -->
-                <div class="flex justify-center mb-12">
-                    <blockquote class="border-l-4 border-amber-500 pl-4 italic text-slate-400">
-                        <p class="mb-2">Und was in schwankender Erscheinung schwebt, Befestiget mit dauernden Gedanken.</p>
+                <div class="flex justify-center mb-16">
+                    <blockquote class="border-l-4 border-amber-500 pl-6 italic text-slate-400 max-w-2xl">
+                        <p class="mb-2 font-serif text-lg">Und was in schwankender Erscheinung schwebt, Befestiget mit dauernden Gedanken.</p>
                         <p class="mb-2 text-sm text-slate-500 font-normal">«Y lo que oscila en apariencia fluctuante, fijadlo con ideas perdurables».</p>
-                        <footer class="text-xs mt-2 not-italic text-slate-500">— Goethe [16]</footer>
+                        <footer class="text-xs mt-3 not-italic text-amber-500 tracking-widest font-bold uppercase">— Goethe [16]</footer>
                     </blockquote>
                 </div>
 
                 <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
                     
                     <!-- 3.1 -->
-                    <h3 id="cap3-1" class="text-amber-500 font-bold text-xl mt-8 mb-4">3.1. Mutaciones discontinuas: material de trabajo de la selección natural</h3>
+                    <h3 id="cap3-1" class="text-3xl font-serif font-bold text-white mt-12 mb-6 border-l-4 border-amber-500 pl-6">3.1. Mutaciones discontinuas: material de trabajo de la selección natural</h3>
                     
                     <p>Los hechos generales que acabamos de exponer sobre la duración atribuida a la <span class="text-amber-500 font-semibold">estructura del gen</span> son quizá demasiado familiares como para sorprendernos o incluso para considerarlos convincentes. Esta vez, al menos, el refrán, según el cual la excepción confirma la regla, se convierte en realidad. Si el parecido entre padres e hijos no presentara excepciones, no solo no dispondríamos de todos esos brillantes experimentos que nos han revelado el detallado mecanismo de la herencia, sino que no se daría ese experimento a gran escala de la Naturaleza, realizado algunos millones de veces ya, que forja las especies por <span class="text-slate-100 font-semibold">selección natural</span> y supervivencia del más apto.</p>
 
@@ -355,63 +364,136 @@
                     <p>Hoy sabemos con certeza que <span class="text-slate-100 font-semibold">Darwin</span> estaba en un error al considerar las variaciones pequeñas y continuas que se presentan incluso en la población más homogénea como los fenómenos sobre los que actúa la selección natural. Se ha demostrado que esas variaciones no se heredan. El hecho es suficientemente importante como para ilustrarlo con brevedad. Si tomamos la recolección de una raza pura de cebada, medimos una por una la longitud de las espigas y construimos una gráfica con los resultados, obtendremos una curva acampanada como la de la figura 1, donde en ordenadas se indica el número de espigas de una determinada longitud y en abscisas las diversas longitudes de espiga posible. En otras palabras: domina una longitud media definida, existiendo desviaciones con determinadas frecuencias en cada dirección. Elijamos un grupo de espigas (indicado en negro en la figura) con longitudes considerablemente mayores que la media, pero cuyo número es suficiente para que puedan ser sembradas y den una nueva cosecha. Al hacer la estadística correspondiente, Darwin habría esperado encontrar que la curva se hubiese desplazado hacia la derecha. En otras palabras, se habría esperado producir por selección un aumento de la longitud media de las espigas. Esto no ocurre si se ha empleado una raza de cebada verdaderamente pura. La nueva curva estadística obtenida de la cosecha seleccionada es idéntica a la primera, y habría ocurrido lo mismo en caso de seleccionar para la siembra las espigas especialmente cortas. La selección resulta ineficaz porque las <span class="text-amber-500 font-semibold">diferencias pequeñas y continuas</span> no se heredan. Es obvio que no radican en la estructura del material hereditario, sino que, evidentemente, son accidentales. No obstante, el holandés <span class="text-slate-100 font-semibold">Hugo de Vries</span> descubrió hace unos cuarenta años que incluso en la descendencia de cepas realmente puras un número muy pequeño de individuos, algo así como dos o tres entre varias decenas de miles, aparece con cambios pequeños, pero que suponen una especie de «salto».</p>
 
                     <!-- Figura 1 -->
-                    <figure class="my-8">
-                        <div class="figure-placeholder">
-                            <div class="text-center p-6 space-y-4">
-                                <p>[Gráfico de campana de Gauss]</p>
-                                <p class="text-xs text-slate-500">Distribución de longitudes de espigas</p>
-                                <div class="w-full h-1 bg-slate-700 rounded relative">
-                                    <div class="absolute right-1/4 w-1/12 h-2 bg-amber-500 -top-0.5" title="Grupo seleccionado"></div>
-                                </div>
+                    <figure class="my-16 text-center">
+                        <div class="relative inline-block w-full max-w-5xl">
+                            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-amber-500/10 rounded-full blur-3xl -z-10 glow-sphere"></div>
+                            <div class="chart-container p-6 md:p-12 rounded-3xl shadow-2xl w-full mx-auto">
+                                <h2 class="text-amber-500 font-bold uppercase tracking-[0.3em] text-[10px] mb-8 text-center">Distribución de Caracteres</h2>
+                                <div id="d3-histogram" class="flex justify-center w-full overflow-x-auto"></div>
                             </div>
                         </div>
-                        <figcaption class="text-center mt-3 text-sm text-slate-400">
-                            <span class="font-bold text-amber-500">FIGURA 1.</span> Gráfico estadístico de la longitud de las barbas de las espigas de una raza pura de cebada. Seleccionaremos para la siembra de semillas, del grupo indicado en negro. <span class="italic text-xs">(Los datos del grafico no se refieren a un experimento real, pero sirven de ejemplo).</span>
+                        <figcaption class="mt-8">
+                            <span class="font-bold text-amber-500 tracking-widest text-xs uppercase block mb-1">Figura 1</span> 
+                            Gráfico estadístico de la longitud de las barbas de las espigas de una raza pura de cebada. Seleccionaremos para la siembra de semillas, del grupo indicado en negro. <span class="italic text-xs text-slate-500 block mt-1">(Los datos del grafico no se refieren a un experimento real, pero sirven de ejemplo).</span>
                         </figcaption>
                     </figure>
 
                     <p>La expresión «salto» no quiere significar que el cambio sea especialmente importante, sino que supone una <span class="text-amber-500 font-semibold">discontinuidad</span>, en el sentido de que no hay formas intermedias entre la forma inalterada y los pocos individuos que han cambiado. Tras su observación, De Vries les dio el nombre de <span class="text-amber-500 font-semibold">mutaciones</span>. El hecho significativo es la discontinuidad. Al físico le recuerda la <span class="text-slate-100 font-semibold">teoría cuántica</span>, según la cual no hay energías intermedias entre dos niveles energéticos contiguos. Podríamos llamar la teoría de la mutación, de forma figurada, la teoría cuántica de la Biología. Más adelante veremos que tal denominación es mucho más que figurativa. Las mutaciones se deben, de hecho, a <span class="text-amber-500 font-semibold">saltos cuánticos</span> en las moléculas del gen. Pero la teoría cuántica solo tenía dos años cuando de Vries publicó su teoría de la mutación, en el año 1902. No es, pues, extraño que se necesitase una generación más para descubrir la íntima relación entre ambas.</p>
 
                     <!-- 3.2 -->
-                    <h3 id="cap3-2" class="text-amber-500 font-bold text-xl mt-12 mb-4">3.2. Las mutaciones se heredan perfectamente</h3>
+                    <h3 id="cap3-2" class="text-3xl font-serif font-bold text-white mt-16 mb-6 border-l-4 border-amber-500 pl-6">3.2. Las mutaciones se heredan perfectamente</h3>
 
                     <p>Las mutaciones se heredan tan perfectamente como los caracteres inalterados originales. A modo de ejemplo, en la primera cosecha de cebada que veíamos antes, unas pocas espigas podían tener una longitud de barbas o aristas considerablemente alejada del nivel de variabilidad dado en la figura 1: digamos que están totalmente desprovistas de aristas. Podríamos representar una mutación de De Vries y en tal caso se reproducirían realmente, lo cual significa que todos los descendientes carecerían de aristas. Una mutación es, claramente, un cambio en el <span class="text-slate-100 font-semibold">tesoro hereditario</span> y debe atribuirse a algún cambio en la <span class="text-amber-500 font-semibold">estructura material</span> de la sustancia de la herencia. De hecho, la mayoría de los cruces experimentales de importancia, los cuales nos han revelado el mecanismo de la herencia, consisten en el análisis detallado de la descendencia obtenida al cruzar, de acuerdo con un plan preconcebido, individuos mutados (o, en muchos casos, múltiplemente mutados) con individuos no mutados o mutados de otra forma.</p>
 
                     <!-- Figura 2 -->
-                    <figure class="my-8">
-                        <div class="figure-placeholder">
-                            <div class="text-center p-6 space-y-4">
-                                <p>[Esquema de cromosomas homólogos]</p>
-                                <div class="flex justify-center gap-4 text-2xl font-bold font-mono">
-                                    <span class="text-slate-500">|</span>
-                                    <span class="text-amber-500 relative">|<span class="absolute top-1/2 -right-4 -translate-y-1/2 text-xs">❌</span></span>
+                    <figure class="my-16 text-center">
+                        <div class="relative inline-block w-full max-w-4xl">
+                            <div class="model-container p-8 md:p-12 rounded-3xl shadow-2xl w-full mx-auto">
+                                <h2 class="text-amber-500 font-bold uppercase tracking-[0.3em] text-[10px] mb-8 text-center">Mutante Heterozigótico</h2>
+                                <div class="flex justify-center">
+                                    <svg viewBox="0 0 400 350" class="w-full max-w-xs h-auto drop-shadow-2xl">
+                                        <rect x="140" y="20" width="30" height="300" rx="15" fill="#1e293b" stroke="#475569" stroke-width="2" />
+                                        <g>
+                                            <rect x="230" y="20" width="30" height="300" rx="15" fill="#1e293b" stroke="#475569" stroke-width="2" />
+                                            <g transform="translate(245, 80)">
+                                                <line x1="-15" y1="-15" x2="15" y2="15" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" />
+                                                <line x1="15" y1="-15" x2="-15" y2="15" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" />
+                                            </g>
+                                        </g>
+                                    </svg>
                                 </div>
                             </div>
                         </div>
-                        <figcaption class="text-center mt-3 text-sm text-slate-400">
-                            <span class="font-bold text-amber-500">FIGURA 2.</span> Mutante heterozigótico. La cruz señala el gen mutado.
+                        <figcaption class="mt-8">
+                            <span class="font-bold text-amber-500 tracking-widest text-xs uppercase block mb-1">Figura 2</span>
+                            Mutante heterozigótico. La cruz señala el gen mutado.
                         </figcaption>
                     </figure>
 
                     <p>Además, en virtud de su legítima transmisión, las mutaciones son un material apropiado sobre el cual puede operar la <span class="text-slate-100 font-semibold">selección natural</span> y producir las especies, según describió Darwin, eliminando los menos dotados y dejando sobrevivir a los mas aptos. Basta con sustituir en la teoría de Darwin «pequeñas variaciones accidentales» por «mutaciones» (de la misma forma que la teoría cuántica sustituye «transferencia continua de energía» por «salto cuántico»). Por lo demás, se requieren muy pocos cambios más en la teoría de Darwin, siempre que yo este interpretando correctamente el punto de vista de la mayoría de biólogos [17].</p>
 
                     <!-- 3.3 -->
-                    <h3 id="cap3-3" class="text-amber-500 font-bold text-xl mt-12 mb-4">3.3. Localización. Recesividad y dominancia</h3>
+                    <h3 id="cap3-3" class="text-3xl font-serif font-bold text-white mt-16 mb-6 border-l-4 border-amber-500 pl-6">3.3. Localización. Recesividad y dominancia</h3>
 
                     <p>Debemos revisar ahora otros hechos y nociones fundamentales referentes a las mutaciones, y de nuevo de forma algo dogmática, sin revelar directamente cómo se infieren, uno por uno, a partir de la evidencia experimental.</p>
 
-                    <p>Podríamos esperar que una determinada mutación fuera causada por un cambio en una región determinada de uno de los cromosomas. Y así es. Es importante señalar que sabemos positivamente que se trata de un cambio en solo un cromosoma, pero no en el <span class="text-italic">locus</span> correspondiente del cromosoma homólogo. La figura 2 indica esto esquemáticamente, representando la cruz el locus mutado. El hecho de que solo se vea afectado un cromosoma se revela cuando el individuo mutado (llamado frecuentemente «mutante») se cruza con un individuo no mutado: exactamente la mitad de la descendencia presenta el carácter mutante y la otra mitad el carácter normal. Esto es lo esperable como consecuencia de la separación de los cromosomas en la meiosis del mutante, tal como se ve en la figura 3 de forma muy esquemática. En ella se ve un árbol genealógico que representa cada individuo (de tres generaciones consecutivas) simplemente por el par de cromosomas en cuestión. Tómese nota de que, si el mutante tuviera los dos cromosomas alterados, todos los hijos recibirían la misma herencia (mezclada), distinta de la de cualquiera de ambos padres.</p>
+                    <p>Podríamos esperar que una determinada mutación fuera causada por un cambio en una región determinada de uno de los cromosomas. Y así es. Es importante señalar que sabemos positivamente que se trata de un cambio en solo un cromosoma, pero no en el <span class="italic">locus</span> correspondiente del cromosoma homólogo. La figura 2 indica esto esquemáticamente, representando la cruz el locus mutado. El hecho de que solo se vea afectado un cromosoma se revela cuando el individuo mutado (llamado frecuentemente «mutante») se cruza con un individuo no mutado: exactamente la mitad de la descendencia presenta el carácter mutante y la otra mitad el carácter normal. Esto es lo esperable como consecuencia de la separación de los cromosomas en la meiosis del mutante, tal como se ve en la figura 3 de forma muy esquemática. En ella se ve un árbol genealógico que representa cada individuo (de tres generaciones consecutivas) simplemente por el par de cromosomas en cuestión. Tómese nota de que, si el mutante tuviera los dos cromosomas alterados, todos los hijos recibirían la misma herencia (mezclada), distinta de la de cualquiera de ambos padres.</p>
 
                     <!-- Figura 3 -->
-                    <figure class="my-8">
-                        <div class="figure-placeholder">
-                            <div class="text-center p-6 space-y-2">
-                                <p>[Árbol genealógico simplificado]</p>
-                                <p class="text-xs text-slate-500">Generaciones I, II, III</p>
+                    <figure class="my-16 text-center">
+                        <div class="relative inline-block w-full max-w-4xl">
+                            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-amber-500/5 rounded-full blur-3xl -z-10 glow-sphere"></div>
+                            <div class="model-container p-6 md:p-12 rounded-3xl shadow-2xl w-full mx-auto">
+                                <h2 class="text-amber-500 font-bold uppercase tracking-[0.3em] text-[10px] mb-8 text-center">Herencia de una mutación</h2>
+                                <div class="flex justify-center overflow-x-auto">
+                                    <svg viewBox="0 0 1000 600" class="w-full max-w-3xl h-auto">
+                                        <defs>
+                                            <g id="chrom-normal">
+                                                <rect x="-6" y="-30" width="4" height="60" rx="2" fill="#334155" />
+                                                <rect x="2" y="-30" width="4" height="60" rx="2" fill="#334155" />
+                                            </g>
+                                            <g id="chrom-mutant">
+                                                <rect x="-6" y="-30" width="4" height="60" rx="2" fill="#334155" />
+                                                <rect x="2" y="-15" width="4" height="45" rx="2" fill="#f59e0b" />
+                                            </g>
+                                        </defs>
+                                        <g stroke="#475569" fill="none">
+                                            <line x1="400" y1="110" x2="200" y2="190" stroke-width="1.5" />
+                                            <line x1="400" y1="110" x2="400" y2="190" stroke-width="1.5" />
+                                            <line x1="400" y1="110" x2="600" y2="190" stroke-width="1.5" />
+                                            <line x1="400" y1="110" x2="800" y2="190" stroke-width="1.5" />
+                                            <line x1="600" y1="110" x2="200" y2="190" stroke-width="1.5" />
+                                            <line x1="600" y1="110" x2="400" y2="190" stroke-width="1.5" />
+                                            <g stroke-width="3" stroke="#f59e0b" opacity="0.6">
+                                                <line x1="600" y1="110" x2="600" y2="190" />
+                                                <line x1="600" y1="110" x2="800" y2="190" />
+                                            </g>
+                                        </g>
+                                        <g>
+                                            <circle cx="400" cy="70" r="45" fill="none" stroke="#475569" stroke-width="1.5" />
+                                            <use href="#chrom-normal" transform="translate(400, 70)" />
+                                            <circle cx="600" cy="70" r="45" fill="none" stroke="#475569" stroke-width="1.5" />
+                                            <use href="#chrom-mutant" transform="translate(600, 70)" />
+                                        </g>
+                                        <g transform="translate(0, 180)">
+                                            <circle cx="200" cy="70" r="40" fill="none" stroke="#475569" stroke-width="1" />
+                                            <use href="#chrom-normal" transform="translate(200, 70)" />
+                                            <circle cx="400" cy="70" r="40" fill="none" stroke="#475569" stroke-width="1" />
+                                            <use href="#chrom-normal" transform="translate(400, 70)" />
+                                            <circle cx="600" cy="70" r="40" fill="none" stroke="#475569" stroke-width="1" />
+                                            <use href="#chrom-mutant" transform="translate(600, 70)" />
+                                            <circle cx="800" cy="70" r="40" fill="none" stroke="#475569" stroke-width="1" />
+                                            <use href="#chrom-mutant" transform="translate(800, 70)" />
+                                        </g>
+                                        <g stroke="#475569" fill="none" transform="translate(0, 250)">
+                                            <line x1="200" y1="70" x2="100" y2="150" stroke-width="1" />
+                                            <line x1="200" y1="70" x2="200" y2="150" stroke-width="1" />
+                                            <line x1="400" y1="70" x2="350" y2="150" stroke-width="1" />
+                                            <line x1="400" y1="70" x2="450" y2="150" stroke-width="1" />
+                                            <line x1="600" y1="70" x2="550" y2="150" stroke-width="1" />
+                                            <line x1="800" y1="70" x2="800" y2="150" stroke-width="1" />
+                                            <g stroke-width="2.5" stroke="#f59e0b" opacity="0.6">
+                                                <line x1="600" y1="70" x2="650" y2="150" />
+                                                <line x1="800" y1="70" x2="900" y2="150" />
+                                            </g>
+                                        </g>
+                                        <g transform="translate(0, 420)">
+                                            <circle cx="100" cy="50" r="30" fill="none" stroke="#475569" stroke-width="0.8" /> <use href="#chrom-normal" transform="translate(100, 50) scale(0.8)" />
+                                            <circle cx="200" cy="50" r="30" fill="none" stroke="#475569" stroke-width="0.8" /> <use href="#chrom-normal" transform="translate(200, 50) scale(0.8)" />
+                                            <circle cx="350" cy="50" r="30" fill="none" stroke="#475569" stroke-width="0.8" /> <use href="#chrom-normal" transform="translate(350, 50) scale(0.8)" />
+                                            <circle cx="450" cy="50" r="30" fill="none" stroke="#475569" stroke-width="0.8" /> <use href="#chrom-normal" transform="translate(450, 50) scale(0.8)" />
+                                            <circle cx="550" cy="50" r="30" fill="none" stroke="#475569" stroke-width="0.8" /> <use href="#chrom-normal" transform="translate(550, 50) scale(0.8)" />
+                                            <circle cx="650" cy="50" r="30" fill="none" stroke="#475569" stroke-width="0.8" /> <use href="#chrom-mutant" transform="translate(650, 50) scale(0.8)" />
+                                            <circle cx="800" cy="50" r="30" fill="none" stroke="#475569" stroke-width="0.8" /> <use href="#chrom-normal" transform="translate(800, 50) scale(0.8)" />
+                                            <circle cx="900" cy="50" r="30" fill="none" stroke="#475569" stroke-width="0.8" /> <use href="#chrom-mutant" transform="translate(900, 50) scale(0.8)" />
+                                        </g>
+                                    </svg>
+                                </div>
                             </div>
                         </div>
-                        <figcaption class="text-center mt-3 text-sm text-slate-400">
-                            <span class="font-bold text-amber-500">FIGURA 3.</span> Herencia de una mutación. Las líneas rectas indican la transferencia de un cromosoma, las dobles, de un cromosoma mutado. <span class="italic text-xs">Los cromosomas incorporados en la tercera generación proceden de las «parejas» de la segunda generación, que no se incluyen en el diagrama. Se supone que serán no relativos, ajenos a la mutación.</span>
+                        <figcaption class="mt-8">
+                            <span class="font-bold text-amber-500 tracking-widest text-xs uppercase block mb-1">Figura 3</span>
+                            Herencia de una mutación. Las líneas rectas indican la transferencia de un cromosoma, las dobles, de un cromosoma mutado. <span class="italic text-xs text-slate-500 block mt-1">Los cromosomas incorporados en la tercera generación proceden de las «parejas» de la segunda generación, que no se incluyen en el diagrama. Se supone que serán no relativos, ajenos a la mutación.</span>
                         </figcaption>
                     </figure>
 
@@ -420,25 +502,40 @@
                     <p>Lo que en realidad ocurre es que el «esquema» del individuo, por regla general, sigue una u otra versión, que puede ser la normal o la mutante. La versión elegida es llamada «<span class="text-amber-500 font-semibold">dominante</span>», y la otra «<span class="text-amber-500 font-semibold">recesiva</span>»; dicho de otro modo, la mutación se llama dominante o recesiva según consiga o no cambiar inmediatamente la estructura. Las mutaciones recesivas son incluso mas frecuentes que las dominantes y revisten gran importancia, a pesar de que no se muestren desde un principio. Para alterar la estructura, deben estar presentes en ambos cromosomas (véase la figura 4). Tales individuos se pueden producir cuando dos mutantes igualmente recesivos se cruzan entre ellos o cuando un mutante se cruza consigo mismo; esto último puede darse en plantas hermafroditas donde ocurre incluso espontáneamente. Es fácil comprender que, en estos casos, aproximadamente un cuarto de la descendencia será de este tipo, y por consiguiente mostrará la mutación de forma visible.</p>
 
                     <!-- 3.4 -->
-                    <h3 id="cap3-4" class="text-amber-500 font-bold text-xl mt-12 mb-4">3.4. Introducción de un poco de lenguaje técnico</h3>
+                    <h3 id="cap3-4" class="text-3xl font-serif font-bold text-white mt-16 mb-6 border-l-4 border-amber-500 pl-6">3.4. Introducción de un poco de lenguaje técnico</h3>
 
                     <p>Creo que para mayor claridad vale la pena explicar aquí algunos términos técnicos. Para lo que he llamado «versión del texto cifrado» (sea la original o la mutante), se ha adoptado el término «<span class="text-slate-100 font-semibold">alelo</span>».</p>
 
                     <!-- Figura 4 -->
-                    <figure class="my-8">
-                        <div class="figure-placeholder">
-                            <div class="text-center p-6 space-y-4">
-                                <p>[Cruzamiento de heterocigotos]</p>
-                                <div class="grid grid-cols-2 gap-4 max-w-xs mx-auto text-xs">
-                                    <div class="border border-slate-600 p-2">Normal</div>
-                                    <div class="border border-amber-500/50 p-2">Portador</div>
-                                    <div class="border border-amber-500/50 p-2">Portador</div>
-                                    <div class="bg-amber-900/30 border border-amber-500 p-2 text-amber-500 font-bold">Mutado (1/4)</div>
+                    <figure class="my-16 text-center">
+                        <div class="relative inline-block w-full max-w-4xl">
+                            <div class="model-container p-8 md:p-12 rounded-3xl shadow-2xl w-full mx-auto">
+                                <h2 class="text-amber-500 font-bold uppercase tracking-[0.3em] text-[10px] mb-8 text-center">Estado Homocigoto</h2>
+                                <div class="flex justify-center">
+                                    <svg viewBox="0 0 400 350" class="w-full max-w-xs h-auto drop-shadow-2xl">
+                                        <!-- Cromosoma Mutante 1 -->
+                                        <g>
+                                            <rect x="140" y="20" width="30" height="300" rx="15" fill="#1e293b" stroke="#475569" stroke-width="2" />
+                                            <g transform="translate(155, 80)">
+                                                <line x1="-15" y1="-15" x2="15" y2="15" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" />
+                                                <line x1="15" y1="-15" x2="-15" y2="15" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" />
+                                            </g>
+                                        </g>
+                                        <!-- Cromosoma Mutante 2 -->
+                                        <g>
+                                            <rect x="230" y="20" width="30" height="300" rx="15" fill="#1e293b" stroke="#475569" stroke-width="2" />
+                                            <g transform="translate(245, 80)">
+                                                <line x1="-15" y1="-15" x2="15" y2="15" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" />
+                                                <line x1="15" y1="-15" x2="-15" y2="15" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" />
+                                            </g>
+                                        </g>
+                                    </svg>
                                 </div>
                             </div>
                         </div>
-                        <figcaption class="text-center mt-3 text-sm text-slate-400">
-                            <span class="font-bold text-amber-500">FIGURA 4.</span> Homozigótico en una cuarta parte de los descendientes, bien por auto fertilización de un heterozigótico mutante (ver figura 2), bien por cruce entre un par de estos.
+                        <figcaption class="mt-8">
+                            <span class="font-bold text-amber-500 tracking-widest text-xs uppercase block mb-1">Figura 4</span>
+                            Homozigótico en una cuarta parte de los descendientes, bien por auto fertilización de un heterozigótico mutante (ver figura 2), bien por cruce entre un par de estos.
                         </figcaption>
                     </figure>
 
@@ -446,14 +543,14 @@
 
                     <p>La presencia de color es muy a menudo dominante sobre la falta de color (o blanco). Así, por ejemplo, un guisante tendrá flores blancas solo cuando posee «el alelo recesivo causante de blanco en ambos cromosomas en cuestión, cuando es «homozigótico para el blanco»; al autofecundarse, todos sus descendientes serán blancos. Pero basta con un «alelo rojo» (si el otro es blanco, «heterozigoto») para que la flor sea roja, e igual ocurrirá cuando los dos alelos son rojos («homozigoto»). La diferencia entre estos dos últimos casos solo se manifiesta en la descendencia, cuando el heterozigoto rojo produce algunos descendientes blancos, y el homozigoto rojo siempre los produce rojos. El hecho de que dos individuos puedan ser exactamente iguales en su apariencia externa y diferir en su herencia es tan importante como para justificar una diferenciación exacta. El genetista dice que tienen el mismo <span class="text-amber-500 font-semibold">fenotipo</span> pero distinto <span class="text-amber-500 font-semibold">genotipo</span>. El contenido de los párrafos anteriores podría resumirse con esta afirmación, breve pero muy técnica:</p>
 
-                    <blockquote class="border-l-2 border-slate-500 pl-4 my-4 italic text-slate-300">
+                    <blockquote class="border-l-4 border-slate-600 pl-6 my-8 py-2 italic text-slate-300 bg-slate-900/30 rounded-r-lg">
                         Un alelo recesivo solo afecta al fenotipo cuando el genotipo es homozigótico.
                     </blockquote>
 
                     <p>Pocas veces usaremos estas expresiones técnicas, pero recordaremos su significado al lector donde sea necesario.</p>
 
                     <!-- 3.5 -->
-                    <h3 id="cap3-5" class="text-amber-500 font-bold text-xl mt-12 mb-4">3.5. Efecto perjudicial de los cruces consanguíneos</h3>
+                    <h3 id="cap3-5" class="text-3xl font-serif font-bold text-white mt-16 mb-6 border-l-4 border-amber-500 pl-6">3.5. Efecto perjudicial de los cruces consanguíneos</h3>
 
                     <p>Las mutaciones recesivas, mientras estén en heterozigotos, no presentan, desde luego, un material de trabajo para la selección natural. Aunque sean perjudiciales, cosa que ocurre muy a menudo con las mutaciones, no resultan eliminadas, ya que se encuentran latentes. En consecuencia, se puede acumular una cantidad considerable de mutaciones desfavorables, sin suponer un perjuicio inmediato. Pero, evidentemente, son transmitidas a la mitad de la descendencia, y esto tiene importantes consecuencias para el hombre, para el ganado, aves domésticas, y cualquier otra especie, allí donde nos interese mantener o aumentar las buenas cualidades físicas. En la figura 3, suponemos que un individuo macho (digamos, en concreto, yo) lleva heterozigóticamente una mutación perjudicial, de forma que no se manifiesta. Supongamos que mi mujer no la lleva. Entonces, la mitad de nuestros hijos (segunda línea) también los llevarán (otra vez heterozigóticamente). Si todos ellos se casan con parejas no mutadas (que hemos omitido en el diagrama para evitar confusiones), un cuarto de nuestros nietos, por término medio, estará afectado de la misma forma.</p>
 
@@ -462,19 +559,19 @@
                     <p>De la misma forma, el factor de peligro resulta ser <span class="text-slate-100 font-semibold">1/64</span> para la descendencia de una unión entre dos de mis nietos que son primos hermanos. Esta probabilidad no parece ser excesiva y en efecto el segundo caso se tolera por regla general. Pero no olvidemos que hemos analizado las consecuencias de solo una malformación latente en uno de los miembros de la pareja inicial (mi mujer y yo). De hecho, es bastante probable que ambos sean portadores de varias deficiencias latentes de este tipo. Si alguien se sabe portador de una determinada deficiencia de esta clase, puede contar con que uno de cada ocho primos hermanos también lo es. Experimentos realizados con plantas y animales parecen indicar que, además de algunas deficiencias importantes, relativamente raras, existe una multitud de deficiencias menores que, combinando sus probabilidades, deterioran globalmente la descendencia de los cruces consanguíneos. Siendo así que ya no eliminamos los errores en la forma drástica en que lo hacían los lacedemonios en el Monte Taigeto, debemos considerar este tema muy seriamente en el caso del hombre, donde la selección natural del más apto se ha disminuido grandemente, o incluso invertido. El efecto antiselectivo de las modernas matanzas sobre la juventud sana de todo el mundo muy difícilmente puede considerarse compensada por la apreciación de que, en condiciones mas primitivas, la guerra pudo haber tenido un valor positivo al permitir la supervivencia de la tribu mas apta.</p>
 
                     <!-- 3.6 -->
-                    <h3 id="cap3-6" class="text-amber-500 font-bold text-xl mt-12 mb-4">3.6. Consideraciones históricas y generales</h3>
+                    <h3 id="cap3-6" class="text-3xl font-serif font-bold text-white mt-16 mb-6 border-l-4 border-amber-500 pl-6">3.6. Consideraciones históricas y generales</h3>
 
                     <p>Es sorprendente el hecho de que el alelo recesivo, en un heterozigoto, sea totalmente superado por el dominante y no produzca efecto visible alguno. Debería mencionarse al menos que existen excepciones de este comportamiento. Cuando una planta de «boca de dragón» (<span class="italic">Antirrhinum majus</span>) homozigótica blanca se cruza con una roja, también homozigótica, todos los descendientes inmediatos tienen un color intermedio, son rosados (no rojos, como cabría esperar). Un caso mucho más importante de dos alelos que presentan sus efectos simultáneamente lo tenemos en los grupos sanguíneos, pero no podemos entrar en el tema aquí. No me sorprendería si resultara que la recesividad presentara distintos grados y dependiera de la sensibilidad de las pruebas que utilizamos para analizar el fenotipo.</p>
 
                     <p>Éste es quizá el momento apropiado para hacer un breve comentario sobre la historia de la Genética. La base de la teoría, la ley de la herencia, la transmisión a generaciones sucesivas de propiedades distintas de los padres, y, más especialmente, la significativa distinción entre recesivo y dominante, se deben al fraile agustino, hoy en día mundialmente famoso, <span class="text-slate-100 font-semibold">Gregor Mendel</span> (1822-1884). Mendel no supo nada de mutaciones ni cromosomas. En los jardines de su convento en Brno (Brünn), experimentó con el guisante (<span class="italic">Pisum sativum</span>), cultivando distintas variedades, cruzándolas y observando su descendencia en la primera, segunda, tercera... generaciones. Podría decirse que experimentó con mutantes que encontró ya preparados en la Naturaleza. Publicó sus resultados en la temprana fecha de 1866 en los <span class="italic">Verhandlugen naturforschender Verein in Brünn</span> (Informes de la Sociedad para el estudio de la Naturaleza de Brno). Parece que nadie se interesó por la ocupación de aficionado del fraile y, a buen seguro, nadie tuvo la menor idea de que aquel descubrimiento se convertiría en el siglo XX en la piedra angular de toda una nueva rama de la Ciencia, probablemente la más interesante de nuestros días. Su trabajo quedó olvidado y no fue redescubierto hasta 1900, de forma simultánea e independiente, por <span class="text-slate-100 font-semibold">Correns</span> (Berlín), <span class="text-slate-100 font-semibold">De Vries</span> (Ámsterdam) y <span class="text-slate-100 font-semibold">Tschermak</span> (Viena).</p>
 
                     <!-- 3.7 -->
-                    <h3 id="cap3-7" class="text-amber-500 font-bold text-xl mt-12 mb-4">3.7. La mutación debe ser un acontecimiento poco frecuente</h3>
+                    <h3 id="cap3-7" class="text-3xl font-serif font-bold text-white mt-16 mb-6 border-l-4 border-amber-500 pl-6">3.7. La mutación debe ser un acontecimiento poco frecuente</h3>
 
                     <p>Hasta aquí hemos dedicado nuestra atención a las mutaciones perjudiciales, que son, probablemente, las más abundantes; pero debe quedar claro que también se encuentran mutaciones beneficiosas. Si consideramos la mutación espontánea como un pequeño paso en el desarrollo de las especies, podemos imaginar que algún cambio ha sido «probado» de forma bastante aleatoria y con el riesgo de resultar perjudicial, en cuyo caso es eliminado automáticamente. Esto nos coloca frente a un aspecto muy importante del asunto. Para que las mutaciones puedan constituir un material apropiado para el trabajo de la selección natural, deben ser acontecimientos raros, poco frecuentes, como efectivamente ocurre. Si fueran tan frecuentes que hubiera una probabilidad de presentarse, por ejemplo, una docena de mutaciones en un mismo individuo, las mutaciones perjudiciales predominarían, en general, sobre las beneficiosas y la especie, en lugar de mejorar por selección, permanecería inalterada o perecería. La relativa <span class="text-amber-500 font-semibold">estabilidad</span> que resulta del alto grado de permanencia de los genes es esencial. Podríamos buscar una analogía en el funcionamiento de una fábrica. Para desarrollar métodos mejores, innovaciones que no se conocen, deben hacerse pruebas. Pero, para averiguar si las modificaciones aumentan o disminuyen el rendimiento, es imprescindible que sea introducida una sola cada vez, manteniendo constantes las demás partes del mecanismo.</p>
 
                     <!-- 3.8 -->
-                    <h3 id="cap3-8" class="text-amber-500 font-bold text-xl mt-12 mb-4">3.8. Mutaciones inducidas por los rayos X</h3>
+                    <h3 id="cap3-8" class="text-3xl font-serif font-bold text-white mt-16 mb-6 border-l-4 border-amber-500 pl-6">3.8. Mutaciones inducidas por los rayos X</h3>
 
                     <p>Veamos ahora, brevemente, una serie de trabajos de investigación genética extremadamente ingeniosos que nos mostrarán la característica más significativa de nuestro análisis.</p>
 
@@ -483,22 +580,22 @@
                     <p>Los experimentos con mutaciones producidas por rayos X dan la impresión de que cada «transición» particular, por ejemplo del individuo normal a un mutante determinado, o al revés, tiene su «coeficiente de rayos X», individual, el cual indica el porcentaje de la descendencia que resulta haber mutado de aquella forma determinada, cuando se le ha aplicado una dosis unitaria de rayos X a los padres, antes de engendrar a los descendientes.</p>
 
                     <!-- 3.9 -->
-                    <h3 id="cap3-9" class="text-amber-500 font-bold text-xl mt-12 mb-4">3.9. Primera ley. La mutación es un acontecimiento aislado</h3>
+                    <h3 id="cap3-9" class="text-3xl font-serif font-bold text-white mt-16 mb-6 border-l-4 border-amber-500 pl-6">3.9. Primera ley. La mutación es un acontecimiento aislado</h3>
 
                     <p>Las leyes que gobiernan la frecuencia de mutación inducida son extremadamente simples e ilustrativas en extremo. Sigo aquí el informe de N. W. Timofeeff, en <span class="italic">Biological Reviews</span>, vol. 9, 1934. Gran parte del mismo hace referencia al brillante trabajo del propio autor. La primera ley dice:</p>
 
-                    <ol class="list-decimal pl-6 space-y-2 marker:text-amber-500">
+                    <ol class="list-decimal pl-6 space-y-4 marker:text-amber-500 marker:font-bold">
                         <li>El aumento es exactamente <span class="text-amber-500 font-semibold">proporcional a la dosis</span> de rayos, de forma que puede hablarse realmente de un coeficiente de aumento.</li>
                     </ol>
 
                     <p>Estamos tan acostumbrados a la proporcionalidad simple que corremos el riesgo de menospreciar las consecuencias de largo alcance de esta simple ley. Para captarlas, podemos recordar que el precio de un artículo, por ejemplo, no es siempre proporcional a su valor. En condiciones normales, un tendero puede quedarse tan impresionado por el hecho de que se le hayan comprado seis melones que, al solicitarle una docena, puede que la ofrezca por menos del doble de precio. En tiempos de escasez, puede ocurrir lo contrario. En el caso que nos ocupa, llegamos a la conclusión de que la primera mitad de la dosis provoca, por ejemplo, la mutación de un descendiente de cada 1000, pero no influye en absoluto sobre el resto, ni predisponiéndolos ni inmunizándolos contra la mutación. De no ser así, la segunda mitad de la dosis no provocaría igualmente un mutante de entre mil. La mutación no es, pues, un efecto acumulativo, causado por pequeñas porciones de variación consecutivas que se refuerzan mutuamente. La mutación debe consistir, de hecho, en algún <span class="text-amber-500 font-semibold">acontecimiento único</span> que se da en un cromosoma durante la irradiación. ¿De qué tipo de acontecimiento se trata?</p>
 
                     <!-- 3.10 -->
-                    <h3 id="cap3-10" class="text-amber-500 font-bold text-xl mt-12 mb-4">3.10. Segunda ley. Localización del acontecimiento</h3>
+                    <h3 id="cap3-10" class="text-3xl font-serif font-bold text-white mt-16 mb-6 border-l-4 border-amber-500 pl-6">3.10. Segunda ley. Localización del acontecimiento</h3>
 
                     <p>Encontraremos la respuesta en la segunda ley, que dice:</p>
 
-                    <ol start="2" class="list-decimal pl-6 space-y-2 marker:text-amber-500">
+                    <ol start="2" class="list-decimal pl-6 space-y-4 marker:text-amber-500 marker:font-bold">
                         <li>Si variamos la cualidad (longitud de onda) de los rayos dentro de un amplio margen, desde los relativamente débiles rayos X a los rayos &gamma; más fuertes, el coeficiente permanece constante, siempre que se aplique la misma dosis.</li>
                     </ol>
 
@@ -521,10 +618,44 @@
                 Reproducción digital con fines educativos.
             </p>
             <p class="text-[9px] md:text-[10px] text-slate-600 font-mono text-center">
-                SCRIPTORILIT | EX-LIBRIS
+                SCRIPTORILIT | EX-LIBRIS | 2025
             </p>
         </div>
     </footer>
 
+    <script>
+        (function() {
+            const dataset = [
+                { xVal: 1, yVal: 2 }, { xVal: 2, yVal: 4 }, { xVal: 3, yVal: 9 },
+                { xVal: 4, yVal: 20 }, { xVal: 5, yVal: 48 }, { xVal: 6, yVal: 68 },
+                { xVal: 7, yVal: 72 }, { xVal: 8, yVal: 66 }, { xVal: 9, yVal: 42 },
+                { xVal: 10, yVal: 25, highlight: true }, { xVal: 11, yVal: 10 },
+                { xVal: 12, yVal: 5 }, { xVal: 13, yVal: 2 }
+            ];
+            const margin = { top: 60, right: 60, bottom: 100, left: 100 };
+            const chartWidth = 900 - margin.left - margin.right;
+            const chartHeight = 500 - margin.top - margin.bottom;
+
+            const mainSvg = d3.select("#d3-histogram")
+                .append("svg")
+                .attr("viewBox", `0 0 ${chartWidth + margin.left + margin.right} ${chartHeight + margin.top + margin.bottom}`)
+                .attr("class", "max-w-full h-auto drop-shadow-2xl")
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const defs = mainSvg.append("defs");
+            const highlightGradient = defs.append("linearGradient").attr("id", "highlightGradient").attr("x1", "0%").attr("y1", "0%").attr("x2", "0%").attr("y2", "100%");
+            highlightGradient.append("stop").attr("offset", "0%").attr("stop-color", "#f59e0b");
+            highlightGradient.append("stop").attr("offset", "100%").attr("stop-color", "#d97706");
+
+            const xScale = d3.scaleBand().range([0, chartWidth]).domain(dataset.map(d => d.xVal)).padding(0.1);
+            const yScale = d3.scaleLinear().range([chartHeight, 0]).domain([0, d3.max(dataset, d => d.yVal) + 5]);
+
+            mainSvg.selectAll(".bar").data(dataset).enter().append("rect").attr("class", "bar").attr("x", d => xScale(d.xVal)).attr("width", xScale.bandwidth()).attr("y", chartHeight).attr("height", 0)
+                .attr("fill", d => d.highlight ? "url(#highlightGradient)" : "rgba(245, 158, 11, 0.2)")
+                .attr("rx", 4)
+                .transition().duration(1000).delay((d, i) => i * 50).attr("y", d => yScale(d.yVal)).attr("height", d => chartHeight - yScale(d.yVal));
+        })();
+    </script>
 </body>
 </html>
