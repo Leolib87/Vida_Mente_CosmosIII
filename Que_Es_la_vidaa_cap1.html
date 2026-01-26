@@ -199,6 +199,13 @@
             box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
         }
 
+        /* Ajuste de altura para móviles en la simulación */
+        @media (max-width: 640px) {
+            .sim-container { 
+                height: 500px; /* Más alto en móvil para que quepa todo al hacer zoom out */
+            }
+        }
+
         .sim-ui {
             position: absolute;
             bottom: 1rem;
@@ -217,6 +224,7 @@
             opacity: 0.95;
             transition: opacity 0.3s;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 20;
         }
         
         .sim-container:hover .sim-ui { opacity: 1; }
@@ -229,7 +237,6 @@
 
         @media (max-width: 640px) {
             .sim-controls-grid { grid-template-columns: 1fr; gap: 0.75rem; }
-            .sim-container { height: 400px; }
         }
 
         /* --- Sliders Rehechos (Estilo OCVM Alto Contraste) --- */
@@ -337,6 +344,16 @@
             background: #f59e0b;
             color: #020617;
             box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+
+        /* Estilo para la etiqueta flotante sincronizada */
+        .sim-floating-label {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 5;
+            text-align: center;
+            width: 200px;
         }
 
     </style>
@@ -569,10 +586,11 @@
                     <figure class="my-8">
                         <div id="sim-1" class="sim-container">
                             <button id="restart-1" class="restart-btn-mini">Reiniciar</button>
-                            <!-- Etiqueta BAJO LA FLECHA - AJUSTE POSICIÓN -->
-                            <div style="position: absolute; top: 18%; left: 0; width: 100%; text-align: center; pointer-events: none; z-index: 5;">
-                                <span class="text-[10px] uppercase tracking-widest text-amber-500 font-bold bg-slate-900/50 px-2 rounded">Dirección del campo magnético</span>
+                            <!-- Etiqueta Flotante sincronizada -->
+                            <div id="sim-1-label" class="sim-floating-label">
+                                <span class="text-[10px] uppercase tracking-widest text-amber-500 font-bold bg-slate-900/70 px-2 py-1 rounded shadow-lg border border-amber-500/20">Dirección del campo magnético</span>
                             </div>
+                            
                             <div class="sim-ui">
                                 <div class="sim-controls-grid">
                                     <div>
@@ -740,6 +758,9 @@
                 this.specialParticle = null;
                 this.particleTrail = null;
                 
+                // Track objects for label sync
+                this.arrowRef = null;
+                
                 this.animationId = null;
                 
                 this.init();
@@ -774,6 +795,9 @@
                 this.setupControls();
                 window.addEventListener('resize', () => this.onResize());
                 
+                // Trigger resize once to set correct frustum for mobile
+                this.onResize();
+
                 // Start Loop
                 this.animate();
             }
@@ -822,15 +846,35 @@
                 else if (this.mode === 'diffusion') this.setupDiffusion();
             }
 
+            updateLabelPosition() {
+                if (this.mode !== 'dipoles' || !this.arrowRef) return;
+                
+                const label = document.getElementById('sim-1-label');
+                if (!label) return;
+
+                // Point below the arrow (arrow is at y=7.5, length 8 horizontally)
+                // Center of arrow is at x=0, y=7.5
+                // We want label slightly below: y=6.0
+                const target = new THREE.Vector3(0, 6.0, 0);
+                
+                target.project(this.camera);
+                
+                const x = (target.x * .5 + .5) * this.container.clientWidth;
+                const y = (target.y * -.5 + .5) * this.container.clientHeight;
+
+                label.style.left = `${x}px`;
+                label.style.top = `${y}px`;
+            }
+
             // --- MODO 1: DIPOLOS ---
             setupDipoles() {
-                // Flecha de campo (MOVIDA A Y=7.5 para dejar espacio a la elipse y texto)
+                // Flecha de campo (MOVIDA A Y=7.5)
                 const arrowDir = new THREE.Vector3(1, 0, 0);
                 const arrowOrigin = new THREE.Vector3(-4, 7.5, 0);
                 const arrowLength = 8;
                 const arrowHex = 0xf59e0b;
-                const arrowHelper = new THREE.ArrowHelper(arrowDir, arrowOrigin, arrowLength, arrowHex, 0.5, 0.5);
-                this.scene.add(arrowHelper);
+                this.arrowRef = new THREE.ArrowHelper(arrowDir, arrowOrigin, arrowLength, arrowHex, 0.5, 0.5);
+                this.scene.add(this.arrowRef);
 
                 // Add Ellipse Border (Blanco y visible)
                 const curve = new THREE.EllipseCurve(0, 0, 9, 5, 0, 2 * Math.PI, false, 0);
@@ -845,7 +889,7 @@
                 const coneMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
 
                 const placedPositions = [];
-                const minDistance = 0.85; // slightly increased to avoid overlap with higher density
+                const minDistance = 0.85;
 
                 // Loop para llenar la elipse (Intento de 100 partículas para llenar bien el espacio)
                 for (let i = 0; i < 100; i++) {
@@ -857,7 +901,7 @@
                         x = (Math.random() - 0.5) * 17.5; 
                         y = (Math.random() - 0.5) * 9.5;  
                         
-                        // Check elipse estricta con margen interno pequeño: (x^2 / 8.5^2) + (y^2 / 4.5^2) <= 1
+                        // Check elipse estricta con margen interno pequeño
                         if ( (x*x)/(8.2*8.2) + (y*y)/(4.2*4.2) > 1 ) {
                             invalid = true;
                         }
@@ -971,6 +1015,9 @@
                 this.animationId = requestAnimationFrame(() => this.animate());
                 const time = Date.now() * 0.001;
 
+                // Sync labels
+                this.updateLabelPosition();
+
                 if (this.mode === 'dipoles') {
                     this.objects.forEach(d => {
                         const noise = (Math.sin(time * 2.5 + d.userData.seed) + Math.cos(time * 1.8 + d.userData.seed)) * this.params.temperature;
@@ -1055,7 +1102,13 @@
                 const width = this.container.clientWidth;
                 const height = this.container.clientHeight;
                 const aspect = width / height;
-                const d = 11;
+                
+                // Adaptive frustum
+                let d = 11;
+                const minWidth = 22;
+                if (d * aspect < minWidth / 2) {
+                    d = minWidth / 2 / aspect;
+                }
                 
                 this.camera.left = -d * aspect; 
                 this.camera.right = d * aspect;
