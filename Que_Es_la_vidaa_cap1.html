@@ -736,10 +736,11 @@
     <!-- LOGICA DE SIMULACIÓN -->
     <script>
         class PhysicsSimulation {
-            constructor(containerId, mode, controlIds) {
+            constructor(containerId, mode, controlIds, sceneBounds = { width: 22, height: 16 }) {
                 this.container = document.getElementById(containerId);
                 this.mode = mode; // 'dipoles', 'brownian', 'diffusion'
                 this.controlIds = controlIds;
+                this.sceneBounds = sceneBounds;
                 
                 // Parámetros por defecto según modo
                 this.params = {
@@ -983,12 +984,14 @@
                 // Agregar Borde del Contenedor
                 const boundsX = 14;
                 const boundsY = 6;
+                // Move entire rect up by 1.5 units
+                const offsetY = 1.5;
                 const rectPoints = [
-                    new THREE.Vector3(-boundsX, boundsY, 0),
-                    new THREE.Vector3(boundsX, boundsY, 0),
-                    new THREE.Vector3(boundsX, -boundsY, 0),
-                    new THREE.Vector3(-boundsX, -boundsY, 0),
-                    new THREE.Vector3(-boundsX, boundsY, 0)
+                    new THREE.Vector3(-boundsX, boundsY + offsetY, 0),
+                    new THREE.Vector3(boundsX, boundsY + offsetY, 0),
+                    new THREE.Vector3(boundsX, -boundsY + offsetY, 0),
+                    new THREE.Vector3(-boundsX, -boundsY + offsetY, 0),
+                    new THREE.Vector3(-boundsX, boundsY + offsetY, 0)
                 ];
                 const lineGeom = new THREE.BufferGeometry().setFromPoints(rectPoints);
                 const lineMat = new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.5 });
@@ -999,13 +1002,14 @@
                 
                 for (let i = 0; i < 200; i++) {
                     const p = new THREE.Mesh(geom, matA);
-                    // Concentrados a la izquierda (ajustado para estar dentro del borde)
+                    // Concentrados a la izquierda (ajustado para estar dentro del borde y desplazado verticalmente)
                     // Borde izquierdo es -14. Los ponemos entre -13.5 y -10.5
-                    p.position.set(-12 + (Math.random() - 0.5) * 3.0, (Math.random()-0.5)*10, 0); 
+                    p.position.set(-12 + (Math.random() - 0.5) * 3.0, (Math.random()-0.5)*10 + offsetY, 0); 
                     
                     p.userData = { 
                         vx: (Math.random()-0.5) * 0.1 + 0.05, // Tendencia derecha inicial
-                        vy: (Math.random()-0.5) * 0.1 
+                        vy: (Math.random()-0.5) * 0.1,
+                        offsetY: offsetY
                     };
                     this.scene.add(p);
                     this.gasParticles.push(p);
@@ -1078,10 +1082,14 @@
                     }
                 } else if (this.mode === 'diffusion') {
                     const speedFactor = this.params.diffusionSpeed * (0.5 + this.params.temperature * 0.5);
-                    const boundsX = 14; // Un poco menos que ancho pantalla
+                    const boundsX = 14; 
                     const boundsY = 6;
+                    // Account for offsetY in bounds check
+                    const offsetY = 1.5;
 
                     this.gasParticles.forEach(p => {
+                        const baseOffsetY = p.userData.offsetY || 0;
+                        
                         p.userData.vx += (Math.random() - 0.5) * 0.01 * this.params.temperature;
                         p.userData.vy += (Math.random() - 0.5) * 0.01 * this.params.temperature;
                         
@@ -1090,8 +1098,10 @@
 
                         if (p.position.x > boundsX) { p.position.x = boundsX; p.userData.vx *= -1; }
                         if (p.position.x < -boundsX) { p.position.x = -boundsX; p.userData.vx *= -1; }
-                        if (p.position.y > boundsY) { p.position.y = boundsY; p.userData.vy *= -1; }
-                        if (p.position.y < -boundsY) { p.position.y = -boundsY; p.userData.vy *= -1; }
+                        
+                        // Check Y bounds shifted by offsetY
+                        if (p.position.y > boundsY + baseOffsetY) { p.position.y = boundsY + baseOffsetY; p.userData.vy *= -1; }
+                        if (p.position.y < -boundsY + baseOffsetY) { p.position.y = -boundsY + baseOffsetY; p.userData.vy *= -1; }
                     });
                 }
 
@@ -1104,13 +1114,16 @@
                 const height = this.container.clientHeight;
                 const aspect = width / height;
                 
-                // Adaptive frustum
-                let d = 11;
-                const minWidth = 22;
-                if (d * aspect < minWidth / 2) {
-                    d = minWidth / 2 / aspect;
-                }
+                // Adaptive frustum calculation based on scene bounds
+                // Determine camera zoom (d)
+                const targetW = this.sceneBounds.width;
+                const targetH = this.sceneBounds.height;
                 
+                let d = Math.max(targetH / 2, targetW / (2 * aspect));
+                
+                // Add padding
+                d *= 1.1;
+
                 this.camera.left = -d * aspect; 
                 this.camera.right = d * aspect;
                 this.camera.top = d; 
@@ -1123,23 +1136,26 @@
 
         // Inicializar Simulaciones
         window.addEventListener('load', () => {
+            // Sim 1: Dipoles (Ellipse 18x10, Arrow at y=7.5) -> Bounds ~22x18
             new PhysicsSimulation('sim-1', 'dipoles', { 
                 sliderA: 'slider-1-a', valA: 'val-1-a',
                 sliderB: 'slider-1-b', valB: 'val-1-b',
                 restart: 'restart-1'
-            });
+            }, { width: 22, height: 18 });
 
+            // Sim 2: Brownian (Two boxes -8 to 8, y -5 to 5) -> Bounds ~20x12
             new PhysicsSimulation('sim-2', 'brownian', { 
                 sliderA: 'slider-2-a', valA: 'val-2-a',
                 sliderB: 'slider-2-b', valB: 'val-2-b',
                 restart: 'restart-2'
-            });
+            }, { width: 20, height: 12 });
 
+            // Sim 3: Diffusion (Box -14 to 14, y -6 to 6 + offset 1.5) -> Bounds ~30x16
             new PhysicsSimulation('sim-3', 'diffusion', { 
                 sliderA: 'slider-3-a', valA: 'val-3-a',
                 sliderB: 'slider-3-b', valB: 'val-3-b',
                 restart: 'restart-3'
-            });
+            }, { width: 32, height: 16 });
         });
     </script>
 </body>
