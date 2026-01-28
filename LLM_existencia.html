@@ -5,585 +5,568 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transformando la Agencia: LLMs y su Modo de Existencia | O.C.V.M.</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js" defer></script>
     <style>
-        /* Variables de CSS para colores y fuentes */
-        :root {
-            --primary: #818cf8;
-            --primary-dark: #6366f1;
-            --secondary: #22d3ee;
-            --primary-text: #e5e7eb;
-            --primary-glow: #818cf8;
-            --secondary-glow: #22d3ee;
-            --font-main: 'Inter', sans-serif;
-            --nav-height: 70px;
-            --concept-color-1: #fbbf24; /* Amarillo para conceptos principales */
-            --concept-color-2: #34d399; /* Verde para conceptos secundarios */
-            --person-color: #f472b6;    /* Rosa para nombres de personas */
-        }
-
-        /* Estilos generales para el cuerpo de la página */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+        
         body {
-            background-color: #000000;
-            color: var(--primary-text);
-            font-family: var(--font-main);
-            line-height: 1.8;
-            overflow-x: hidden;
-            text-align: justify;
-        }
-        p {
-            text-align: justify;
-            margin-bottom: 1rem;
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #94a3b8; /* slate-400 */
+            scroll-behavior: smooth;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 70%);
+            background-attachment: fixed;
         }
 
-        /* Canvas de fondo con animación Three.js */
-        #bg-canvas {
-            position: fixed;
-            top: 0;
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* --- Estilos de Navegación Desktop --- */
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+            cursor: pointer;
+            display: block;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -2px;
             left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            cursor: crosshair;
-        }
-
-        /* Estilo de glassmorphism para secciones y navegación */
-        .glassmorphism {
-            background: rgba(17, 24, 39, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Estilos para el menú de navegación en móviles */
-        body.menu-open { overflow: hidden; }
-        
-        nav {
-            position: fixed; top: 0; width: 100%; height: var(--nav-height);
-            z-index: 1000;
-            display: flex; justify-content: center; align-items: center;
-            padding: 0 5%;
-            pointer-events: auto;
-        }
-
-        .nav-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
+            background-color: #f59e0b;
+            transition: width 0.3s ease;
         }
         
-        .nav-logo a {
-            font-size: 1.3em;
-            font-weight: 700;
-            color: #fff;
-            text-decoration: none;
-            text-shadow: 0 0 8px var(--primary-glow);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 1rem;}
-        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
-        nav .nav-container > li > a {
-            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
-            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
-        }
-        nav . nav-container > li > a:hover { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
-        
-        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
-
-        /* Sección del héroe o cabecera principal */
-        .hero {
-            min-height: 60vh;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            text-align: center; position: relative;
-            padding: 1rem;
-            margin-top: var(--nav-height);
-        }
-        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
-        .hero h1 {
-            font-size: clamp(2rem, 7vw, 4.5rem); font-weight: 700; color: #fff;
-            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
-            animation: pulse-glow 3s infinite alternate;
-        }
-        .hero p { font-size: clamp(1rem, 2.5vw, 1.3rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
-        @keyframes pulse-glow {
-            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
-            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Contenedor principal para el contenido */
-        .main-container { 
-            width: 100%;
-            max-width: 100%; 
-            margin: 0 auto; 
-            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
-            pointer-events: none;
-        }
-        
-        main, .footer, .section, .hero-content {
-            pointer-events: auto;
-        }
-
-        main p, .footer p {
-            user-select: text;
-            cursor: default;
-        }
-
-        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
-        
-        .section {
-            padding: clamp(1.5rem, 5vw, 2.5rem);
-            border-radius: 12px; margin-bottom: 2rem; position: relative;
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
-        }
-        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
-        
-        /* Animación de aparición para las secciones con scroll */
-        .section h2, .section h3, .section p, .mermaid, .section ul, .section .authors, .section ol {
-             opacity: 0;
-             transform: translateY(20px);
-             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-        }
-
-        .section.is-visible h2, .section.is-visible h3, .section.is-visible p, .section.is-visible .mermaid, .section.is-visible ul, .section.is-visible .authors, .section.is-visible ol {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        h2 {
-            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
-            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
-        }
-        h3 { font-size: clamp(1.2rem, 4vw, 1.5rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
-        
-        /* Clases para colorear palabras y conceptos */
-        .concept1 { color: var(--concept-color-1); font-weight: 600; text-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
-        .concept2 { color: var(--concept-color-2); font-weight: 500; }
-        .person { color: var(--person-color); font-weight: 600; text-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
-        .authors { color: var(--primary-text); margin-top: 1rem; font-style: italic; }
-
-        /* Pie de página */
-        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-glow); margin-top: 2rem; }
-
-        /* Estilo para los diagramas de Mermaid */
-        .mermaid {
-            margin: 2rem auto;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            max-width: 900px;
-            overflow-x: auto;
-            padding: 1rem;
-        }
-        
-        /* Media queries para dispositivos móviles */
-        @media (max-width: 768px) {
-            .nav-container {
-                position: fixed;
-                top: var(--nav-height);
+        /* Solo aplicar hover underline en desktop */
+        @media (min-width: 768px) {
+            .nav-item:hover .nav-link::after {
+                width: 100%;
+            }
+            
+            .nav-item:hover .dropdown-menu {
+                opacity: 1;
+                visibility: visible;
+                transform: translateX(-50%) translateY(0);
+            }
+            
+            .dropdown-menu {
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%) translateY(10px);
+                min-width: 220px;
+                opacity: 0;
+                visibility: hidden;
+            }
+            .dropdown-menu::before {
+                content: '';
+                position: absolute;
+                top: -6px;
+                left: 50%;
+                transform: translateX(-50%);
+                border-width: 0 6px 6px 6px;
+                border-style: solid;
+                border-color: transparent transparent rgba(255, 255, 255, 0.1) transparent;
+            }
+            .dropdown-menu::after {
+                content: '';
+                position: absolute;
+                top: -20px;
                 left: 0;
                 width: 100%;
-                height: calc(100vh - var(--nav-height));
-                background: rgba(17, 24, 39, 0.95);
-                backdrop-filter: blur(15px);
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-                transform: translateY(-110%);
-                overflow-y: auto;
-                padding: 2rem;
+                height: 20px;
+                background: transparent;
             }
-            body.menu-open .nav-container {
-                transform: translateY(0);
-            }
-
-            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
-            nav .nav-container > li > a { padding: 1.5rem; width: 100%; font-size: 1.8em;}
-            
-            .menu-toggle {
-                display: block; position: relative; z-index: 1001;
-                width: 30px; height: 22px;
-                background: none; border: none; cursor: pointer;
-            }
-            .icon-bar {
-                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
-                margin: 6px 0; transition: all 0.3s ease-in-out;
-                border-radius: 2px;
-            }
-
-            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
-            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
-            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
         }
-        @media (min-width: 769px) {
-            .menu-toggle { display: none; }
+
+        /* --- Estilos Comunes Dropdown --- */
+        .dropdown-menu {
+            background-color: rgba(2, 6, 23, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease-in-out;
+            z-index: 100;
+        }
+
+        .dropdown-link {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            border-radius: 0.25rem;
+            line-height: 1.4;
+        }
+
+        .dropdown-link:hover {
+            color: #f59e0b; /* amber-500 */
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* --- Ajustes Móviles --- */
+        @media (max-width: 767px) {
+            #mobile-menu-container {
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+            
+            .nav-item {
+                width: 100%;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                padding: 0;
+            }
+
+            .nav-item-content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.5rem;
+            }
+
+            .dropdown-menu {
+                position: static;
+                transform: none;
+                opacity: 1;
+                visibility: visible;
+                width: 100%;
+                box-shadow: none;
+                background-color: rgba(0, 0, 0, 0.3);
+                border: none;
+                border-top: 1px solid rgba(255,255,255,0.05);
+                display: none;
+                margin-top: 0;
+            }
+            
+            .arrow-icon {
+                transition: transform 0.3s;
+            }
+            .nav-item.active .arrow-icon {
+                transform: rotate(180deg);
+            }
+        }
+
+        /* Ajustes scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* Ajustes Mermaid para tema oscuro y Responsividad Controlada */
+        .mermaid {
+            width: 100%;
+            max-width: 800px; /* Limita el ancho máximo para que no sean gigantes */
+            margin: 0 auto;   /* Centra el diagrama */
+            display: flex;
+            justify-content: center;
+        }
+        /* Esto fuerza al SVG generado a ocupar todo el ancho disponible hasta el max-width */
+        .mermaid svg {
+            width: 100% !important;
+            height: auto !important;
+            max-width: 100% !important;
+        }
+
+        .mermaid .node rect, .mermaid .node circle, .mermaid .node ellipse, .mermaid .node polygon, .mermaid .node path {
+            fill: #1e293b !important;
+            stroke: #f59e0b !important;
+            stroke-width: 2px !important;
+        }
+        .mermaid .label {
+            color: #e2e8f0 !important;
+            font-family: 'Inter', sans-serif !important;
+            font-size: 16px !important; /* Texto legible */
+        }
+        .mermaid .edgePath .path {
+            stroke: #64748b !important;
+            stroke-width: 2px !important;
+        }
+        .mermaid .marker {
+            fill: #64748b !important;
+            stroke: #64748b !important;
         }
     </style>
 </head>
-<body>
-    <!-- Canvas de fondo con animación Three.js -->
-    <canvas id="bg-canvas" aria-hidden="true"></canvas>
-    <nav class="glassmorphism">
-        <div class="nav-content">
-            <div class="nav-logo">
-                <a href="#inicio">
-                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
-                    <span>O.C.V.M.</span>
+<body class="selection:bg-amber-500 selection:text-slate-900 min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- Navegación Responsiva -->
+    <nav class="fixed w-full z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+            <div class="flex justify-between items-center h-16">
+                
+                <!-- Logo / Marca -->
+                <a href="#" class="flex items-center space-x-2 group">
+                    <div class="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-150 transition-transform"></div>
+                    <span class="text-[10px] md:text-xs font-bold tracking-widest uppercase text-slate-200 group-hover:text-white transition-colors">
+                        O.C.V.M. <span class="text-slate-600 mx-1">|</span> Transformando la Agencia
+                    </span>
                 </a>
+
+                <!-- Botón Hamburguesa -->
+                <button id="menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+
+                <!-- Menú Desktop & Contenedor Móvil -->
+                <div id="mobile-menu-container" class="hidden md:flex absolute md:static top-16 left-0 w-full md:w-auto bg-slate-950 md:bg-transparent flex-col md:flex-row md:items-center overflow-y-auto md:overflow-visible max-h-[80vh] md:max-h-full transition-all">
+                    
+                    <ul class="flex flex-col md:flex-row md:items-center text-[11px] font-medium uppercase tracking-widest text-slate-400 w-full md:w-auto">
+                        
+                        <!-- 1. Introducción -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#introduccion" class="nav-link hover:text-white" onclick="closeMobileMenu()">Intro & Status</a>
+                            </div>
+                        </li>
+
+                        <!-- 2. Arquitectura -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#arquitectura" class="nav-link hover:text-white" onclick="closeMobileMenu()">Arquitectura LLM</a>
+                            </div>
+                        </li>
+
+                        <!-- 3. Entrenamiento -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#entrenamiento" class="nav-link hover:text-white" onclick="closeMobileMenu()">Entrenamiento</a>
+                            </div>
+                        </li>
+
+                        <!-- 4. Agencia 4E -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#agencia" class="nav-link hover:text-white" onclick="closeMobileMenu()">Agencia y 4E</a>
+                            </div>
+                        </li>
+
+                        <!-- 5. Midtended -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#midtended" class="nav-link text-amber-500 hover:text-amber-400" onclick="closeMobileMenu()">Propuesta Midtended</a>
+                            </div>
+                        </li>
+
+                        <!-- Referencias -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#referencias" class="nav-link hover:text-white" onclick="closeMobileMenu()">Referencias</a>
+                            </div>
+                        </li>
+
+                    </ul>
+                </div>
             </div>
-            <ul class="nav-container" id="nav-menu">
-                <li><a href="#introduccion">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
-                    Introducción</a></li>
-                <li><a href="#arquitectura">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
-                    Arquitectura LLM</a></li>
-                <li><a href="#agencia">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12A2.25 2.25 0 0020.25 14.25V3M3.75 20.25h16.5M3.75 12h16.5m-16.5 4.5h16.5m-16.5-8.25h16.5" /></svg>
-                    Agencia y 4E</a></li>
-                <li><a href="#midtended">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
-                    Midtended</a></li>
-                <li><a href="#referencias">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
-                    Referencias</a></li>
-            </ul>
-            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
-                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
-            </button>
         </div>
     </nav>
 
-    <div class="main-container" id="inicio">
-        <!-- Sección Hero -->
-        <div class="hero">
-            <div class="hero-content">
-                <h1>Transformando la Agencia: El Modo de Existencia de los LLMs</h1>
-                <p>Una investigación ontológica sobre <span class="person">ChatGPT</span>: De loros estocásticos a autómatas interlocutores y la emergencia de la <span class="concept1">Agencia Midtended</span>.</p>
-                <p class="authors">Por <span class="person">Xabier E. Barandiaran</span> y <span class="person">Lola S. Almendros</span></p>
-            </div>
-        </div>
+    <!-- Script de Navegación -->
+    <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu-container');
 
-        <div class="layout-grid">
-            <main class="content">
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            mobileMenu.classList.toggle('flex');
+        });
+
+        function toggleDropdown(button) {
+            const navItem = button.closest('.nav-item');
+            const dropdown = navItem.querySelector('.dropdown-menu');
+            navItem.classList.toggle('active');
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            } else {
+                dropdown.style.display = 'block';
+            }
+        }
+
+        function closeMobileMenu() {
+            if (window.innerWidth < 768) {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('flex');
+                document.querySelectorAll('.dropdown-menu').forEach(d => d.style.display = 'none');
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            }
+        }
+    </script>
+
+    <!-- Contenido Principal - ANCHO COMPLETO CONFIGURADO -->
+    <div class="flex-grow pt-32 md:pt-48 pb-16 md:pb-24 px-4 md:px-8 w-full">
+        <main class="w-full mx-auto text-center">
+            
+            <!-- Bloque Hero -->
+            <header class="mb-24 relative animate-fade-in-up">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-amber-500/5 rounded-full blur-3xl -z-10"></div>
                 
-                <!-- Sección 1: Introducción y Estatus Ontológico -->
-                <section id="introduccion" class="glassmorphism section" data-animate>
-                    <h2>El Estatus Ontológico: De Loro Estocástico a Agente Sparky</h2>
-                    <p>La irrupción de los <span class="concept1">Grandes Modelos de Lenguaje (LLMs)</span>, como <span class="person">ChatGPT</span>, ha reavivado el debate sobre el estatus ontológico de la <span class="concept1">Inteligencia Artificial (IA)</span>. Las perspectivas se dividen entre visiones <span class="concept2">inflacionarias</span>—que equiparan a los LLMs con capacidades humanas o incluso superhumanas (Ge et al., 2023; Lemoine, 2022)—y <span class="concept2">deflacionarias</span>—que los reducen a procesadores estadísticos o "loros estocásticos" (Bender et al., 2021; Chiang, 2023). Este espectro abarca desde la idea de que son "equivalentes al cerebro humano" hasta la crítica de que producen "bullshit" (Hicks et al., 2024) sin verdadera comprensión.</p>
-                    
-                    <h3>El Desafío a los Benchmarks Tradicionales</h3>
-                    <p>Históricamente, los benchmarks han sido herramientas clave para evaluar las capacidades de la IA. Sin embargo, los LLMs modernos han superado pruebas como el <span class="concept2">Test de Turing</span> y el <span class="concept2">Winograd Schema Challenge</span>, considerados anteriormente exclusivos de la inteligencia humana (Kocijan et al., 2023). Modelos como GPT-4 y Gemini han alcanzado <span class="concept1">rendimiento a nivel humano</span> en exámenes profesionales y académicos (OpenAI, 2023; Gemini Team et al., 2023), mientras que innovaciones como el <span class="concept2">razonamiento autoguiado (Chain of Thought)</span> han difuminado las fronteras entre lo humano y lo artificial (Wei et al., 2023).</p>
-                    <ul class="list-disc list-inside space-y-2 ml-4">
-                        <li>El <span class="concept2">Test de Turing</span> se ha vuelto obsoleto, con conversaciones indistinguibles de las humanas (Jones & Bergen, 2024).</li>
+                <h1 class="text-4xl sm:text-5xl md:text-7xl font-black text-slate-100 mb-6 leading-none tracking-tighter drop-shadow-2xl break-words">
+                    TRANSFORMANDO LA AGENCIA<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-500 text-2xl md:text-4xl block mt-4 font-serif italic tracking-widest">El Modo de Existencia de los LLMs</span>
+                </h1>
+                
+                <p class="mt-8 text-sm md:text-base text-slate-400 font-medium tracking-wide max-w-none w-full mx-auto px-4">
+                    Una investigación ontológica sobre <strong class="text-white">ChatGPT</strong>: De loros estocásticos a autómatas interlocutores y la emergencia de la <span class="text-amber-500 font-bold">Agencia Midtended</span>.
+                </p>
+                
+                <div class="mt-8 flex flex-wrap justify-center gap-4 text-xs md:text-sm text-amber-500 uppercase tracking-widest font-bold">
+                    <span>Xabier E. Barandiaran</span> • <span>Lola S. Almendros</span>
+                </div>
+                
+                <div class="mt-16 flex justify-center">
+                    <div class="h-24 w-px bg-gradient-to-b from-amber-500/0 via-amber-500/50 to-amber-500/0"></div>
+                </div>
+            </header>
+
+            <!-- Sección 1: Introducción y Estatus Ontológico -->
+            <section id="introduccion" class="w-full mx-auto mb-20 text-left bg-slate-900/40 p-6 md:p-12 rounded-xl border border-white/5 shadow-xl backdrop-blur-sm">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">El Estatus Ontológico: De Loro Estocástico a Agente Sparky</h2>
+                
+                <div class="prose prose-invert prose-lg max-w-none w-full text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        La irrupción de los <span class="text-amber-500 font-bold">Grandes Modelos de Lenguaje (LLMs)</span>, como <strong class="text-white">ChatGPT</strong>, ha reavivado el debate sobre el estatus ontológico de la <span class="text-amber-500 font-bold">Inteligencia Artificial (IA)</span>. Las perspectivas se dividen entre visiones <span class="text-cyan-400 font-bold">inflacionarias</span> —que equiparan a los LLMs con capacidades humanas o incluso superhumanas (Ge et al., 2023; Lemoine, 2022)— y <span class="text-cyan-400 font-bold">deflacionarias</span> —que los reducen a procesadores estadísticos o "loros estocásticos" (Bender et al., 2021; Chiang, 2023). Este espectro abarca desde la idea de que son "equivalentes al cerebro humano" hasta la crítica de que producen "bullshit" (Hicks et al., 2024) sin verdadera comprensión.
+                    </p>
+
+                    <h3 class="text-xl text-amber-500 font-bold mt-8 mb-4">El Desafío a los Benchmarks Tradicionales</h3>
+                    <p>
+                        Históricamente, los benchmarks han sido herramientas clave para evaluar las capacidades de la IA. Sin embargo, los LLMs modernos han superado pruebas como el <span class="text-cyan-400 font-bold">Test de Turing</span> y el <span class="text-cyan-400 font-bold">Winograd Schema Challenge</span>, considerados anteriormente exclusivos de la inteligencia humana (Kocijan et al., 2023). Modelos como GPT-4 y Gemini han alcanzado <span class="text-amber-500 font-bold">rendimiento a nivel humano</span> en exámenes profesionales y académicos (OpenAI, 2023; Gemini Team et al., 2023), mientras que innovaciones como el <span class="text-cyan-400 font-bold">razonamiento autoguiado (Chain of Thought)</span> han difuminado las fronteras entre lo humano y lo artificial (Wei et al., 2023).
+                    </p>
+                    <ul class="list-disc pl-6 space-y-2 mb-8 border-l-2 border-slate-700 ml-4">
+                        <li>El <strong class="text-white">Test de Turing</strong> se ha vuelto obsoleto, con conversaciones indistinguibles de las humanas (Jones & Bergen, 2024).</li>
                         <li>GPT-4 y Gemini superan pruebas de sentido común como Winogrande y HellaSwag (Sakaguchi et al., 2019; Zellers et al., 2019).</li>
                         <li>El benchmark ARC-AGI, actualizado a ARC-AGI3 en julio de 2025, refleja la necesidad de desafíos más complejos (Chollet et al., 2025).</li>
                     </ul>
+                    <p>
+                        A pesar de estos avances, las limitaciones persisten, como fallos en el razonamiento abstracto y la planificación (Dziri et al., 2023; Valmeekam et al., 2023). Las visiones deflacionarias argumentan que estos sistemas son meros artefactos estadísticos, pero ignoran su potencial transformador. Nuestra meta es trascender esta dicotomía, explorando el <span class="text-amber-500 font-bold">modo de existencia</span> de los LLMs a través del lente de la <span class="text-amber-500 font-bold">agencia</span>.
+                    </p>
 
-                    <p>A pesar de estos avances, las limitaciones persisten, como fallos en el razonamiento abstracto y la planificación (Dziri et al., 2023; Valmeekam et al., 2023). Las visiones deflacionarias argumentan que estos sistemas son meros artefactos estadísticos, pero ignoran su potencial transformador. Nuestra meta es trascender esta dicotomía, explorando el <span class="concept1">modo de existencia</span> de los LLMs a través del lente de la <span class="concept1">agencia</span>.</p>
-
-                    <h3>Diagrama: Polarización Ontológica de los LLMs</h3>
-                    <div class="mermaid">
-                        graph TD
-                            A[Perspectivas sobre LLMs] --> B(Inflacionarias)
-                            A --> C(Deflacionarias)
-                            B --> D[Human-Brain Equivalent<br>Ge et al., 2023]
-                            B --> E[Fully Sentient Person<br>Lemoine, 2022]
-                            C --> F[Stochastic Parrots<br>Bender et al., 2021]
-                            C --> G[Blurry JPEG of Web<br>Chiang, 2023]
-                            style A fill:#818cf8,stroke:#333,stroke-width:2px
-                            style B fill:#fbbf24,stroke:#333,stroke-width:2px
-                            style C fill:#34d399,stroke:#333,stroke-width:2px
+                    <!-- Mermaid Diagram: Polarización -->
+                    <div class="my-12 p-6 bg-slate-900/50 border border-slate-800 rounded-lg flex justify-center w-full">
+                        <div class="mermaid w-full">
+                            graph TD
+                                A[Perspectivas sobre LLMs] --> B(Inflacionarias)
+                                A --> C(Deflacionarias)
+                                B --> D[Human-Brain Equivalent<br>Ge et al., 2023]
+                                B --> E[Fully Sentient Person<br>Lemoine, 2022]
+                                C --> F[Stochastic Parrots<br>Bender et al., 2021]
+                                C --> G[Blurry JPEG of Web<br>Chiang, 2023]
+                        </div>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <!-- Sección 2: La Arquitectura del Transformer: Cómo Trabaja un LLM -->
-                <section id="arquitectura" class="glassmorphism section" data-animate>
-                    <h2>Anatomía Digital: La Arquitectura y el Flujo de Procesamiento de GPT-3</h2>
-                    <p>Para comprender el <span class="concept1">modo de existencia</span> de los LLMs, es crucial desentrañar su arquitectura. El <span class="concept1">Transformer</span>, base de modelos como GPT-3, convierte un <span class="concept2">prompt</span> en una predicción estadística del siguiente <span class="concept2">token</span> mediante transformaciones matriciales complejas (Vaswani et al., 2017). Con 175 mil millones de parámetros, GPT-3 representa una escala masiva que desafía las nociones tradicionales de automatismo.</p>
+            <!-- Sección 2: Arquitectura del Transformer -->
+            <section id="arquitectura" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">Anatomía Digital: La Arquitectura y el Flujo de Procesamiento</h2>
+                <div class="prose prose-invert prose-lg max-w-none w-full text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        Para comprender el <span class="text-amber-500 font-bold">modo de existencia</span> de los LLMs, es crucial desentrañar su arquitectura. El <span class="text-amber-500 font-bold">Transformer</span>, base de modelos como GPT-3, convierte un <span class="text-cyan-400 font-bold">prompt</span> en una predicción estadística del siguiente <span class="text-cyan-400 font-bold">token</span> mediante transformaciones matriciales complejas (Vaswani et al., 2017). Con 175 mil millones de parámetros, GPT-3 representa una escala masiva que desafía las nociones tradicionales de automatismo.
+                    </p>
 
-                    <h3>Diagrama: Flujo de Procesamiento de GPT-3</h3>
-                    <div class="mermaid">
-                        graph TD
-                            A[Prompt] --> B(Tokenización)
-                            B --> C(Embedding)
-                            C --> D(Codificación Posicional)
-                            D --> E[Atención Multi-Cabeza]
-                            E --> F[FeedForward]
-                            F --> G[Repetición 96 Veces]
-                            G --> H(Softmax)
-                            H --> I[Token Siguiente]
-                            I -->|Auto-regresión| A
-                            style A fill:#34d399,stroke:#333,stroke-width:2px
-                            style I fill:#fbbf24,stroke:#333,stroke-width:2px
-                            style G fill:#818cf8,stroke:#333,stroke-width:2px
+                    <!-- Mermaid Diagram: Flujo de Procesamiento -->
+                    <div class="my-12 p-6 bg-slate-900/50 border border-slate-800 rounded-lg flex justify-center w-full">
+                        <div class="mermaid w-full">
+                            graph TD
+                                A[Prompt] --> B(Tokenización)
+                                B --> C(Embedding)
+                                C --> D(Codificación Posicional)
+                                D --> E[Atención Multi-Cabeza]
+                                E --> F[FeedForward]
+                                F --> G[Repetición 96 Veces]
+                                G --> H(Softmax)
+                                H --> I[Token Siguiente]
+                                I -->|Auto-regresión| A
+                        </div>
                     </div>
 
-                    <h3>Flujo de Procesamiento del Input</h3>
-                    <ol class="list-decimal list-inside space-y-3 ml-4">
+                    <h3 class="text-xl text-amber-500 font-bold mt-8 mb-4">Flujo de Procesamiento del Input</h3>
+                    <ol class="list-decimal pl-6 space-y-3 mb-8">
                         <li><strong>Tokenización y Codificación:</strong> El texto se fragmenta en tokens (e.g., "El elefante" → [El, ele, fante]). Estos se mapean a identificadores numéricos en un vocabulario de 50.257 tokens.</li>
                         <li><strong>Embedding:</strong> Los tokens se transforman en vectores de alta dimensionalidad (12.288 dimensiones), codificando relaciones semánticas implícitas en el corpus de entrenamiento.</li>
                         <li><strong>Codificación Posicional:</strong> Se añaden funciones seno-coseno para preservar el orden de las palabras, esencial para el contexto.</li>
-                        <li><strong>Mecanismo de Atención:</strong> La <span class="concept1">Atención Multi-Cabeza</span> (96 cabezales en GPT-3) evalúa la relevancia de cada token en relación con todos los demás, capturando dependencias a largo plazo.</li>
+                        <li><strong>Mecanismo de Atención:</strong> La <span class="text-amber-500 font-bold">Atención Multi-Cabeza</span> (96 cabezales en GPT-3) evalúa la relevancia de cada token en relación con todos los demás, capturando dependencias a largo plazo.</li>
                         <li><strong>Red Neuronal FeedForward (FFNN):</strong> Una red sin retroalimentación ajusta las relaciones entre tokens, aplicando parámetros aprendidos.</li>
                         <li><strong>Bloques de Transformación:</strong> Este proceso se repite 96 veces, refinando progresivamente la representación.</li>
                         <li><strong>Output y Softmax:</strong> La matriz final genera una distribución de probabilidad sobre el vocabulario, seleccionando el siguiente token.</li>
                         <li><strong>Auto-regresión:</strong> El token generado se reintegra al input, repitiendo el ciclo hasta un token de fin de secuencia.</li>
                     </ol>
 
-                    <p>Este flujo es <span class="concept1">reactivo</span>, sin estado interno persistente más allá del ciclo auto-regresivo, dependiendo enteramente de la escala de sus parámetros y el corpus de entrenamiento.</p>
+                    <p>Este flujo es <span class="text-amber-500 font-bold">reactivo</span>, sin estado interno persistente más allá del ciclo auto-regresivo, dependiendo enteramente de la escala de sus parámetros y el corpus de entrenamiento.</p>
+                </div>
+            </section>
 
-                    <h3>Fases de Entrenamiento</h3>
+            <!-- Sección 3: Entrenamiento -->
+            <section id="entrenamiento" class="w-full mx-auto mb-20 text-left bg-slate-900/40 p-6 md:p-12 rounded-xl border border-white/5 shadow-xl backdrop-blur-sm">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">Moldeando el Autómata: Fases de Entrenamiento y Extensiones</h2>
+                <div class="prose prose-invert prose-lg max-w-none w-full text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        El entrenamiento masivo de los LLMs, como GPT-3, los dota de una capacidad performativa que simula agencia. Las extensiones, como memoria externa y uso de herramientas, amplían esta ilusión.
+                    </p>
                     <p>El entrenamiento de GPT-3, con \(3.14 \times 10^{23}\) FLOPS, implica tres etapas clave:</p>
-                    <ol class="list-decimal list-inside space-y-3 ml-4">
+                    <ol class="list-decimal pl-6 space-y-3 mb-8">
                         <li><strong>Pre-entrenamiento:</strong> Ajuste no supervisado de 175 mil millones de parámetros prediciendo tokens en un corpus masivo.</li>
-                        <li><strong>Ajuste Fino y RLHF:</strong> Optimización para tareas específicas con <span class="concept2">Refuerzo por Aprendizaje con Retroalimentación Humana</span>.</li>
-                        <li><strong>Auto-mejora:</strong> Técnicas como <span class="concept2">Modelos de Recompensa Supervisados</span> permiten autocorrección.</li>
+                        <li><strong>Ajuste Fino y RLHF:</strong> Optimización para tareas específicas con <span class="text-cyan-400 font-bold">Refuerzo por Aprendizaje con Retroalimentación Humana</span>.</li>
+                        <li><strong>Auto-mejora:</strong> Técnicas como <span class="text-cyan-400 font-bold">Modelos de Recompensa Supervisados</span> permiten autocorrección.</li>
                     </ol>
-                </section>
-                
-                <!-- Sección 3: Entrenamiento y Expansión de la Agencia -->
-                <section id="entrenamiento" class="glassmorphism section" data-animate>
-                    <h2>Moldeando el Autómata: Fases de Entrenamiento y Extensiones</h2>
-                    <p>El entrenamiento masivo de los LLMs, como GPT-3, los dota de una capacidad performativa que simula agencia. Las extensiones, como memoria externa y uso de herramientas, amplían esta ilusión.</p>
 
-                    <h3>Estrategias para la "Agencia" Digital</h3>
-                    <ul class="list-disc list-inside space-y-2 ml-4">
-                        <li><span class="concept2">Memoria Extendida:</span> Frameworks como Langchain emulan memoria de trabajo.</li>
-                        <li><span class="concept2">Planificación (CoT):</span> "Pensar en voz alta" simula pasos deliberativos.</li>
-                        <li><span class="concept2">Uso de Herramientas:</span> APIs conectan LLMs a entornos digitales.</li>
-                        <li><span class="concept2">Interacciones Multi-Agente:</span> Múltiples LLMs colaboran para mejorar consistencia.</li>
+                    <h3 class="text-xl text-amber-500 font-bold mt-8 mb-4">Estrategias para la "Agencia" Digital</h3>
+                    <ul class="list-disc pl-6 space-y-2 mb-8 border-l-2 border-slate-700 ml-4">
+                        <li><span class="text-cyan-400 font-bold">Memoria Extendida:</span> Frameworks como Langchain emulan memoria de trabajo.</li>
+                        <li><span class="text-cyan-400 font-bold">Planificación (CoT):</span> "Pensar en voz alta" simula pasos deliberativos.</li>
+                        <li><span class="text-cyan-400 font-bold">Uso de Herramientas:</span> APIs conectan LLMs a entornos digitales.</li>
+                        <li><span class="text-cyan-400 font-bold">Interacciones Multi-Agente:</span> Múltiples LLMs colaboran para mejorar consistencia.</li>
                     </ul>
 
-                    <h3>Diagrama: Extensiones para Simular Agencia</h3>
-                    <div class="mermaid">
-                        graph TD
-                            A[LLM Base] --> B(Memoria Extendida)
-                            A --> C(Chain of Thought)
-                            A --> D(Uso de Herramientas)
-                            A --> E(Interacciones Multi-Agente)
-                            B --> F[Langchain - Contexto Pasado]
-                            C --> G[Pensamiento Secuencial]
-                            D --> H[APIs - Navegación, Código]
-                            E --> I[Tree of Agents - Colaboración]
-                            style A fill:#818cf8,stroke:#333,stroke-width:2px
-                            style B fill:#fbbf24,stroke:#333,stroke-width:2px
-                            style C fill:#34d399,stroke:#333,stroke-width:2px
-                            style D fill:#f472b6,stroke:#333,stroke-width:2px
-                            style E fill:#22d3ee,stroke:#333,stroke-width:2px
+                    <!-- Mermaid Diagram: Extensiones -->
+                    <div class="my-12 p-6 bg-slate-900/50 border border-slate-800 rounded-lg flex justify-center w-full">
+                        <div class="mermaid w-full">
+                            graph TD
+                                A[LLM Base] --> B(Memoria Extendida)
+                                A --> C(Chain of Thought)
+                                A --> D(Uso de Herramientas)
+                                A --> E(Interacciones Multi-Agente)
+                                B --> F[Langchain - Contexto Pasado]
+                                C --> G[Pensamiento Secuencial]
+                                D --> H[APIs - Navegación, Código]
+                                E --> I[Tree of Agents - Colaboración]
+                        </div>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <!-- Sección 4: El Fracaso del Autómata ante la Agencia Autónoma -->
-                <section id="agencia" class="glassmorphism section" data-animate>
-                    <h2>Criterios de Agencia 4E: Por qué los LLMs no son Agentes Autónomos</h2>
-                    <p>La filosofía <span class="concept1">4E (Embodied, Extended, Enactive, Ecological)</span> define la agencia como auto-organización en interacción con el entorno. Según <span class="person">Barandiaran</span> et al. (2009), los LLMs fallan en tres condiciones:</p>
+            <!-- Sección 4: Agencia 4E -->
+            <section id="agencia" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">Criterios de Agencia 4E: Por qué los LLMs no son Agentes Autónomos</h2>
+                <div class="prose prose-invert prose-lg max-w-none w-full text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        La filosofía <span class="text-amber-500 font-bold">4E (Embodied, Extended, Enactive, Ecological)</span> define la agencia como auto-organización en interacción con el entorno. Según <strong class="text-white">Barandiaran</strong> et al. (2009), los LLMs fallan en tres condiciones:
+                    </p>
 
-                    <h3>1. Condición de Individualidad</h3>
-                    <ul class="list-disc list-inside space-y-2 ml-4">
-                        <li><span class="concept1">No Autoproducción:</span> Dependen de infraestructura externa.</li>
-                        <li><span class="concept2">Sin Estado Interno:</span> Son reactivos, sin memoria persistente.</li>
-                    </ul>
-
-                    <h3>2. Condición de Normatividad</h3>
-                    <ul class="list-disc list-inside space-y-2 ml-4">
-                        <li><span class="concept2">Sin Precariedad:</span> No generan normas propias.</li>
-                        <li><span class="concept2">Metas Extrínsecas:</span> Funcionan bajo funciones de pérdida humanas.</li>
-                    </ul>
-
-                    <h3>3. Condición de Asimetría Interaccional</h3>
-                    <ul class="list-disc list-inside space-y-2 ml-4">
-                        <li><span class="concept2">Reactividad:</span> Responden pasivamente a prompts.</li>
-                        <li><span class="concept1">Simetría Causal:</span> No inician acciones autónomas.</li>
-                    </ul>
-
-                    <h3>Diagrama: Comparación Agencia Autónoma vs. LLM</h3>
-                    <div class="mermaid">
-                        graph TD
-                            A[Agente Autónomo] --> B(Individualidad)
-                            A --> C(Normatividad)
-                            A --> D(Asimetría)
-                            X[LLM] --> Y(Externalidad)
-                            X --> Z(Extrínseca)
-                            X --> W(Reactividad)
-                            B --> B1[Autoproducción]
-                            C --> C1[Normas Propias]
-                            D --> D1[Acción Iniciada]
-                            Y --> Y1[Dependencia Externa]
-                            Z --> Z1[Pérdida Externa]
-                            W --> W1[Respuesta Pasiva]
-                            style A fill:#34d399,stroke:#333,stroke-width:3px
-                            style X fill:#fbbf24,stroke:#333,stroke-width:3px
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
+                        <div class="bg-slate-900/60 p-6 rounded-lg border border-slate-800">
+                            <h4 class="text-amber-500 font-bold mb-4">1. Condición de Individualidad</h4>
+                            <ul class="list-disc pl-4 text-sm space-y-2">
+                                <li><span class="text-cyan-400 font-semibold">No Autoproducción:</span> Dependen de infraestructura externa.</li>
+                                <li><span class="text-cyan-400 font-semibold">Sin Estado Interno:</span> Son reactivos, sin memoria persistente.</li>
+                            </ul>
+                        </div>
+                        <div class="bg-slate-900/60 p-6 rounded-lg border border-slate-800">
+                            <h4 class="text-amber-500 font-bold mb-4">2. Condición de Normatividad</h4>
+                            <ul class="list-disc pl-4 text-sm space-y-2">
+                                <li><span class="text-cyan-400 font-semibold">Sin Precariedad:</span> No generan normas propias.</li>
+                                <li><span class="text-cyan-400 font-semibold">Metas Extrínsecas:</span> Funcionan bajo funciones de pérdida humanas.</li>
+                            </ul>
+                        </div>
+                        <div class="bg-slate-900/60 p-6 rounded-lg border border-slate-800">
+                            <h4 class="text-amber-500 font-bold mb-4">3. Condición de Asimetría Interaccional</h4>
+                            <ul class="list-disc pl-4 text-sm space-y-2">
+                                <li><span class="text-cyan-400 font-semibold">Reactividad:</span> Responden pasivamente a prompts.</li>
+                                <li><span class="text-amber-500 font-semibold">Simetría Causal:</span> No inician acciones autónomas.</li>
+                            </ul>
+                        </div>
                     </div>
-                </section>
 
-                <!-- Sección 5: La Propuesta Ontológica: Autómatas Interlocutores y Agencia Midtended -->
-                <section id="midtended" class="glassmorphism section" data-animate>
-                    <h2>Si No son Agentes... ¿Qué Son? El Autómata Interlocutor y la Agencia Midtended</h2>
-                    <p>Proponemos que los LLMs son <span class="concept1">Autómatas Interlocutores</span>, capaces de conversaciones efectivas pero sin agencia autónoma. Su <span class="concept2">embodiment textual</span> (corpus), <span class="concept2">computacional</span>, y el "fantasma" proyectado por humanos habilitan interacciones transformadoras.</p>
-
-                    <h3>La Agencia Midtended</h3>
-                    <p>La <span class="concept1">Agencia Midtended</span> surge de la interacción recíproca entre humanos y LLMs, mediando el pensamiento externalizado (e.g., autocompletado predictivo). Difiere de la <span class="concept2">agencia asistida</span> o <span class="concept2">extendida</span> al integrar intenciones humanas y predicciones automáticas.</p>
-
-                    <h3>Diagrama: Evolución de la Agencia</h3>
-                    <div class="mermaid">
-                        graph LR
-                            A[Herramientas Simples] --> B(Agencia Asistida)
-                            B --> C[Martillo]
-                            D[Recursos Cognitivos] --> E(Agencia Extendida)
-                            E --> F[Cuaderno]
-                            G[LLM] --> H(Agencia Midtended)
-                            H --> I[Autocompletado]
-                            style A fill:#34d399,stroke:#333,stroke-width:2px
-                            style D fill:#34d399,stroke:#333,stroke-width:2px
-                            style G fill:#818cf8,stroke:#333,stroke-width:2px
-                            style I fill:#fbbf24,stroke:#333,stroke-width:2px
+                    <!-- Mermaid Diagram: Comparación -->
+                    <div class="my-12 p-6 bg-slate-900/50 border border-slate-800 rounded-lg flex justify-center w-full">
+                        <div class="mermaid w-full">
+                            graph TD
+                                A[Agente Autónomo] --> B(Individualidad)
+                                A --> C(Normatividad)
+                                A --> D(Asimetría)
+                                X[LLM] --> Y(Externalidad)
+                                X --> Z(Extrínseca)
+                                X --> W(Reactividad)
+                                B --> B1[Autoproducción]
+                                C --> C1[Normas Propias]
+                                D --> D1[Acción Iniciada]
+                                Y --> Y1[Dependencia Externa]
+                                Z --> Z1[Pérdida Externa]
+                                W --> W1[Respuesta Pasiva]
+                        </div>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <!-- Sección 6: Referencias -->
-                <section id="referencias" class="glassmorphism section" data-animate>
-                    <h2>Referencias Clave</h2>
-                    <ul class="list-disc list-inside space-y-2">
-                        <li><span class="person">Barandiaran, X. E., Di Paolo, E., & Rohde, M.</span> (2009). Defining agency: Individuality, normativity, asymmetry, and Spatio-temporality in action. <i>Adaptive Behavior, 17</i>(5), 367-386.</li>
-                        <li><span class="person">Bender, E. M., Gebru, T., et al.</span> (2021). On the dangers of stochastic parrots. <i>FAccT '21</i>, 610-623.</li>
-                        <li><span class="person">Chiang, T.</span> (2023). ChatGPT is a blurry JPEG of the web. <i>The New Yorker</i>.</li>
-                    </ul>
-                </section>
+            <!-- Sección 5: Propuesta Midtended -->
+            <section id="midtended" class="w-full mx-auto mb-20 text-left bg-slate-900/40 p-6 md:p-12 rounded-xl border border-white/5 shadow-xl backdrop-blur-sm">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">Si No son Agentes... ¿Qué Son? El Autómata Interlocutor y la Agencia Midtended</h2>
+                <div class="prose prose-invert prose-lg max-w-none w-full text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        Proponemos que los LLMs son <span class="text-amber-500 font-bold">Autómatas Interlocutores</span>, capaces de conversaciones efectivas pero sin agencia autónoma. Su <span class="text-cyan-400 font-bold">embodiment textual</span> (corpus), <span class="text-cyan-400 font-bold">computacional</span>, y el "fantasma" proyectado por humanos habilitan interacciones transformadoras.
+                    </p>
 
-            </main>
-        </div>
-        <footer class="footer" id="contacto">
-            <p style="text-align:center;">Este espacio es una cartografía personal y una invitación al diálogo sobre la filosofía de la IA.</p>
-            <p style="margin-top:1.5rem; font-size: 0.9em; text-align:center;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
-        </footer>
+                    <h3 class="text-xl text-amber-500 font-bold mt-8 mb-4">La Agencia Midtended</h3>
+                    <p>
+                        La <span class="text-amber-500 font-bold">Agencia Midtended</span> surge de la interacción recíproca entre humanos y LLMs, mediando el pensamiento externalizado (e.g., autocompletado predictivo). Difiere de la <span class="text-cyan-400 font-bold">agencia asistida</span> o <span class="text-cyan-400 font-bold">extendida</span> al integrar intenciones humanas y predicciones automáticas.
+                    </p>
+
+                    <!-- Mermaid Diagram: Evolución -->
+                    <div class="my-12 p-6 bg-slate-900/50 border border-slate-800 rounded-lg flex justify-center w-full">
+                        <div class="mermaid w-full">
+                            graph LR
+                                A[Herramientas Simples] --> B(Agencia Asistida)
+                                B --> C[Martillo]
+                                D[Recursos Cognitivos] --> E(Agencia Extendida)
+                                E --> F[Cuaderno]
+                                G[LLM] --> H(Agencia Midtended)
+                                H --> I[Autocompletado]
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Referencias -->
+            <section id="referencias" class="w-full mx-auto mb-24 text-left border-t border-slate-800 pt-12">
+                <h2 class="text-2xl font-serif font-bold text-white mb-8">Referencias Clave</h2>
+                <ul class="text-sm text-slate-400 space-y-3 font-light list-disc pl-6">
+                    <li><span class="text-amber-500 font-bold">Barandiaran, X. E., Di Paolo, E., & Rohde, M.</span> (2009). Defining agency: Individuality, normativity, asymmetry, and Spatio-temporality in action. <i>Adaptive Behavior, 17</i>(5), 367-386.</li>
+                    <li><span class="text-amber-500 font-bold">Bender, E. M., Gebru, T., et al.</span> (2021). On the dangers of stochastic parrots. <i>FAccT '21</i>, 610-623.</li>
+                    <li><span class="text-amber-500 font-bold">Chiang, T.</span> (2023). ChatGPT is a blurry JPEG of the web. <i>The New Yorker</i>.</li>
+                    <li><span class="text-amber-500 font-bold">Vaswani, A., et al.</span> (2017). Attention is all you need. <i>NIPS</i>.</li>
+                    <li><span class="text-amber-500 font-bold">Wei, J., et al.</span> (2023). Chain-of-thought prompting elicits reasoning in large language models. <i>NeurIPS</i>.</li>
+                </ul>
+            </section>
+
+        </main>
     </div>
+
+    <!-- Mermaid Initialization -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof THREE !== 'undefined') {
-                initThreeJS();
-            } else {
-                console.error("Three.js not loaded");
-            }
-
-            setupNavigation();
-            setupScrollAnimations();
-            
-            mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
-                'primaryColor': '#000000',
-                'primaryTextColor': '#e5e7eb',
-                'lineColor': '#818cf8',
-                'nodeBorder': '#818cf8',
-                'mainBkg': '#111827',
-                'textColor': '#e5e7eb'
-            } });
+        document.addEventListener('DOMContentLoaded', function() {
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'dark',
+                securityLevel: 'loose',
+                themeVariables: {
+                    primaryColor: '#0f172a',
+                    edgeLabelBackground: '#0f172a',
+                    tertiaryColor: '#1e293b',
+                    primaryTextColor: '#cbd5e1',
+                    lineColor: '#64748b',
+                    mainBkg: '#020617'
+                }
+            });
         });
-
-        let scene, camera, renderer, points;
-        
-        function initThreeJS() {
-            try {
-                scene = new THREE.Scene();
-                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
-                camera.position.z = 50;
-
-                renderer = new THREE.WebGLRenderer({
-                    canvas: document.getElementById("bg-canvas"),
-                    alpha: true
-                });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-
-                const pointCount = 250;
-                const positions = new Float32Array(pointCount * 3);
-                const pointGeo = new THREE.BufferGeometry();
-                for (let i = 0; i < pointCount; i++) {
-                    positions[i * 3] = (Math.random() - 0.5) * 300;
-                    positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
-                    positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
-                }
-                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.2, transparent: true, opacity: 0.7 });
-                points = new THREE.Points(pointGeo, pointMaterial);
-                scene.add(points);
-
-                window.addEventListener("resize", onWindowResize, false);
-                document.addEventListener('mousemove', onMouseMove, false);
-                animate();
-            } catch (error) {
-                console.error('Error initializing Three.js:', error);
-            }
-        }
-
-        function onWindowResize() {
-            if(camera && renderer) {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            }
-        }
-
-        let mouseX = 0, mouseY = 0;
-        function onMouseMove(event) {
-            mouseX = (event.clientX - window.innerWidth / 2) / 100;
-            mouseY = (event.clientY - window.innerHeight / 2) / 100;
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            if(scene && camera && renderer && points) {
-                points.rotation.y += 0.0003;
-                points.rotation.x += 0.0002;
-                camera.position.x += (mouseX - camera.position.x) * 0.05;
-                camera.position.y += (-mouseY - camera.position.y) * 0.05;
-                camera.lookAt(scene.position);
-                renderer.render(scene, camera);
-            }
-        }
-
-        function setupNavigation() {
-            const menuToggleBtn = document.getElementById('menu-toggle-btn');
-            const navMenu = document.getElementById('nav-menu');
-
-            menuToggleBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                document.body.classList.toggle('menu-open');
-            });
-
-            navMenu.addEventListener('click', (e) => {
-                if (e.target.tagName === 'A' && window.innerWidth <= 768) {
-                   document.body.classList.remove('menu-open');
-                }
-            });
-        }
-
-        function setupScrollAnimations() {
-            const animatedSections = document.querySelectorAll('[data-animate]');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                        const elementsToAnimate = entry.target.querySelectorAll('h2, h3, p, .mermaid, ul, ol, .authors');
-                        elementsToAnimate.forEach((el, index) => {
-                           el.style.transitionDelay = `${index * 100}ms`;
-                        });
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.15 });
-            animatedSections.forEach(section => observer.observe(section));
-        }
     </script>
+
+    <!-- Footer Simple -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-6 md:py-8">
+        <div class="max-w-full mx-auto px-6 md:px-12 flex flex-col items-center justify-center gap-2">
+            <p class="text-[10px] md:text-[11px] font-medium text-slate-400 text-center">
+                Este espacio es una cartografía personal y una invitación al diálogo sobre la filosofía de la IA.
+            </p>
+            <p class="text-[9px] md:text-[10px] text-slate-600 font-mono text-center">
+                La vida es terriblemente bella cuando los jugadores juegan. | 2025
+            </p>
+        </div>
+    </footer>
+
 </body>
 </html>
