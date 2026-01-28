@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homeostasis y Robótica Blanda | Man & Damasio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #94a3b8; /* slate-400 */
+            scroll-behavior: smooth;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 70%);
+            background-attachment: fixed;
+        }
+
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* --- Estilos de Navegación Desktop --- */
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+            cursor: pointer;
+            display: block;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -2px;
+            left: 0;
+            background-color: #f59e0b;
+            transition: width 0.3s ease;
+        }
+        
+        /* Solo aplicar hover underline en desktop */
+        @media (min-width: 768px) {
+            .nav-item:hover .nav-link::after {
+                width: 100%;
+            }
+            
+            /* Dropdown Desktop: Absolute & Hover */
+            .nav-item:hover .dropdown-menu {
+                opacity: 1;
+                visibility: visible;
+                transform: translateX(-50%) translateY(0);
+            }
+            
+            .dropdown-menu {
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%) translateY(10px);
+                min-width: 220px;
+                opacity: 0;
+                visibility: hidden;
+            }
+            .dropdown-menu::before {
+                content: '';
+                position: absolute;
+                top: -6px;
+                left: 50%;
+                transform: translateX(-50%);
+                border-width: 0 6px 6px 6px;
+                border-style: solid;
+                border-color: transparent transparent rgba(255, 255, 255, 0.1) transparent;
+            }
+            .dropdown-menu::after {
+                content: '';
+                position: absolute;
+                top: -20px;
+                left: 0;
+                width: 100%;
+                height: 20px;
+                background: transparent;
+            }
+        }
+
+        /* --- Estilos Comunes Dropdown --- */
+        .dropdown-menu {
+            background-color: rgba(2, 6, 23, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease-in-out;
+            z-index: 100;
+        }
+
+        .dropdown-link {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            border-radius: 0.25rem;
+            line-height: 1.4;
+        }
+
+        .dropdown-link:hover {
+            color: #f59e0b; /* amber-500 */
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* --- Ajustes Móviles --- */
+        @media (max-width: 767px) {
+            #mobile-menu-container {
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+            .nav-item {
+                width: 100%;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                padding: 0;
+            }
+            .nav-item-content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.5rem;
+            }
+            .dropdown-menu {
+                position: static;
+                transform: none;
+                opacity: 1;
+                visibility: visible;
+                width: 100%;
+                box-shadow: none;
+                background-color: rgba(0, 0, 0, 0.3);
+                border: none;
+                border-top: 1px solid rgba(255,255,255,0.05);
+                display: none;
+                margin-top: 0;
+            }
+            .arrow-icon {
+                transition: transform 0.3s;
+            }
+            .nav-item.active .arrow-icon {
+                transform: rotate(180deg);
+            }
+        }
+
+        /* Ajustes scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* Ajustes Mermaid */
+        .mermaid .node rect, .mermaid .node circle, .mermaid .node ellipse, .mermaid .node polygon, .mermaid .node path {
+            fill: #1e293b !important;
+            stroke: #f59e0b !important;
+            stroke-width: 2px !important;
+        }
+        .mermaid .label {
+            color: #e2e8f0 !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+        .mermaid .edgePath .path {
+            stroke: #64748b !important;
+            stroke-width: 2px !important;
+        }
+        .mermaid .marker {
+            fill: #64748b !important;
+            stroke: #64748b !important;
+        }
+        
+        /* Modificación clave para ancho completo: eliminar límite max-width de prose */
+        .prose {
+            max-width: none !important;
+        }
+        .full-width-text {
+            max-width: none !important;
+        }
+        
+        figure {
+            margin: 3rem 0;
+            background: rgba(0,0,0,0.2);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        figcaption {
+            color: #94a3b8;
+            font-size: 0.875rem;
+            text-align: center;
+            margin-top: 1rem;
+            font-style: italic;
+        }
+        
+        /* Clase para resaltar conceptos en ámbar */
+        .concept {
+            color: #f59e0b; /* amber-500 */
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="selection:bg-amber-500 selection:text-slate-900 min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- Navegación Responsiva -->
+    <nav class="fixed w-full z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <a href="#" class="flex items-center space-x-2 group">
+                    <div class="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-150 transition-transform"></div>
+                    <span class="text-[10px] md:text-xs font-bold tracking-widest uppercase text-slate-200 group-hover:text-white transition-colors">
+                        Nature MI <span class="text-slate-600 mx-1">|</span> Man & Damasio 2019
+                    </span>
+                </a>
+                <!-- Hamburguesa -->
+                <button id="menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <!-- Menú -->
+                <div id="mobile-menu-container" class="hidden md:flex absolute md:static top-16 left-0 w-full md:w-auto bg-slate-950 md:bg-transparent flex-col md:flex-row md:items-center overflow-y-auto md:overflow-visible max-h-[80vh] md:max-h-full transition-all">
+                    <ul class="flex flex-col md:flex-row md:items-center text-[11px] font-medium uppercase tracking-widest text-slate-400 w-full md:w-auto">
+                        <li class="nav-item group md:mx-3"><div class="nav-item-content"><a href="#resumen" class="nav-link hover:text-white" onclick="closeMobileMenu()">Resumen</a></div></li>
+                        <li class="nav-item group md:mx-3"><div class="nav-item-content"><a href="#introduccion" class="nav-link text-amber-500 hover:text-amber-400" onclick="closeMobileMenu()">01. Intro</a></div></li>
+                        <li class="nav-item group md:mx-3"><div class="nav-item-content"><a href="#auto-interes" class="nav-link hover:text-white" onclick="closeMobileMenu()">02. Auto-interés</a></div></li>
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#tecnologias" class="nav-link hover:text-white" onclick="closeMobileMenu()">03. Tecnologías</a>
+                                <button class="md:hidden p-2 arrow-icon" onclick="toggleDropdown(this)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu md:w-48">
+                                <span class="block text-[9px] text-amber-500 mb-2 border-b border-white/10 pb-1">Habilitadores</span>
+                                <a href="#robotica-blanda" class="dropdown-link" onclick="closeMobileMenu()">Robótica Blanda</a>
+                                <a href="#asociaciones-transmodales" class="dropdown-link" onclick="closeMobileMenu()">Asociaciones Transmodales</a>
+                            </div>
+                        </li>
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#objeciones" class="nav-link hover:text-white" onclick="closeMobileMenu()">04. Preguntas</a>
+                                <button class="md:hidden p-2 arrow-icon" onclick="toggleDropdown(this)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu md:w-64">
+                                <a href="#recompensa" class="dropdown-link" onclick="closeMobileMenu()">Recompensa y Homeostasis</a>
+                                <a href="#robot-bien-comportado" class="dropdown-link" onclick="closeMobileMenu()">El Robot Ético</a>
+                                <a href="#es-real" class="dropdown-link" onclick="closeMobileMenu()">¿Es Real?</a>
+                            </div>
+                        </li>
+                        <li class="nav-item group md:mx-3"><div class="nav-item-content"><a href="#conclusion" class="nav-link text-amber-500 hover:text-amber-400" onclick="closeMobileMenu()">05. Conclusión</a></div></li>
+                        <li class="nav-item group md:mx-3"><div class="nav-item-content"><a href="#referencias" class="nav-link hover:text-white" onclick="closeMobileMenu()">Referencias</a></div></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Script de Navegación -->
+    <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu-container');
+        menuBtn.addEventListener('click', () => { mobileMenu.classList.toggle('hidden'); mobileMenu.classList.toggle('flex'); });
+        function toggleDropdown(button) {
+            const navItem = button.closest('.nav-item');
+            const dropdown = navItem.querySelector('.dropdown-menu');
+            navItem.classList.toggle('active');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+        function closeMobileMenu() {
+            if (window.innerWidth < 768) {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('flex');
+                document.querySelectorAll('.dropdown-menu').forEach(d => d.style.display = 'none');
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            }
+        }
+    </script>
+
+    <!-- Contenido Principal -->
+    <div class="flex-grow pt-32 md:pt-48 pb-16 md:pb-24 px-6 md:px-12 w-full">
+        <main class="w-full mx-auto text-center">
+            
+            <!-- Bloque Hero -->
+            <header class="mb-24 relative animate-fade-in-up">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-amber-500/5 rounded-full blur-3xl -z-10"></div>
+                
+                <h1 class="text-4xl sm:text-5xl md:text-7xl font-black text-slate-100 mb-6 leading-none tracking-tighter drop-shadow-2xl break-words">
+                    HOMEOSTASIS Y<br>ROBÓTICA BLANDA<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-500 text-2xl md:text-4xl block mt-4 font-serif italic tracking-wide">en el diseño de máquinas sintientes</span>
+                </h1>
+                
+                <p class="mt-8 text-sm md:text-base text-slate-400 font-medium tracking-wide max-w-2xl mx-auto uppercase">
+                    Nature Machine Intelligence | VOL 1 | OCTUBRE 2019
+                </p>
+                
+                <div class="mt-8 flex flex-wrap justify-center gap-4 text-xs md:text-sm text-amber-500 uppercase tracking-widest font-bold">
+                    <span>Kingson Man</span> • <span>Antonio Damasio</span>
+                </div>
+
+                <div class="mt-4 text-xs text-slate-500">
+                    Brain and Creativity Institute, Dornsife College of Letters, Arts and Sciences,<br>University of Southern California, Los Angeles, CA, USA.
+                </div>
+                
+                <div class="mt-16 flex justify-center">
+                    <div class="h-24 w-px bg-gradient-to-b from-amber-500/0 via-amber-500/50 to-amber-500/0"></div>
+                </div>
+            </header>
+
+            <!-- Resumen -->
+            <section id="resumen" class="w-full mx-auto mb-24 text-left bg-slate-900/40 p-8 md:p-12 rounded-xl border border-white/5 shadow-xl backdrop-blur-sm">
+                <h3 class="text-amber-500 font-bold uppercase tracking-widest text-xs mb-6 border-b border-slate-800 pb-2">Abstract / Resumen</h3>
+                <div class="prose prose-invert prose-lg full-width-text text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        Los intentos de crear máquinas que se comporten de manera inteligente a menudo conceptualizan la <span class="concept">inteligencia</span> como la capacidad de alcanzar objetivos, dejando sin respuesta una pregunta crucial: <strong class="text-white">¿los objetivos de quién?</strong> En un mundo dinámico e impredecible, un agente inteligente debería mantener su propio meta-objetivo de <span class="concept">auto-preservación</span>, como los organismos vivos cuya supervivencia depende de la <span class="concept">homeostasis</span>: la regulación de los estados corporales dirigida a mantener condiciones compatibles con la vida. En organismos capaces de estados mentales, los <span class="concept">sentimientos</span> son una expresión mental del estado de la vida en el cuerpo y juegan un papel crítico en la regulación del comportamiento. Nuestro objetivo aquí es indagar sobre las condiciones que potencialmente permitirían a las máquinas preocuparse por lo que hacen o piensan. Bajo ciertas condiciones, las máquinas capaces de implementar un proceso similar a la homeostasis también podrían adquirir una fuente de <span class="concept">motivación</span> y un nuevo medio para evaluar el comportamiento, similar al de los sentimientos en los organismos vivos. Basándonos en desarrollos recientes en <span class="concept">robótica blanda</span> y <span class="concept">abstracción multisensorial</span>, proponemos una nueva clase de máquinas inspiradas en los principios de la homeostasis. Las máquinas resultantes (1) exhibirían equivalentes al sentimiento; (2) mejorarían su funcionalidad en una variedad de entornos; y (3) constituirían una plataforma para investigar la <span class="concept">consciencia</span>, la inteligencia y el propio proceso de sentir.
+                    </p>
+                </div>
+            </section>
+
+            <!-- 1. Introducción -->
+            <section id="introduccion" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">1. Introducción: Vulnerabilidad y Sentimiento</h2>
+                <div class="prose prose-invert prose-lg full-width-text text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        Proponemos el diseño y la construcción de una nueva clase de máquinas organizadas de acuerdo con los principios de la regulación de la vida, u <span class="concept">homeostasis</span>. Estas máquinas tienen construcciones físicas —cuerpos— que deben mantenerse dentro de un estrecho rango de estados de viabilidad y, por lo tanto, comparten algunos rasgos esenciales con todos los sistemas vivos. La innovación fundamental de estas máquinas es la introducción del <span class="concept">riesgo para sí mismas</span>. En lugar de blindar o añadir potencia de procesamiento bruta para lograr resiliencia, comenzamos el diseño de estos robots introduciendo, paradójicamente, la <span class="concept">vulnerabilidad</span>.
+                    </p>
+                    <p>
+                        Los organismos vivos capaces de actividad mental son vasos frágiles de dolor, placer y puntos intermedios. Es en virtud de esa fragilidad que obtienen acceso al reino del <span class="concept">sentimiento</span>. La motivación principal para este proyecto es un conjunto de contribuciones teóricas a la comprensión de los sistemas biológicos dotados de sentimiento. Damasio ha proporcionado una justificación para la emergencia de los sentimientos a partir de la fisiología de la regulación de la vida. Los sentimientos son intrínsecamente sobre algo: hacen posible que un organismo gravite hacia estados de regulación de la vida al menos buenos y preferiblemente óptimos, manteniendo así la vida y extendiéndola hacia el futuro. Debemos añadir que, en nuestra conceptualización, los sentimientos son por necesidad <span class="concept">conscientes</span> y juegan un papel crítico en la maquinaria de la <span class="concept">consciencia</span>.
+                    </p>
+                    <p>
+                        Para las máquinas homeostáticas que imaginamos, los comportamientos pueden conllevar consecuencias reales. El mundo ofrece riesgos y oportunidades, no en relación con una función arbitraria de recompensa o pérdida, sino en relación con la existencia continuada de la propia máquina y, más concretamente, con la calidad del sentimiento que es el presagio del resultado bueno o malo relativo a la supervivencia. Las recompensas no son gratificantes y las pérdidas no duelen a menos que estén arraigadas en la vida y la muerte. La verdadera agencia surge cuando la máquina puede tomar partido en esta dicotomía, cuando actúa con una preferencia por (o, visto desde otro ángulo, hace una predicción fiable de) la existencia sobre la disolución. Un robot diseñado para participar en su propia homeostasis se convertiría en su propio <span class="concept">foco de preocupación</span>. Esta preocupación elemental infundiría significado en su procesamiento de información particular. Un robot operando sobre representaciones intrínsecamente significativas podría buscar soluciones especialmente inteligentes a las tareas que se le plantean; es decir, aumentar el alcance de sus habilidades cognitivas.
+                    </p>
+                    <p>
+                        Aportamos una perspectiva biológica al esfuerzo de producir máquinas con un equivalente artificial del sentimiento. Para este esfuerzo, nos basaremos en desarrollos recientes de dos campos: la ciencia de materiales y la informática. Pasando primero a los nuevos materiales, notamos que la última década ha sido testigo del nacimiento de una subdisciplina, la <span class="concept">robótica blanda</span>. Esto fue posible gracias a nuevos descubrimientos en el diseño y construcción de "tejidos" blandos incrustados con electrónica, sensores y actuadores. Estos tejidos artificiales son flexibles, estirables, comprimibles y rebotan con resiliencia; en resumen, son naturalmente dóciles con sus entornos. Combinados con parámetros convencionales como temperatura y nivel de energía, los materiales blandos proporcionan potencialmente una rica fuente de información sobre el cuerpo y el entorno.
+                    </p>
+                    <p>
+                        El segundo desarrollo se refiere a los algoritmos de aprendizaje automático estadístico para la creación de representaciones abstractas. Nuevas técnicas computacionales pueden permitirnos poner en registro mapas de los mundos interno y externo. Se ha prestado una enorme atención a las capacidades del <span class="concept">aprendizaje profundo</span>, pero aquí nos centramos en una aplicación particular de la tecnología: su capacidad para tender puentes a través de modalidades sensoriales, incluyendo no solo la exterocepción sino también las modalidades relacionadas con los estados internos del organismo: <span class="concept">interocepción</span> y <span class="concept">propiocepción</span>. Este avance proporciona una pieza crucial del rompecabezas de cómo entrelazar los estados homeostáticos internos de un sistema con sus percepciones externas y su comportamiento.
+                    </p>
+                </div>
+            </section>
+
+            <!-- 2. Auto-interés -->
+            <section id="auto-interes" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">2. El auto-interés como fuente de creatividad</h2>
+                <div class="prose prose-invert prose-lg full-width-text text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        Los robots de hoy carecen de sentimientos. No están diseñados para representar el estado interno de sus operaciones de una manera que les permita experimentar ese estado en un espacio mental. También carecen de individualidad y de "intencionalidad" (aboutness). Todas estas deficiencias están relacionadas. Es cierto que las máquinas inteligentes actuales funcionan extremadamente bien en dominios estrechos, pero les va mal en interacciones no restringidas con el mundo real. Nuestro enfoque difiere de las concepciones tradicionales de inteligencia que enfatizan la percepción dirigida hacia el exterior y la resolución abstracta de problemas. Consideramos la cognición de alto nivel como una excrecencia de recursos que se originaron para resolver el antiguo problema biológico de la homeostasis. La homeostasis se manifiesta como <span class="concept">auto-interés</span> e inspira un comportamiento creativo en entornos complejos, naturales y sociales. Las máquinas actuales exhibir cierta inteligencia pero ningún sentido ("sense-making"), definido como la "relación significativa de un agente con el entorno". Proponemos que el significado comienza a emerger cuando el procesamiento de la información conlleva consecuencias homeostáticas.
+                    </p>
+                    <p>
+                        En la formalización original de la información de Shannon, como reducción en la incertidumbre del contenido de un mensaje, el problema del significado del mensaje se dejó cuidadosamente de lado. Recientemente, Kolchinsky y Wolpert han propuesto una definición formal de <span class="concept">información semántica</span>, o significativa, como ese subconjunto de información de Shannon que está relacionado con los estados de <span class="concept">viabilidad</span> futuros de un sistema. Toman un enfoque causal-contrafactual para identificar la información semántica calculando cómo se habría visto afectada la viabilidad futura del sistema si esa información hubiera sido diferente. Como señalan los autores, el éxito o el fracaso de su definición depende de la medida de viabilidad seleccionada, que en su caso es la entropía negativa, elegida por su interpretabilidad termodinámica, si no necesariamente biológica.
+                    </p>
+                    <p>
+                        A diferencia de otros sistemas físicos, los cuerpos vivos están sujetos a un riesgo y deterioro perennes, resultantes de sus propias operaciones regulares de vida. Pero nada equivalente se aplica a un algoritmo incorpóreo o a los robots actuales cuya existencia física es un hecho y, a efectos prácticos, está garantizada. En nuestra opinión, los datos sensoriales se vuelven significativos cuando pueden conectarse con el mantenimiento y la integridad del agente que siente, es decir, con el paquete de operaciones reguladoras del organismo que contribuye a la homeostasis. Sin un marco biológico, el procesamiento sensorial que no está unido a un cuerpo vulnerable "no tiene sentido".
+                    </p>
+
+                    <h3 class="text-xl text-amber-500 font-bold mt-8 mb-4">Más allá de la corporización (Embodiment)</h3>
+                    <p>
+                        Nuestro enfoque para construir una máquina con algo parecido al sentimiento tiene lugar en un contexto histórico de sistemas autónomos corporizados. La cibernética de Norbert Wiener puso gran énfasis en el control basado en retroalimentación para producir y mantener estados dentro de un rango deseado. El "homeostato" de W. Ross Ashby demostró la emergencia de una estabilidad auto-restauradora. El dispositivo de Ashby acoplaba sensores y efectores eléctricos y magnéticos de tal manera que, cuando se perturbaba, ejecutaba una búsqueda aleatoria de parámetros hasta que se restauraba el equilibrio (Fig. 1; ver refs. 9-14).
+                    </p>
+                </div>
+
+                <!-- Figura 1 -->
+                <figure class="w-full">
+                    <img src="https://github.com/Leolib87/Vida_Mente_CosmosII/blob/main/homeostatic_robotics_fig1.png?raw=true" alt="Diagrama del Homeostato de Ashby mostrando módulos interconectados y mecanismos de búsqueda de equilibrio" class="w-full h-auto rounded shadow-lg border border-slate-700">
+                    <figcaption>
+                        <strong>Fig. 1 | El homeostato de Ashby de 1954 exhibía cierta estabilidad auto-restauradora.</strong> Compuesto por cuatro módulos eléctrico-magnéticos idénticos, cada uno ejerciendo efectos sobre los otros, el sistema ejecutaba una búsqueda de un estado globalmente estable cuando el voltaje (V) de un módulo excedía algún valor crítico de error (e) desde el estado nulo. Reproducido de ref. 9, Taylor & Francis.
+                    </figcaption>
+                </figure>
+
+                <div class="prose prose-invert prose-lg full-width-text text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        Los robots basados en el comportamiento, quizás originados con las tortugas de Grey Walter y llevados a primer plano por la arquitectura de subsunción de Rodney Brooks, se basaron en la <span class="concept">corporización</span> de los agentes —el hecho de que la IA tenía un cuerpo físico en continua interacción con el entorno— como una fuente crucial de su capacidad para comportarse inteligentemente. Lipson, Bongard y sus colegas han extendido desde entonces esta línea de investigación a la evolución de robots que modelan su propia morfología para ejecutar objetivos conductuales. Otros trabajos han producido agentes que pueden regular su propia susceptibilidad a las señales ambientales basándose en variables internas abstractas. El proyecto Cyber Rodent ha explorado la evolución de controladores de redes neuronales para apoyar el comportamiento de "apareamiento" y "búsqueda de alimento" de robots que buscan congéneres y baterías en el entorno. En experimentos de simulación que hacen referencia explícita a la homeostasis, robots fototácticos utilizaron "plasticidad neuronal" para restaurar el comportamiento adaptativo tras la inversión del campo visual.
+                    </p>
+                    <p>
+                        Se han dado algunos pasos preliminares para desarrollar "circuitos emocionales" para influir en la selección de objetivos robóticos. Otros han construido robots capaces de expresiones emocionales (típicamente a través de movimientos faciales) para facilitar la interacción humano-robot, pero estos programas de motivación y actuaciones emocionales no han estado arraigados en el propio bienestar de la máquina, y mucho menos en su bienestar. Las características similares a la homeostasis, si es que estaban presentes, se implementaron desde fuera hacia dentro: se instruyó a los agentes para maximizar, o mantener dentro de un rango establecido, ciertos valores arbitrarios. Lo que el propio robot no apreciaba era el hecho de que si estos valores viraban hacia un extremo, entonces su propia existencia se vería comprometida. Las "emociones" y "valores" subyacentes a los comportamientos no eran relevantes para la continuación del sistema en sí. En última instancia, estos sistemas carecían de una restricción de viabilidad. Todos los robots de esta clase serían descritos por el filósofo Hans Jonas como "biológicamente indiferentes" y, correspondientemente, carentes de afecto. A pesar de comportarse con aparente propósito, lo que hacían estas máquinas —y esto es esencial— no le importaba a los propios sistemas.
+                    </p>
+                    <p>
+                        En resumen, la presencia de un cuerpo que sirve como ayuda o andamio para la resolución de problemas no es suficiente para generar significado. Tampoco calcular un parámetro interno abstracto y etiquetarlo como "emoción" eleva el parámetro a este sugerente título. Di Paolo ha criticado el programa de la robótica corporizada por carecer aún de una lógica a nivel de organismo: "las emociones no vienen en cajas". Es por eso que abogamos por una transición de la "inteligencia artificial corporizada" a la <span class="concept">"inteligencia artificial motivada homeostáticamente"</span>. La inteligencia se ha definido como "la capacidad de un agente para lograr objetivos en una amplia gama de entornos". Pero esta definición provoca una pregunta de seguimiento: ¿los objetivos de quién? ¿Merece ser llamado inteligente un agente que sigue miopemente las órdenes hasta el punto de ponerse en peligro y comprometer su capacidad para llevar a cabo órdenes futuras?
+                    </p>
+                    <p>
+                        Los sistemas vivos, por otro lado, tienen la propiedad de la individualidad. Se construyen y mantienen continuamente contra la tendencia natural hacia la disolución y la decadencia. "Este mundo es a la vez invitador y amenazante", como dice Jonas. "La apetición es la forma que asume la preocupación básica de toda vida". Los seres, como condición de existencia, deben imponer y reparar continuamente el límite entre el yo y el entorno. En el concepto estrechamente relacionado de <span class="concept">autopoiesis</span>, los sistemas se construyen continuamente a sí mismos y definen sus propias relaciones con el entorno. Damasio ha trazado una progresión gradual de procesos del yo, desde el proto-yo hasta el yo central y el yo autobiográfico, con cada etapa avanzada explicada por arquitecturas cerebro-cuerpo específicas y los procesos que ejecutan. A lo largo de la progresión de los procesos del yo corre el tema de la regulación homeostática de la vida.
+                    </p>
+                    <p>
+                        En última instancia, nuestro objetivo es producir máquinas que tomen decisiones y controlen comportamientos bajo la guía de equivalentes de sentimientos. Imaginamos que estas máquinas lograrán un nivel de adaptabilidad y resiliencia más allá de los robots "autónomos" de hoy. En lugar de tener que codificar un robot para cada eventualidad o equiparlo con un conjunto limitado de políticas de comportamiento, un robot preocupado por su propia supervivencia podría resolver creativamente los desafíos que encuentre. Estos robots interactuarían con y aprenderían sobre el entorno desde una perspectiva de auto-preservación generada internamente. Los objetivos y valores básicos se descubrirían orgánicamente, en lugar de diseñarse extrínsecamente. Estos comportamientos relacionados con la supervivencia podrían entonces vincularse a propósitos humanos útiles.
+                    </p>
+                </div>
+            </section>
+
+            <!-- 3. Tecnologías Habilitadoras -->
+            <section id="tecnologias" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">3. Tecnologías Habilitadoras</h2>
+                <div class="prose prose-invert prose-lg full-width-text text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        Para realizar esta propuesta de una nueva clase de máquinas homeostáticas dotadas de equivalentes a los sentimientos, integraremos desarrollos recientes de dos campos: la <span class="concept">robótica blanda</span> y la <span class="concept">abstracción multisensorial</span>.
+                    </p>
+
+                    <h3 id="robotica-blanda" class="text-xl text-amber-500 font-bold mt-8 mb-4">Robótica Blanda</h3>
+                    <p>
+                        Las estructuras componentes de los organismos vivos están vivas ellas mismas y conllevan sus propios imperativos homeostáticos. Los organismos vivos están compuestos de órganos y tejidos vivos que a su vez están compuestos de células vivas. Cada nivel participa en su propio auto-mantenimiento, detectando y señalizando el estado de su proceso vital. Estos niveles anidados de preocupación material por uno mismo aún no han encontrado expresión en las máquinas. Sin embargo, en el nivel intermedio de los tejidos, los últimos desarrollos en <span class="concept">materiales blandos</span> deberían permitirnos diseñar, hasta cierto punto, "imitaciones" de la naturaleza.
+                    </p>
+                    <p>
+                        ¿Por qué materiales blandos? La mayoría de los robots actuales están construidos con materiales de conveniencia. ¿Qué es tan diferente en un robot blando comparado con un robot de metal? Considere la "vida" de una pieza de chapa metálica doblada en un robot cuadrado. En general, el metal es tan duradero en comparación con su nicho —nuestro entorno humano— que su integridad y viabilidad no es una consideración. Es por eso que los metales y los plásticos duros son omnipresentes en la robótica: precisamente para que, en la mayoría de los casos, la integridad material pueda asumirse con seguridad.
+                    </p>
+                    <p>
+                        Sin embargo, la durabilidad tiene un costo. Un material invulnerable no tiene nada que decir sobre su bienestar. Rara vez encuentra amenazas existenciales. Si imaginamos medidores de tensión incrustados en una superficie dura, pasarían la mayor parte de su tiempo reportando "sin cambios". Los golpes duros de la vida se acumulan hasta que finalmente ocurre una falla catastrófica, y los sensores gritan al unísono. El robot rígido presenta una cara monolítica e implacable al mundo, insensible por diseño, su función desacoplada de su constitución.
+                    </p>
+                    <p>
+                        Los robots blandos, por otro lado, entran más fácilmente en un acoplamiento elegante y sensible con el entorno (Fig. 2a). Comenzando con la vulnerabilidad como principio de diseño para robots, proponemos extenderla hasta la propia materia de la que está hecho el robot. Continuando con el ejemplo que adelantamos anteriormente, los mismos medidores de tensión incrustados en el volumen de un material blando pueden localizar fuerzas y señalar interrupciones graduadas en la continuidad de la superficie corporal, como las causadas por pinchazos y rasgaduras. Como ejemplo realizado, Markvicka et al. fabricaron una "piel" electrónica blanda que localiza y puede desencadenar respuestas al daño. Impregnaron una base de elastómero con gotas de metal líquido que, al romperse, causan cambios en la conductividad eléctrica a través de la superficie dañada.
+                    </p>
+                </div>
+
+                <!-- Figura 2 -->
+                <figure class="w-full">
+                    <img src="https://github.com/Leolib87/Vida_Mente_CosmosII/blob/main/homeostatic_robotics_fig2.png?raw=true" alt="Composición de imágenes mostrando electrónica blanda, un brazo robótico tipo pulpo y una sección transversal de piel humana" class="w-full h-auto rounded shadow-lg border border-slate-700">
+                    <figcaption>
+                        <strong>Fig. 2 | Materiales blandos artificiales y naturales.</strong> a, La electrónica blanda puede incrustarse en sustratos flexibles y estirables. LM, metal líquido. b, Los efectores robóticos blandos agarran conformándose al objeto. c, La piel humana contiene incrustaciones densas de sensores y efectores para el mantenimiento de su propia integridad. Reproducido de ref. 23, AAAS (a, tres filas superiores); ref. 29, Wiley (a, fila inferior); y ref. 34, Elsevier (b). Crédito: Instituto Nacional del Cáncer (c).
+                    </figcaption>
+                </figure>
+
+                <div class="prose prose-invert prose-lg full-width-text text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        Esto no quiere decir que los materiales blandos sean necesariamente más débiles o menos resistentes al daño mecánico que los materiales duros. La materia blanda admite una mayor complejidad y más formas de regular y ser regulada. Los materiales blandos se acomodan a los objetos en lugar de empujarlos a un lado. Bajo estrés, se deforman sin romperse, luego entran en disfunción o declive gradual en lugar de sufrir fallas catastróficas repentinas. En muchos casos, los materiales blandos pueden <span class="concept">auto-curarse</span>, recuperando gran parte, si no todas, sus propiedades estructurales y eléctricas previas a la lesión. En un golpe de ingeniería, Cao et al. demostraron una piel de gel electrónica que puede auto-curarse después de un corte (a través de interacciones iónicas); puede sentir el tacto, la presión y la tensión; ¡y funcionar en condiciones húmedas o secas!
+                    </p>
+                    <p>
+                        Los materiales blandos tienen una morfología continuamente variable, con más puntos de contacto, control y dispersión de fuerza. Muestrean densamente el entorno a través de múltiples modalidades, incluyendo presión, estiramiento, temperatura y nivel de energía, y devuelven rica información sobre la interacción en evolución. Aunque no es suficiente para generar sentimiento por sí solo, la materia blanda tiene más probabilidades de crear naturalmente el tipo de relación que, esperamos, admite una aproximación al sentimiento.
+                    </p>
+                    <p>
+                        Como ejemplo, considere el brazo robótico de pulpo construido de silicona y actuado por tendones (Fig. 2b). Ejecuta un agarre envolvente y en espiral sobre una superficie irregular no calculando una solución analítica de pares aplicados a cada una de sus "articulaciones" microscópicas, sino conformándose al objeto. Hasta cierto punto, sostiene permitiendo ser sostenido. Su agarre del mundo se logra no por cognición de objetos de alto nivel sino por sus propias propiedades materiales. En gran medida, también lo es el sentimiento en las criaturas biológicas.
+                    </p>
+                    <p>
+                        Los sensores de un organismo vivo están ellos mismos vivos y son vulnerables a las condiciones que están detectando. La retina no es una pieza indiferente de silicio, sino una hoja curva de células fotorreceptoras que descansan sobre un lecho de capilares, todo bañado en una jalea salina, rodeado de sensores de dolor y defendido por una barrera física de despliegue ultrarrápido: el párpado.
+                    </p>
+                    <p>
+                        Para tomar otro ejemplo de la biología, considere el material casi milagroso llamado piel (Fig. 2c). En su totalidad, la piel es la más grande de las vísceras en el organismo humano y contiene densas incrustaciones de sistemas sensoriales, motores, de intercambio de nutrientes y de auto-reparación. Además, las células individuales que componen la piel no solo contienen sus propios sistemas de mantenimiento de vida, como todas las otras vísceras, sino que las células de la piel también registran picazón, dolor, temperatura, estiramiento, vibración y presión, constituyendo así la interfaz entre el yo y el mundo. Y, sin embargo, la piel es exquisitamente vulnerable. Las mandíbulas de un pequeño insecto pueden romper la piel y crear una gran perturbación en el organismo. De hecho, esta sensibilidad literal es uno de los "propósitos" de la piel. El registro y amplificación por parte de la piel de señales de ataque, las caricias de un ser querido o los rayos del sol, proporciona información crítica con respecto al gobierno continuo de la vida. Las cosas pueden ir bien o muy mal para los materiales blandos, de maneras más y más interesantes que para la materia dura.
+                    </p>
+                    <p>
+                        La <span class="concept">suavidad</span> puede modelarse computacionalmente como una malla o retícula de componentes lo suficientemente pequeños que interactúan en números lo suficientemente grandes. El principal desafío es simular el material a una resolución lo suficientemente alta para que la suavidad pueda emerger mientras sigue siendo computacionalmente manejable. Se han desarrollado algoritmos eficientes para modelar la dinámica de robots blandos, incluso cuando están compuestos de materiales heterogéneos. Los <span class="concept">algoritmos evolutivos</span> también se han aplicado al problema de generar morfologías de robots blandos y los patrones motores correspondientes. La vasta expansión de los grados de libertad de movimiento en los robots blandos es paralela a una vasta expansión de la sensibilidad y el control. La complejidad resultante de la simulación vale la pena porque los materiales blandos presentan un espacio de oportunidad más grande para el mantenimiento y el cuidado: un escenario más grande para que se desarrolle un modelo de homeostasis y sentimientos.
+                    </p>
+                    <p>
+                        También llamaríamos la atención sobre el interesante caso de los sistemas <span class="concept">biohíbridos</span>, que integran materiales robóticos convencionales o blandos con células diseñadas. Los tejidos musculares pueden integrarse en robots en miniatura para la actuación a pequeña escala, o células bacterianas en hidrogeles para la detección y computación a largo plazo. La advertencia, sin embargo, es que agregar células o tejidos vivos a materiales más convencionales puede enturbiar las aguas en el objetivo de comprender los principios detrás de las máquinas sintientes. Poner trozos de materia biológica en máquinas puede muy bien conseguirnos algo de suavidad y sentimiento "gratis", sin modelarlos explícitamente.
+                    </p>
+
+                    <h3 id="asociaciones-transmodales" class="text-xl text-amber-500 font-bold mt-8 mb-4">Computación de asociaciones transmodales</h3>
+                    <p>
+                        El sueño de construir un robot con una auto-representación homeostática presentaría un ejercicio complejo en aprendizaje automático, pero podría basarse en hechos y teoría de la neurociencia; por ejemplo, en un marco neuro-arquitectónico propuesto originalmente en 1989. Según este marco, las entradas sensoriales se unen en conceptos abstractos al ser reasignadas progresivamente en una moda jerárquica neural, con cada nivel superior registrando características más complejas. Los nodos en cada nivel también re-instancian sus características constituyentes de nivel inferior mediante proyecciones de arriba hacia abajo. Esta arquitectura de <span class="concept">convergencia-divergencia</span> puede formar representaciones que unen a través de las modalidades sensoriales.
+                    </p>
+                    <p>
+                        Existe una correspondencia intrigante entre la arquitectura de convergencia-divergencia implementada biológicamente y algunas variantes de redes neuronales profundas. Las <span class="concept">Máquinas de Boltzmann Profundas</span> (DBMs), por ejemplo, aprenden representaciones jerárquicas de entradas sensoriales paso a paso, con características internas cada vez más complejas adquiridas a medida que se sube en la jerarquía. Las DBM también son generativas en el sentido de que intentan reconstruir, en cada nivel hacia abajo de la jerarquía, las características aprendidas y, en última instancia, el patrón original de energía sensorial correspondiente al estímulo.
+                    </p>
+                    <p>
+                        El reconocimiento visual de dígitos escritos fue uno de los primeros usos prácticos de las redes neuronales, con el reconocimiento auditivo del habla de dígitos siguiendo algo más tarde. Las redes de hoy pueden aprender representaciones que unen a través de las modalidades auditiva y visual para realizar reconocimiento transmodal. Ngiam et al. usaron DBMs y autoencoders para realizar reconocimiento de habla audiovisual, entrenando con datos auditivos para reconocer los videos correspondientes de movimientos labiales. El reconocimiento de objetos a través de las modalidades auditiva y visual siguió poco después. Curiosamente, las representaciones de objetos audiovisuales-invariantes fueron descubiertas en el cerebro humano alrededor del mismo período. Otras modalidades se han unido desde entonces a la refriega algorítmica, incluyendo la combinación significativa de visión con modalidades motoras y táctiles. Manteniendo el ritmo con los algoritmos, el cerebro humano ha sido mapeado para correspondencias transmodales entre visión y tacto, y entre visión, audición y tacto.
+                    </p>
+                    <p>
+                        Crucialmente, el procesamiento transmodal no se limita a combinaciones de modalidades sensoriales externas (exteroceptivas), sino que también puede acomodar las modalidades internas (propioceptivas e interoceptivas). Damasio ha propuesto que una clave para generar una auto-perspectiva es la integración de información exteroceptiva (de cortezas visuales, por ejemplo) con información de portales sensoriales y el marco musculoesquelético, que proporciona un ancla estable para el procesamiento sensorial en evolución.
+                    </p>
+                    <p>
+                        Sugerimos que las redes neuronales profundas están listas para abordar el próximo gran desafío de construir correspondencias entre el espacio interior y el espacio exterior, entre datos homeostáticos internos y datos sensoriales externos. Una propuesta ha sido que el sentimiento de existencia en sí mismo, o de presencia consciente, puede deberse a la <span class="concept">codificación predictiva</span> de sensaciones internas. El robot homeostático procesará información con la ayuda de algo parecido al sentimiento. ¿Cómo se asocia sistemáticamente el color, sabor y textura, digamos, de una manzana, con cambios en la gestión continua de la vida? Todo lo cual es para decir que la pregunta "¿cómo te hace sentir esto?" podría hacerse a las máquinas.
+                    </p>
+                </div>
+            </section>
+
+            <!-- 4. Objeciones -->
+            <section id="objeciones" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">4. Preguntas y Objeciones</h2>
+                <div class="prose prose-invert prose-lg full-width-text text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        Ya tenemos las manos llenas enseñando a los robots a conducir nuestros coches y barrer nuestros suelos. ¿Por qué añadir nuevos modos de fallo? ¿Por qué preocuparse de que la Roomba coja un resfriado? La perspectiva de añadir vulnerabilidad y auto-interés a los robots provoca un conjunto de preocupaciones comunes. Intentamos abordarlas aquí.
+                    </p>
+
+                    <h3 id="recompensa" class="text-xl text-amber-500 font-bold mt-8 mb-4">Recompensa, refuerzo y costos generales de la homeostasis</h3>
+                    <p>
+                        La adición de vulnerabilidad física abre el comportamiento del robot a una nueva riqueza. Usamos el cuerpo para calcular implícitamente una función de recompensa de alta dimensión, para la cual una solución analítica explícita está fuera de alcance. Las funciones de recompensa se emplean en el <span class="concept">aprendizaje por refuerzo</span> (RL), un marco computacional que se originó en la tradición conductista de la psicología. En estudios computacionales, el RL se puede usar para entrenar un sistema para realizar un comportamiento complejo de múltiples pasos diseñando una función de recompensa apropiada para que la maximice. Una dificultad principal es definir la función de recompensa con suficiente especificidad para lograr el estado objetivo previsto. Otra dificultad es el requisito de enormes cantidades de datos experienciales —del orden de millones de ensayos y errores— para aprender comportamientos complejos. Las máquinas pueden adquirir vasta experiencia en simulaciones informáticas aceleradas, pero esto no es posible para organismos limitados por los límites materiales y temporales de la realidad física.
+                    </p>
+                    <p>
+                        Consideramos el RL como una herramienta poderosa para ciertas clases de problemas, pero el RL en general no debe confundirse ni identificarse con una arquitectura de sistema homeostático. Especificamos un objetivo particular para la optimización (bienestar homeostático) e incorporamos un vínculo necesario con la integridad física del cuerpo. Al hacerlo, esperamos reformular términos utilizados por los practicantes de RL como recompensa, castigo y motivación, que, en su mayor parte, carecen de fundamento en la realidad biológica y fenomenológica.
+                    </p>
+                    <p>
+                        En este punto, nos alienta una corriente de trabajo computacional que construye puentes entre la homeostasis del organismo, las emociones y el RL. Keramati y Gutkin modelan matemáticamente el RL como el recorrido de un <span class="concept">espacio homeostático multidimensional</span>, en el que cada dimensión corresponde a un parámetro fisiológico y tiene un valor óptimo. La recompensa, en esta perspectiva, no se identifica con bombones o dólares o puntos de videojuego, sino más bien con cualquier cosa que mueva al agente hacia la ubicación en el espacio homeostático que minimiza la distancia a los diversos óptimos. Como dijo un revisor del trabajo de Keramati y Gutkin, esto hace que "el aprendizaje por refuerzo sea responsable ante los imperativos homeostáticos". Trabajos recientes han extendido este marco de RL homeostático para abordar comportamientos cognitivos, sociales y económicos de alto nivel, y considerado su relación con la inferencia activa.
+                    </p>
+
+                    <h3 id="robot-bien-comportado" class="text-xl text-amber-500 font-bold mt-12 mb-4">El robot bien comportado</h3>
+                    <p>
+                        Nuestro objetivo es construir robots con un sentido de auto-preservación. ¿Qué podría salir mal con tal esfuerzo? Las historias sobre robots a menudo terminan mal para sus creadores humanos. Parecemos estar inquietos por el estatus moral de los artefactos imbuidos de cualidades similares a las de la vida. Si la existencia de una máquina genuinamente sintiente fuera amenazada por humanos, ¿respondería necesariamente en defensa propia violenta? Sugerimos que no, siempre y cuando, por ejemplo, además de tener acceso a sus propios sentimientos, fuera capaz de saber sobre los sentimientos de los demás, es decir, si estuviera dotada de <span class="concept">empatía</span>. Para algunos de los problemas que surgen al dar algunos sentimientos a los robots, podríamos intentar resolverlos dando a los robots más sentimientos en lugar de suprimirlos.
+                    </p>
+                    <p>
+                        Suscribimos una cuenta naturalista de la moralidad en la que los comportamientos son guiados por la <span class="concept">deliberación moral</span>. Johnson argumenta que la deliberación moral implica imaginar las consecuencias de nuestras acciones sobre nosotros mismos y los demás, y sentir conscientemente esas consecuencias. Levy va más allá, argumentando que la consciencia es necesaria para la responsabilidad moral. Una condición previa necesaria para la atribución de responsabilidad moral es la conciencia de los hechos y condiciones que dan a nuestras acciones su significado moral. Los sentimientos son responsables de introducir en la mente los hechos relevantes del cuerpo. Asumiendo un robot ya capaz de sentimiento genuino, un vínculo obligatorio entre sus sentimientos y los de los demás resultaría en su comportamiento ético y sociable. Como punto de partida, proponemos dos reglas provisionales para un robot bien comportado: <strong class="text-white">(1) sentirse bien; (2) sentir empatía</strong>.
+                    </p>
+                    <p>
+                        La máquina es capaz de sentirse bien o mal, pero de acuerdo con la regla 1 persigue el bienestar homeostático, es decir, sentirse bien. La segunda regla, imponiendo la empatía, haría que un robot sintiera el placer y el dolor de los demás como propios (aunque no necesariamente con toda su fuerza). Las dos reglas se integran y refuerzan mutuamente. La empatía actúa como un regulador del auto-interés y como un reforzador del comportamiento pro-social. Las acciones que dañan a otros se sentirán como si ocurriera daño al yo, mientras que las acciones que mejoran el bienestar de los otros beneficiarán al yo.
+                    </p>
+                    <p>
+                        Estamos seguros de que nuestras dos reglas eventualmente quedarían atrapadas en enredos inesperados, pero tal es la naturaleza de la toma de decisiones morales, que se caracteriza por elecciones difíciles, contingencia a las circunstancias, resistencia a la maximización racional y guía por sentimientos fuertes pero inarticulables u ocultos. Lo que las personas no hacen típicamente es quedarse atrapadas en bucles infinitos de razonamiento 'moral', o causar estragos siguiendo reglas estrictas hasta un final sangriento.
+                    </p>
+                    <p>
+                        Las IA suficientemente avanzadas se han caracterizado, injustamente creemos, como necesariamente desviadas, paranoicas y adquisitivas. Sus "impulsos básicos de IA" de autoprotección implicarían una voluntad de poder. Pero esto no es una implicación empíricamente justificada de la inteligencia. Podemos imaginar con la misma facilidad una IA 'ascética' completamente iluminada y retirada, como podemos imaginar un maximizador demoníaco. Nuestra comprensión actual de la relación entre inteligencia y personalidad aún no puede adjudicar estas posiciones.
+                    </p>
+                    <p>
+                        Esperamos que esta sección sirva como un aviso preliminar para las discusiones futuras necesarias sobre la ética de los robots. Los robots que sienten deberían implementar la deliberación moral de la manera en que lo hacen los humanos: como resolución de problemas orientada por sentimientos, teniendo en cuenta los sentimientos de los demás. Los robots podrían tener incluso menos impedimentos para el comportamiento moral que los humanos, por ejemplo, aquellos impedimentos que heredamos de la historia, la cultura o los impulsos biológicos, que pueden ser eliminados mediante ingeniería de un robot. El comportamiento moralmente perfecto, en robots o de otro modo, es probable que sea incoherente o inalcanzable, pero el progreso moral es posible.
+                    </p>
+
+                    <h3 id="es-real" class="text-xl text-amber-500 font-bold mt-12 mb-4">¿Pero es la cosa real?</h3>
+                    <p>
+                        ¿Sería un robot homeostático, en el mejor de los casos, un simulacro, replicando algunos de los comportamientos y mecanismos de los organismos vivos pero perdiendo un ingrediente clave de la cosa real? ¿Se requiere la bioquímica "húmeda" del tejido celular para una auténtica homeostasis y para la experiencia mental que llamamos sentimiento? Estas son preguntas importantes y abiertas (Cuadro 1). ¿Pueden todos los fenómenos mentales reducirse a procesamiento de información, implementable en cualquier medio de computación arbitrario? Una simulación por ordenador de un huracán no nos mojará, pero ¿podría la simulación del pensamiento, siendo en sí misma procesamiento de información, resultar en pensamiento real?
+                    </p>
+                    <p>
+                        Aquí debemos considerar la posibilidad de que el sentimiento verdadero —el tipo de estado mental que los humanos experimentan cuando sentimos— pueda de hecho estar restringido al tejido biológico húmedo y puede no ser realizable en artefactos no vivos. La <span class="concept">hipótesis de la humedad</span> predice que los mecanismos potencialmente cruciales detrás del sentimiento son imposibles de realizar en materiales alternativos, debido a su falta de las propiedades fisicoquímicas necesarias para replicar la cadena causal de eventos. Los modelos y simulaciones del mecanismo crucial serían mapas útiles del territorio, pero no replicarían usualmente la estructura causal de una manera que esté fundamentada en la realidad.
+                    </p>
+                    <p>
+                        Igualmente importante, la posesión de sentimiento genuino, como sea que se defina o verifique, puede no ser necesaria para el objetivo práctico de mejorar el comportamiento del robot. En la actualidad, la hipótesis de la humedad para los sentimientos genuinos no está probada y es inverificable. La realidad de una cosa es difícil de establecer cuando la cosa es subjetiva. La verificabilidad puede ser en última instancia una distracción de la tarea actualmente en cuestión, que es modelar la cosa mejor y obtener una comprensión adicional de ella. A medida que los modelos continúen mejorando, es concebible que se conviertan en instanciaciones de los fenómenos modelados. En algún nivel de detalle, el mapa podría volverse indistinguible del territorio.
+                    </p>
+
+                    <!-- CAJA 1 -->
+                    <div class="my-12 p-6 bg-amber-500/20 border-l-4 border-amber-500 rounded-r-lg">
+                        <h4 class="text-lg font-bold text-white mb-4">Cuadro 1 | Máquinas sintientes como plataforma de investigación</h4>
+                        <p class="mb-4">El objetivo inicial de la introducción de la vulnerabilidad física y la auto-regulación autodeterminada no es crear robots con sentimiento auténtico, sino más bien mejorar su funcionalidad a través de una amplia gama de entornos. Como segundo objetivo, introducir esta nueva clase de máquinas constituiría una plataforma científica para la experimentación sobre arquitecturas cerebro-cuerpo robóticas. Esta plataforma abriría la posibilidad de investigar importantes preguntas de investigación:</p>
+                        <ul class="list-disc pl-6 space-y-2 text-slate-300">
+                            <li>¿Cuáles son las expansiones específicas de inteligencia y capacidad cognitiva logradas por la adición de <span class="concept">diseño homeostático</span> y procesamiento afectivo?</li>
+                            <li>¿Cuál es el papel de la transmisión cultural y la resolución colectiva de problemas en sociedades de robots homeostáticos?</li>
+                            <li>¿Hasta qué punto la aparición del sentimiento y la consciencia depende de un sustrato material?</li>
+                        </ul>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- 5. Conclusión -->
+            <section id="conclusion" class="w-full mx-auto mb-20 text-left">
+                <h2 class="text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">5. Conclusión</h2>
+                <div class="prose prose-invert prose-lg full-width-text text-slate-300 leading-relaxed font-light text-justify">
+                    <p>
+                        Sugerimos que la <span class="concept">supervivencia</span> del agente artificial debería implementarse como un problema a resolver por derecho propio. La constitución y los estados de viabilidad de la máquina aún no se han explotado como una fuente interna de datos ricos y altamente relevantes. La incorporación de tejidos blandos incrustados con sensores y efectores en robots proporcionará una fuente de <span class="concept">datos homeostáticos multimodales</span>. Los algoritmos transmodales construirán asociaciones abstractas entre los objetos del mundo y sus efectos multidimensionales sobre la homeostasis. Los robots homeostáticos podrían cosechar beneficios conductuales actuando como si tuvieran sentimientos. Incluso si nunca lograran una experiencia interna completa en el sentido humano, su comportamiento adecuadamente motivado resultaría en una inteligencia expandida y una autonomía mejor comportada.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Información Adicional y Agradecimientos -->
+            <section id="informacion-adicional" class="w-full mx-auto mb-16 text-left border-t border-slate-800 pt-12">
+                <h3 class="text-xl font-serif font-bold text-white mb-6">Información Adicional</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm text-slate-400 font-light">
+                    <div>
+                        <h4 class="text-amber-500 font-bold mb-2">Agradecimientos</h4>
+                        <p class="mb-4">
+                            Agradecemos a H. Damasio por sus comentarios sobre esta Perspectiva. Este trabajo fue apoyado por subvenciones de la Fundación Berggruen y la Fundación Templeton World Charity a A.D.
+                        </p>
+                        
+                        <h4 class="text-amber-500 font-bold mb-2">Intereses en Competencia</h4>
+                        <p class="mb-4">
+                            Los autores declaran no tener intereses en competencia.
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-amber-500 font-bold mb-2">Correspondencia</h4>
+                        <p class="mb-4">
+                            La correspondencia debe dirigirse a K.M. o A.D.
+                        </p>
+                        
+                        <h4 class="text-amber-500 font-bold mb-2">Nota del Editor</h4>
+                        <p>
+                            Springer Nature se mantiene neutral con respecto a los reclamos jurisdiccionales en mapas publicados y afiliaciones institucionales.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Referencias -->
+            <section id="referencias" class="w-full mx-auto mb-24 text-left border-t border-slate-800 pt-12">
+                <h2 class="text-2xl font-serif font-bold text-white mb-8">Referencias</h2>
+                <ol class="text-xs text-slate-400 space-y-2 font-light list-decimal pl-4">
+                    <li>Damasio, A. <i>The Strange Order of Things: Life, Feeling, and the Making of Cultures</i> (Pantheon, 2018).</li>
+                    <li>Friston, K. The free-energy principle: a unified brain theory? <i>Nat. Rev. Neurosci.</i> 11, 127–138 (2010).</li>
+                    <li>Kolchinsky, A. & Wolpert, D. H. Semantic information, autonomous agency and non-equilibrium statistical physics. <i>Interface Focus</i> 8, 20180041 (2018).</li>
+                    <li>Kiverstein, J. D. & Rietveld, E. Reconceiving representation-hungry cognition: an ecological-enactive proposal. <i>Adapt. Behav.</i> 26, 147–163 (2018).</li>
+                    <li>Shannon, C. E. The mathematical theory of communication. <i>Bell Syst. Tech. J.</i> 27, 379–423 (1948).</li>
+                    <li>Anderson, M. L. Embodied cognition: a field guide. <i>Artif. Intell.</i> 149, 91–130 (2003).</li>
+                    <li>Froese, T. & Ziemke, T. Enactive artificial intelligence: investigating the systemic organization of life and mind. <i>Artif. Intell.</i> 173, 466–500 (2009).</li>
+                    <li>Seth, A. K. & Tsakiris, M. Being a beast machine: the somatic basis of selfhood. <i>Trends Cogn. Sci.</i> 969–981 (2018).</li>
+                    <li>Cariani, P. A. The homeostat as embodiment of adaptive control. <i>Int. J. Gen. Syst.</i> 38, 139–154 (2009).</li>
+                    <li>Walter, W. G. An imitation of life. <i>Sci. Am.</i> 182, 42–45 (1950).</li>
+                    <li>Holland, O. E. in <i>Artificial Life V: Proceedings of the 5th International Workshop on the Synthesis and Simulation of Living Systems</i> (eds Langton, C. G. & Shimohara, K.) 34–44 (MIT Press, 1997).</li>
+                    <li>Brooks, R. A. New approaches to robotics. <i>Science</i> 253, 1227–1232 (1991).</li>
+                    <li>Bongard, J. & Lipson, H. Evolved machines shed light on robustness and resilience. <i>Proc. IEEE</i> 102, 899–914 (2014).</li>
+                    <li>Parisi, D. Internal robotics. <i>Conn. Sci.</i> 16, 325–338 (2004).</li>
+                    <li>Doya, K. & Uchibe, E. The cyber rodent project: exploration of adaptive mechanisms for self-preservation and self-reproduction. <i>Adapt. Behav.</i> 13, 149–160 (2005).</li>
+                    <li>Di Paolo, E. Homeostatic adaptation to inversion of the visual field and other sensorimotor disruptions. <i>Proc. Simul. Adapt. Behav.</i> 440–449 (2000).</li>
+                    <li>Parisi, D. & Petrosino, G. Robots that have emotions. <i>Adapt. Behav.</i> 18, 453–469 (2010).</li>
+                    <li>Breazeal, C. Emotion and sociable humanoid robots. <i>Int. J. Hum. Comput. Stud.</i> 59, 119–155 (2003).</li>
+                    <li>Jonas, H. <i>The Phenomenon of Life: Toward a Philosophical Biology</i> (Northwestern Univ. Press, 1966).</li>
+                    <li>Di Paolo, E. in <i>Dynamical Systems Approach to Embodiment and Sociality</i> (eds Murase, K. & Asakura, T.) 19–42 (Advanced Knowledge International, 2003).</li>
+                    <li>Legg, S. & Hutter, M. Universal intelligence: a definition of machine intelligence. <i>Minds Mach.</i> 17, 391–444 (2007).</li>
+                    <li>Maturana, H. R. & Varela, F. J. <i>Autopoiesis and Cognition: The Realization of the Living</i> (Springer, 1991).</li>
+                    <li>Rogers, J. A., Someya, T. & Huang, Y. Materials and mechanics for stretchable electronics. <i>Science</i> 327, 1603–1607 (2010).</li>
+                    <li>Kim, S., Laschi, C. & Trimmer, B. Soft robotics: a bioinspired evolution in robotics. <i>Trends Biotechnol.</i> 31, 287–294 (2013).</li>
+                    <li>Majidi, C. Soft robotics: a perspective—current trends and prospects for the future. <i>Soft Robot.</i> 1, 5–11 (2014).</li>
+                    <li>Lu, N. & Kim, D.-H. Flexible and stretchable electronics paving the way for soft robotics. <i>Soft Robot.</i> 1, 53–62 (2014).</li>
+                    <li>Pfeifer, R., Iida, F. & Lungarella, M. Cognition from the bottom up: on biological inspiration, body morphology, and soft materials. <i>Trends Cogn. Sci.</i> 18, 404–413 (2014).</li>
+                    <li>Rus, D. & Tolley, M. T. Design, fabrication and control of soft robots. <i>Nature</i> 521, 467–475 (2015).</li>
+                    <li>Markvicka, E. J., Tutika, R., Bartlett, M. D. & Majidi, C. Soft electronic skin for multi-site damage detection and localization. <i>Adv. Funct. Mater.</i> 29, 1900160 (2019).</li>
+                    <li>Martinez, R. V., Glavan, A. C., Keplinger, C., Oyetibo, A. I. & Whitesides, G. M. Soft actuators and robots that are resistant to mechanical damage. <i>Adv. Funct. Mater.</i> 24, 3003–3010 (2014).</li>
+                    <li>Kang, J., Tok, J. B. H. & Bao, Z. Self-healing soft electronics. <i>Nat. Electron.</i> 2, 144–150 (2019).</li>
+                    <li>Bartlett, M. D., Dickey, M. D. & Majidi, C. Self-healing materials for soft-matter machines and electronics. <i>npg Asia Mater.</i> 11, 19–22 (2019).</li>
+                    <li>Cao, Y. et al. Self-healing electronic skins for aquatic environments. <i>Nat. Electron.</i> 2, 75–82 (2019).</li>
+                    <li>Laschi, C. et al. Soft robot arm inspired by the octopus. <i>Adv. Robot.</i> 26, 709–727 (2012).</li>
+                    <li>Duriez, C. in <i>Proc. IEEE International Conference on Robotics and Automation</i> 3982–3987 (IEEE, 2013).</li>
+                    <li>Goldberg, N. N. et al. On planar discrete elastic rod models for the locomotion of soft robots. <i>Soft Robot.</i> https://doi.org/10.1089/soro.2018.0104 (2019).</li>
+                    <li>Hiller, J. & Lipson, H. Dynamic simulation of soft multimaterial 3D-printed objects. <i>Soft Robot.</i> 1, 88–101 (2014).</li>
+                    <li>Rieffel, J., Knox, D., Smith, S. & Trimmer, B. Growing and evolving soft robots. <i>Artif. Life</i> 20, 143–162 (2014).</li>
+                    <li>Ricotti, L. et al. Biohybrid actuators for robotics; a review of devices actuated by living cells. <i>Sci. Robot.</i> 2, eaaq0495 (2017).</li>
+                    <li>Liu, X. et al. Stretchable living materials and devices with hydrogel–elastomer hybrids hosting programmed cells. <i>Proc. Natl Acad. Sci. USA</i> 114, 2200–2205 (2017).</li>
+                    <li>Damasio, A. The brain binds entities and events by multiregional activation from convergence zones. <i>Neural Comput.</i> 1, 123–132 (1989).</li>
+                    <li>Damasio, A. Time-locked multiregional retroactivation: a systems-level proposal for the neural substrates of recall and recognition. <i>Cognition</i> 33, 25–62 (1989).</li>
+                    <li>Meyer, K. & Damasio, A. Convergence and divergence in a neural architecture for recognition and memory. <i>Trends Neurosci.</i> 32, 376–82 (2009).</li>
+                    <li>Man, K., Kaplan, J., Damasio, H. & Damasio, A. Neural convergence and divergence in the mammalian cerebral cortex: from experimental neuroanatomy to functional neuroimaging. <i>J. Comp. Neurol.</i> 521, 4097–4111 (2013).</li>
+                    <li>Salakhutdinov, R. & Hinton, G. Deep Boltzmann machines. <i>Artif. Intell. Stat.</i> 5, 448–455 (2009).</li>
+                    <li>Hinton, G. E. & Sejnowski, T. J. Optimal perceptual inference. in <i>Proceedings of the IEEE conference on Computer Vision and Pattern Recognition</i> 448–453 (IEEE, 1983).</li>
+                    <li>Ackley, D., Hinton, G. & Sejnowski, T. A learning algorithm for Boltzmann machines. <i>Cogn. Sci.</i> 9, 147–169 (1985).</li>
+                    <li>LeCun, Y et al. Backpropagation applied to handwritten zip code recognition. <i>Neural Comput.</i> 1, 541–551 (1989).</li>
+                    <li>Graves, A., Eck, D., Beringer, N. & Schmidhuber, J. in <i>Biologically Inspired Approaches to Advanced Information Technology</i> (eds Ijspeert, A. J., Murata, M. & Wakamiya, N.) 127–136 (Springer, 2003).</li>
+                    <li>Ngiam, J., Khosla, A. & Kim, M. Multimodal deep learning. In <i>Proc. 28th International Conference on Machine Learning</i> (eds Getoor, L. & Scheffer, T.) 689–696 (2011).</li>
+                    <li>Aytar, Y., Vondrick, C. & Torralba, A. SoundNet: learning sound representations from unlabeled video. In <i>Proc. 30th International Conference on Neural Information Processing Systems</i> 892–900 (NIPS, 2016).</li>
+                    <li>Man, K., Kaplan, J. T., Damasio, A. & Meyer, K. Sight and sound converge to form modality-invariant representations in temporoparietal cortex. <i>J. Neurosci.</i> 32, 16629–36 (2012).</li>
+                    <li>Lenz, I., Lee, H. & Saxena, A. Deep learning for detecting robotic grasps. <i>Int. J. Rob. Res.</i> 34, 705–724 (2015).</li>
+                    <li>Oosterhof, N. N., Wiggett, A. J., Diedrichsen, J., Tipper, S. P. & Downing, P. E. Surface-based information mapping reveals crossmodal vision–action representations in human parietal and occipitotemporal cortex. <i>J. Neurophysiol.</i> 104, 1077–89 (2010).</li>
+                    <li>Man, K., Damasio, A., Meyer, K. & Kaplan, J. T. Convergent and invariant object representations for sight, sound, and touch. <i>Hum. Brain Mapp.</i> 36, 3629–3640 (2015).</li>
+                    <li>Damasio, A. <i>Self Comes to Mind</i> (Pantheon, 2010).</li>
+                    <li>Seth, A. K., Suzuki, K. & Critchley, H. D. An interoceptive predictive coding model of conscious presence. <i>Front. Psychol.</i> 2, 395 (2012).</li>
+                    <li>Bersini, H. in <i>Proc. Third International Conference on Simulation of Adaptive Behaviour</i> 325–333 (MIT Press-Bradford Books, 1994).</li>
+                    <li>Konidaris, G. & Barto, A. in <i>From Animals to Animats 9</i> (ed. Nolfi, S.) 346–356 (Springer, 2006).</li>
+                    <li>Keramati, M. & Gutkin, B. Homeostatic reinforcement learning for integrating reward collection and physiological stability. <i>eLife</i> 3, e04811 (2014).</li>
+                    <li>Moerland, T. M., Broekens, J. & Jonker, C. M. Emotion in reinforcement learning agents and robots: a survey. <i>Mach. Learning</i> 107, 443–480 (2018).</li>
+                    <li>Juechems, K. & Summerfield, C. Where does value come from? Preprint at https://doi.org/10.31234/osf.io/rxf7e (2019).</li>
+                    <li>Morville, T., Friston, K., Burdakov, D., Siebner, H. R. & Hulme, O. J. The homeostatic logic of reward. Preprint at https://doi.org/10.1101/242974 (2018).</li>
+                    <li>Johnson, M. <i>Morality for Humans</i> (Univ. Chicago Press, 2014).</li>
+                    <li>Levy, N. <i>Consciousness and Moral Responsibility</i> (Oxford Univ. Press, 2014).</li>
+                    <li>Omohundro, S. M. The basic AI drives. In <i>Proc. 2008 Conference on Artificial General Intelligence</i> 483–492 (ACM, 2008).</li>
+                    <li>DeYoung, C. G. in <i>The Cambridge Handbook of Intelligence</i> 711–737 (Cambridge Univ. Press, 2012).</li>
+                    <li>Searle, J. R. Minds, brains and programs. <i>Behav. Brain Sci.</i> 3, 417–457 (1980).</li>
+                </ol>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Mermaid Initialization -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'dark',
+                securityLevel: 'loose',
+                themeVariables: {
+                    primaryColor: '#0f172a',
+                    edgeLabelBackground: '#0f172a',
+                    tertiaryColor: '#1e293b',
+                    primaryTextColor: '#cbd5e1',
+                    lineColor: '#64748b',
+                    mainBkg: '#020617'
+                }
+            });
+        });
+    </script>
+
+    <!-- Footer Simple -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-6 md:py-8">
+        <div class="max-w-full mx-auto px-6 md:px-12 flex flex-col items-center justify-center gap-2">
+            <p class="text-[10px] md:text-[11px] font-medium text-slate-400 text-center">
+                Traducción y adaptación del paper original publicado en Nature Machine Intelligence.
+            </p>
+            <p class="text-[9px] md:text-[10px] text-slate-600 font-mono text-center">
+                © 2019 Springer Nature Limited.
+            </p>
+        </div>
+    </footer>
+
+</body>
+</html>
