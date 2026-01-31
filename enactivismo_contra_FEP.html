@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trazando un sendero que se bifurca | Di Paolo, Thompson, Beer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #cbd5e1; /* slate-300 */
+            scroll-behavior: smooth;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 70%);
+            background-attachment: fixed;
+            line-height: 1.8;
+        }
+
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* --- Estilos de Navegación Desktop --- */
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+            cursor: pointer;
+            display: block;
+            padding-bottom: 2px;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: 0;
+            left: 0;
+            background-color: #f59e0b;
+            transition: width 0.3s ease;
+        }
+        
+        @media (min-width: 768px) {
+            .nav-item:hover .nav-link::after {
+                width: 100%;
+            }
+            .nav-item:hover .dropdown-menu {
+                opacity: 1;
+                visibility: visible;
+                transform: translateX(-50%) translateY(0);
+            }
+            .dropdown-menu {
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%) translateY(10px);
+                min-width: 240px;
+                opacity: 0;
+                visibility: hidden;
+            }
+            .dropdown-menu::before {
+                content: '';
+                position: absolute;
+                top: -6px;
+                left: 50%;
+                transform: translateX(-50%);
+                border-width: 0 6px 6px 6px;
+                border-style: solid;
+                border-color: transparent transparent rgba(255, 255, 255, 0.1) transparent;
+            }
+            .dropdown-menu::after {
+                content: '';
+                position: absolute;
+                top: -20px;
+                left: 0;
+                width: 100%;
+                height: 20px;
+                background: transparent;
+            }
+        }
+
+        .dropdown-menu {
+            background-color: rgba(2, 6, 23, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.7);
+            transition: all 0.2s ease-in-out;
+            z-index: 100;
+        }
+
+        .dropdown-link {
+            display: block;
+            padding: 0.6rem 0.75rem;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            border-radius: 0.25rem;
+        }
+
+        .dropdown-link:hover {
+            color: #f59e0b;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* --- Ajustes Móviles --- */
+        @media (max-width: 767px) {
+            #mobile-menu-container {
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+            .nav-item {
+                width: 100%;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                padding: 0;
+            }
+            .nav-item-content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.5rem;
+            }
+            .dropdown-menu {
+                position: static;
+                transform: none;
+                opacity: 1;
+                visibility: visible;
+                width: 100%;
+                box-shadow: none;
+                background-color: rgba(0, 0, 0, 0.3);
+                border: none;
+                border-top: 1px solid rgba(255,255,255,0.05);
+                display: none;
+                margin-top: 0;
+            }
+            .arrow-icon {
+                transition: transform 0.3s;
+            }
+            .nav-item.active .arrow-icon {
+                transform: rotate(180deg);
+            }
+        }
+
+        /* Estilos de Tipografía y Citas */
+        .prose blockquote {
+            border-left-color: #f59e0b;
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 1rem 1.5rem;
+            font-style: italic;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+        
+        /* Highlight Class */
+        .hl {
+            color: #f59e0b; /* amber-500 */
+            font-weight: 600;
+        }
+
+        .prose strong {
+            color: #f8fafc;
+            font-weight: 700;
+        }
+
+        .prose a {
+            color: #f59e0b;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .prose a:hover {
+            color: #fbbf24;
+            text-decoration: underline;
+        }
+
+        /* Ajustes Mermaid */
+        .mermaid .node rect, .mermaid .node circle, .mermaid .node ellipse, .mermaid .node polygon {
+            fill: #0f172a !important;
+            stroke: #f59e0b !important;
+            stroke-width: 2px !important;
+        }
+        .mermaid .label {
+            color: #e2e8f0 !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+        .mermaid .edgePath .path {
+            stroke: #64748b !important;
+            stroke-width: 2px !important;
+        }
+        .mermaid .marker {
+            fill: #64748b !important;
+            stroke: #64748b !important;
+        }
+
+        /* Superíndice para notas */
+        sup {
+            color: #f59e0b;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 2px;
+        }
+    </style>
+</head>
+<body class="selection:bg-amber-500/30 selection:text-amber-100 min-h-screen flex flex-col">
+
+    <!-- Navegación -->
+    <nav class="fixed w-full z-50 bg-slate-950/95 backdrop-blur-md border-b border-white/5 transition-all duration-300">
+        <div class="w-full px-6 md:px-12">
+            <div class="flex justify-between items-center h-16">
+                
+                <!-- Logo -->
+                <a href="#" class="flex items-center space-x-3 group">
+                    <div class="w-2.5 h-2.5 bg-amber-500 rounded-sm group-hover:rotate-45 transition-transform duration-300"></div>
+                    <span class="text-xs md:text-sm font-bold tracking-[0.2em] uppercase text-slate-200 group-hover:text-white transition-colors">
+                        O.C.V.M. <span class="text-slate-600 mx-2">|</span> Enacción vs FEP
+                    </span>
+                </a>
+
+                <!-- Botón Hamburguesa -->
+                <button id="menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+
+                <!-- Menú -->
+                <div id="mobile-menu-container" class="hidden md:flex absolute md:static top-16 left-0 w-full md:w-auto bg-slate-950 md:bg-transparent flex-col md:flex-row md:items-center overflow-y-auto md:overflow-visible max-h-[80vh] md:max-h-full transition-all">
+                    <ul class="flex flex-col md:flex-row md:items-center text-[11px] font-semibold uppercase tracking-widest text-slate-400 w-full md:w-auto">
+                        <li class="nav-item group md:mx-4"><div class="nav-item-content"><a href="#resumen" class="nav-link hover:text-white" onclick="closeMobileMenu()">Resumen</a></div></li>
+                        <li class="nav-item group md:mx-4"><div class="nav-item-content"><a href="#introduccion" class="nav-link hover:text-white" onclick="closeMobileMenu()">1. Intro</a></div></li>
+                        <li class="nav-item group md:mx-4"><div class="nav-item-content"><a href="#fep-enactivo" class="nav-link hover:text-white" onclick="closeMobileMenu()">2. ¿FEP Enactivo?</a></div></li>
+                        
+                        <li class="nav-item group md:mx-4">
+                            <div class="nav-item-content">
+                                <a href="#lecturas-erroneas" class="nav-link hover:text-white" onclick="closeMobileMenu()">3. Malinterpretaciones</a>
+                                <button class="md:hidden p-2 arrow-icon" onclick="toggleDropdown(this)">↓</button>
+                            </div>
+                            <div class="dropdown-menu">
+                                <a href="#autopoiesis" class="dropdown-link" onclick="closeMobileMenu()">3.1 Autopoiesis</a>
+                                <a href="#limites" class="dropdown-link" onclick="closeMobileMenu()">3.2 Límites y Clausura</a>
+                            </div>
+                        </li>
+
+                        <li class="nav-item group md:mx-4">
+                            <div class="nav-item-content">
+                                <a href="#puntos-tension" class="nav-link hover:text-white text-amber-500" onclick="closeMobileMenu()">4. Tensiones</a>
+                                <button class="md:hidden p-2 arrow-icon" onclick="toggleDropdown(this)">↓</button>
+                            </div>
+                            <div class="dropdown-menu">
+                                <a href="#ness-vs-historia" class="dropdown-link" onclick="closeMobileMenu()">4.1 NESS vs Historia</a>
+                                <a href="#constitucion-mutua" class="dropdown-link" onclick="closeMobileMenu()">4.2 Constitución Mutua</a>
+                            </div>
+                        </li>
+
+                        <li class="nav-item group md:mx-4"><div class="nav-item-content"><a href="#conclusiones" class="nav-link hover:text-white" onclick="closeMobileMenu()">5. Conclusiones</a></div></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <div class="flex-grow pt-32 pb-24 w-full px-6 md:px-12">
+        <main class="w-full max-w-[95%] mx-auto">
+            
+            <!-- Header -->
+            <header class="mb-32 relative text-center max-w-7xl mx-auto">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-amber-500/10 rounded-full blur-[100px] -z-10"></div>
+                
+                <h1 class="text-4xl sm:text-6xl md:text-8xl font-black text-slate-100 mb-8 leading-[0.9] tracking-tighter drop-shadow-2xl">
+                    TRAZANDO UN SENDERO<br>QUE SE BIFURCA
+                </h1>
+                <p class="text-xl md:text-3xl text-amber-500 font-serif italic mb-12">
+                    Tensiones entre la enacción y el principio de energía libre
+                </p>
+                
+                <div class="flex flex-wrap justify-center gap-6 text-sm text-slate-400 font-mono border-t border-b border-white/5 py-6">
+                    <span class="text-slate-200">Ezequiel A. Di Paolo</span>
+                    <span class="text-slate-600">/</span>
+                    <span class="text-slate-200">Evan Thompson</span>
+                    <span class="text-slate-600">/</span>
+                    <span class="text-slate-200">Randall D. Beer</span>
+                </div>
+                
+                <div class="mt-4 text-xs text-slate-500 uppercase tracking-widest">
+                    Philosophy and the Mind Sciences, Vol 3, 2022
+                </div>
+            </header>
+
+            <!-- Abstract -->
+            <section id="resumen" class="mb-24 bg-slate-900/50 p-8 md:p-16 rounded-2xl border border-white/5 mx-auto w-full">
+                <h3 class="text-amber-500 font-bold uppercase tracking-widest text-xs mb-8 border-b border-slate-800 pb-4">Resumen</h3>
+                <div class="prose prose-invert prose-xl max-w-none text-slate-300 font-light text-justify leading-relaxed columns-1 xl:columns-2 gap-16">
+                    <p>
+                        Varios autores han hecho afirmaciones sobre la compatibilidad entre el <span class="hl">Principio de Energía Libre (FEP)</span> y las teorías de la <span class="hl">autopoiesis</span> y la <span class="hl">enacción</span>. Muchos ven estas teorías como socios naturales o como si hicieran declaraciones similares sobre la naturaleza de los sistemas biológicos y cognitivos. Examinamos críticamente estas afirmaciones e identificamos una serie de lecturas erróneas e interpretaciones equivocadas de conceptos enactivos clave. En particular, notamos una tendencia a ignorar la definición operacional de <span class="hl">autopoiesis</span> y la distinción entre la <span class="hl">estructura</span> de un sistema y su <span class="hl">organización</span>. Otras lecturas erróneas conciernen a la confusión de los procesos de <span class="hl">autodistinción</span> en sistemas operacionalmente cerrados con las <span class="hl">Mantas de Markov</span>.
+                    </p>
+                    <p>
+                        Tensiones teóricas más profundas subyacen a algunas de estas interpretaciones erróneas. El <span class="hl">FEP</span> asume sistemas que alcanzan un <span class="hl">estado estacionario de no equilibrio (NESS)</span> y están envueltos por una <span class="hl">Manta de Markov</span>. Argumentamos que estas suposiciones contradicen la <span class="hl">historicidad</span> de la <span class="hl">creación de sentido</span> (<em>sense-making</em>) que es explícita en el enfoque enactivo. Conceptos enactivos como la <span class="hl">adaptabilidad</span> y la <span class="hl">agencia</span> se definen en términos de la modulación de parámetros y restricciones del acoplamiento agente-entorno, lo que implica la posibilidad de cambios en conjuntos de variables y parámetros, restricciones y leyes dinámicas que afectan al sistema. Esto permite que la <span class="hl">enacción</span> aborde la diversidad dependiente de la trayectoria de los cuerpos y mentes humanos. Argumentamos que estas ideas son incompatibles con la <span class="hl">invariancia temporal</span> de los <span class="hl">estados estacionarios de no equilibrio</span> asumidos por el FEP. Además, la perspectiva enactiva pone en primer plano los roles habilitadores y constitutivos desempeñados por el mundo en la <span class="hl">creación de sentido</span>, la <span class="hl">agencia</span> y el desarrollo. Argumentamos que esta visión de las relaciones transaccionales y constitutivas entre organismos y entornos es un desafío para el FEP. Una vez que vamos más allá de las similitudes superficiales, identificamos lecturas erróneas y examinamos los compromisos teóricos de los dos enfoques, llegamos a la conclusión de que, lejos de integrarse fácilmente, el <span class="hl">FEP</span>, tal como está formulado hoy, está en tensión con las teorías de la <span class="hl">autopoiesis</span> y la <span class="hl">enacción</span>.
+                    </p>
+                </div>
+            </section>
+
+            <!-- 1. Introducción -->
+            <section id="introduccion" class="mb-24 w-full">
+                <div class="flex flex-col xl:flex-row gap-12">
+                    <div class="xl:w-1/5">
+                        <h2 class="text-4xl font-serif font-bold text-white sticky top-24 border-l-4 border-amber-500 pl-6 py-2">
+                            1. Introducción
+                        </h2>
+                    </div>
+                    <div class="xl:w-4/5 prose prose-invert prose-lg max-w-none text-slate-300 font-light text-justify">
+                        <p>
+                            El <span class="hl">Principio de Energía Libre (FEP)</span> (Friston et al., 2006; Friston, 2012) ha estimulado un gran cuerpo de literatura en las ciencias de la mente. Un subconjunto creciente de esta literatura se refiere a una serie de afirmaciones sobre la compatibilidad entre el <span class="hl">FEP</span> y las teorías de la ciencia cognitiva corporizada, en particular, el enfoque <span class="hl">enactivo</span> (e.g., Di Paolo et al., 2017; Thompson, 2007; Varela et al., 1991). Han aparecido varios artículos (hasta la fecha más de dos docenas) que establecen alguna conexión entre el <span class="hl">FEP</span>, la <span class="hl">autopoiesis</span> y la <span class="hl">enacción</span>. Estamos interesados en examinar estas afirmaciones. Son variadas y se presentan con justificaciones que van desde señalar similitudes generales hasta intentar demostrar conexiones profundas y de principios entre los dos enfoques. Estas afirmaciones se han interpretado de diferentes maneras. Algunos dan la bienvenida a la perspectiva de compatibilidad como positiva tanto para las posiciones enactiva como del FEP, lo que lleva potencialmente a una teoría más poderosa y unificada de la <span class="hl">cognición corporizada</span>. Hablan de elaboraciones, interpretaciones, extensiones, síntesis, etc. (e.g., Bruineberg et al., 2018). Otros piensan que el FEP puede servir para reconciliar la enacción con posiciones que los enactivistas critican, como las versiones modernas del <span class="hl">representacionalismo</span> (Clark, 2015; Constant et al., 2021; Wiese & Friston, 2021). Otros adoptan un tono diferente que sugiere que el FEP ha superado las limitaciones del enfoque enactivo, o subsume o absorbe las teorías autopoiéticas y enactiva (e.g., Allen & Friston, 2018; "El FEP subsume la autopoiesis", Korbak, 2021, p. 2747; "El FEP proporciona una implementación del enactivismo, y en cierto sentido reemplaza o absorbe las formulaciones clásicas (i.e., autopoiéticas)", Ramstead et al., 2021, p. 59). Finalmente, en contraste con lo último, algunos proponen que las ideas enactiva pueden usarse para llenar vacíos y resolver problemas en el marco del FEP (Kirchhoff & Froese, 2017; van Es & Kirchhoff, 2021).
+                        </p>
+                        <p>
+                            Dada esta variedad, es difícil examinar esta literatura como un todo coherente. Además, las afirmaciones continúan evolucionando, de modo que a veces detalles importantes ausentes en un trabajo se vuelven relevantes en otro. Sin embargo, pensamos que hay algunas afirmaciones centrales compartidas que no parecen cambiar. En particular, está la afirmación de que la extensión del <span class="hl">FEP</span> desde su dominio original de aplicación en neurociencia a los sistemas vivos en general sirve como base de una teoría amplia de la biología y la cognición, algo que resuena con el discurso enactivo sobre la <span class="hl">continuidad entre la vida y la mente</span> (Thompson, 2007). Una afirmación común más específica se refiere a la necesidad de atender al papel activo del <span class="hl">agente cognitivo</span> al involucrarse con el mundo siguiendo normas vitales. Esta afirmación subraya la estrecha conexión entre los procesos internos, los procesos en el entorno, la actividad del agente y la viabilidad del agente. A primera vista, los enactivistas estarían de acuerdo con estas afirmaciones. ¿Pero son estos paralelos meramente superficiales? La literatura que examinamos aquí afirma que la conexión entre las dos perspectivas es profunda. No estamos de acuerdo. Argumentaremos que las aparentes compatibilidades se basan en lecturas rápidas, o incluso erróneas, de las ideas enactiva y lo que implican, mientras que aspectos centrales de la <span class="hl">autopoiesis</span> y la <span class="hl">enacción</span> se dejan sin reconocer.
+                        </p>
+                        <p>
+                            Aclarar las malas interpretaciones puede hacer avanzar la discusión, pero no resolverá por sí mismo las tensiones más profundas entre el <span class="hl">FEP</span> y la <span class="hl">enacción</span> como teorías de la cognición. Muchos comentaristas se centran en lo que ven como la principal fuente de tensión, que tiene que ver con el sesgo <span class="hl">representacional</span> y cargado de cognición que las instanciaciones del FEP y las ideas relacionadas tienden a adoptar, particularmente en forma de modelos de <span class="hl">procesamiento predictivo</span> (Hohwy, 2013). Argumentan que el FEP admite interpretaciones más amplias de términos como "modelo" e "inferencia", y que estas interpretaciones son compatibles con el rechazo de la enacción al <span class="hl">internalismo</span> y al <span class="hl">computacionalismo</span>. Si bien estos argumentos tienen mérito, creemos que pasan por alto tensiones mucho más básicas entre las dos teorías. Estas tensiones tienen que ver con cómo el enfoque enactivo concibe a los agentes como entidades <span class="hl">precarias</span>, <span class="hl">autoconstituidas</span> en un desarrollo <span class="hl">histórico continuo</span> y capaces de incorporar diferentes fuentes de <span class="hl">normatividad</span> a lo largo de su desarrollo, un proceso que involucra al mundo y que se co-define con su entorno a través de múltiples escalas espaciotemporales y junto con otros agentes. La visión enactiva, como explicaremos, está en desacuerdo con la universalización de las ideas de <span class="hl">estados estacionarios de no equilibrio</span> y <span class="hl">Mantas de Markov</span> que sirven como suposiciones clave en el FEP. Subyacentes a estas preocupaciones hay concepciones fundamentales divergentes de la <span class="hl">materialidad</span> y la <span class="hl">temporalidad</span>. Estas incompatibilidades conducen a una serie de afirmaciones bifurcadas sobre agentes corporizados en general, afirmaciones que adquieren un contraste más nítido en el caso de los seres humanos debido a su <span class="hl">diversidad</span> e <span class="hl">historicidad</span>. Las interpretaciones no representacionales del FEP no resuelven estas divergencias.
+                        </p>
+                        <p>
+                            Antes de continuar, algunas advertencias. Primero, no pretendemos evaluar críticamente el FEP en su totalidad (para ello, véase e.g., Aguilera et al., 2021; Baltieri et al., 2020; Biehl et al., 2021; Colombo & Wright, 2021; Litwin & Miłkowski, 2020; Raja et al., 2021; van Es, 2021). Nos concierne exclusivamente examinar las afirmaciones sobre la compatibilidad entre el FEP y la enacción. Segundo, al especificar lo que vemos como puntos de tensión teórica entre los enfoques, trabajamos sobre la base del FEP tal como está formulado actualmente. No afirmamos que las aclaraciones, extensiones o elaboraciones del FEP no puedan abordar algunas de las divergencias entre los enfoques.
+                        </p>
+                        <p>
+                            Nuestro argumento procederá aproximadamente de la siguiente manera: (1) Hay ciertos principios y fenómenos que el FEP necesita poder explicar si afirma hacer contacto con la enacción; (2) hasta la fecha, el FEP no ha explicado con éxito estos principios y fenómenos enactivos, a pesar de algunas afirmaciones en contrario en la literatura; (3) hay razones para pensar que podría ser difícil para algo como el FEP proporcionar tal explicación, aunque el tiempo lo dirá y ciertamente no estamos reclamando ninguna prueba de imposibilidad. Finalmente, no rechazamos aplicaciones específicas de las ideas o técnicas del FEP para dar sentido a los datos empíricos (Walsh et al., 2020). En la medida en que ofrecen métodos útiles para el análisis, el FEP y los modelos de <span class="hl">procesamiento predictivo</span> pueden proporcionar herramientas útiles en casos específicos. Nuestra discusión concierne al FEP como un enfoque general para explicar la vida y la mente. Es en este nivel donde encontramos diferencias significativas y difíciles de reconciliar con el enfoque enactivo.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. ¿Un FEP Enactivo? -->
+            <section id="fep-enactivo" class="mb-24 w-full">
+                <div class="flex flex-col xl:flex-row gap-12">
+                    <div class="xl:w-1/5">
+                        <h2 class="text-4xl font-serif font-bold text-white sticky top-24 border-l-4 border-amber-500 pl-6 py-2">
+                            2. ¿Un FEP Enactivo?
+                        </h2>
+                    </div>
+                    <div class="xl:w-4/5 prose prose-invert prose-lg max-w-none text-slate-300 font-light text-justify">
+                        <p>
+                            Las lecturas enactiva del FEP y las afirmaciones de compatibilidad con ideas como la <span class="hl">autopoiesis</span> son variadas. Algunos intentan argumentos unificadores basados en principios (Ramstead et al., 2021), otros proporcionan lecturas del FEP desde perspectivas enactiva y ecológicas (Bruineberg et al., 2018), y otros simplemente comentan sobre aparentes resonancias y similitudes (Clark, 2015).
+                        </p>
+                        <p>
+                            A pesar de esta variedad, las motivaciones para estas diversas afirmaciones parecen bastante alineadas. Podemos describirlas aproximadamente como una preocupación por establecer interpretaciones de <span class="hl">cognición corporizada</span> del FEP que no necesariamente impliquen una perspectiva tradicionalmente internalista o representacionalista, o que al menos reformulen las nociones de representación en términos orientados a la acción. Algunos autores también están motivados por las posibles extensiones del FEP, formulado originalmente dentro de los confines de la neurociencia, a una gama más amplia de fenómenos biológicos; de hecho, al estatus de un principio general de biología teórica y psicología. Demostrar la compatibilidad con el enfoque enactivo, con su énfasis en la continuidad entre la vida y la mente, podría considerarse como un paso hacia este objetivo.
+                        </p>
+                        <p>
+                            Debido a estas motivaciones alineadas, tiene sentido mirar esta literatura como un todo. Agrupamos sus afirmaciones en dos grandes conjuntos. Somos conscientes de que podemos perder algunos matices, pero no creemos que sean centrales para nuestros propósitos. En particular, nos preocupan los siguientes dos grupos de ideas: (1) propuestas para un vínculo entre el FEP y la teoría de la <span class="hl">autopoiesis</span>, y (2) discusiones de varias compatibilidades entre el FEP y las ideas enactiva.
+                        </p>
+                        <p>
+                            Es importante tener en cuenta que la <span class="hl">autopoiesis</span> y la <span class="hl">enacción</span> están obviamente relacionadas y la división en dos grupos es simplemente por conveniencia. La suposición tácita es que el enfoque enactivo se ha desarrollado históricamente a partir de lecturas y elaboraciones de las ideas presentadas por primera vez en la teoría clásica de la autopoiesis (Maturana & Varela, 1980, 1987), y que hasta el día de hoy muchos conceptos centrales en la enacción encuentran sus raíces en esta teoría. Sin embargo —y esto puede ser un factor de confusión a tener en cuenta— el enfoque enactivo es en muchos sentidos un desarrollo ramificado de la teoría de la autopoiesis y es crítico de aspectos importantes de la teoría autopoiética clásica (e.g., Di Paolo, 2018). Los defensores contemporáneos de la teoría autopoiética clásica, a su vez, han criticado el enfoque enactivo precisamente por esta razón (e.g., Villalobos & Ward, 2015).
+                        </p>
+                        <p>
+                            Nuestro <strong>primer grupo</strong> concierne al objetivo defendido por Karl Friston y otros de extender el alcance del FEP a la biología. Este trabajo discute la relación del FEP con la teoría de la autopoiesis y concierne a las ideas enactiva solo indirectamente. Sin embargo, sus afirmaciones forman una especie de columna vertebral para el trabajo que mira a la enacción, siendo el razonamiento que la teoría enactiva es una elaboración de la teoría de la autopoiesis, como acabamos de decir.
+                        </p>
+                        <p>
+                            Friston (2013) proporciona una afirmación temprana sobre la relación entre FEP y <span class="hl">autopoiesis</span> (para versiones más actualizadas de esta afirmación, ver Parr et al., 2019; Ramstead et al., 2021; Wiese & Friston, 2021). Este artículo describe la aplicabilidad del FEP a los sistemas biológicos refiriéndose explícitamente al concepto de autopoiesis. Brevemente, la <span class="hl">autopoiesis</span> es una propiedad de la organización de los sistemas vivos. Maturana y Varela originalmente la postularon como la propiedad definitoria, necesaria y suficiente para la organización viva, pero investigadores posteriores han argumentado que la autopoiesis es necesaria pero no suficiente. "Autopoiesis" significa que los sistemas vivos están organizados como redes de procesos bioquímicos tales que se obtienen dos condiciones: (1) (<span class="hl">autoproducción</span>) la operación de los procesos en la red regenera el conjunto de relaciones entre procesos en la red; y (2) (<span class="hl">autodistinción</span>) la red emerge como una unidad topológica distinta en el dominio de las interacciones bioquímicas. Debido a la circularidad (autoproducción recursiva) a la que se refiere esta idea, Maturana y Varela describieron un sistema autopoiético como manifestando "<span class="hl">clausura organizacional</span>" o "<span class="hl">clausura operacional</span>". Volveremos a estas ideas en la siguiente sección.
+                        </p>
+                        <p>
+                            Friston considera un <span class="hl">sistema dinámico aleatorio ergódico</span>. Según él, la <span class="hl">ergodicidad</span> en este contexto significa que el promedio temporal de cualquier función medible del sistema converge sobre una cantidad suficiente de tiempo, y que uno puede interpretar el tiempo promedio que un estado es ocupado como la probabilidad de que el sistema esté en ese estado cuando se observa al azar. Tal sistema tenderá a evolucionar hacia un régimen donde la densidad de probabilidad de sus estados no cambia con el tiempo. Si la densidad de estados no cambia, es decir, si el sistema alcanza un <span class="hl">estado estacionario de no equilibrio (NESS)</span>, se pueden derivar una serie de relaciones entre variables internas y externas. La distinción entre estos conjuntos de variables se define asumiendo la presencia de una <span class="hl">Manta de Markov</span> que "aísla" estadísticamente un conjunto del otro, impidiendo que afecte directamente al otro. En cambio, los efectos se propagan a través de variables de acción y sensoriales que constituyen la manta. Según Friston, estas relaciones demuestran la afirmación central de que "cualquier sistema dinámico aleatorio ergódico que posea una Manta de Markov parecerá mantener activamente su <span class="hl">integridad estructural y dinámica</span>". Friston ve el mantenimiento de la integridad estructural y dinámica como la propiedad clave de los sistemas biológicos, de lo cual conjetura que, para existir, los organismos deben ser <span class="hl">ergódicos</span> y deben estar en posesión de una <span class="hl">Manta de Markov</span><sup title="Friston refiere a sistemas dinámicos aleatorios con una o varias Mantas de Markov que convergen a un NESS se conservan a sí mismos en esa condición estacionaria minimizando la energía libre.">1</sup>.
+                        </p>
+                        <p>
+                            Friston se refiere a la <span class="hl">autopoiesis</span> como un atributo de la <span class="hl">autoorganización</span> biológica y afirma que puede derivarse de su análisis. Él ve el mantenimiento de un estado estacionario como un tipo de integridad estructural; y ve tal integridad estructural como una forma de <span class="hl">homeostasis</span> sostenida por el sistema que parece actuar contra la dispersión o entropía de sus estados. La afirmación central de estos argumentos es que los sistemas dinámicos aleatorios con una o varias Mantas de Markov que convergen a un NESS se conservan a sí mismos en esa condición estacionaria (o parecen hacerlo dependiendo de la perspectiva) minimizando la energía libre, y que estas condiciones son equivalentes a la condición de que un sistema sea autopoiético.
+                        </p>
+                        <p>
+                            Nuestro <strong>segundo grupo</strong> en la literatura corresponde a argumentos a favor de una compatibilidad de amplio espectro entre el FEP y la enacción, no solo el concepto de autopoiesis. Por ejemplo, Bruineberg et al. (2018) aceptan que el FEP es aplicable a los sistemas biológicos, pero rechazan su asociación con enfoques Helmholtzianos (inferencias inconscientes). Articulan una interpretación <span class="hl">ecológico-enactiva</span> del FEP, evitando la separación tajante Helmholtziana entre organismo y entorno, y colocando el lugar de la inferencia activa en todo el organismo situado. Ofrecen interpretaciones caritativas, como interpretar la dinámica interna de la <span class="hl">inferencia activa</span> como estados de preparación para la acción.
+                        </p>
+                        <p>
+                            Aplicando una interpretación ecológico-enactiva similar del FEP a preguntas sobre el yo y el sentimiento de pertenencia, Kiverstein (2020) ofrece una comparación más detallada. Al igual que Ramstead et al. (2021), describe el concepto de <span class="hl">autonomía</span> en términos de <span class="hl">clausura operacional precaria</span> y sugiere que este concepto puede cobrarse en términos del FEP. Según "el principio de energía libre, la autonomía de los sistemas vivos es una consecuencia de los procesos inferenciales de minimización de energía libre", y "el principio de energía libre nos dice cómo los sistemas vivos podrían sostener su propia clausura operacional bajo condiciones precarias".
+                        </p>
+                        <p>
+                            Kiverstein también sugiere que una comprensión más corporizada y situada de la inferencia activa debería ser en términos de preparación para la acción. "A medida que la organización del sistema autónomo se vuelve menos atada a sus necesidades metabólicas inmediatas, las posibles relaciones significativas en las que el organismo puede estar con el entorno se vuelven menos estrechamente ligadas al aquí y ahora [...] El sistema nervioso puede entonces pensarse como generando y sosteniendo patrones estables y recurrentes de compromiso sensorio-motor con el entorno. Estos patrones de compromiso exhiben las mismas propiedades de clausura operacional y precariedad que encontramos en los procesos más básicos de homeostasis. El argumento [aquí] es que los patrones de compromiso sensorio-motor deben su clausura operacional a procesos de minimización de energía libre".
+                        </p>
+                        <p>
+                            Otros, como Clark (2015), defienden una construcción corporizada y orientada a la acción del procesamiento predictivo. Kirchhoff (2018) sigue el argumento de Friston añadiendo que el FEP "incorpora la <span class="hl">adaptabilidad</span> —viz., el aspecto orientado al futuro de la cognición— desde el principio", encajando con la enacción. Sin embargo, Kirchhoff también plantea la preocupación de que nada en el FEP sea capaz de dar cuenta de la constitución de una perspectiva significativa (<span class="hl">creación de sentido</span>): "si el FEP renuncia a la creación de sentido, entonces ¿cómo puede explicar lo que es central para la vida y la mente?". Kirchhoff y Froese (2017) sugieren que las versiones enactiva de la continuidad vida-mente, definidas en términos de autonomía, adaptabilidad y creación de sentido, deberían usarse para restringir un FEP demasiado liberal que podría ver mente en todas partes (como en la llama de una vela).
+                        </p>
+                        <p>
+                            En esta rápida exposición hemos visto cómo el FEP, la autopoiesis y la enacción se han discutido casi exclusivamente en términos de importantes compatibilidades. Encontramos muy pocas instancias donde se mencionen serias incompatibilidades, haciendo que parezca que, excepto por algunos detalles, hay un amplio consenso. Antes de discutir por qué estamos totalmente en desacuerdo con esta imagen, mencionaremos algunas lecturas erróneas.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. Lecturas Erróneas -->
+            <section id="lecturas-erroneas" class="mb-24 w-full">
+                <div class="flex flex-col xl:flex-row gap-12">
+                    <div class="xl:w-1/5">
+                        <h2 class="text-4xl font-serif font-bold text-white sticky top-24 border-l-4 border-amber-500 pl-6 py-2">
+                            3. Lecturas Erróneas
+                        </h2>
+                    </div>
+                    <div class="xl:w-4/5 prose prose-invert prose-lg max-w-none text-slate-300 font-light text-justify">
+                        <p>
+                            El enfoque enactivo debe mucho a la teoría clásica de la autopoiesis pero no es idéntico a ella. Hereda varios conceptos, y más importante, una sensibilidad a la necesidad de proporcionar definiciones operacionales de sus ideas clave. Es sorprendente que muy pocos intentos de vincular el FEP, la autopoiesis y la enacción hayan aprovechado estas definiciones operacionales y que la terminología técnica se use a veces de manera imprecisa. Esta imprecisión resulta en una serie de lecturas erróneas que pueden señalar incompatibilidades más profundas.
+                        </p>
+
+                        <h3 id="autopoiesis" class="text-2xl text-amber-500 font-bold mt-12 mb-6">3.1 Autopoiesis</h3>
+                        <p>
+                            Comencemos reafirmando la definición clásica de <span class="hl">autopoiesis</span> (según Maturana & Varela, 1980, pp. 78-79):
+                        </p>
+                        <blockquote>
+                            Un sistema autopoiético está organizado (definido como una unidad) como una red de procesos de producción (transformación y destrucción) de componentes que:<br><br>
+                            (i) a través de sus interacciones y transformaciones regeneran y realizan continuamente la red de procesos y relaciones que los produce; y<br>
+                            (ii) constituyen el sistema como una unidad concreta en el espacio en el que existen los procesos especificando el dominio topológico de su realización como una red.
+                        </blockquote>
+                        <p>
+                            Llamamos a los requisitos primero y segundo "<span class="hl">autoproducción</span>" y "<span class="hl">autodistinción</span>", respectivamente. Friston (2013, p. 5) se refiere a la autopoiesis como un atributo de autoorganización biológica y homeostasis donde "los estados activos parecerán mantener la <span class="hl">integridad estructural y funcional</span> de los estados biológicos". Otros hacen comentarios similares, sugiriendo que la autopoiesis se entiende suficientemente como autoorganización, integridad o persistencia en el tiempo.
+                        </p>
+                        <p>
+                            Sin embargo, la autopoiesis no se define como autoorganización, integridad o persistencia en el tiempo. Un cristal en una solución sobresaturada tiene integridad y autoorganización, pero no es autopoiético (no se regenera continuamente). Puede persistir en el tiempo y aun así no ser autopoiético. La autopoiesis es la descripción de una clase de sistemas, i.e., una descripción de la <span class="hl">organización</span> que define esta clase, a diferencia de su <span class="hl">estructura</span> (los componentes concretos). La distinción entre estructura y organización es crucial. La estructura de un sistema cambia con el tiempo, incluso si la organización permanece invariante (Fido era un cachorro, es un sabueso adulto, será un anciano perezoso). Las afirmaciones sobre la estructura de un sistema no se traducen obviamente en afirmaciones sobre su organización, y viceversa.
+                        </p>
+                        <p>
+                            Friston y sus colegas a menudo confunden estos niveles, refiriéndose a una "<span class="hl">integridad estructural</span>" y "homeostasis" que son propiedades estructurales, no organizacionales. Además, en los sistemas de Friston (sistemas dinámicos aleatorios en un NESS), no hay un equivalente organizacional obvio a la red de procesos que a través de transformaciones realizan las condiciones de su propia producción. De hecho, las suposiciones son tales que no se necesita regeneración después de alcanzar el NESS; la "organización" simplemente perdura. Es incierto en qué sentido los componentes de los sistemas, e.g., su Manta de Markov, son producidos materialmente por otros procesos en el sistema, en lugar de simplemente estar ahí por asunción.
+                        </p>
+                        <p>
+                            En resumen, la autopoiesis ha sido interpretada libremente y a menudo malinterpretada por Friston y sus colegas. Atendiendo a la definición operacional y a la distinción entre estructura y organización, es posible mostrar que la caracterización de autopoiesis presentada por Friston (integridad estructural, persistencia) no implica la organización autopoiética; tales propiedades pueden encontrarse en sistemas no autopoiéticos.
+                        </p>
+
+                        <h3 id="limites" class="text-2xl text-amber-500 font-bold mt-12 mb-6">3.2 Límites</h3>
+                        <p>
+                            El concepto de <span class="hl">clausura operacional</span> bajo condiciones precarias sustenta la idea enactiva de autonomía. Ramstead et al. (2021) y Kirchhoff (2018) ven en este concepto un análogo enactivo de una <span class="hl">Manta de Markov</span>. Afirman que "es bastante sencillo establecer que el formalismo de la Manta de Markov proporciona una formulación estadística de la clausura operacional".
+                        </p>
+                        <p>
+                            Vemos tal afirmación como especulativa y desconcertante. Confunde nuevamente la organización y la estructura. No vemos una relación directa entre la <span class="hl">clausura operacional</span> (una declaración organizacional sobre cómo una red de procesos se produce y se distingue activamente) y las <span class="hl">Mantas de Markov</span> (una declaración sobre la independencia condicional estadística entre conjuntos de variables). Un sistema operacionalmente cerrado está abierto no solo a influencias informacionales externas sino también a todo tipo de relaciones materiales y formativas (transporte de calor, masa, biomateria, material genético, microorganismos). Los procesos internos pueden depender literalmente de tales intercambios habilitadores para continuar operando.
+                        </p>
+                        <p>
+                            Mantener la condición de <span class="hl">autodistinción</span> puede llevar a procesos que regulan límites estructurales y espaciales complejos (como membranas celulares), pero también a otros procesos, como el sistema inmune, que no están en el "límite" sino que son parte del sistema. También encontramos un gran número de procesos que cruzan límites y barreras en ambas direcciones sin ninguna mediación estadística (ósmosis, transferencia horizontal de plásmidos, efectos acumulativos de la dieta). El estado de las relaciones entre la distinción sistémica, los procesos estructurales de autodistinción, los límites espaciales reales y la independencia estadística condicional (Mantas de Markov) es cualquier cosa menos "bastante sencillo".
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. Puntos de Tensión -->
+            <section id="puntos-tension" class="mb-24 w-full">
+                <div class="flex flex-col xl:flex-row gap-12">
+                    <div class="xl:w-1/5">
+                        <h2 class="text-4xl font-serif font-bold text-white sticky top-24 border-l-4 border-amber-500 pl-6 py-2">
+                            4. Puntos de Tensión
+                        </h2>
+                    </div>
+                    <div class="xl:w-4/5 prose prose-invert prose-lg max-w-none text-slate-300 font-light text-justify">
+                        <p>
+                            Nuestro argumento es que hay ciertos principios y fenómenos que el FEP necesita poder explicar si afirma hacer contacto con o abarcar la enacción, y que, hasta la fecha, el FEP no ha explicado con éxito estos principios.
+                        </p>
+                        
+                        <div class="my-12 p-8 bg-slate-900/50 border border-slate-800 rounded-xl flex justify-center">
+                            <div class="mermaid">
+                            graph TD
+                                subgraph FEP ["Principio de Energía Libre (FEP)"]
+                                    NESS[Estado Estacionario de No Equilibrio]
+                                    MB[Manta de Markov]
+                                    Invar[Invariancia Temporal]
+                                    Stat[Independencia Estadística]
+                                end
+                                subgraph Enaction ["Enacción / Autopoiesis"]
+                                    Hist[Historicidad & Adaptabilidad]
+                                    OpClose[Clausura Operacional]
+                                    Path[Dependencia de Trayectoria]
+                                    Const[Constitución Mutua]
+                                end
+                                NESS -- Incompatible con --> Hist
+                                Invar -- Contradice --> Path
+                                MB -- Insuficiente para --> Const
+                                Stat -- No equivale a --> OpClose
+                                style FEP fill:#0f172a,stroke:#f59e0b,stroke-width:2px
+                                style Enaction fill:#0f172a,stroke:#3b82f6,stroke-width:2px
+                            </div>
+                        </div>
+
+                        <h3 id="ness-vs-historia" class="text-2xl text-amber-500 font-bold mt-12 mb-6">4.1 Estados estacionarios de no equilibrio versus historia</h3>
+                        <p>
+                            El trabajo presentado en Friston (2013) es central para prácticamente todas las propuestas que comparan FEP y enacción. La suposición de que el sistema dinámico aleatorio convergerá a un conjunto invariante de estados (un <span class="hl">NESS</span>) es central para el argumento del FEP. La densidad invariante de NESS describe la probabilidad de visitar estados particulares incluso si las variables continúan cambiando. La <span class="hl">invariancia temporal</span> de estas expresiones es clave. Establecer "la tasa de cambio de la densidad a cero" es útil para formalizar la noción de que un sistema mantiene su forma a lo largo del tiempo.
+                        </p>
+                        <p>
+                            La convergencia a un NESS es un punto importante de contraste. La enacción enfatiza la naturaleza <span class="hl">histórica</span> de la vida y la mente. Ideas técnicas clave enactiva, como la <span class="hl">adaptabilidad</span> y la <span class="hl">creación de sentido</span>, operan a través de transformaciones mutuamente definidas de agente y entorno que contradicen la condición NESS. Estas ideas teorizan precisamente lo que sucede en las transiciones entre diferentes situaciones relativamente metaestables. Varela usa la palabra "enacción" para referirse precisamente a tales procesos que suceden "entre un momento conductual y el siguiente". En ese sentido, la historia está integrada en la definición misma del término enacción. Las ideas enactiva conciernen a lo que sucede cuando una descripción dinámica adecuada para una situación se vuelve inadecuada para la siguiente; i.e., cuando ya no estamos en una situación de <span class="hl">simetría de traducción temporal</span>.
+                        </p>
+                        <p>
+                            La <span class="hl">historicidad</span> implica <span class="hl">simetrías temporales rotas</span>: cambios en leyes, acoplamientos, parámetros, restricciones, condiciones de contorno y conjuntos de variables. Los sistemas en una condición estacionaria, por el contrario, no pueden acomodar este tipo de cambio histórico; permanecen en su condición estacionaria a menos que algo los saque de ella y eventualmente olvidan su historia debido a sus propiedades invariantes en el tiempo.
+                        </p>
+                        <p>
+                            La posibilidad de historicidad se introduce inequívocamente en la teoría enactiva a través del concepto de <span class="hl">adaptabilidad</span>. La adaptabilidad es la capacidad del sistema para regular sus estados y relación con el entorno para evitar la pérdida de viabilidad. Esto implica que las intervenciones adaptativas necesariamente modulan el paisaje dinámico (cambiando parámetros, desacoplando sistemas, alterando restricciones). Estos cambios necesariamente resultan en un espacio de fase alterado. Por definición, la adaptabilidad implica simetrías temporales rotas y, por lo tanto, es incompatible con asumir que un sistema permanece en un NESS. Las propiedades invariantes en el tiempo del flujo no pueden garantizarse si los parámetros, las restricciones e incluso los conjuntos de variables del sistema se modifican en el curso de un evento adaptativo.
+                        </p>
+                        <p>
+                            En cuanto a los seres humanos, la evidencia sugiere fuertemente que los procesos de cambio histórico no pueden ser ignorados (formación de hábitos, aprendizaje de habilidades, desarrollo, trauma). La <span class="hl">variabilidad cultural e interpersonal</span> en los seres humanos no es ruido estadístico, sino consecuencias necesarias de lo que significa experimentar el devenir humano. Algunos eventos pueden entrar en la historia del desarrollo, cognitiva y emocional de una persona como accidentes, pero si sus efectos perduran o se amplifican, esto ocurre desencadenando un desvío en los caminos dinámicos y remodelando los paisajes dinámicos. Las fluctuaciones pueden bloquearse y cambiar el curso de la historia posterior. Fenómenos generalizados como la ontogenia, la inmunidad adquirida, el curso de una enfermedad, el desarrollo de la personalidad, el lenguaje y el pensamiento abstracto rompen fundamentalmente la invariancia temporal de NESS.
+                        </p>
+
+                        <h3 id="constitucion-mutua" class="text-2xl text-amber-500 font-bold mt-12 mb-6">4.2 Habilitación mutua y co-constitución de dominios internos y externos</h3>
+                        <p>
+                            Existe una confusión recurrente entre las <span class="hl">Mantas de Markov</span> y lo que las teorías autopoiéticas y enactiva especifican como <span class="hl">clausura operacional</span>, y en particular, procesos de autodistinción organizacional. ¿Es esta confusión sintomática de otra tensión? Los enactivistas afirman una noción fuerte de <span class="hl">involucramiento con el mundo (world-involvement)</span>: los procesos en el entorno juegan roles más que informacionales en la constitución y actualización de la vida y la mente. Son eventos materiales con consecuencias que cambian tanto al mundo como al agente. Los procesos ambientales y biológicos/cognitivos se habilitan y constituyen mutuamente. ¿Pueden estas afirmaciones ser acomodadas por la idea de las Mantas de Markov?
+                        </p>
+                        <p>
+                            Las Mantas de Markov no son producidas por el sistema de la misma manera que lo son las estructuras de autodistinción. No hay nada en la Manta de Markov que la vincule necesariamente a procesos de constitución organísmica. La <span class="hl">autodistinción</span> no está soportada estructuralmente solo por la formación de límites organísmicos. Los procesos "no limítrofes" de autodistinción (sistema inmune, regulación de temperatura, mantenimiento de forma corporal) regulan los encuentros entre procesos internos y externos, pero no se encuentran en la interfaz topológica y no implican necesariamente ningún tipo particular de independencia estadística condicional; al contrario.
+                        </p>
+                        <p>
+                            El mundo habilita y constituye la <span class="hl">agencia corporizada</span> por encima de cualquier información que proporcione a los procesos cognitivos del agente. Un entorno de gravedad cero no informa al cuerpo de un astronauta que debe volverse menos denso, lo "hace" hacerlo. Beber un vaso de agua apaga nuestra sed de una manera que es diferente a encontrar una pieza útil de información. Además, los procesos relacionales de involucramiento con el mundo contribuyen a establecer las <span class="hl">normas</span> de la actividad de un agente, así como sus condiciones de viabilidad. Por ejemplo, al participar en una nueva habilidad manual, aprendemos a través de la confrontación de obstáculos para acomodar nuevas normas que emergen de estos encuentros materiales.
+                        </p>
+                        <p>
+                            Ambos puntos —los roles habilitadores y constitutivos que juegan los procesos ambientales, y el papel que juegan en establecer normas— indican tensiones con la idea de las Mantas de Markov. Desde una perspectiva enactiva, las condiciones de la Manta de Markov son demasiado fuertes y demasiado indiscriminadas para dar cuenta de la complejidad de la relación organismo-entorno.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. Conclusiones -->
+            <section id="conclusiones" class="mb-24 w-full">
+                <div class="flex flex-col xl:flex-row gap-12">
+                    <div class="xl:w-1/5">
+                        <h2 class="text-4xl font-serif font-bold text-white sticky top-24 border-l-4 border-amber-500 pl-6 py-2">
+                            5. Conclusiones
+                        </h2>
+                    </div>
+                    <div class="xl:w-4/5 prose prose-invert prose-lg max-w-none text-slate-300 font-light text-justify">
+                        <p>
+                            El proceso de comparación inter-teórica no puede ser eludido o reemplazado por dispositivos retóricos, como afirmar que algunas similitudes son "bastante sencillas". Requiere un examen crítico.
+                        </p>
+                        <p>
+                            En este artículo, hemos mostrado que una vez que tomamos los pasos necesarios de verificar interpretaciones erróneas y comparar suposiciones fundamentales, el <span class="hl">FEP</span>, tal como está formulado hoy, presenta una serie de tensiones con las teorías de la <span class="hl">autopoiesis</span> y la <span class="hl">enacción</span>. No solo encontramos lecturas erróneas —como confundir declaraciones sobre <span class="hl">organización</span> con declaraciones sobre <span class="hl">estructuras</span>, o combinar nociones de autodistinción con límites materiales y estos últimos con Mantas de Markov— sino que sugerimos que en la raíz de estas lecturas erróneas pueden yacer visiones conflictivas sobre la constitución de la <span class="hl">agencia</span> y la <span class="hl">auto-individuación</span> en sistemas biológicos y cognitivos.
+                        </p>
+                        <p>
+                            Nuestra conclusión es que, por estas razones, el FEP —al menos en su forma actual— y el enfoque enactivo no son tan compatibles como se ha sugerido. Las diferencias inter-teóricas que hemos mostrado no son menores. La enacción concibe los cuerpos y la creación de sentido como irreductiblemente <span class="hl">históricos</span> y co-constituidos por el mundo sociomaterial de formas que van mucho más allá del procesamiento de información. En contraste, las suposiciones clave del FEP, como el <span class="hl">NESS</span>, dificultan que alcance una concepción similar de la vida y la mente. Debido a esto, consideramos que esta es una incompatibilidad entre los dos enfoques.
+                        </p>
+                        <p>
+                            Hay otras diferencias que no hemos explorado aquí, como la dimensión social. Los cuerpos y mentes humanos son irreductiblemente sociales. Los enactivistas han propuesto el concepto de <span class="hl">creación de sentido participativa</span>, que creemos está en desacuerdo con las nociones de persistencia individual protegida por mantas en el corazón del FEP. No hemos profundizado en lo que motiva a los investigadores a intentar hacer compatible el FEP con la enacción, pero parece haber un deseo de proporcionar interpretaciones más corporizadas y menos neurocéntricas de la minimización de la energía libre. Aunque esta es una buena motivación, creemos que elaborar esta interpretación es una tarea ardua debido a los orígenes computacionales del FEP.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Notas y Agradecimientos -->
+            <section class="mb-24 w-full border-t border-slate-800 pt-12">
+                <h3 class="text-xl font-bold text-slate-200 mb-6">Agradecimientos</h3>
+                <p class="text-sm text-slate-400 mb-12">
+                    Agradecemos a Miguel Aguilera, Maxwell Ramstead y a los revisores de este artículo por sus comentarios y sugerencias. También agradecemos a Wanja Wiese por su consejo editorial y apoyo durante el proceso de revisión.
+                </p>
+            </section>
+
+            <!-- Referencias -->
+            <section id="referencias" class="w-full border-t border-slate-800 pt-12">
+                <h2 class="text-3xl font-serif font-bold text-white mb-10 pl-6 border-l-4 border-amber-500">Referencias</h2>
+                <ul class="text-xs md:text-sm text-slate-400 space-y-4 font-light columns-1 md:columns-2 gap-16">
+                    <li class="break-inside-avoid">
+                        <span class="hl">Adolph, K. E., & Hoch, J. E.</span> (2019). Motor development: Embodied, embedded, enculturated, and enabling. <i>Annual Review of Psychology, 70</i>(1), 141–164.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Aguilera, M., & Di Paolo, E. A.</span> (2019). Integrated information in the thermodynamic limit. <i>Neural Networks, 114</i>, 136–146.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Aguilera, M., Millidge, B., Tschantz, A., & Buckley, C. L.</span> (2021). How particular is the physics of the free energy principle? <i>Physics of Life Reviews</i>.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Allen, M., & Friston, K. J.</span> (2018). From cognitivism to autopoiesis: Towards a computational framework for the embodied mind. <i>Synthese, 195</i>(6), 2459–2482.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Anderson, M. L.</span> (2014). <i>After phrenology: Neural reuse and the interactive brain</i>. MIT Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Anderson, M. L., Richardson, M. J., & Chemero, A.</span> (2012). Eroding the boundaries of cognition: Implications of Embodiment. <i>Topics in Cognitive Science, 4</i>(4), 717–730.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Arthur, W. B.</span> (1994). <i>Increasing returns and path dependence in the economy</i>. The University of Michigan Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Ashby, W. R.</span> (1962). Principles of the self-organizing system. In H. V. Foerster & Jr. G. W. Zopf (Eds.), <i>Principles of self-organization</i> (pp. 255–278). Pergamon Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Baltieri, M., Buckley, C. L., & Bruineberg, J.</span> (2020). Predictions in the eye of the beholder: An active inference account of watt governors. In <i>Proceedings of ALIFE 2020</i> (pp. 121–129). MIT Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Barandiaran, X. E., Di Paolo, E. A., & Rohde, M.</span> (2009). Defining agency: Individuality, normativity, asymmetry, and spatio-temporality in action. <i>Adaptive Behavior, 17</i>(5), 367–386.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Beer, R. D.</span> (2015). Characterizing autopoiesis in the game of life. <i>Artificial Life, 21</i>(1), 1–19.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Beer, R. D.</span> (2020). Bittorio revisited: Structural coupling in the game of life. <i>Adaptive Behavior, 28</i>(4), 197–212.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Beltrán, I., Herculano-Houzel, S., Sinervo, B., & Whiting, M. J.</span> (2021). Are ectotherm brains vulnerable to global warming? <i>Trends in Ecology & Evolution, 36</i>(8), 691–699.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Biehl, M., Pollock, F. A., & Kanai, R.</span> (2021). A technical critique of some parts of the free energy principle. <i>Entropy, 23</i>(3), 293.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Bitbol, M., & Luisi, P. L.</span> (2004). Autopoiesis with or without cognition: Defining life at its edge. <i>Journal of The Royal Society Interface, 1</i>(1), 99–107.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Bourgine, P., & Stewart, J.</span> (2004). Autopoiesis and cognition. <i>Artificial Life, 10</i>(3), 327–345.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Bruineberg, J., Dolega, K., Dewhurst, J., & Baltieri, M.</span> (2021). The emperor's new Markov blankets. <i>Behavioral and Brain Sciences</i>, 1–63.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Bruineberg, J., & Hesp, C.</span> (2018). Beyond blanket terms: Challenges for the explanatory value of variational (neuro-) ethology. <i>Physics of Life Reviews, 24</i>, 37–39.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Bruineberg, J., Kiverstein, J., & Rietveld, E.</span> (2018). The anticipating brain is not a scientist: The free-energy principle from an ecological-enactive perspective. <i>Synthese, 195</i>(6), 2417–2444.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Byrge, L., Sporns, O., & Smith, L. B.</span> (2014). Developmental process emerges from extended brain-body-behavior networks. <i>Trends in Cognitive Sciences, 18</i>(8), 395–403.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Chemero, A.</span> (2009). <i>Radical embodied cognitive science</i>. MIT Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Clark, A.</span> (2015). Radical predictive processing. <i>The Southern Journal of Philosophy, 53</i>, 3–27.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Clark, A.</span> (2017). How to knit your own Markov blanket: Resisting the second law with metamorphic minds. In <i>Philosophy and predictive processing</i>. MIND Group.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Clavel Vázquez, M. J.</span> (2020). A match made in heaven: Predictive approaches to (an unorthodox) sensorimotor enactivism. <i>Phenomenology and the Cognitive Sciences, 19</i>(4), 653–684.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Colombo, M., & Palacios, P.</span> (2021). Non-equilibrium thermodynamics and the free energy principle in biology. <i>Biology & Philosophy, 36</i>(5).
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Colombo, M., & Wright, C.</span> (2021). First principles in the life sciences: The free-energy principle, organicism, and mechanism. <i>Synthese, 198</i>(S14), 3463–3488.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Constant, A., Clark, A., & Friston, K. J.</span> (2021). Representation wars: Enacting an armistice through active inference. <i>Frontiers in Psychology, 11</i>, 598733.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Costa, L. D., Friston, K., Heins, C., & Pavliotis, G. A.</span> (2021). Bayesian mechanics for stationary processes. <i>Proceedings of the Royal Society A, 477</i>(2256).
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">De Jaegher, H.</span> (2021). Loving and knowing: Reflections for an engaged epistemology. <i>Phenomenology and the Cognitive Sciences, 20</i>(5), 847–870.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">De Jaegher, H., & Di Paolo, E. A.</span> (2007). Participatory sense-making. <i>Phenomenology and the Cognitive Sciences, 6</i>(4), 485–507.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">De Jaegher, H., Di Paolo, E. A., & Adolphs, R.</span> (2016). What does the interactive brain hypothesis mean for social neuroscience? <i>Philosophical Transactions of the Royal Society B, 371</i>(1693).
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">De Jaegher, H., Di Paolo, E. A., & Gallagher, S.</span> (2010). Can social interaction constitute social cognition? <i>Trends in Cognitive Sciences, 14</i>(10), 441–447.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Desjardins, E.</span> (2011). Historicity and experimental evolution. <i>Biology & Philosophy, 26</i>(3), 339–364.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Desjardins, E.</span> (2015). Historicity and ecological restoration. <i>Biology & Philosophy, 30</i>(1), 77–98.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Di Paolo, E. A.</span> (2001). Artificial life and historical processes. In <i>Advances in artificial life</i> (pp. 649–658). Springer.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Di Paolo, E. A.</span> (2005). Autopoiesis, adaptivity, teleology, agency. <i>Phenomenology and the Cognitive Sciences, 4</i>(4), 429–452.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Di Paolo, E. A.</span> (2009). Extended life. <i>Topoi, 28</i>(1), 9–21.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Di Paolo, E. A.</span> (2014). The worldly constituents of perceptual presence. <i>Frontiers in Psychology, 5</i>.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Di Paolo, E. A.</span> (2018). The enactive conception of life. In <i>The Oxford handbook of cognition</i> (pp. 71–94). Oxford University Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Di Paolo, E. A.</span> (2021). Enactive becoming. <i>Phenomenology and the Cognitive Sciences, 20</i>(5), 783–809.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Di Paolo, E. A., Buhrmann, T., & Barandiaran, X.</span> (2017). <i>Sensorimotor life: An enactive proposal</i>. Oxford University Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Di Paolo, E. A., Cuffari, E. C., & De Jaegher, H.</span> (2018). <i>Linguistic bodies: The continuity between life and language</i>. MIT Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Di Paolo, E. A., & De Jaegher, H.</span> (2021). Enactive ethics: Difference becoming participation. <i>Topoi</i>.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Di Paolo, E. A., Heras-Escribano, M., Chemero, A., & McGann, M. (Eds.)</span> (2021). <i>Enaction and ecological psychology</i>. Frontiers Media SA.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Di Paolo, E. A., & Thompson, E.</span> (2014). The enactive approach. In <i>The Routledge handbook of embodied cognition</i> (pp. 68–78). Routledge.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Fischer, K. W., & Bidell, T. R.</span> (2006). Dynamic development of action, thought, and emotion. In <i>Handbook of child psychology</i>. Wiley.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Fisher, A. J., Medaglia, J. D., & Jeronimus, B. F.</span> (2018). Lack of group-to-individual generalizability is a threat to human subjects research. <i>PNAS, 115</i>(27).
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Freeman, W. J.</span> (1999). Consciousness, intentionality and causality. <i>Journal of Consciousness Studies, 6</i>(11-12), 143–172.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Friston, K.</span> (2012). A free energy principle for biological systems. <i>Entropy, 14</i>(11), 2100–2121.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Friston, K.</span> (2013). Life as we know it. <i>Journal of The Royal Society Interface, 10</i>(86).
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Friston, K.</span> (2019). A free energy principle for a particular physics. arXiv:1906.10184.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Friston, K. J.</span> (2011). Embodied inference. In <i>The implications of embodiment</i>. Imprint Academic.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Friston, K. J., Costa, L. D., & Parr, T.</span> (2021). Some interesting observations on the free energy principle. <i>Entropy, 23</i>(8), 1076.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Friston, K. J., Parr, T., Yufik, Y., Sajid, N., Price, C. J., & Holmes, E.</span> (2020). Generative models, linguistic communication and active inference. <i>Neuroscience & Biobehavioral Reviews, 118</i>, 42–64.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Friston, K. J., Rosch, R., Parr, T., Price, C., & Bowman, H.</span> (2018). Deep temporal models and active inference. <i>Neuroscience & Biobehavioral Reviews, 90</i>, 486–501.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Friston, K., Kilner, J., & Harrison, L.</span> (2006). A free energy principle for the brain. <i>Journal of Physiology-Paris, 100</i>(1-3), 70–87.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Fuchs, T.</span> (2017). <i>Ecology of the brain</i>. Oxford University Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Gould, S. J.</span> (2002). <i>The structure of evolutionary theory</i>. Harvard University Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Hohwy, J.</span> (2013). <i>The predictive mind</i>. Oxford University Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Hutto, D., & Myin, E.</span> (2013). <i>Radicalizing enactivism</i>. MIT Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Kirchhoff, M. D.</span> (2018). Autopoiesis, free energy, and the life-mind continuity thesis. <i>Synthese, 195</i>(6), 2519–2540.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Kirchhoff, M. D., & Froese, T.</span> (2017). Where there is life there is mind. <i>Entropy, 19</i>(4), 169.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Kirchhoff, M. D., & Kiverstein, J.</span> (2021). How to determine the boundaries of the mind: A Markov blanket proposal. <i>Synthese, 198</i>(5), 4791–4810.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Kirchhoff, M., Parr, T., Palacios, E., Friston, K., & Kiverstein, J.</span> (2018). The Markov blankets of life. <i>Journal of The Royal Society Interface, 15</i>(138).
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Kiverstein, J.</span> (2020). Free energy and the self: An ecological-enactive interpretation. <i>Topoi, 39</i>(3), 559–574.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Korbak, T.</span> (2021). Computational enactivism under the free energy principle. <i>Synthese, 198</i>(3), 2743–2763.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Kostrubiec, V., et al.</span> (2012). Beyond the blank slate. <i>Frontiers in Human Neuroscience, 6</i>, 222.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Kuhn, T.</span> (1962). <i>The structure of scientific revolutions</i>. University of Chicago Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Landecker, H.</span> (2011). Food as exposure. <i>BioSocieties, 6</i>(2), 167–194.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Litwin, P., & Milkowski, M.</span> (2020). Unification by fiat. <i>Cognitive Science, 44</i>(7).
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Longo, G.</span> (2018). How future depends on past and rare events in systems of life. <i>Foundations of Science, 23</i>(3), 443–474.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Longo, G., & Montévil, M.</span> (2014). <i>Perspectives on organisms: Biological time, symmetries and singularities</i>. Springer.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Maturana, H. R., & Varela, F. J.</span> (1980). <i>Autopoiesis and cognition</i>. D. Reidel Publishing Company.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Maturana, H. R., & Varela, F. J.</span> (1987). <i>The tree of knowledge</i>. Shambhala.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Medaglia, J. D., et al.</span> (2011). The challenge of non-ergodicity in network neuroscience. <i>Network: Computation in Neural Systems, 22</i>, 148–153.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Molenaar, P. C. M.</span> (2004). A manifesto on psychology as idiographic science. <i>Measurement, 2</i>(4), 201–218.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Molenaar, P. C. M., & Nesselroade, J. R.</span> (2014). New trends in the inductive use of relational developmental systems theory. In <i>Handbook of developmental systems and methodology</i>. Wiley.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Montévil, M.</span> (2020). Historicity at the heart of biology. <i>Theory in Biosciences</i>.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Nicolis, G., & Prigogine, L.</span> (1977). <i>Self-organization in nonequilibrium systems</i>. John Wiley & Sons.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Orth, D., et al.</span> (2017). Creative motor actions as emerging from movement variability. <i>Frontiers in Psychology, 8</i>, 1903.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Oyama, S., Griffiths, P. E., & Gray, R. D.</span> (2001). <i>Cycles of contingency</i>. MIT Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Palacios, E. R., et al.</span> (2020). On Markov blankets and hierarchical self-organisation. <i>Journal of Theoretical Biology, 486</i>, 110089.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Parr, T., Costa, L. D., & Friston, K.</span> (2019). Markov blankets, information geometry and stochastic thermodynamics. <i>Philosophical Transactions of the Royal Society A, 378</i>.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Pessoa, L.</span> (2014). Understanding brain networks and brain organization. <i>Physics of Life Reviews, 11</i>(3), 400–435.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Pezzulo, G., Rigoli, F., & Friston, K.</span> (2015). Active inference, homeostatic regulation and adaptive behavioural control. <i>Progress in Neurobiology, 134</i>, 17–35.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Raja, V., et al.</span> (2021). The Markov blanket trick. <i>Physics of Life Reviews, 39</i>, 49–72.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Ramstead, M. J. D., Badcock, P. B., & Friston, K. J.</span> (2018). Answering Schrödinger's question. <i>Physics of Life Reviews, 24</i>, 1–16.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Ramstead, M. J. D., Kirchhoff, M. D., Constant, A., & Friston, K. J.</span> (2021). Multiscale integration. <i>Synthese, 198</i>, 41–70.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Rath, D., et al.</span> (2015). The CRISPR-cas immune system. <i>Biochimie, 117</i>, 119–128.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Rose, L. T., Rouhani, P., & Fischer, K. W.</span> (2013). The science of the individual. <i>Mind, Brain, and Education, 7</i>(3), 152–158.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Seth, A. K.</span> (2014). A predictive processing theory of sensorimotor contingencies. <i>Cognitive Neuroscience, 5</i>(2), 97–118.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Soucy, S. M., Huang, J., & Gogarten, J. P.</span> (2015). Horizontal gene transfer. <i>Nature Reviews Genetics, 16</i>(8), 472–482.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Speelman, C. P., & McGann, M.</span> (2016). Challenges to mean-based analysis in psychology. <i>Frontiers in Psychology, 7</i>, 1234.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Stewart, J., Gapenne, O., & Di Paolo, E. A. (Eds.)</span> (2010). <i>Enaction: A new paradigm for cognitive science</i>. MIT Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Thelen, E.</span> (2005). Dynamic systems theory and the complexity of change. <i>Psychoanalytic Dialogues, 15</i>(2), 255–283.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Thelen, E., Corbetta, D., & Spencer, J. P.</span> (1996). Development of reaching during the first year. <i>JEP: Human Perception and Performance, 22</i>(5), 1059–1076.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Thompson, E.</span> (2007). <i>Mind in life</i>. Harvard University Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Thompson, E.</span> (2018). Review of Daniel D. Hutto and Erik Myin, Evolving enactivism. <i>Notre Dame Philosophical Reviews</i>.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Thompson, E., & Stapleton, M.</span> (2009). Making sense of sense-making. <i>Topoi, 28</i>(1), 23–30.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Turner, J. S.</span> (2000). <i>The extended organism</i>. Harvard University Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">van Es, T.</span> (2021). Living models or life modelled? <i>Adaptive Behavior, 29</i>(3), 315–329.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">van Es, T., & Kirchhoff, M. D.</span> (2021). Between pebbles and organisms. <i>Synthese, 199</i>, 6623–6644.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Varela, F. J.</span> (1979). <i>Principles of biological autonomy</i>. North Holland.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Varela, F. J.</span> (1991a). Making it concrete. <i>Revue Internationale de Psychopathologie, 4</i>(6), 601–617.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Varela, F. J.</span> (1991b). Organism: A meshwork of selfless selves. In <i>Organism and the origins of self</i>. Springer.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Varela, F. J.</span> (2011). Preface to the second edition of "De máquinas y seres vivos". <i>Systems Research and Behavioral Science, 28</i>(6), 601–617.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Varela, F. J., Thompson, E., & Rosch, E.</span> (1991). <i>The embodied mind</i>. MIT Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Varela, F., et al.</span> (2001). The brainweb. <i>Nature Reviews Neuroscience, 2</i>(4), 229–239.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Veissière, S. P. L., et al.</span> (2019). Thinking through other minds. <i>Behavioral and Brain Sciences, 43</i>, E90.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Villalobos, M., & Ward, D.</span> (2015). Living systems: Autonomy, autopoiesis and enaction. <i>Philosophy & Technology, 28</i>(2), 225–239.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Vygotsky, L.</span> (2012). <i>Thought and language</i>. MIT Press.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Waddington, C. H.</span> (1957). <i>The strategy of the genes</i>. George Allen; Unwin.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Walsh, K. S., et al.</span> (2020). Evaluating the neurophysiological evidence for predictive processing. <i>Annals of the New York Academy of Sciences, 1464</i>(1), 242–268.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Weron, A., et al.</span> (2017). Ergodicity breaking on the neuronal surface. <i>Scientific Reports, 7</i>(1), 5404.
+                    </li>
+                    <li class="break-inside-avoid">
+                        <span class="hl">Wiese, W., & Friston, K. J.</span> (2021). Examining the continuity between life and mind. <i>Philosophies, 6</i>(1), 18.
+                    </li>
+                </ul>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Inicialización de Mermaid -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'dark',
+                securityLevel: 'loose',
+            });
+        });
+
+        // Toggle del menú móvil
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu-container');
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            mobileMenu.classList.toggle('flex');
+        });
+
+        // Funciones para dropdown
+        function toggleDropdown(button) {
+            const navItem = button.closest('.nav-item');
+            const dropdown = navItem.querySelector('.dropdown-menu');
+            navItem.classList.toggle('active');
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            } else {
+                dropdown.style.display = 'block';
+            }
+        }
+
+        function closeMobileMenu() {
+            if (window.innerWidth < 768) {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('flex');
+                document.querySelectorAll('.dropdown-menu').forEach(d => d.style.display = 'none');
+            }
+        }
+    </script>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-12">
+        <div class="max-w-[1800px] mx-auto px-10 flex flex-col md:flex-row justify-between items-center gap-6">
+            <p class="text-xs text-slate-500 font-medium text-center md:text-left">
+                Adaptación HTML completa del artículo original "Laying down a forking path".<br>
+                <span class="text-slate-600">Traducción libre para fines educativos.</span>
+            </p>
+            <p class="text-[10px] text-slate-600 font-mono text-center md:text-right">
+                Philosophy and the Mind Sciences | 2022
+            </p>
+        </div>
+    </footer>
+
+</body>
+</html>
