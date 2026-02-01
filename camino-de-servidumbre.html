@@ -3,548 +3,433 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análisis de Camino de Servidumbre | O.C.V.M.</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <title>Lectura de Fondo: Camino de Servidumbre</title>
     <style>
         :root {
-            --primary: #818cf8;
-            --primary-dark: #6366f1;
-            --secondary: #22d3ee;
-            --primary-text: #e5e7eb;
-            --primary-glow: #818cf8;
-            --secondary-glow: #22d3ee;
-            --font-main: 'Inter', sans-serif;
-            --nav-height: 70px;
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --concept-color: #FFBF00; /* Ámbar para conceptos/ideas */
+            --person-color: #87CEEB; /* Celeste para personajes */
+            --heading-color: #ffffff;
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        html { scroll-behavior: smooth; }
 
         body {
-            background-color: #000000;
-            color: var(--primary-text);
-            font-family: var(--font-main);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             line-height: 1.8;
-            overflow-x: hidden;
+            margin: 0;
+            padding: 40px;
+            font-size: 18px;
         }
-        
-        #bg-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
+
+        .container {
             width: 100%;
-            height: 100%;
-            z-index: -1;
-            cursor: crosshair;
+            max-width: 100%; /* Usa todo el ancho disponible */
+            margin: 0 auto;
         }
 
-        .glassmorphism {
-            background: rgba(17, 24, 39, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        h1, h2, h3 {
+            color: var(--heading-color);
+            margin-top: 1.5em;
+            margin-bottom: 0.8em;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
         }
 
-        body.menu-open {
-            overflow: hidden;
-        }
-        
-        nav {
-            position: fixed; top: 0; width: 100%; height: var(--nav-height);
-            z-index: 1000;
-            display: flex; justify-content: center; align-items: center;
-            padding: 0 5%;
-            pointer-events: auto;
+        h1 {
+            font-size: 2.5em;
+            text-align: center;
+            border-bottom: none;
+            margin-top: 0;
         }
 
-        .nav-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
-        
-        .nav-logo a {
-            font-size: 1.3em;
-            font-weight: 700;
-            color: #fff;
-            text-decoration: none;
-            text-shadow: 0 0 8px var(--primary-glow);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .nav-container { display: flex; justify-content: center; align-items: center; list-style: none; height: 100%; gap: 0.5rem;}
-        nav .nav-container > li { position: relative; height: 100%; display: flex; align-items: center; }
-        nav .nav-container > li > a {
-            color: var(--primary-text); text-decoration: none; font-size: clamp(0.9em, 1.2vw, 1.05em); font-weight: 500;
-            transition: color 0.3s ease, text-shadow 0.3s ease; padding: 0 1rem; display: flex; align-items: center; gap: 8px;
-        }
-        nav .nav-container > li > a:hover, nav .nav-container > li:hover > a { color: #FFFFFF; text-shadow: 0 0 12px var(--primary-glow); }
-        
-        .nav-icon { width: 20px; height: 20px; stroke-width: 1.5; }
-        
-        .hero {
-            min-height: 80vh;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            text-align: center; position: relative;
-            padding: 1rem;
-            padding-top: var(--nav-height);
-        }
-        .hero-content { position: relative; z-index: 2; animation: fadeIn 2s ease-in; }
-        .hero h1 {
-            font-size: clamp(2.5rem, 8vw, 5.5rem); font-weight: 700; color: #fff;
-            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px rgba(129, 140, 248, 0.7);
-            animation: pulse-glow 3s infinite alternate;
-        }
-        .hero p.subtitle { font-size: clamp(1.2rem, 3vw, 1.8rem); color: var(--secondary-glow); text-shadow: 0 0 8px var(--secondary-glow); margin-top: 0.5rem; }
-        .hero p.description { font-size: clamp(1rem, 2.5vw, 1.2rem); max-width: 800px; margin: 1.5rem auto 0; text-shadow: 0 0 5px #000; }
-        
-        @keyframes pulse-glow {
-            from { text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); }
-            to { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .main-container { 
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto; 
-            padding: 1rem clamp(1rem, 5vw, 4rem) 1rem;
-            pointer-events: none;
-        }
-        
-        main, .footer, .section, .hero-content {
-            pointer-events: auto;
-        }
-
-        main p, .footer p, main li, main blockquote {
-            user-select: text;
-            cursor: default;
-        }
-
-        .layout-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
-        
-        .section {
-            padding: clamp(1.5rem, 5vw, 2.5rem);
-            border-radius: 12px; margin-bottom: 2rem; position: relative;
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
-        }
-        .section:hover { transform: translateY(-5px); box-shadow: 0 0 40px rgba(129, 140, 248, 0.2); }
-        
-        .section h2, .section .tab-nav, .section .tab-content {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-        }
-
-        .section.is-visible h2, .section.is-visible .tab-nav, .section.is-visible .tab-content-container {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
         h2 {
-            font-size: clamp(1.5rem, 5vw, 2.2rem); color: var(--primary-text); text-shadow: 0 0 8px var(--secondary-glow);
-            border-bottom: 1px solid var(--primary-glow); padding-bottom: 1rem; margin-bottom: 1.5rem;
+            font-size: 1.8em;
+            color: var(--person-color);
         }
-        h3 { font-size: clamp(1.4rem, 4vw, 1.9rem); color: var(--primary-glow); margin: 2.5rem 0 1.5rem 0; }
-        h4 { font-size: clamp(1.2rem, 3vw, 1.5rem); color: var(--secondary-glow); margin-bottom: 1rem; margin-top: 2rem; }
-        
-        /* --- ESTILOS PARA TABS Y CONTENIDO --- */
-        .color-personaje { color: #F59E0B; font-weight: 600; } /* Mustard Yellow */
-        .color-concepto { color: var(--primary-glow); font-style: italic; font-weight: 500;}
-        .color-idea { color: #a7f3d0; } /* Mint green */
 
-        .tab-nav {
-            display: flex;
-            flex-wrap: wrap;
-            border-bottom: 1px solid rgba(129, 140, 248, 0.3);
-            margin-bottom: 2rem;
+        p {
+            text-align: justify; /* Texto justificado obligatoriamente */
+            margin-bottom: 1.5em;
+            word-spacing: 0.05em; /* Mejora la legibilidad del justificado */
         }
-        .tab-button {
-            padding: 1rem 1.5rem;
-            cursor: pointer;
-            background: none;
-            border: none;
-            border-bottom: 3px solid transparent;
-            color: var(--primary-text);
-            font-size: clamp(0.9rem, 2vw, 1.1rem);
-            font-weight: 500;
-            transition: all 0.3s ease;
-            margin-bottom: -1px;
-        }
-        .tab-button:hover {
-            color: #fff;
-            background-color: rgba(129, 140, 248, 0.1);
-        }
-        .tab-button.active {
-            color: var(--primary-glow);
-            border-bottom-color: var(--primary-glow);
-            text-shadow: 0 0 8px var(--primary-glow);
+
+        .concept {
+            color: var(--concept-color);
             font-weight: 600;
         }
-        .tab-content {
-            display: none;
+
+        .person {
+            color: var(--person-color);
+            font-weight: 700;
         }
-        .tab-content.active {
-            display: block;
-            animation: fadeInContent 0.6s ease forwards;
-        }
-        @keyframes fadeInContent {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .tab-content .card {
-            background-color: rgba(0,0,0,0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 1.5rem;
+
+        .intro-box {
+            border: 1px solid #444;
+            padding: 20px;
+            background-color: #252525;
             border-radius: 8px;
-            margin-bottom: 1.5rem;
-        }
-        .tab-content .quote-block {
-            border-left: 3px solid var(--primary-glow);
-            padding-left: 1.5rem;
-            margin: 1.5rem 0;
-            font-style: italic;
-            color: #c7d2fe;
-        }
-
-        .tab-content ul {
-            list-style-position: inside;
-            padding-left: 0.5rem;
-        }
-        .tab-content li {
-            margin-bottom: 0.75rem;
-        }
-        
-        .footer { text-align: center; padding: 2.5rem 1rem; color: var(--primary-glow); border-top: 1px solid var(--primary-text); margin-top: 2rem; }
-        
-        @media (min-width: 1025px) {
-            .menu-toggle { display: none; }
-            .nav-container { display: flex; }
-        }
-
-        @media (max-width: 1024px) {
-            .nav-content { justify-content: space-between; }
-            .nav-container {
-                position: fixed;
-                top: var(--nav-height);
-                left: 0;
-                width: 100%;
-                height: calc(100vh - var(--nav-height));
-                background: rgba(17, 24, 39, 0.95);
-                backdrop-filter: blur(15px);
-                flex-direction: column;
-                justify-content: flex-start;
-                align-items: center;
-                transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-                transform: translateY(-110%);
-                overflow-y: auto;
-                padding: 2rem;
-            }
-            body.menu-open .nav-container {
-                transform: translateY(0);
-            }
-
-            nav .nav-container > li { width: 100%; height: auto; text-align: center; }
-            nav .nav-container > li > a { padding: 1rem; width: 100%; font-size: 1.5em;}
-            
-            .menu-toggle {
-                display: block; position: relative; z-index: 1001;
-                width: 30px; height: 22px;
-                background: none; border: none; cursor: pointer;
-            }
-            .icon-bar {
-                display: block; width: 100%; height: 3px; background-color: var(--primary-text); 
-                margin: 6px 0; transition: all 0.3s ease-in-out;
-                border-radius: 2px;
-            }
-
-            body.menu-open .menu-toggle .icon-bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
-            body.menu-open .menu-toggle .icon-bar:nth-child(2) { opacity: 0; }
-            body.menu-open .menu-toggle .icon-bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+            margin-bottom: 30px;
         }
     </style>
 </head>
 <body>
-    <canvas id="bg-canvas" aria-hidden="true"></canvas>
-    <nav class="glassmorphism">
-        <div class="nav-content">
-            <div class="nav-logo">
-                <a href="index.html">
-                    <img src="https://placehold.co/40x40/818cf8/000000?text=O" alt="Logo O.C.V.M." class="h-8 w-8 md:h-10 md:w-10 rounded-full">
-                    <span>O.C.V.M.</span>
-                </a>
-            </div>
-            <ul class="nav-container" id="nav-menu">
-                <li><a href="index.html">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
-                    Inicio</a></li>
-                <li><a href="#contacto">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
-                    Contacto</a></li>
-            </ul>
-            <button class="menu-toggle" id="menu-toggle-btn" aria-label="Abrir o cerrar menú">
-                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
-            </button>
-        </div>
-    </nav>
 
-    <div class="main-container" id="inicio">
-        <div class="hero">
-            <div class="hero-content">
-                <h1>Camino de Servidumbre</h1>
-                <p class="subtitle">Un análisis de Carlos Peña y Alejandro Vigo</p>
-                <p class="description">
-                    A 80 años de su publicación, una reflexión sobre la vigencia, el contexto y las ideas fundamentales de la obra magna de Friedrich Hayek, que alertó sobre los peligros de la planificación centralizada para la libertad.
-                </p>
-            </div>
+    <div class="container">
+        <h1>Lectura de Fondo: 80 años de Camino de Servidumbre</h1>
+
+        <!-- INTRODUCCIÓN -->
+        <h3>Introducción y Presentación</h3>
+        
+        <p>
+            Bueno, bienvenidos a todos a nuestra <span class="concept">lectura de fondo</span>, las <span class="concept">lecturas de fondo</span> son una instancia periódica en la que analizamos libros que tienen relevancia en la <span class="concept">contingencia nacional</span>. Entonces mi nombre es <span class="person">Álvaro Vergara</span>, soy investigador de acá de Elías y voy a dirigir esta <span class="concept">lectura de fondo</span> sobre un libro del cual se cumplen 80 años que es <span class="concept">Camino de servidumbre</span>. Pero además me gustaría decir que no solo se cumplan 80 años de la publicación de <span class="concept">Camino de servidumbre</span> sino que también se cumplen 50 años de la obtención del <span class="concept">Premio Nobel de economía</span> por parte del autor <span class="person">Friedrich Hayek</span>.
+        </p>
+        
+        <p>
+            El libro ha sido objeto de alabanza y también de <span class="concept">críticas descarnadas</span> pero en realidad pocos se han tomado el tiempo para leer el libro completamente. Entonces para comentar su contenido, su contexto y por supuesto el trabajo de este autor, hoy tenemos dos grandes invitados y tal vez sean los que mejor han interpretado a <span class="person">Hayek</span> acá en Chile. Por un lado tenemos a <span class="person">Carlos Peña</span>, magister en <span class="concept">sociología</span>, doctor en <span class="concept">filosofía</span> por la Universidad de Chile, rector de la Universidad Diego Portales, columnista de El Mercurio, autor de múltiples libros entre ellos "Lo que el dinero sí puede comprar", "Ideas de perfil" el cual por cierto comienza con un ensayo titulado "El divorcio entre <span class="concept">ética y política</span>: un encuentro entre <span class="person">Hayek</span> y <span class="person">Lenin</span>", y su último libro "Hijos sin padre" de la editorial Taurus.
+        </p>
+
+        <p>
+            Por otro lado tenemos a <span class="person">Alejandro Vigo</span> que es licenciado en <span class="concept">filosofía</span> por la Universidad de Buenos Aires, doctor en <span class="concept">filosofía</span> por la Universidad de Heidelberg, profesor de <span class="concept">filosofía</span> en la Universidad de los Andes, miembro del comité editorial de Elías y también autor de múltiples libros como "Aristóteles una introducción" el cual pueden conseguir luego a la salida, "En la víspera de una nueva catástrofe Europea", "El fin de la <span class="concept">ilusión monetaria</span>" y su último libro "<span class="person">Kant</span> y la <span class="concept">conciencia moral</span>" de la editorial Roneo.
+        </p>
+
+        <div class="intro-box">
+            <p>
+                Yo solo voy a introducir muy brevemente el libro y después le voy a dar el pase a ustedes para que puedan iniciar la conversación. Entonces hace casi 80 años, en marzo de 1944, en plena <span class="concept">Segunda Guerra Mundial</span> y luego de ser rechazado por varias editoriales se publica en Inglaterra <span class="concept">Camino de servidumbre</span>. La primera edición se agota en un par de semanas, la segunda también y en septiembre de ese año también se publica por la editorial Chicago en Estados Unidos. Luego se hace una <span class="concept">edición condensada</span> por la cual de hecho se convierte en bestseller en Estados Unidos y luego sale una edición que tuvo menos pantalla pero que se editó en Australia. Su nombre solo quiero decir de dónde viene, su nombre viene de la siguiente frase del pensador <span class="person">Alexis de Tocqueville</span> en quien se inspiró mucho en toda su reflexión y dice: "pero adviértase la diferencia, mientras la <span class="concept">democracia</span> aspira a la <span class="concept">igualdad en libertad</span>, el <span class="concept">socialismo</span> aspira a la <span class="concept">igualdad en la coerción y la servidumbre</span>".
+            </p>
         </div>
 
-        <div class="layout-grid">
-            <main class="content">
-                
-                <section id="camino-servidumbre-contenido" class="glassmorphism" data-animate>
-                    <h2>Análisis del Libro</h2>
-                    
-                    <div class="tab-nav">
-                        <button class="tab-button active" onclick="changeTab(event, 'introduccion')">Introducción y Contexto</button>
-                        <button class="tab-button" onclick="changeTab(event, 'tesis')">La Tesis Central</button>
-                        <button class="tab-button" onclick="changeTab(event, 'debate')">El Debate Filosófico</button>
-                        <button class="tab-button" onclick="changeTab(event, 'relevancia')">Relevancia y Críticas</button>
-                    </div>
+        <p>
+            Por eso es útil entonces para conversar, para iniciar esta conversación, me gustaría hacerle las preguntas de cómo llegaron al libro por primera vez y con qué reflexión se quedaron esa primera vez que lo leyeron y qué nuevas reflexiones sacaron de esta relectura. Si quiere partimos por usted rector.
+        </p>
 
-                    <div class="tab-content-container">
-                        <div id="introduccion" class="tab-content active">
-                            <h3>Un Libro para Tiempos de Crisis</h3>
-                            <p class="mb-4">Presentado por <span class="color-personaje">Álvaro Vergara</span>. Hace casi 80 años, en marzo de 1944, en plena Segunda Guerra Mundial, se publica en Inglaterra "Camino de Servidumbre". La primera edición se agota en semanas. Su nombre viene de una frase de <span class="color-personaje">Alexis de Tocqueville</span>: "Mientras la democracia aspira a la igualdad en libertad, el socialismo aspira a la igualdad en la coerción y la servidumbre".</p>
-                            
-                            <h4>Primer Encuentro con la Obra</h4>
-                            <p class="mb-4"><span class="color-personaje">Carlos Peña:</span> Leí el libro a propósito de otro: "La gran transformación" de <span class="color-personaje">Karl Polanyi</span>, publicado el mismo año, 1944. Ambos libros reaccionan a la misma pregunta: <span class="color-idea">¿Qué pudo ocurrir en la cultura occidental para que algo así como el fascismo apareciera?</span></p>
-                            <div class="grid md:grid-cols-2 gap-6 mb-8">
-                                <div class="card">
-                                    <h4 style="color: var(--primary-glow);"><span class="color-personaje">Polanyi</span>: La Falacia Economicista</h4>
-                                    <p>El origen del fascismo está en el "molino satánico": la expansión sin límites del capitalismo que mercantiliza todo, disuelve los vínculos sociales y deja a las masas presas de liderazgos carismáticos.</p>
-                                </div>
-                                <div class="card">
-                                    <h4 style="color: var(--secondary-glow);"><span class="color-personaje">Hayek</span>: La Falacia Constructivista</h4>
-                                    <p>El origen es la idea de que se puede planificar deliberadamente el orden social. <span class="color-personaje">Hayek</span> reacciona contra el socialismo de su tiempo: el <span class="color-concepto">socialismo fabiano</span> de <span class="color-personaje">George Bernard Shaw</span>, el socialismo de mercado de <span class="color-personaje">Oskar Lange</span>, y la planificación de <span class="color-personaje">Karl Mannheim</span>.</p>
-                                </div>
-                            </div>
+        <!-- PRIMERA INTERVENCIÓN: CARLOS PEÑA -->
+        <h3>El Contexto Intelectual: Polanyi vs Hayek</h3>
 
-                            <p class="mb-4"><span class="color-personaje">Alejandro Vigo:</span> Mi encuentro fue más ingenuo, a comienzos de mis estudios en la Universidad de Buenos Aires (1978-79). Venía de la tragedia hiperinflacionaria y de una familia liberal-católica. Un compañero me regaló el libro y me produjo un impacto profundo por dos cosas:</p>
-                            <ul class="list-disc ml-4">
-                                <li><span class="color-idea">La raíz común del totalitarismo:</span> Por primera vez entendí que podía haber una raíz común entre la derecha fascista y ciertas formas del fascismo de izquierda.</li>
-                                <li><span class="color-idea">El rol de las ideas:</span> La dedicatoria y el tono del libro me enseñaron que estas cosas no pueden construirse con la retórica de buenos y malos, sino entendiendo las ideas de fondo.</li>
-                            </ul>
-                        </div>
+        <p>
+            <span class="person">Carlos Peña</span>: Bueno encantado por supuesto. Bueno muchísimas gracias por haberme invitado a conversar sobre este libro. Bueno yo leí el libro, o más bien lo estudié con cierto detalle, a propósito de otro libro en realidad que es el libro que ustedes seguramente recuerdan de <span class="person">Karl Polanyi</span>, "<span class="concept">La gran transformación</span>", porque ocurre la circunstancia hasta cierto punto sorprendente que el año 1944 aparecen simultáneamente dos libros, ambos de intelectuales que crecieron digamos en el Imperio Austrohúngaro, que seguramente se conocieron o tenían amigos en común, amigos intelectuales en común. Uno de esos libros es "<span class="concept">La gran transformación</span>" de <span class="person">Polanyi</span> donde se elabora lo que hasta hoy día se conoce como la <span class="concept">falacia del economicismo</span> de <span class="person">Polanyi</span>, es la frase que se ha repetido muchísimas veces en Chile en el debate contemporáneo según la cual una cosa es el <span class="concept">mercado</span> y otra cosa la <span class="concept">sociedad de mercado</span> y que el drama de occidente es que está erigiendo una <span class="concept">sociedad de mercado</span>. Y el otro libro es <span class="concept">Camino de servidumbre</span>.
+        </p>
 
-                        <div id="tesis" class="tab-content">
-                            <h3>¿Un Panfleto? Las Tesis Subyacentes</h3>
-                            <p class="mb-4"><span class="color-personaje">Carlos Peña:</span> Depende de lo que se entienda por panfleto. Si es un escrito de circunstancia, movido por un afán polémico, con talento, entonces es un gran panfleto, a la altura del Manifiesto Comunista. Pero es un panfleto erigido sobre ideas de gran profundidad. Esta obra vale no tanto por lo que dice, sino por lo que oculta, por aquello que le subyace.</p>
-                            <blockquote class="quote-block">
-                                El subsuelo de este texto descansa en un conjunto de tesis que son, en mi opinión, las que siguen: una tesis económica, una tesis epistémica, una tesis moral y una tesis política.
-                            </blockquote>
-                            <div class="card space-y-4">
-                                <p><strong class="color-concepto">1. Tesis Económica (Economía y Conocimiento, 1936):</strong> El modelo de equilibrio general neoclásico supone información completa. Pero empíricamente, nunca se alcanza el equilibrio. La razón es que los agentes <span class="color-idea">no tienen información completa</span>. La pretensión de planificar es absurda porque supondría que un planificador puede reunir una información que ninguna mente humana puede.</p>
-                                <p><strong class="color-concepto">2. Tesis Epistémica:</strong> El conocimiento se compone de conceptos apriorísticos (legados por la costumbre, el lenguaje) e información fragmentaria y personal. Nuestro conocimiento es evolutivo. El <span class="color-idea">sistema de precios</span> es un sistema de transmisión de esta información dispersa que, sumado a las reglas (legado evolutivo), permite la coordinación.</p>
-                                <p><strong class="color-concepto">3. Tesis Moral:</strong> No existe una única escala de valores a la luz de la cual un planificador pueda tomar decisiones. Cada ser humano tiene su propia escala de preferencias, inconmensurable con la de los demás. Pretender que hay una sola escala de valores para las decisiones públicas es absurdo.</p>
-                                <p><strong class="color-concepto">4. Tesis Política:</strong> Una cosa es el liberalismo (ser dócil a nuestra condición epistémica) y otra la democracia. Una dictadura puede ser liberal. La democracia responde a <span class="color-idea">quién gobierna</span> (la mayoría), mientras que el liberalismo responde a <span class="color-idea">cuáles son los límites del poder</span>. Esta es la parte más sombría de <span class="color-personaje">Hayek</span>.</p>
-                            </div>
-                        </div>
-                        
-                        <div id="debate" class="tab-content">
-                            <h3>El Debate Filosófico: Conocimiento, Valor y Racionalidad</h3>
-                            <p class="mb-4"><span class="color-personaje">Alejandro Vigo:</span> La parte epistemológica es clave. El libro tiene un aire de familia con "La sociedad abierta y sus enemigos" de <span class="color-personaje">Popper</span>. Ambos se distancian del positivismo lógico del Círculo de Viena. <span class="color-personaje">Hayek</span> es un post-positivista. Siguiendo a <span class="color-personaje">Mises</span>, incorpora un componente apriorístico. <span class="color-personaje">Mises</span>, en "Acción Humana", tematiza la <span class="color-concepto">praxeología</span>, donde hay verdades apriorísticas sobre la acción, como reglas constitutivas.</p>
-                            <blockquote class="quote-block">
-                                No es solamente que la información es incompleta. Lo que hay es un anclaje situacional de la toma de decisiones que no puede ser nunca transferida sin pérdida esencial a la tercera persona. La perspectiva de los agentes, anclada en la primera persona, hace posible un marco de interacciones que no es reconstruible sin resto desde la totalidad estadística.
-                            </blockquote>
-                            <p class="mb-4"><span class="color-personaje">Carlos Peña:</span> Esto conecta con la idea de <span class="color-personaje">Wittgenstein</span> de que el lenguaje es una forma de vida que descansa sobre presupuestos no lingüísticos que compartimos. El lenguaje está sostenido en el silencio. También con <span class="color-personaje">Heidegger</span> en "Ser y Tiempo", que describe nuestro comportamiento cotidiano como vivir sobre la base de un conjunto de supuestos que damos por establecidos.</p>
-                            <h4>El Problema de los "Valores"</h4>
-                            <p class="mb-4"><span class="color-personaje">Alejandro Vigo:</span> <span class="color-personaje">Hayek</span> está entrampado en la filosofía de los valores del neokantismo. Hoy estamos convencidos de que las cuestiones éticas son de "valores", pero ni <span class="color-personaje">Aristóteles</span>, ni <span class="color-personaje">Tomás de Aquino</span>, ni <span class="color-personaje">Kant</span> lo hubieran planteado así. La noción de "valor subjetivo" es confusa: una cosa es decir que el valor no es una propiedad descriptiva de las cosas, y otra que es arbitrario. Las preferencias son comunicables y compartidas, pero no se explican por propiedades de los objetos.</p>
-                            <p class="mb-4"><span class="color-personaje">Carlos Peña:</span> <span class="color-personaje">Hayek</span> no aceptaría que hay una forma de racionalidad práctica que podamos compartir y que nos diga cómo debemos vivir. No tenemos un criterio para discernir qué vida debemos vivir. El mercado, a través del sistema de precios, permite la convergencia de preferencias, pero desechando cualquier modo de discernir un modelo de buena vida global. En este sentido, no es aristotélico.</p>
-                        </div>
+        <p>
+            ¿Qué tienen en común cabría preguntarse ambos libros para que el examen de uno de ellos conduzca inevitablemente al otro como me ocurrió? Bueno es que ambos libros fíjense ustedes reaccionan frente a una misma pregunta, y yo creo que sin entender esto es difícil entender <span class="concept">Camino de servidumbre</span>, y la pregunta es la siguiente: Bueno, ¿qué pudo ocurrir en la <span class="concept">cultura occidental</span> para que algo así como el <span class="concept">fascismo</span> apareciera? ¿Qué ocurrió? ¿Qué puede explicar que el <span class="concept">autoritarismo</span> de pronto fuera la regla general de convivencia en Europa occidental, la zona más culta más ilustrada del mundo? ¿Cuáles son los orígenes del <span class="concept">fascismo</span>?
+        </p>
 
-                        <div id="relevancia" class="tab-content">
-                            <h3>Relevancia, Críticas y el "Camino Abandonado"</h3>
-                            <h4>¿Libertad Económica para la Libertad Política?</h4>
-                            <p class="mb-4"><span class="color-personaje">Hayek</span> dice tajantemente: "Hemos abandonado progresivamente aquella libertad en materia económica sin la cual jamás existió en el pasado libertad personal y política".</p>
-                            <p class="mb-4"><span class="color-personaje">Alejandro Vigo:</span> No estoy convencido de que se le pueda atribuir una tesis fuerte de inconmensurabilidad de valores. Un orden de libertad no se puede defender de una manera no-cognitivista radical. Tiene que haber algún criterio para distinguir qué es mejor o peor, al menos a nivel de metateoría.</p>
-                            <p class="mb-4"><span class="color-personaje">Carlos Peña:</span> Yo creo que <span class="color-personaje">Hayek</span> era no-cognitivista en este sentido. Un economista diría: "es un caso de tu sangre o la mía, cañones o mantequilla". Creo que <span class="color-personaje">Hayek</span> creía firmemente en eso.</p>
+        <p>
+            <span class="person">Polanyi</span> de manera prácticamente simultánea con <span class="person">Hayek</span> sostiene que el origen del <span class="concept">fascismo</span> está en lo que él llama el <span class="concept">molino satánico</span>, es decir la idea de que el <span class="concept">sistema de precios</span> se extiende a todas las esferas de la vida donde bienes que históricamente estaban al margen del <span class="concept">sistema de precios</span> como la tierra y el trabajo de pronto se transforman en mercancías dice <span class="person">Polanyi</span>, y todo se <span class="concept">mercantiliza</span>, se comodifica —otra expresión que hemos usado o se ha usado hace poco en Chile— y este es el origen dice él del <span class="concept">fascismo</span>, porque cuando todo se <span class="concept">mercantiliza</span> los vínculos sociales se deterioran, se disuelven hasta desaparecer. La <span class="concept">sociedad de masas</span> se transforma en una muchedumbre de solitarios, una expresión que usó luego <span class="person">Hannah Arendt</span>, y quedan presas en consecuencia de <span class="concept">liderazgos carismáticos y autoritarios</span>. Este es el diagnóstico de <span class="person">Polanyi</span> digamos, de acuerdo, de manera que <span class="person">Polanyi</span> dice: no, no, el <span class="concept">fascismo</span> la causa del <span class="concept">fascismo</span> es la expansión sin límites y moderada e irreflexiva del <span class="concept">capitalismo</span>, del <span class="concept">capitalismo</span> entendido de esta manera que es lo que llama la <span class="concept">falacia economicista</span>.
+        </p>
 
-                            <h4>El "Camino Abandonado" y el Estado de Bienestar</h4>
-                            <p class="mb-4">Una pregunta del público: El libro habla del "camino abandonado". Después de 80 años, parece que estamos lejos de retomarlo. ¿Qué reflexión sacan de eso?</p>
-                            <p class="mb-4"><span class="color-personaje">Alejandro Vigo:</span> El camino se abandona, según <span class="color-personaje">Hayek</span>, cuando surge la idea de que la racionalidad implica planificar, como propone <span class="color-personaje">Keynes</span> en "El fin del laissez-faire" (1926). <span class="color-personaje">Hayek</span> quiere recuperar ese camino, pero sin el laissez-faire del siglo XIX. Él pertenece al movimiento del <span class="color-concepto">ordoliberalismo</span>, que busca introducir correcciones para impedir los efectos no deseados de una libertad sin ley. Su terror es que una intervención reclame otra, hasta llegar a una sociedad totalmente subsidiada.</p>
-                            <p class="mb-4"><span class="color-personaje">Carlos Peña:</span> Tendría cuidado de leer el libro como una predicción. <span class="color-personaje">Hayek</span> se rebelaba contra una mentalidad, no predecía el futuro. Tampoco creo que la izquierda actual, salvo excesos minoritarios, quiera planificar todos los intersticios de la vida social. <span class="color-personaje">Hayek</span> no era un opositor franco a la socialdemocracia (un orden capitalista con reglas y políticas sociales focalizadas). Tomarlo como un arma arrojadiza en el debate actual me parece un error. Hay que leerlo con cuidado, sin dejarse llevar por la retórica inflamada, propia del contexto en que escribía: con el nazismo en la puerta.</p>
-                        </div>
-                    </div>
-                </section>
+        <p>
+            <span class="person">Hayek</span>, y por eso el interés del libro, tiene un diagnóstico exactamente opuesto. Dice que en realidad la causa de todo esto del <span class="concept">totalitarismo</span> es la <span class="concept">falacia constructivista</span>. No dice él, no es en realidad la expansión del <span class="concept">sistema de precios</span> de la manera que hablamos sino la <span class="concept">falacia constructivista</span>, la idea de que usted puede <span class="concept">planificar deliberadamente</span> el orden social a la manera en que usted planifica sus decisiones de consumo, o sea el individuo. Y <span class="person">Hayek</span> cuando escribe este libro, yo creo que es bueno recordar esto, pero luego voy a seguir para que ahora <span class="person">Alejandro</span> pueda decir lo suyo, es bueno recordar que el libro de <span class="person">Hayek</span> que se opone casi perfectamente a la tesis de <span class="person">Polanyi</span> está dedicado a los <span class="concept">socialistas</span> verdad como ustedes recuerdan. Entonces la pregunta es bueno, ¿pero quiénes eran los <span class="concept">socialistas</span>? Porque hoy día entenderíamos por <span class="concept">socialistas</span> una especie de <span class="concept">ideología doctrinaria de inspiración marxista</span>, bueno no está hablando de eso exactamente <span class="person">Hayek</span>.
+        </p>
 
-            </main>
-        </div>
-        <footer class="footer" id="contacto">
-            <h2>Contacto</h2>
-            <p>Este espacio es una cartografía personal y una invitación al diálogo.</p>
-            <p style="margin-top:1.5rem; font-size: 0.9em;">La vida es terriblemente bella cuando los jugadores juegan. | 2025</p>
-        </footer>
+        <p>
+            <span class="person">Hayek</span> está en medio de un debate en Inglaterra y en la cultura de su tiempo donde hay autores —déjenme mencionar dos o tres digamos que son muy interesantes creo yo porque ayudan a comprender el trasfondo de lo que está en <span class="concept">Camino de servidumbre</span> a lo que luego puedo referirme—: el momento del <span class="concept">socialismo fabiano</span> en Inglaterra en los años 30 del que participa <span class="person">George Bernard Shaw</span> por ejemplo, que es una especie de <span class="concept">socialismo reformista</span>, un <span class="concept">socialismo totalmente socialdemócrata</span> amistoso con el <span class="concept">capitalismo</span>. Es la época digamos de donde existe algo tan sorprendente como el <span class="concept">socialismo de mercado</span> por ejemplo de <span class="person">Oskar Lange</span> que quiso matemáticamente mostrar que el mercado podía servir al <span class="concept">socialismo</span>. Es la época de <span class="person">Karl Mannheim</span>, el gran creador de la <span class="concept">sociología del conocimiento</span> que escribe un gran libro que se llama "Diagnóstico de nuestro tiempo" donde él dice en realidad la única manera de domesticar a la <span class="concept">democracia de masas</span> y al <span class="concept">capitalismo</span> es la <span class="concept">planificación</span>. Contra todo esto es el <span class="concept">socialismo</span> contra el cual reacciona <span class="person">Hayek</span>, en el trasfondo como digo de esta pregunta: ¿qué causó el <span class="concept">fascismo</span>? Porque una virtud tiene <span class="person">Hayek</span>, no es fascista por lo menos, pero bueno luego podemos hablar de eso.
+        </p>
+
+        <!-- SEGUNDA INTERVENCIÓN: ALEJANDRO VIGO -->
+        <h3>El Impacto Inicial y la Raíz Común</h3>
+
+        <p>
+            <span class="person">Alejandro Vigo</span>: Bueno no, mi encuentro con el libro fue mucho más ingenuo, muy temprano fue mi encuentro con el libro. No quiero hacer lo que dicen los españoles "elevar la anécdota a categoría", pero el encuentro que tuve con el libro fue una ocasión al comienzo de mis estudios en la Universidad de Buenos Aires, estoy hablando del año 78-79 a más tardar, cuando un compañero... Bueno ahí había discusiones ¿no es cierto? Yo venía de mi servicio militar, había habido un <span class="concept">golpe militar</span> que ya se conoce como qué es lo que ocurrió, y yo venía también de la tragedia <span class="concept">hiperinflacionaria</span> del golpe previo al <span class="concept">golpe militar</span>, tenía 14-15 años en la tragedia <span class="concept">hiperinflacionaria</span> y venía yo de una familia... <span class="person">Loris Zanatta</span> dijo una vez que la iglesia Argentina es la tumba de los <span class="concept">católicos liberales</span> y yo, mi familia salió de esa tumba ¿no? Una familia de background digamos <span class="concept">liberal católico</span>.
+        </p>
+
+        <p>
+            Y claro era muy difícil entender como en un mismo gobierno podían coexistir pero matándose entre ellos una <span class="concept">ala fascista de derecha</span> reconocidamente falangista y de vinculación digamos así con un ideario que <span class="person">Perón</span> había establecido en los años 40 ¿no es cierto? y que tenía mucho de raigambre italiana en su origen, y por otro lado la nueva <span class="concept">juventud de izquierda</span> de origen católico como eran los <span class="concept">montoneros</span> en particular —no así el ejército revolucionario del pueblo— pero los que tenían una gran eh un gran predicamento fundó <span class="person">Perón</span> pero no llevó a su verdad y convivieron en un mismo gobierno y desataron prácticamente una <span class="concept">guerra civil</span> en el mismo gobierno entre ellos.
+        </p>
+
+        <p>
+            Bueno entrando a la universidad un compañero con el que dialogamos y discutíamos con otros cuantos me regaló el ejemplar del libro de <span class="person">Hayek</span> en la traducción que había en Alianza en aquellos años ¿no? Y yo recuerdo el impacto que a mí me produjo este libro, que no creo ser el único impactado porque por algo el libro es un bestseller, no, el impacto de haber visto allí dos cosas que me marcaron profundamente. Después volví al libro pero ese primer encuentro fue así, fue un encuentro como ingenuo de mi parte pero de pérdida de la ingenuidad en algunos puntos, de por primera vez entender que podía haber una <span class="concept">raíz común</span> entre la <span class="concept">derecha fascista</span> y ciertas formas de lo que <span class="person">Hofmann</span> llamó el <span class="concept">fascismo de izquierda</span> y eso yo lo veía en la praxis ahí ¿no es cierto? Pero no podía entender cómo era posible eso y <span class="person">Hayek</span> me abrió una ventana a una posible explicación de eso, quizá no la última, quizá no la mejor, pero en todo caso era alguien que veía una <span class="concept">raíz común</span> entre esos dos fenómenos y eso es parte importante del argumento de <span class="person">Hayek</span> en este libro.
+        </p>
+
+        <p>
+            Y lo segundo que me impactó debo decir es la dedicatoria, porque a lo largo del libro <span class="person">Hayek</span> solo atribuye rol intelectual incluso a las posiciones que él considera más perversas. Y eso para mí fue intelectualmente un llamado de atención muy importante de que estas cosas digamos no pueden construirse simplemente con la retórica de buenos y malos, que hay que tratar de entender cuáles son las <span class="concept">ideas de fondo</span> en estos debates, dónde pueden estar los eventuales errores, de estar abierto también a recibir réplica cuando uno argumenta. Eso para mí fue una gran lección y debo reconocer que mi inclinación posterior, siempre cierta forma de <span class="concept">liberalismo austríaco</span> muy mitigada en algunos puntos, tiene que ver con el descubrimiento de este libro. O sea yo no hubiera nunca podido articular lo que era mi background de la manera en que lo pude hacer a partir de la lectura del libro, pero naturalmente eso es un camino que queda hace 40 y tantos años atrás, más que las vueltas luego al mismo libro tuvieron otro carácter.
+        </p>
+
+        <!-- ¿ES UN PANFLETO? -->
+        <h3>El Subsuelo Filosófico: Economía, Epistemología y Moral</h3>
+
+        <p>
+            <span class="person">Álvaro Vergara</span>: <span class="person">Bruce Caldwell</span> que es el editor de la obra general de <span class="person">Hayek</span> dice que <span class="concept">Camino de servidumbre</span> es el <span class="concept">panfleto político</span> más importante del siglo XX. ¿Es un panfleto? ¿Están de acuerdo con esa afirmación o hay quizás otro más trascendente?
+        </p>
+
+        <p>
+            <span class="person">Carlos Peña</span>: Bueno depende como todo de lo que uno entienda por panfleto. Esto es producto de se acopla con esto sí y ahí me escuchan alguien dijo no es raro esto adelante alguien dijo no y ya sí. Bueno pero ahí me escuchan verdad. Ahí sí muy bien. Digo depende de lo que se entienda por panfleto. Si por panfleto uno entiende un escrito de circunstancia digamos movido por un afán polémico reaccionando frente a una circunstancia que resulta irritante, con talento yo diría, bueno este es un gran panfleto sin ninguna duda, un panfleto a la altura del <span class="concept">Manifiesto Comunista</span> supongo, una cosa semejante ¿no?
+        </p>
+
+        <p>
+            Pero lo notable creo yo es que se trata de un panfleto erigido sobre ideas que no son para nada panfletarias sino que tienen un <span class="concept">trasfondo filosófico y teórico</span> de gran profundidad en el que yo creo debiéramos detenernos. Me parece que esta obra de <span class="concept">Camino de servidumbre</span> vale no tanto por lo que dice sino por lo que oculta, es decir por aquello que le subyace y sobre lo cual se erige ¿me entienden? Porque claro la escritura de <span class="concept">Camino de servidumbre</span> es una escritura deliberadamente provocativa que carga las tintas retóricamente eficaz digamos, uno imagina perfectamente a <span class="person">Hayek</span> inclinado sobre su escritorio agitado digamos escribiendo algunos párrafos. Uno recuerda menos a <span class="person">Popper</span> digamos que escribió "La sociedad abierta y sus enemigos" verdad dice él como mi aporte personal a la lucha contra el <span class="concept">fascismo</span> bueno claro es un panfleto literariamente visto como género pero el subsuelo de este texto yo creo que es fundamental.
+        </p>
+
+        <p>
+            Y déjenme resumirlo brevemente lo que yo creo el subsuelo, bueno ya escucharemos a <span class="person">Alejandro</span> para que nos diga si le parece razonable lo que voy a afirmar. A mí me parece que este texto <span class="concept">Camino de servidumbre</span>, la tesis que allí se contiene que es la crítica como decíamos al <span class="concept">socialismo fabiano</span> a la <span class="concept">planificación</span> de <span class="person">Mannheim</span> al modelo del <span class="concept">socialismo de mercado</span> etc., este texto digo descansa en un conjunto de tesis que son en mi opinión las que siguen: una <span class="concept">tesis económica</span>, una tesis digamos <span class="concept">epistémica</span>, una <span class="concept">tesis moral</span> y una <span class="concept">tesis política</span>, así resumiría yo este libro. ¿En qué consiste cada una de estas?
+        </p>
+        
+        <p>
+            Fíjense antes de <span class="concept">Camino de servidumbre</span> en 1936 <span class="person">Hayek</span> publica un paper, un artículo extraordinario que se llama "<span class="concept">Economía y conocimiento</span>". ¿Cuál es la tesis de este artículo? La tesis de este artículo <span class="concept">Economía y Conocimiento</span> es que el modelo del <span class="concept">equilibrio general</span> de la <span class="concept">economía neoclásica</span> —o sea la economía marginalista de fines del 19— que afirma que en todos los mercados en un punto se iguala la oferta con la demanda, el precio con el coste marginal digamos, si uno le pregunta dice a los economistas dice <span class="person">Hayek</span> siendo un economista ¿cuál es el supuesto del <span class="concept">equilibrio general</span>? Todo lo economistas dicen bueno <span class="concept">información completa</span>, si los agentes tienen <span class="concept">información completa</span> se produce el <span class="concept">equilibrio general</span>. Entonces dice bueno en esto no hay diferencias pareciera entre los economistas neoclásicos y los planificadores porque ambos aceptan que puede haber <span class="concept">información completa</span> pero el hecho es que empíricamente dice en este famoso paper el <span class="concept">equilibrio general</span> se tiende al <span class="concept">equilibrio general</span> pero nunca se produce el <span class="concept">equilibrio general</span>.
+        </p>
+
+        <p>
+             La pregunta entonces que debieran formular los economistas por qué, y la respuesta dice es que los digamos las personas los agentes no tienen <span class="concept">información completa</span>. Esta es la afirmación central de <span class="person">Hayek</span>, esto lo dice el año 36 mucho antes de <span class="concept">Camino de servidumbre</span>, de ahí él deriva una <span class="concept">tesis epistémica</span>. La tesis conforme a la cual lo que llamamos <span class="concept">conocimiento</span> en realidad es una cuestión que se compone —espero que <span class="person">Alejandro</span> no esté de acuerdo conmigo— se compone de <span class="concept">conceptos apriorísticos</span> en un sentido débil, apriorístico no el sentido kantiano, débil. O sea conceptos que manejamos que no son legados por la costumbre, por el lenguaje, etcétera, marcos cognoscitivos que nos permiten ordenar la experiencia que poseemos. Y por otra parte <span class="concept">información fragmentaria</span> digamos ya. Entonces nuestro comportamiento, nuestra toma de decisiones, tiene que ver por una parte con el conocimiento depositado en las instituciones digámoslo así, el lenguaje entre otras cosas, más el conocimiento que nosotros adquirimos digamos por familiaridad directa con las cosas como diría <span class="person">Russell</span>. Ya este es el modelo, este es digamos la <span class="concept">tesis epistémica</span> de de <span class="person">Hayek</span> y esto conduce evidentemente a explicar por qué no se produce el <span class="concept">equilibrio general</span> y no se produce porque nuestro conocimiento por decirlo así es evolutivo verdad nunca tenemos <span class="concept">información completa</span> y entonces la pretensión de que alguien pueda <span class="concept">planificar la totalidad</span> de los intersticios de la vida social es simplemente absurda porque supondría verdad que hay un sujeto que conoce tanta información que sabemos no puede reunir ninguna mente humana. Esto es lo que dice <span class="person">Hayek</span> finalmente.
+        </p>
+
+        <p>
+            Entonces el <span class="concept">sistema de precios</span>, esta es la afirmación de <span class="person">Hayek</span>, es un sistema de transmisión de información que sumado a las <span class="concept">reglas</span> —porque <span class="person">Hayek</span> no es un anarquista en absoluto verdad como algunos creen no no es un anarquista no es un <span class="concept">anarcocapitalista</span> digamos— sumado a las reglas y las reglas son un <span class="concept">legado evolutivo</span> de miles y miles de años, permite que tomemos decisiones y se vaya produciendo el <span class="concept">equilibrio general</span>. Esto es lo que dice en la tesis digámoslo así <span class="concept">epistémica</span>. De aquí deriva una <span class="concept">tesis moral</span>. ¿Cuál es la tesis moral? Bueno no existe ninguna <span class="concept">escala de valores</span> a la luz de la cual un <span class="concept">planificador central</span> pueda tomar decisiones porque <span class="person">Hayek</span> es un liberal, cada ser humano tiene su propia escala de preferencias que es <span class="concept">inconmensurable</span> con la escala de preferencia de cualquier otro, luego pretender que hay una sola escala de valores que nos permita adoptar decisiones públicas es simplemente absurdo. Y esta es la <span class="concept">tesis moral</span> diría yo de <span class="person">Hayek</span> que tiene bastante que ver con lo que después va a ser el <span class="concept">teorema de la imposibilidad de Arrow</span> digamos ¿no?
+        </p>
+
+        <p>
+            Y finalmente hay una <span class="concept">tesis política</span>. ¿Cuál es la tesis política? Que yo creo que es la más complicada a pesar de que es la más desafiante: que va a decir una cosa es el <span class="concept">liberalismo</span> que consiste en ser dócil a esta condición epistémica nuestra, otra cosa es la <span class="concept">democracia</span>. Luego una dictadura puede ser liberal que fue lo que dijo cuando visitó a cuando vino durante la dictadura que le causó grandes problemas a <span class="person">Hayek</span>. La <span class="concept">democracia</span> dijo él es la forma, responde la pregunta quién gobierna, y la <span class="concept">democracia</span> dice la mayoría. El <span class="concept">liberalismo</span> responde una pregunta distinta: cuáles son los <span class="concept">límites del poder</span> verdad. Luego dice <span class="person">Hayek</span> uno puede responder ser antidemócrata o no demócrata pero puede ser liberal, y el ejemplo dijo en Chile, no donde se está instalando un mecanismo de <span class="concept">mercado autorregulado</span> no obstante que hay una dictadura. Yo creo que esta es la parte más sombría desde luego de <span class="person">Hayek</span> no. Bueno este es un super resumen a una pregunta que era muy mucho más acotada si esto es un panfleto.
+        </p>
+
+        <h3>El Diálogo con la Fenomenología y la Praxiología</h3>
+
+        <p>
+            <span class="person">Alejandro Vigo</span>: Yo no voy a responder si es un panfleto, no no podría mejorar el resumen tampoco, me agarraría de algunas cosas que has dicho Carlos porque creo que el proyecto que tiene en vista... colapsaría con una teoría no cognitivista total de las preferencias. Bueno, hay algunos puntos que yo vengo de una óptica en la que la parte epistemológica para mí es clave en esta en esta cuestión ¿no? Entonces simplemente a modo de acotación a este resumen que me parece difícilmente mejorable de verdad eh diría lo siguiente: un panfleto, bueno Carlos ya ha mencionado casi todas las referencias que yo tenía para mencionar, por ejemplo este libro tiene un aire de familia con el libro de <span class="person">Popper</span> sobre "La sociedad abierta y sus enemigos" con "Miseria del historicismo", y con claro "Miseria del historicismo". Entonces qué pasa son casi del mismo año además a mí el libro de <span class="person">Popper</span> no me prendo y el de <span class="person">Hayek</span> sí pero ¿por qué? Porque <span class="person">Popper</span> tenía una lectura de <span class="person">Platón</span> en el primer volumen que alguien que venía de la filología clásica como yo no podía admitir por ningún motivo ¿no es cierto? Era como presentar a <span class="person">Platón</span> como una especie de predecesor de <span class="person">Stalin</span> sin ningún sentido para la ironía del texto platónico y una cantidad de cosas que no pude hacerme amigo de ese libro. En cambio este otro libro sí porque <span class="person">Hayek</span> no había venido al golpe militar de Argentina ¿no es cierto? ni había dicho nada sobre <span class="person">Videla</span> y en cambio me presentaba una alternativa a lo que había sido la matriz en la que yo me había criado ¿no? Bueno esto es Chile tuvo cierta repercusión, en Argentina nadie conocía a <span class="person">Hayek</span> naturalmente quitando a <span class="person">Benegas Lynch</span> al ingeniero <span class="person">Alsogaray</span> que son figuras como decir bueno marginales dentro de lo que era la discusión política central en Argentina, eso por un lado ¿no?
+        </p>
+        
+        <p>
+            Ahora todas las cosas que mencionó Carlos y muchas de las cuales digamos anticipan... si estamos con un problema de micrófonos ahora. Esto se oye ahora sí. Bueno entonces hay algunas cosas que mencionó Carlos además con profundo conocimiento de la evolución digamos de ahí de la teoría económica en esos años que está muy vinculada al problema de la evolución de la filosofía en esos años porque no había una separación como hay ahora entre la disciplina econométrica y la reflexión en las ciencias humanas. Estamos asistiendo al nacimiento de la <span class="concept">sociología</span>, ahí mencionó Carlos a <span class="person">Mannheim</span> que es una referencia fundamental aquí. Yo no soy un experto en ese autor pero está claro que tanto <span class="person">Popper</span> como <span class="person">Hayek</span> los dos lo citan como uno de los enemigos, enemigos como una de las figuras de las que se están distanciando: la idea de una <span class="concept">libertad planificada</span> o de una como dice <span class="person">Mannheim</span> de una planificación para la libertad, que eso a <span class="person">Hayek</span> le parece un oxímoro ¿no? con o sin razón, a <span class="person">Popper</span> le parece también que eso no no es el camino ¿no? Los dos tienen en vista a <span class="person">Mannheim</span>.
+        </p>
+
+        <p>
+            Pero después está el otro problema que es como un problema filosófico más general que es bastante curioso. Yo tengo una cierta pasión por la Viena de esos años porque todos los trenes conducen si uno quiere entender la filosofía contemporánea, todos los trenes conducen la Viena de <span class="person">Brentano</span> y lo que siguió dice ¿pero qué pasaba en Viena en esos años? Bueno piensen ustedes lo siguiente: no solo el <span class="concept">Círculo de Viena</span> de donde sale <span class="person">Popper</span> y del cual se distancia <span class="person">Popper</span> rápidamente, también se distancia <span class="person">Hayek</span> de ese tipo de planteo que es un planteo de <span class="concept">positivismo</span>, que tanto <span class="person">Popper</span> y <span class="person">Hayek</span> rechazan. <span class="person">Hayek</span> es un <span class="concept">postpositivista</span>, no sé si estarás de acuerdo con esto, no es un positivista en el modo del <span class="concept">Círculo de Viena</span>.
+        </p>
+
+        <p>
+            Sin embargo <span class="person">Hayek</span> siguiendo a <span class="person">Mises</span> incorpora cierto componente <span class="concept">apriorístico</span> en su visión. Fue <span class="person">Mises</span> el que en "La acción humana" que es un libro de teoría económica pero también de teoría de la acción de una importancia a mi juicio crucial —yo podía hacer algún seminario sobre ese libro y me dediqué más a eso que a <span class="person">Hayek</span> en la vida académica digamos— pero la idea de <span class="person">Mises</span> es que si uno tematiza la teoría de la acción desde el punto de vista de lo que él llama la <span class="concept">praxiología</span> lo que tenemos ahí son acciones <span class="concept">apriorísticos</span> acerca de las acciones ¿no? verdades a confirmar o refutar empíricamente porque digamos así lo que <span class="person">Mises</span> estatiza en el fondo tiene un estatuto parecido a lo que podemos llamar <span class="concept">reglas constitutivas</span>. Voy a poner un ejemplo en la teoría de los actos sociales de <span class="person">Reinach</span>, <span class="person">Reinach</span> tematiza el a priori de las promesas. ¿Cómo puede haber un a priori de las promesas? Bueno son un conjunto de condiciones que si no se satisfacen simplemente no hubo promesa, no ocurrió la promesa. Y hay una teoría muy interesante fenomenológica de <span class="person">Reinach</span> que anticipa a <span class="person">Searle</span> sobre cuál sería el a priori de un acto social como la promesa. Uno puede leer a <span class="person">Mises</span> y en cierta medida menor pero algo menor pero no no distinto a <span class="person">Hayek</span> como tematizando las <span class="concept">condiciones apriorísticas</span> de los intercambios básicamente de lo que llaman la <span class="concept">cataláctica</span> ¿no? unas reglas no contractuales...
+        </p>
+
+        <p>
+            <span class="person">Carlos Peña</span>: Los contratos.
+        </p>
+
+        <p>
+            <span class="person">Alejandro Vigo</span>: Exacta las reglas no contractuales de los contratos, los contratos después ejecutan dentro de ese espacio una serie de acuerdos que habrá que cumplir etcétera, pero hay unas reglas no contractuales de carácter <span class="concept">apriorístico</span>. Hasta el día de hoy en la <span class="concept">escuela austríaca</span> se discute sobre este problema si son a priori o no las reglas que tematiza <span class="person">Mises</span> y hay dos dos variantes ahí ¿no? hay gente que dice que no son apriori, hay gente que se dice que sí no esto de... Bueno pero no quiero irme por las ramas y tengo el peligro de hacerlo.
+        </p>
+
+        <p>
+            Entonces volviendo a lo a lo central, ¿cómo conecta esto con el <span class="concept">falibilismo</span> y el <span class="concept">finitismo epistémico</span>? Bueno yo creo que ya el rector ha dado una una puerta de entrada a eso. Las reglas apriorísticas son reglas que explican digamos así la constitución básica de un espacio de interacciones pero de ellas no se sigue ninguna interacción en particular, hay todo un plus de conocimiento adicional que es <span class="concept">conocimiento situado falible</span> y no es mera yo aquí tengo una una diferencia con <span class="person">Hayek</span>, <span class="person">Hayek</span> en términos de información yo creo que eso es un mal vocabulario para lo que él quiere decir. Bueno hay un ejemplo perdón en teología muy bueno que el de <span class="person">Luis de Molina</span> pues <span class="person">Luis de Molina</span> dice "sabemos que hay pecado en el mundo pero no sabemos quién de nosotros va a pecar". Este es un buen ejemplo.
+        </p>
+
+        <p>
+             <span class="person">Carlos Peña</span>: Quién está pecando.
+        </p>
+        
+        <p>
+             <span class="person">Alejandro Vigo</span>: Claro, exactamente y qué ocurre si uno dice información uno tiene sobre todo hoy la idea de que esa información se puede de alguna manera exteriorizar y almacenar pero en las interacciones ciertamente hay informaciones en juego que podría ser digamos del *know that* saber que tal cosa es el caso muy bien pero no solo interacción información en juego hay preferencias en juego preferencias que son variables porque están situadas. En este momento prefiero una coca-cola a no sé a un postre o lo que fuera ¿no? Entonces no es solamente yo en eso discrepo un poquito de la manera en que <span class="person">Hayek</span> lo presenta. Creo que una interpretación *bonafide* debe corregirlo en su vocabulario, me pasa mucho eso con los austríacos de esa época y es que no es solamente que la información es incompleta sino que aquí lo que hay es un <span class="concept">anclaje situacional de la toma de decisiones</span> que no puede ser nunca transferida sin pérdida esencial a la tercera persona. O sea si yo tuviera que reconstruir la teoría austríaca desde este punto de vista yo diría que lo que ellos llaman el <span class="concept">valor subjetivo</span> se puede expresar metódicamente mejor —a mí no me gusta la oposición subjetivo objetivo en tema de valores— se puede expresar mejor diciendo que la <span class="concept">perspectiva de los agentes anclada en la primera persona</span> hace posible un marco de interacciones que no es reconstruible sin resto es decir sin pérdida sustancial si uno adopta la <span class="concept">perspectiva de la tercera persona</span> y de la <span class="concept">totalidad estadística</span>. Este es un debate al interior de la sociología de la época también porque estamos en nacimiento del intento de aplicar la estadística a las ciencias sociales, entonces <span class="person">Hayek</span> está reaccionando con un lenguaje que a mi juicio es insuficiente en muchos aspectos ¿no? Yo creo que se puede no corregirlo pero se puede hacerlo más presentable en la discusión hoy con 70 80 años de filosofía de medio.
+        </p>
+        
+        <p>
+            Si uno traduce esto en unos términos diferentes por ejemplo <span class="concept">valores subjetivos</span> eso ¿qué quiere decir? ¿que es caprichoso arbitrario? No no quiere decir eso, quiere decir que las preferencias que hacen que aquí ahora yo me decida por una coca-cola y no por un flan no pueden ser recogidas sin resto en una en un tratamiento externalizado en la perspectiva de la tercera persona y además estadístico. Obviamente cualquiera puede entender por qué yo prefiero una coca-cola o no un flan eso no tiene nada de misterioso ni de insondable ni de caprichoso ¿no es cierto? Si tengo sed prefiero una coca-cola que nunca es mi caso no me gusta la coca-cola y no un flan ¿no es cierto? pero la interacción entonces no se puede reconstruir desde arriba. La <span class="concept">cataláctica</span> es el intento de reconstruir cómo es posible la <span class="concept">cooperación</span> sin abandonar la perspectiva de los que están implicados en la cooperación. Eso me parece a mí que es un punto metódico muy importante y que con las modificaciones necesarias habría que rescatar del enfoque de <span class="person">Hayek</span> no sé si aquí está...
+        </p>
+
+        <p>
+            <span class="person">Carlos Peña</span>: Ahora yo para defender a <span class="person">Hayek</span> en esta parte al menos bueno algo de eso dice no no en este lenguaje ya lo voy a voy a insistir en eso en "<span class="concept">Teoría de sistemas complejos</span>" que es un texto posterior verdad allí en realidad retoma este tema que por la época había sido planteado por <span class="person">Peter Winch</span> y otros en la línea de <span class="person">Wittgenstein</span> verdad. El punto este del relato en <span class="concept">primera persona</span> o en <span class="concept">tercera persona</span> vale la pena subrayarlo. Ah ¿qué quiere decir esto? Quiere decir que usted no comprende una acción social esto también lo decía <span class="person">Weber</span> desde luego si usted no comparte el punto de vista de los actores es decir usted no puede describir una un fenómeno social desde una <span class="concept">perspectiva puramente externa</span>. Por ejemplo si uno eh si alguien no conoce el fútbol verdad no sabe las reglas del fútbol, o sea no las comparte y mira un partido de fútbol no va a entender nada. Qué puede explicar que los tipos corran detrás de la pelota, que de pronto uno sea expulsado de la cancha, este tipo de acciones no se pueden describir causalmente en términos puramente empíricos, solo es capaz de describirla quien juega fútbol quien sabe jugar fútbol verdad, o sea quien comparte la práctica en cuestión. Esto es lo que quiere decir la perspectiva de primera persona yo jugando de la perspectiva en tercera persona ellos juegan un juego que yo no conozco digamos, esto último no se puede hacer y es pero sobre ese punto vuelve en <span class="concept">teoría de sistemas complejos</span>.
+        </p>
+
+        <p>
+            <span class="person">Alejandro Vigo</span>: No claro bueno eh <span class="person">Borges</span> parece que cuando fue con <span class="person">Bioy Casares</span> a la cancha a ver un partido de fútbol le pasó esto, claro se fueron ¿no? Eh pero en todo caso claro es cierto a mí el artículo de <span class="person">Hayek</span> que me parece decisivo en esta dirección es el 45 "El uso del conocimiento en la sociedad" al que tú has aludido la versión del 36 luego estar. Pero toda esa esa compilación de trabajo sobre el conocimiento con las limitaciones que tiene el vocabulario insisto yo estoy tratando de defenderlo de su vocabulario me parece que después de la <span class="concept">fenomenología</span> de años de filosofía analítica tenemos mejores herramientas de vocabulario para expresar las intuiciones de <span class="person">Hayek</span> que me parecen sin embargo muy rescatables y que yo comparto en gran medida es decir la defensa del <span class="concept">saber anclado</span> por así decir, la sa la defensa de lo que se llama hoy el <span class="concept">carácter personal y auténtico del saber</span>, es decir que no puede haber saber tercerizado puede haber información tercerizada pero eso no constituye saber si no está digamos incorporado en una actuación en la cual alguien que da por verdadero yo lo da por verdadero sobre la base de fundamentos que tiene etcétera. Pero además hay preferencias en juego, hay una cantidad de otras cosas que explican las decisiones. Eso me parece que es un punto muy fuerte epistemológico en la posición de <span class="person">Hayek</span> cambiando lo que haya que cambiar ¿no?
+        </p>
+
+        <p>
+            <span class="person">Carlos Peña</span>: Bueno está también está también en el en el primo de <span class="person">Hayek</span> <span class="person">Wittgenstein</span> verdad.
+        </p>
+        
+        <p>
+             <span class="person">Alejandro Vigo</span>: Claro claro cl que fue primo efectivamente está esta idea de que el lenguaje es una <span class="concept">forma de vida</span> y que en consecuencia el lenguaje descansa sobre un conjunto de presupuestos no lingüísticos que compartimos y que nos permiten hablar pero sobre la base de los cuales somos capaces de entendernos verdad. O sea esta idea de que en realidad el lenguaje, esto también es una idea que <span class="person">Steiner</span> la menciona mucho, el lenguaje está sostenido en el silencio o sea en ciertas cosas que compartimos que no llevamos nunca a la palabra pero que nos permiten que la palabra tenga significado para nosotros verdad. Esto este es una es la misma idea que vuelve digamos que está en <span class="person">Hayek</span> en <span class="concept">sistemas complejos</span> en el uso del conocimiento etcétera no estamos en presencia yo querría decirlo un intelectual digamos de los grandes intelectuales del siglo XX sobre eso yo no no tengo la menor duda. Alguien que forma parte además de una generación bueno lo decía Alejandro recién la generación digamos austrohúngara diría yo. Ah piensen ustedes basta un rápido repaso de los nombre lo indica piensen ustedes <span class="person">Georg Lukács</span> el gran hegeliano marxista digamos, <span class="person">Polanyi</span>, <span class="person">Mannheim</span>, <span class="person">Neurath</span> que era socialista digamos y que era miembro del <span class="concept">Círculo de Viena</span> citado por digamos un rival de es una generación realmente brillante sorprendente lo que pasó en Austria en ese momento.
+        </p>
+
+        <p>
+            <span class="person">Alejandro Vigo</span>: Hay algo curioso también que es que esta por ejemplo la manera en que trata el <span class="concept">sistema de precios</span> en relación con esta visión del conocimiento anclado como le llamo yo es una metáfora finalmente pero nos estamos entendiendo creo, tiene muchas analogías y en esto <span class="person">Heidegger</span> se va a revolver en la tumba con la manera en que trata <span class="person">Heidegger</span> en <span class="concept">Ser y tiempo</span> el <span class="concept">ente intramundano</span> y las señales o <span class="person">Aristóteles</span>. Sin embargo nunca se leyeron entre sí y probablemente no estarían de acuerdo en nada pero nosotros no podemos persistir en esos en esa guerra de trincheras me parece sino que tenemos que darnos cuenta de que intelectuales de este calado están iluminando aspectos de la actuación humana en este caso la economía o la sociedad o lo que fuera, aspectos esenciales estructuras muy básicas y que es posible establecer un diálogo. Yo tenía pensado un paper que nunca terminé de escribir entre <span class="person">Hayek</span> y <span class="person">Heidegger</span> comparando el <span class="concept">sistema de precios</span> de <span class="person">Hayek</span> con el tratamiento del útil en <span class="person">Heidegger</span> total porque hay una cantidad enorme de correspondencias y son de la misma época además hay que darse cuenta también que esto es del 27 <span class="person">Heidegger</span> pero <span class="person">Hayek</span> estaba ya en los años comienzos de los 30 estaba en esta dirección claramente y antes no el 33 parece ser el primer la primera versión la primera remota versión de <span class="concept">Camino de servidumbre</span> pero ya iba en esa dirección. Entonces nosotros estamos en condiciones me parece de hacer una lectura más productiva y no tan caricaturesca salvándola al autor de sí mismo también claro y conectándolo digamos con bueno con los grandes temas de la filosofía de la primera mitad del 20 creo yo.
+        </p>
+        
+        <p>
+            <span class="person">Carlos Peña</span>: Ah la referencia <span class="person">Heidegger</span> es muy interesante ustedes recuerdan <span class="person">Heidegger</span> en <span class="concept">Ser y tiempo</span> para quien no la ha leído digamos <span class="concept">Ser y tiempo</span> que es una obra que tiene fama difícil y que tiene lecturas un poco místicas de parte de algunas personas poco ilustradas en filosofía digamos ¿no? Eh bueno en realidad si ustedes leen <span class="concept">Ser y tiempo</span> toda la primera parte de <span class="concept">Ser y tiempo</span> es una descripción de nuestro comportamiento cotidiano. Claro o sea del hecho que vivimos sobre la base de un conjunto de supuestos que damos por establecido eh y que no los cuestionamos o sea que tenemos un <span class="concept">conocimiento prejudicativo</span> sobre el cual se erige la vida digamos que es exactamente la misma idea que va a desenvolver <span class="person">Hayek</span> verdad.
+        </p>
+
+        <p>
+            <span class="person">Alejandro Vigo</span>: Segundo <span class="person">Wittgenstein</span> bueno el segundo <span class="person">Wittgenstein</span> en las investigaciones filosóficas sin duda y y hay un punto también muy conectado con esto que me parece también muy importante que es que hay una cierta sensibilidad en estos autores. Claro porque está el colapso del <span class="concept">laissez-faire</span> ¿no es cierto? Esto también hay que situarlo en ese contexto no el <span class="concept">laissez-faire</span> del siglo XIX colapsó ¿no es cierto? en determinado momento y tenemos la guerra la primera gran <span class="concept">barbarie tecnológica</span> que motivó a <span class="person">Jünger</span> ¿no es cierto? la Primera Guerra todo estos reacciones a eso que pasó en Europa y hay gente que dice bueno no podemos volver a la irracionalidad del <span class="concept">laissez-faire</span> en este contexto y están los que como <span class="person">Hayek</span> dice bueno pero no no no entremos en otro camino de <span class="concept">irracionalidad planificada</span> ahora que sería una especie de hipertrofia técnica de la racionalidad eh proyectada al nivel de las instituciones sociales.
+        </p>
+        
+        <p>
+            Qué es lo que a mí me interesa de todo esto que no es a mí en particular eso no tiene por qué ser vinculante para nadie más pero desde el punto de vista más filosófico ¿qué me interesa a mí esto? La el énfasis en esos presupuestos que son formas de <span class="concept">a priori empírico</span> como el lenguaje etcétera sin los cuales la acción consciente incluso la acción compartida etcétera no es posible. Entonces tanto <span class="person">Heidegger</span> como de otra manera <span class="person">Wittgenstein</span> después <span class="person">Hayek</span> a su modo están llamando la atención por ejemplo el hecho de que de que ponga como ejemplo de <span class="concept">orden espontáneo</span> el lenguaje es una de las cosas más ricas de su pensamiento diciendo bueno porque uno dice el <span class="concept">orden espontáneo</span> sería algo así como lo caótico porque en realidad si no tenemos algo que sea un orden impuesto desde arriba no podría florecer ningún orden. Bueno los órdenes fundamentales de la vida no florecen de esa manera no florecen de esa manera el lenguaje y eso es lo que pasa a veces cuando se quiere instituir un lenguaje desde arriba no es fruto de convenciones establecidas de esa manera entre otras cosas porque habría que tener un lenguaje para establecer las convenciones no como como ya se sabe con su lenguaje con su vocabulario que para mí no es muy satisfactorio rescata muchas de esas estructuras y creo que es aprovechable filosóficamente en esa dirección a pesar de lo que dice mucha gente de la <span class="concept">escuela austríaca</span>.
+        </p>
+
+        <!-- SOBRE EL ROL DEL ESTADO Y LAS REGLAS -->
+        <h3>El Liberalismo de Reglas y la Intervención</h3>
+
+        <p>
+            <span class="person">Carlos Peña</span>: Claro pero tal vez habría que subrayar dejando en paréntesis el trasfondo filosófico del asunto que no es un <span class="concept">anarcocapitalista</span> algo hoy está muy de moda a propósito de Argentina. No lo en absoluto él más bien suscribe la tesis que sin instituciones y sin reglas la vida humana simplemente no sería posible, o sea no habría vida humana tal cual la conocemos. Lo que ocurre es que él piensa que las reglas son un fruto evolutivo verdad donde precipitan miles de años digamos y no son el fruto simplemente del acuerdo o del consenso. No es digo un <span class="concept">anarcocapitalista</span> tampoco porque alguien podría leer a <span class="person">Hayek</span> diciendo mira en realidad toda forma de <span class="concept">planificación</span> es imposible. Tampoco dice esto <span class="person">Hayek</span>. Cuando discute esta obra más bien él tiene mucho cuidado en decir no no por supuesto hay ciertas <span class="concept">políticas sociales</span> que son perfectamente posibles, no <span class="concept">subsidios focalizados</span>, <span class="concept">transferencias directas</span> son perfectamente posibles. No es eso no es a eso lo que está hablando en realidad <span class="person">Hayek</span> se está oponiendo creo yo a una especie de <span class="concept">sensibilidad intelectual</span> que era digamos casi atmosférica en su época yo creo que eso es muy fuerte ah eh más que ser un instrumento o un arma a la que uno pueda recurrir como digo para el debate político cotidiano que me parece que sería empobrecer porque ya digo no se opone en realidad a las políticas públicas porque alguien podría decir bueno en realidad somos tan menesterosos desde el punto de vista del conocimiento que ninguna intervención ninguna planificación es razonable bueno nunca dijo eso digamos.
+        </p>
+
+        <p>
+            <span class="person">Alejandro Vigo</span>: Bueno yo tenía marcada una sola página para mencionar que es la que dice esto exactamente en la página 8: "para el argumento de este libro y de cara al lector tener en mente que la planificación contra la cual se dirige toda nuestra crítica está dirigida solamente hacia aquella planificación que está en contra de la competencia". Es decir no hay ningún es un defensor de un cierto <span class="concept">capitalismo de reglas</span> naturalmente un <span class="concept">liberalismo de reglas</span> donde la intervención tiene siempre la <span class="concept">carga de la prueba</span>. Por decirlo así si lo que hay que justificar es porque se interviene nunca que no se interviene ¿no es cierto? Y el diseño institucional yo sé que el libro que a ti más te entusiasmó y lo has dicho ahora es "<span class="concept">The Constitution of Liberty</span>" que por también por por la formación jurídica es es un libro en el cual se trata de diseñar un modelo que responda a esa intuición básica un <span class="concept">orden de reglas</span> por lo tanto nada de anarquismo ni nada por el estilo en el cual digamos así la carga de la prueba caiga del lado de la intervención ¿no?
+        </p>
+
+        <p>
+            <span class="person">Carlos Peña</span>: Claro pero la retórica de <span class="person">Hayek</span> no siempre ayuda a mantener en mente esto que aclara porque el capítulo siguiente se llama "la inevitabilidad de la planificación" y lo pone entre comillas como diciendo este es un dogma que hay que sacarse de encima ¿no? Entonces él mismo piensa que cierta planificación cierto tipo de planificación o cierto tipo de regulación es inevitable.
+        </p>
+        
+        <p>
+             <span class="person">Alejandro Vigo</span>: Naturalmente ha defendido políticas como el <span class="concept">ingreso mínimo</span> para gente necesitada.
+        </p>
+        
+        <p>
+            <span class="person">Carlos Peña</span>: Sí claro el <span class="concept">impuesto negativo</span> etcétera.
+        </p>
+        
+        <p>
+             <span class="person">Alejandro Vigo</span>: Sí eh que esto hay mucha gente que no lo registra ¿no es cierto? como diciendo defensor de algo así como una especie de <span class="concept">capitalismo salvaje</span> o algo por el estilo ha podido incurrir en muchos errores pero no en ese y además es explícito que no es así. Entonces claro mantener que la <span class="concept">carga de la prueba de la intervención</span> me parece un sano principio de prudencia en una sociedad libre que es la intervención la que tiene que estar justificada y no lo contrario no la permisión de la actividad digamos lícita me parece una sana medida de prudencia en una sociedad libre pero compatible con reflexiones que tienen que ver con intervenir ocasionalmente donde haga falta que no descarta ¿no? Por lo menos no descarta globalmente.
+        </p>
+
+        <h3>Valores, Preferencias y la "Buena Vida"</h3>
+
+        <p>
+            <span class="person">Carlos Peña</span>: Ahora tal vez lo que habría sobre lo cual habría que profundizar sugiero porque se trata de los temas que están hoy día presentes en el debate público en Chile es la visión que <span class="person">Hayek</span> tiene de lo que llamaríamos valores o o cosas que apetecer digamos no sé cómo decirlo pues claramente no cree que la sociedad tenga o sea que el orden social o que las sociedades tengan un <span class="concept">telos</span> en el sentido de un fin predeterminado en pos de cuya consecución deban ordenarse o enderezarse eh y él no piensa tampoco que la sociedad tenga una <span class="concept">escala ordinal de valores</span> a la que se puede recurrir para adoptar decisiones y también piensa que no es posible comparar o saber si las preferencias de ustedes o la mía son superiores y en consecuencia no sabemos no tenemos ningún baremo ningún criterio para saber si están en competencia estas preferencias cuál hemos de satisfacer. Esto lo cree lo dice explícitamente. Entonces <span class="person">Hayek</span> es diríamos un cómo decirlo un <span class="concept">liberal radical</span> desde este punto de vista él matiza esto cuando dice que en realidad en los sistemas de creencia algunos tienen más capacidad de supervivencia adaptación que otros no de tal manera que hay un criterio de selección cuando menos diacrónico ¿no es cierto? es una perspectiva histórica.
+        </p>
+        
+        <p>
+            <span class="person">Alejandro Vigo</span>: Yo te confío lo siguiente mi mi problema con pero te quiero decir hay una...
+        </p>
+        
+        <p>
+             <span class="person">Carlos Peña</span>: Digamos por supuesto los valores las cosas que creemos los fines digamos más populares han pasado por decirlo así la criba del tiempo y en consecuencia verdad tiene un cierto valor evolutivo pero no tenemos ningún criterio que nos permita a nosotros discernir qué vida debemos vivir. Este es el punto verdad.
+        </p>
+        
+        <p>
+            <span class="person">Alejandro Vigo</span>: Claro yo yo ahí pienso que <span class="person">Hayek</span> como muchos de su época están entrampados en la problemática de la filosofía de los valores digamos en el <span class="concept">neocantismo</span> en todo esto <span class="concept">neocantismo</span> del cual <span class="person">Heidegger</span> ha sido un crítico feroz ¿no es cierto? Eh bueno <span class="person">Heidegger</span> también sus caprichos son notorios pero <span class="person">Heidegger</span> después de haber adherido a eso termina declarando eso hacia los años 30 como la última estación en la decadencia de la pregunta por el ser y la verdad ¿no? ¿Qué pasó allí? Yo creo que ahí hay un problema si uno lo hace históricamente no quiero aburrir tampoco porque la entrada de la noción de valor en la filosofía del siglo XIX es anterior al <span class="concept">neocantismo</span> pero en el <span class="concept">neocantismo</span> explota eso. Yo creo que la persona que digamos el autor que dio entrada a la noción de valor como la noción central de la filosofía en el siglo XIX fue <span class="person">Lotze</span>, <span class="person">Hermann Lotze</span> no que escribió una obra que en su momento fue muy influyente y hoy casi nadie sabe quién fue. Esto pasó muchas veces en la historia no que alguien es decisivo en su época y luego cae en un olvido absoluto. Ahora se está recuperando <span class="person">Lotze</span> desde el punto de vista histórico. No qué es lo que pasó con <span class="person">Lotze</span> entonces pensemos lo siguiente: hoy estamos convencidos que las cuestiones éticas son cuestiones de valores eso ocurre hasta en las prédicas dominicales tenemos problemas de valores en Chile se dice valórico ¿no? Pero ni <span class="person">Aristóteles</span> ni <span class="person">Tomás de Aquino</span> ni tampoco <span class="person">Kant</span> hubieran planteado así esas cuestion en ese vocabulario y nadie sabe qué es un valor. Viene la <span class="concept">ontología de los valores</span> el problema de si los valores hay que concebirlos como los concibe <span class="person">Scheler</span> o <span class="person">Hartmann</span> es un problema ontológico colosal introducir entidades del tipo de los valores ¿no es cierto? En el <span class="concept">neocantismo</span> toda la problemática filosófica se reparafrasea en términos de valores.
+        </p>
+
+        <p>
+            <span class="person">Carlos Peña</span>: Sí pero a ver pero bien yo estoy yo creo que eso es así efectivamente pero hay un trasfondo el argumento de <span class="person">Hayek</span> olvidemos el tema de valores hablemos de <span class="concept">virtudes de racionalidad práctica</span> ya ya claro <span class="person">Hayek</span> no aceptaría que hay una forma de <span class="concept">racionalidad práctica</span> que podamos compartir y que nos diga cómo nosotros debemos vivir.
+        </p>
+
+        <p>
+            <span class="person">Alejandro Vigo</span>: Bueno que no que podamos compartir a ver no estoy seguro te diría porque porque si podemos ponernos de acuerdo en un montón de otras cosas también podemos ponernos de acuerdo en preferencias lo que no creo es que pueda haber la apelación una instancia tercera me explico es decir como si pudiéramos apelar una instancia que desde arriba impusiera ese sistema de creencias pero no creo que fuera inconmensurable que las personas terminen teniendo preferencias compartidas en en el enfoque de <span class="person">Hayek</span>.
+        </p>
+
+        <p>
+            <span class="person">Carlos Peña</span>: Y para <span class="person">Hayek</span> podemos converger.
+        </p>
+
+        <p>
+            <span class="person">Alejandro Vigo</span>: Exacto pero eso no la hace mejores ni peores que otras el hecho que tengamos convergencia de facto por ejemplo que nos gusta la coca-cola no hace no transforma la coca-cola en valiosa podría ocurrir que nos equivoquemos o no.
+        </p>
+
+        <p>
+            <span class="person">Carlos Peña</span>: Bueno ahí ahí quizá entonces <span class="person">Hayek</span> lo que quiero decir lo digo digamos para para los conservadores yo sé que acá no hay ninguno desde luego ah para que se desilusionen de una vez digamos. O sea no estaría de acuerdo con con si alguien es conservador sea si alguien cree que podemos discernir un cierto modelo de buena vida por ejemplo discernir digo no ponernos de acuerdo discernir un cierto modelo de buena vida al cual debiéramos en pos de cuya prosecución debiéramos ordenar nuestros esfuerzos él no piensa eso realmente.
+        </p>
+
+        <p>
+            <span class="person">Alejandro Vigo</span>: Bueno yo ahí ahí quizá no estoy el mejor el mejor modelo del mercado en el mercado piensen ustedes las preferencias suyas y las mías son no solo inconmensurables sino que están en una caja negra que es opaca para mí y opaca para ustedes y sin embargo nos ponemos de acuerdo mediante el <span class="concept">sistema de precios</span> por qué mediante el <span class="concept">sistema de precios</span> bueno porque el <span class="concept">sistema de precios</span> dice <span class="person">Hayek</span> que es un sistema de comunicación que supone como diría un teórico de sistemas poco gasto comunicativo se nos permite saber qué queremos pero sin saber el contenido de lo que queremos verdad. Entonces de alguna manera creo yo cuando pone el <span class="concept">sistema de precios</span> eh como un sistema digamos como una especie de <span class="concept">orden espontáneo</span> verdad de intercambio de información claramente claramente está tratando el <span class="concept">sistema de precios</span> como un sistema de convergencia de preferencias pero desechando cualquier modo de discernir algún modelo de buena vida global digamos en este sentido yo creo que no es aristotélico ni siquiera kantiano que de cierta forma defienda la libertad económica.
+        </p>
+
+        <p>
+            <span class="person">Álvaro Vergara</span>: No no debiera leer a <span class="person">Hayek</span> diría yo porque hay una frase y ahí los quiero llevar que <span class="person">Hayek</span> dice que que la dice sin matices tajantemente al fin del primer capítulo que dice hemos abandonado progresivamente aquella libertad materia económica sin la cual jamás existió en el pasado libertad personal y política. Ustedes están de acuerdo con esa ti pensando en <span class="person">Hayek</span> y y la búsqueda para preservar esta concepción que tiene respecto a las distintas escalas de valores que cada uno tenemos es posible es posible por ejemplo la <span class="concept">libertad política</span> si no hay <span class="concept">libertad económica</span>.
+        </p>
+        
+        <p>
+             <span class="person">Alejandro Vigo</span>: Bueno ese es otro capítulo pero yo quisiera decir algo todavía sobre lo que dijo Carlos porque ahí no estamos de acuerdo yo no creo que se pueda construir a <span class="person">Hayek</span> como un aristotélico sin duda y seguramente tampoco como un kantiano en el sentido estricto no estoy convencido de que se le pueda atribuir una tesis fuerte de inconmensurabilidad o de incog no sé si lo has hecho también pero no estoy convencido de eso no creo que no sería la mejor construcción de lo que dice a pesar de su vocabulario. ¿Por qué decía yo el problema del valor? Porque él hereda una problemática que es la siguiente: cuando la teoría económica <span class="person">Menger</span> descubre lo que él llama el <span class="concept">valor subjetivo</span> la oposición con la que ellos se manejan la siguiente o el valor es una propiedad en las cosas y entonces tenemos la tradición que remonta incluso a <span class="person">Smith</span> que es <span class="concept">teoría el valor trabajo</span> o a la <span class="concept">escolástica</span> y <span class="person">Marx</span> ¿no es cierto? que tiene <span class="person">Ricardo</span> <span class="person">David Ricardo</span> que tiene que haber algo en la cosa que fuera así como está el rojo o el blanco tiene que haber algo un valor detectable en la cosa y como esta gente digamos así no no viene de la filosofía sino que viene de la teoría económica dice no un momento el valor es subjetivo.
+        </p>
+        
+        <p>
+            Esa noción de subjetividad es altamente confusa naturalmente es altamente confusa porque tiene por lo menos dos niveles de aplicación que yo creo que hay que distinguir nítidamente una cosa es decir que el valor no es una <span class="concept">propiedad descriptiva</span> de las cosas y otra cosa es decir que es arbitrario sin embargo en el lenguaje austríaco hasta el día de hoy estas dos cuestiones se mezclan de manera insana a mi juicio es decir no hay nada de extraño las preferencias de los demás generalmente y por eso puede haber transacciones por eso puede haber oferta yo cuento con las preferencias de los demás son comunicables son compartidas etcétera pero lo que no hay es una explicación de eso en términos de que las preferencias están ancladas en propiedades de los objetos como tales hay digamos hay toda una cantidad una cantidad de otros factores que explican por qué nosotros preferimos en ciertos contextos ciertas cosas ciertas otras etcétera. No creo que el lenguaje austríaco de la <span class="concept">teoría subjetiva del valor</span> hoy estaríamos en condiciones de reparafrasearlo en términos más fenomenológicos eh de una manera que no compromete con el con el componente sugerido de arbitrariedad insondable que habría en las valoraciones esto es acercando un poco a estos autores a lo que tú tienes...
+        </p>
+        
+        <p>
+            <span class="person">Carlos Peña</span>: Creo que estás esforzándote demasiado para salvar...
+        </p>
+        
+        <p>
+             <span class="person">Alejandro Vigo</span>: Bueno estoy tratando de salvarlo un poco de su propio vocabulario no es una lectura posible en esa dirección y es la que a mí me entusiasma hacer porque la otra no la podría suscribir.
+        </p>
+        
+        <p>
+             <span class="person">Carlos Peña</span>: Claro pero diría lo que usted prefiere es fruto digámoslo así de como digo una evolución en la que precipitan miles de años factores que usted no logre identificar eh y lo que usted no y usted puede explicar por qué prefiere lo que prefiere explicarlo lo que no puede decirme es por qué le asigna valor en el sentido de por qué lo estima a esto a esto me refiero verdad <span class="person">Ortega</span> emplea la expresión estimativa para escapar del problema de la del lenguaje de los valores por qué lo estima. Bueno eso no tendría explicación porque un aristotélico diría no no momento tenemos muchos deseos pero si no tenemos alguno que deseemos por sí mismo entonces los demás deseos que se subordinan a él son vanos son inútiles verdad. Eh o sea la estructura de preferencia sería absurda nos conduciría inevitablemente al vacío entonces la estructura de la acción humana tendría en el caso aristotélico digamos estaría entregada a nuestra racionalidad a nuestro discernimiento pero no es el caso de <span class="person">Hayek</span>. <span class="person">Hayek</span> más bien dice bueno tenemos preferencias pero no sabemos cómo se forma ni sabemos qué preferencias debemos tener no podemos decidir eso racionalmente y si tú le aplicas eso a la metateoría entonces por qué defier un orden de libertades bueno porque él entiende por libertad justamente esto hasta el cierto punto la definición de libertad de es una definición tautológica él entiende por libertad lo mismo que que va a entender a <span class="person">Isaiah Berlin</span> ausencia de coacción pero él creencia de interferencia él cree que un orden de libertades es mejor que un orden de coacción.
+        </p>
+        
+        <p>
+             <span class="person">Alejandro Vigo</span>: Sí claro y eso no puede ser una preferencia insondable que no sea compartida en ese nivel de análisis no.
+        </p>
+        
+        <p>
+             <span class="person">Carlos Peña</span>: Claro pero bueno pero está bien digamos esara por no hacerlo contradictorio con su propia metateoría y decir bueno su lenguaje sobre las preferencias es mejorable si estamos siendo ortodoxos con él o estamos aprovechando lo que él dice para enmendarlo no sé dónde está el límite puede ser de vistu láser no pero me forzaría porque creo que el proyecto que tiene en vista colapsaría con una teoría no cognitivista total de las preferencias radicalmente no cognitivista o sea como si fuera una teoría de lo que a veces le atribuyen a <span class="person">Hume</span> que yo creo que tampoco es el caso eh porque claro un orden de libertad no se puede defender de una manera no cognitivista radical en definitiva tiene que haber algún tipo de criterio que permita distinguir qué es mejor o qué es peor por lo menos en ese nivel de análisis no una sociedad totalitaria es peor para <span class="person">Hayek</span> que una sociedad. Bueno <span class="person">Robbins</span> a quien <span class="person">Hayek</span> conocía decía bueno en economía se trata siempre un caso de tu sangre o la mía decía cañones o mantequilla bueno un caso de tu sangre o la mía simplemente eso diría un economista yo creo que <span class="person">Hayek</span> creía firmemente eso yo ahí tengo una discrepancia.
+        </p>
+
+        <p>
+            <span class="person">Carlos Peña</span>: Sí sí no está muy bien tenemos que tener discrepancia.
+        </p>
+        
+        <p>
+             <span class="person">Alejandro Vigo</span>: Pero son dos posibles eh invitaciones a lectura.
+        </p>
+        
+        <p>
+             <span class="person">Carlos Peña</span>: Sí sí por supuesto a leer a un gran autor habría que decir por favor eso está más allá de no sé si ha no sé si una pregunta que no hemos contestado pero ya lo siento que hará por alguna ocasión.
+        </p>
+
+        <!-- PREGUNTAS DEL PÚBLICO -->
+        <h3>Preguntas del Público</h3>
+
+        <p>
+            <span class="person">Álvaro Vergara</span>: Vamos a ver si podemos hacer dos preguntas del público ojalá que sean muy cortas eh no comentarios preguntas ya al al callo eh atrás se levantó la mano primero.
+        </p>
+        
+        <p>
+            <strong>Público:</strong> Hola muchas gracias por la oportunidad claro Aló sí bueno muchas gracias por la oportunidad de poder hacer una pregunta la verdad es que yo vengo de Puerto tengo un club de lectura y este mes estamos leyendo este libro entonces me gustaría llevarme algo para la casa porque tengo el primer capítulo habla del <span class="concept">camino abandonado</span> y por el año en que fue escrito este libro debía debía converger el fondo el abandonar el camino hacia lo que fue la <span class="concept">Segunda Guerra Mundial</span> y de cierta forma con ganar la guerra haber por eso digo de cierta forma haber retomado el camino pero en estos 80 años o sea yo creo que estamos lejos de retomar el camino y qué podemos o sea qué reflexión pueden sacar de eso porque después de la guerra eh claro la se la <span class="concept">Rusia comunista</span> se fortalece aún más eh <span class="concept">Estados Unidos</span> por otro lado eh como que retoma el camino del <span class="concept">liberalismo</span> pero está el tema del <span class="concept">Muro de Berlín</span> después en Chile eh <span class="person">Salvador Allende</span> y entonces pareciera que estamos lejos de retomar el camino por favor.
+        </p>
+
+        <p>
+            <span class="person">Alejandro Vigo</span>: Va venir con este no funciona no bueno vamos a ver lo que llama el <span class="concept">camino abandonado</span> hoy una de las múltiples críticas de han hecho este libro que mucha gente dice que la construcción de ese supuesto camino abandonado es una construcción intelectual que no resiste análisis ¿no es cierto? Porque como que <span class="person">Hayek</span> idealizar la tradición previa ¿no es cierto? O el momento previo a la quiebra al quiebre que trajo consigo la Primera Guerra esto no es la Segunda Guerra esto es la Primera Guerra ¿no es cierto? El camino se abandona cuando surge la idea a ver si me equivoco aquí y me corriges Carlos hay un artículo de <span class="person">Keynes</span> que llama "El fin del laissez-faire" del año 26 que es muy indicativo. <span class="person">Keynes</span> que no era un comunista como a veces circula o un socialista ultrad alguien que decía no podemos seguir apostando en la irracionalidad la racionalidad tiene que ser que se pueda planificar esto y ahí propone por ejemplo que tiene que crearse un <span class="concept">Banco Central</span> una institución monetaria centralizada etcétera. Entonces la idea cuál es aquí nosotros teníamos el <span class="concept">laissez-faire</span> del siglo XIX y un colapso irracional de ese mundo de la <span class="concept">Belle Époque</span> o como se le llame eso y no podemos incurrir en los mismos horrores que nos llevaron ese colapso no sé si aquí estás de acuerdo en esto entonces ese es el <span class="concept">camino abandonado</span> que habla <span class="person">Hayek</span>.
+        </p>
+        
+        <p>
+            Ahora curiosamente <span class="person">Hayek</span> dice que hay que recuperar ese camino pero sin <span class="concept">laissez-faire</span> en la obra de la expresión <span class="concept">laissez-faire</span> siempre se usa de manera crítica porque <span class="person">Hayek</span> no defiende el <span class="concept">laissez-faire</span> del siglo XIX hay gente que lo incorporó a lo que en ese momento se llamó <span class="concept">neoliberalismo</span> que es lo contrario a lo que se dice ahora porque la noción de <span class="concept">neoliberalismo</span> que es de francesa pero en Alemania surge en el contexto de la <span class="concept">escuela de Friburgo</span> <span class="person">Walter Eucken</span> el <span class="concept">Ordo liberalismus</span> <span class="person">Rüstow</span> que es uno de los que las pone en circulación <span class="person">Röpke</span> y otro.
+        </p>
+
+        <p>
+            <span class="person">Carlos Peña</span>: <span class="person">Röpke</span> exactamente.
+        </p>
+
+        <p>
+            <span class="person">Alejandro Vigo</span>: Que dicen que hay que introducir correcciones al <span class="concept">laissez-faire</span> digamos así para impedir los efectos no deseados de una libertad sin ley por así decir no como diría <span class="person">Kant</span> entonces que hay que introducir correcciones como por ejemplo la <span class="concept">asignación mínima</span> en casos de la gente que está herida en guerra o ese tipo de cosas no y <span class="person">Hayek</span> que está en ese movimiento intelectual en ese movimiento intelectual lo que yo creo que él le pasa después es que él cree que la introducción de esas correcciones desarrolla una dinámica propia que es que una intervención o un digamos allí un subsidio reclama otro subsidio y otro subsidio otro subsidio hasta llegar a lo que se lo voy a decir de una manera un poquito provocativa hasta llegar a la <span class="concept">peronización de la sociedad</span> perdón por lo que estoy diciendo donde lo que tenemos es una <span class="concept">sociedad subsidiada</span> y ese es un un terror que tiene <span class="person">Hayek</span> me parece a mí de que digamos si uno abre la puerta a demasiadas intervenciones de ese tipo lo que va a ocurrir es que se va a perder la tradición digamos básica de la <span class="concept">sociedad de libertades</span> porque la única manera de defender la libertad es acotando las dádivas hay un autor liberal que a mí me gusta bastante que que fue discípulo de pero nunca se se doctoró ni nada porque abandonó la universidad que es <span class="person">Roland Baader</span> un alemán católico que dice "<span class="concept">la violencia política siempre comienza con las dádivas</span>" una frase que a mí me ha dado que pensar bastante creo que eso es lo que tiene vista que occidente está a medida que avanza el <span class="concept">capitalismo</span> y crece cada vez más el <span class="concept">estado de bienestar</span> que no condena.
+        </p>
+
+        <p>
+            <span class="person">Carlos Peña</span>: Bueno yo tendría cuidado de leer <span class="concept">Camino de servidumbre</span> como una especie de predicción digamos acerca de la evolución que la sociedad ha experimentado por ejemplo soli refutarse o querer refutarse a <span class="person">Hayek</span> después del 46 en Inglaterra cuando triunfó el <span class="concept">Estado de bienestar</span> y cuando <span class="person">T.H. Marshall</span> con la idea de <span class="concept">derechos sociales</span> digamos inspiró buena parte de la política estatal del laborismo inglés y se dijo bueno <span class="person">Hayek</span> se equivocó puesto que la sociedad inglesa funciona bastante bien eh. <span class="person">Hayek</span> siempre se defendió de eso diciendo no no yo no quise hacer predicciones no estaba trazando el curso futuro de la sociedad británica europea en las próximas décadas lo que yo estoy haciendo era rebelarme contra una mentalidad una manera de concebir la vida social que exagerada nos puede llevar efectivamente al desastre entre otras cosas al <span class="concept">fascismo</span> recuerden ustedes que como yo comencé explicando el tema frente al cual reacciona <span class="person">Hayek</span>, <span class="person">Polanyi</span>, <span class="person">Mannheim</span> bueno <span class="person">Neurath</span> y toda toda la intelectualidad de la época es frente al <span class="concept">fascismo</span> cómo puede ocurrir que en el sector más ilustrado en la en lo mejor de la cultura occidental aparezca el <span class="concept">fascismo</span> no y y como dice <span class="person">Ortega</span> digamos alguien que hizo poco menos del gesto epiléptico una forma de conducción política como <span class="person">Hitler</span> se transforma en líder digamos qué pudo pasar en la cultura este es el problema del que se ocupa <span class="person">Hayek</span> de que se ocupa <span class="person">Polanyi</span> bueno <span class="person">Georg Lukács</span> toda la intelectualidad de la época.
+        </p>
+        
+        <p>
+            Entonces no están haciendo predicciones tampoco se trata creo yo ah de alterar las cosas y donde <span class="person">Hayek</span> dice <span class="concept">socialismo</span> ver la <span class="concept">izquierda contemporánea</span> a mí también me parece es un error yo no creo realmente que en la izquierda actual salvo algunos excesos en cualquier caso minoritarios digamos verdad uno pueda estar viendo personas que al modo digamos de planificadores globales quieran diseñar todos los intersticios de la vida social no no no hay tal cosa digamos. No <span class="person">Hayek</span> tampoco era un opositor franco a la <span class="concept">socialdemocracia</span> si es que por <span class="concept">socialdemocracia</span> entendemos un <span class="concept">orden capitalista con estado nacional</span> con reglas claras y con políticas sociales focalizadas en algo así estaría en general de acuerdo piensen ustedes que el gran instrumento de políticas sociales de la dictadura en Chile que fue o de <span class="concept">Mideplan</span> digamos que no fue una mala idea contó con la anuencia de <span class="person">Hayek</span> perfectamente.
+        </p>
+        
+        <p>
+            Entonces tomar a <span class="person">Hayek</span> como una especie de arma arrojadiza en el actual debate político a mí me parece un error de grandes proporciones realmente porque repito <span class="person">Hayek</span> en realidad se inscribe en un tipo de reflexión muchísimo más global que abarca otros aspectos de la vida social económicos epistémicos éticos políticos el <span class="concept">aspecto político</span> que tiene <span class="person">Hayek</span> que yo eh digamos subrayar es su idea de <span class="concept">libertad</span> su idea de libertad como un espacio de franquía total digamos del individuo yo creo que eso en <span class="person">Hayek</span> está muy marcado lo hace un liberal muy cercano a la manera más clásica del liberalismo lo aleja de cualquier forma digámoslo así de concepción de la vida social como una <span class="concept">empresa común</span> digamos común en el entendido digamos una empresa que tiene un <span class="concept">telos</span> hacia en pos de cuya consecución debiera estirarse yo creo que <span class="person">Hayek</span> está lejos de eso eh pero también está lejos ya digo del <span class="concept">anarcocapitalismo</span> y por supuesto lejos digamos de una planificación total <span class="concept">orwelliana</span> digámoslo así de la vida ah y dificulto que hoy día salvo el exceso retórico inevitable los debates políticos locales y criollo ah se pretenda que la izquierda en Chile o el progresismo chileno es una especie de lobo con piel de oveja eh que quiere regimentar todos los aspectos de nuestra vida personal me parece que no hay nada de eso realmente así que yo le diría <span class="person">Hayek</span> con un granos salis así con cuidado sin dejarse entusiasmar sin dejarse llevar por la retórica eh inflamada que a veces tiene ese libro y que es propio repito del contexto de la época está escribiendo está escribiendo con el <span class="concept">nazismo</span> en la puerta de eso estamos hablando así está escribiendo escribiendo como <span class="person">Popper</span> como <span class="person">Polanyi</span> etc.
+        </p>
+
+        <p>
+            <strong>Público:</strong> Quería hacer dos preguntas una es ¿cómo se podría entender que la idea que no se opone a el <span class="concept">orden socialdemócrata</span> o el <span class="concept">estado de bienestar</span> en el marco de su debate y su discusión con <span class="person">Keynes</span>? Porque hay una discusión muy aguda que se da en es en ese mismo momento que participa mucha gente además el 45 <span class="person">Bertrand de Jouvenel</span> mucha gente está en este y y ahí parece haber una oposición un choque con un <span class="person">Keynes</span> que no está proponiendo un estado totalitario ni un comunismo de planificación central ni nada por el estilo pero hay un choque importante entonces hay un margen en que parece que sí se opone a un <span class="concept">estado gastador</span> por decirlo en esos términos eh y el segundo punto era respecto al a la discusión anterior de de del del de cómo concebía <span class="person">Hayek</span> el orden social o las preferencias morales y tiene que ver con su venida a Chile lo entrevista <span class="person">Lucía Santa Cruz</span> y <span class="person">Hayek</span> le dice yo sé que esto es un salto en el tiempo por eso pero pero le dice yo estoy preparando un libro que le puede servir mucho a Chile y y que es "La constitución de la libertad" y ese libro él dice bueno están los países que tienen la tradición del del eh es de <span class="concept">Common Law</span> o o es <span class="concept">Rule of Law</span> uno de los dice del <span class="concept">Common Law</span> están los países que tienen la tradición del <span class="concept">Common Law</span> y y esto va a funcionar en esos contextos pero los países que no lo tienen yo les tengo una propuesta. La tradición del <span class="concept">Common Law</span> es la tradición digámoslo así consuetudinaria verdad evolutiva claro que está abierta la evolución a través de y y él dice pero los que no lo tienen yo les tengo una propuesta y hace una propuesta que llega a a planificar digamos hasta unos clubes de amigos es un es un libro muy curioso en ese pero donde marca claras preferencias respecto a la idea del <span class="concept">orden ideal social ideal</span> en el cual puede operar en el fondo eh el liberalismo tal como él lo consigue entonces no sé si hay un cambio de de punto de vista o si es menos liberal el <span class="person">Hayek</span> después o si es que efectivamente hay una hay un trasfondo eh una idea de de de un orden social bueno o correcto o mejor digamos y de preferencias también morales que involucran ese tipo de ord ese sería el.
+        </p>
+
+        <p>
+            <span class="person">Alejandro Vigo</span>: Lo que pasó en Chile no me voy a referir porque no estaba aquí además no soy la persona indicada no una simple observación respecto de esto yo francamente no pondría <span class="person">Hayek</span> en el <span class="concept">aristotelismo político</span> ¿no es cierto? Obviamente que no pero entre otras cosas porque yo no me cuento entre los aristotélicos políticos voy a explicar por qué como la polis es una estructura que no tiene en absoluto el grado de complejidad que tienen los estados modernos y las sociedades modernas entonces qué ocurre por ejemplo si ustedes toman "Política 3 4" donde <span class="person">Aristóteles</span> sostiene la tesis que en esos momentos parece bastante razonable que el bien del ciudadano y el bien de la polis es el mismo en el estado ideal ¿no es cierto? Esa es una tesis que yo creo que a <span class="person">Hayek</span> le daría terror a la luz de la experiencia histórica que <span class="person">Hayek</span> tiene a la vista con sus más y sus menos digamos. Puede acertar o no en esto pero hay un contexto histórico que marcó muy bien el profesor Peña y yo también dije alguna cosa que es completamente distinto significa esto que <span class="person">Hayek</span> no defiende la <span class="concept">cooperación</span> yo creo que es un teórico de la <span class="concept">cooperación</span> <span class="person">Hayek</span> que <span class="person">Hayek</span> no es un individualista caricaturesco de tipo <span class="concept">atomista</span> sino que <span class="person">Hayek</span> es un gran defensor de la cooperación toda la teoría de la <span class="concept">cataláctica</span> igual que <span class="person">Mises</span> es una teoría en la cual individuos imperfectos con preferencias que son testables intersubjetivamente etcétera se van poniendo de acuerdo en transacciones en clubes de amigos lo que sea porque la transacción no solamente la monetaria nosotros transamos bienes no monetarios también y no transacción tiene no todo intercambio es crematístico por así decir no y eso se ve clarísimamente en <span class="person">Mises</span> también no entonces yo abogaría por una lectura de estos autores está bien lo mío más simpatética con un liberalismo que para mí nunca existió de carácter <span class="concept">atomista</span> y no cognitivista esto sería mi manera de ver este asunto no no creo que haya cambiado de posición entre los dos libros yo conozco menos el segundo libro porque me ocupé más de otras cosas de pero no creo que haya cambiado de posición creo que estabas trayendo consecuencias de lo que siempre quiso decir el primer libro el libro bestseller de él es de gran peligrosidad por la retórica del libro aquí yo coincido plenamente con lo que observó el profesor Peña y por eso hay que tener mucho cuidado en cómo se lo trae la discusión actual.
+        </p>
+        
+        <p>
+            Y déjeme decir algo más y después le doy la palabra a quien sabe sobre <span class="person">Keynes</span> yo creo que la discusión con <span class="person">Keynes</span> no es lo que hoy nosotros nos imaginamos <span class="person">Keynes</span> era fabiano cercano al fabianismo por lo menos si uno sospecha que <span class="person">Keynes</span> era el diablo disfrazado de cordero siempre va a poder atribuir cualquier intención no pero el intercambio de cartas sobre <span class="concept">Camino de servidumbre</span> dice que está de acuerdo en casi todo lo que dice ahora hay acuerdos que cambian las cosas también no entonces interviene y dice en esto sí no cuál es la discusión con <span class="person">Keynes</span> hasta donde yo puedo ver que <span class="person">Hayek</span> descree de la centralización de la institución monetaria y del sistema bancario centralizado. Les cuento que yo también porque vengo de Argentina eh eh claro cl amigo que me fascinó del de de de la concepción austríaca es la idea de que algo tan importante como el dinero no no puede ser puesto en mano del poder me explico y <span class="person">Hayek</span> tiene una discrepancia total con <span class="person">Keynes</span> en ese término ahora el que ganó la discusión fue <span class="person">Keynes</span> porque <span class="person">Keynes</span> al final de la Segunda Guerra fue el ideólogo del de <span class="concept">Bretton Woods</span> y de de todo el sistema monetario que hoy tenemos para bien o para mal yo preso que para mal pero esto es otra cosa no pero me explico es acotada la discusión algunas cuestiones muy concretas pero no es que eh <span class="person">Hayek</span> que sería algo así como el eh el hombre de la derecha más está discutiendo además con el representante del totalitarismo soviético está discutiendo con un colega con el cual tiene grandes discrepancias pero respeto mutuo y eso se ve en el intercambio y están discutiendo sobre problemas concretos de cómo debe ser la institución monetaria en una <span class="concept">sociedad de libertades</span> este es el punto yo lo situaría así verdad ahora si usted me pregunta a mí de qué lado estoy yo de no pero es es otra cuestión.
+        </p>
+        
+        <p>
+            <span class="person">Carlos Peña</span>: De nuevo el asunto no en torno a los autores que mencioné al comienzo en realidad hace un esfuerzo por imaginarse el tipo de mundo en medio del cual está escribiendo hay escribiendo <span class="concept">Camino de servidumbre</span> por supuesto después cambia el contexto piensen ustedes la aparición de lo que llamaríamos la <span class="concept">democracia de masas</span> no es la época de la <span class="concept">República de Weimar</span> entre el 22 y el 33 digamos un fenómeno absolutamente sorpresivo no claro la aparición del <span class="concept">Estado nacional</span> digamos la constitución de los estados nacionales que en el caso alemán es bastante tardía la aparición de la <span class="concept">democracia de masas</span> el peligro de los <span class="concept">liderazgos meramente carismáticos</span> eh la la sensación de que la vida social se insubordina que no es posible controlarla o manejarla la caída pronta en el <span class="concept">fascismo</span> frente a este fenómeno está reaccionando con la <span class="concept">hiperinflación</span> ahí exactamente no que lleva alguno a sostener que hay que abolir el <span class="concept">sistema de precios</span> por ejemplo no este tipo de cosas se decían en la se escribían libros en la época ah <span class="person">Otto Neurath</span> el el gran filósofo miembro del <span class="concept">Círculo de Viena</span> colega <span class="person">Rudolf Carnap</span> nada menos escribe un libro abogando digamos por diseñar matemáticamente la distribución de los bienes en vez de usar el <span class="concept">sistema de precios</span> este tipo de cosas son aquellas con las cuales contra las cuales reacciona <span class="person">Hayek</span> y eso sería la racionalidad esa sería la racionalidad exact no habría modelo alternativo incluso cuando discute Paulo de sobre <span class="concept">Camino de servidumbre</span> porque lo discute con sus críticos hay un famoso diálogo con el director de planificación británica que era también un catedrático y le dice no no en general estamos de acuerdo yo no me opongo a ciertos tipos de planificación a planificar el transporte ciertos tipos de subsidi bueno quién podría oponerse digamos no pero dice buena parte del entramado de la vida social es el precipitado en el que refractan miles y miles años de años de evolución esto esto lo cree firmemente por eso yo pienso que no hay que exagerar la lectura la lectura de <span class="person">Hayek</span>.
+        </p>
+
+        <p>
+            Ahora respecto del <span class="concept">cognoscitivismo</span> no bueno este es un debate tan técnico que podríamos intentar explicarlo rápidamente en qué consiste este debate ustedes tienen deseo llamemos así las preferencias yo también un problema que podríamos plantearnos verdad es si tenemos algún criterio para saber si sus deseos son mejores o peores que los que es lo mismo que usted podría preguntarse en el sentido de decir bien yo es un hecho que tengo deseo hay cosas que prefiero pero diría <span class="person">Kant</span> a quien vale siempre la pena citar verdad bueno pero ser humano consiste en interponer un <span class="concept">momento reflexivo</span> frente al deseo y preguntarse debo tener ese deseo o no verdad la pregunta es la pregunta debo tener ese deseo tiene una respuesta racional o no una respuesta que yo pueda someter al juicio de ustedes discutirla con ustedes para alcanzar una conclusión esta es la cuestión si usted dice sí tiene una respuesta racional es <span class="concept">cognoscitivista</span> en algún sentido en un sentido amplio digamos incluso cubre la <span class="concept">ética discursiva</span> si usted dice no es no congresista yo creo que porque de otra manera no se explica el tema de los precios era no cognitivista en este sentido pero es un debate que podremos continuar con el profesor Vigo más adelante.
+        </p>
+
+        <p>
+            <span class="person">Álvaro Vergara</span>: Muchas gracias a ambos expositores muy interesante toda la discusión muchas gracias a todos ustedes por venir solo dejarles un anuncio desde Instituto de Estudios de la Sociedad Y es que salió nuestro nuevo número de la revista "Punto y Coma" titulada "Radiografía a las derechas" la buen ya está en preventa pueden adquirirla por nuestra tienda virtual y el lanzamiento lo vamos a tener acá el 16 de mayo a las 18:30 para que vengan y los esperamos muchas gracias.
+        </p>
     </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof THREE !== 'undefined') {
-                initThreeJS();
-            } else {
-                console.error("Three.js not loaded");
-            }
-            setupNavigation();
-            setupScrollAnimations();
-        });
-
-        let scene, camera, renderer, points, lines;
-        function initThreeJS() {
-            try {
-                scene = new THREE.Scene();
-                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
-                camera.position.z = 50;
-                renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("bg-canvas"), alpha: true });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                const pointCount = 200;
-                const positions = new Float32Array(pointCount * 3);
-                const pointGeo = new THREE.BufferGeometry();
-                for (let i = 0; i < pointCount; i++) {
-                    positions[i * 3] = (Math.random() - 0.5) * 400;
-                    positions[i * 3 + 1] = (Math.random() - 0.5) * 400;
-                    positions[i * 3 + 2] = (Math.random() - 0.5) * 400;
-                }
-                pointGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                const pointMaterial = new THREE.PointsMaterial({ color: 0x818cf8, size: 1.5, transparent: true, opacity: 0.8 });
-                points = new THREE.Points(pointGeo, pointMaterial);
-                scene.add(points);
-                regenerateLines();
-                window.addEventListener("resize", onWindowResize, false);
-                document.addEventListener('mousemove', onMouseMove, false);
-                renderer.domElement.addEventListener('click', onCanvasClick, false);
-                animate();
-            } catch (error) {
-                console.error('Error initializing Three.js:', error);
-            }
-        }
-        function onWindowResize() {
-            if(camera && renderer) {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            }
-        }
-        let mouseX = 0, mouseY = 0;
-        function onMouseMove(event) {
-            mouseX = (event.clientX - window.innerWidth / 2) / 100;
-            mouseY = (event.clientY - window.innerHeight / 2) / 100;
-        }
-        function animate() {
-            requestAnimationFrame(animate);
-            if(scene && camera && renderer && points && lines) {
-                points.rotation.y += 0.0005;
-                lines.rotation.y += 0.0005;
-                camera.position.x += (mouseX - camera.position.x) * 0.05;
-                camera.position.y += (-mouseY - camera.position.y) * 0.05;
-                camera.lookAt(scene.position);
-                renderer.render(scene, camera);
-            }
-        }
-        function onCanvasClick(event) {
-            const mouse = new THREE.Vector2();
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-            const vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
-            vector.unproject(camera);
-            const dir = vector.sub(camera.position).normalize();
-            const distance = -camera.position.z / dir.z;
-            const pos = camera.position.clone().add(dir.multiplyScalar(distance));
-            addPoint(pos);
-        }
-        function addPoint(position) {
-            const oldPositions = points.geometry.attributes.position.array;
-            const newPointCount = oldPositions.length / 3 + 1;
-            const newPositions = new Float32Array(newPointCount * 3);
-            newPositions.set(oldPositions);
-            newPositions[oldPositions.length] = position.x;
-            newPositions[oldPositions.length + 1] = position.y;
-            newPositions[oldPositions.length + 2] = position.z;
-            points.geometry.setAttribute('position', new THREE.BufferAttribute(newPositions, 3));
-            points.geometry.attributes.position.needsUpdate = true;
-            regenerateLines();
-        }
-        function regenerateLines() {
-            if (lines) scene.remove(lines);
-            const pointPositions = points.geometry.attributes.position.array;
-            const pointCount = pointPositions.length / 3;
-            const linePositions = [];
-            for (let i = 0; i < pointCount; i++) {
-                for (let j = i + 1; j < pointCount; j++) {
-                    const dx = pointPositions[i * 3] - pointPositions[j * 3];
-                    const dy = pointPositions[i * 3 + 1] - pointPositions[j * 3 + 1];
-                    const dz = pointPositions[i * 3 + 2] - pointPositions[j * 3 + 2];
-                    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                    if (dist < 50) {
-                        linePositions.push(pointPositions[i * 3], pointPositions[i * 3 + 1], pointPositions[i * 3 + 2]);
-                        linePositions.push(pointPositions[j * 3], pointPositions[j * 3 + 1], pointPositions[j * 3 + 2]);
-                    }
-                }
-            }
-            const lineGeo = new THREE.BufferGeometry();
-            lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
-            const lineMaterial = new THREE.LineBasicMaterial({ color: 0x22d3ee, opacity: 0.3, transparent: true });
-            lines = new THREE.LineSegments(lineGeo, lineMaterial);
-            scene.add(lines);
-        }
-
-        function setupNavigation() {
-            const menuToggleBtn = document.getElementById('menu-toggle-btn');
-            const navMenu = document.getElementById('nav-menu');
-            menuToggleBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                document.body.classList.toggle('menu-open');
-            });
-            navMenu.addEventListener('click', (e) => {
-                if (e.target.tagName === 'A' && window.innerWidth <= 1024) {
-                   document.body.classList.remove('menu-open');
-                }
-            });
-        }
-
-        function setupScrollAnimations() {
-            const animatedSections = document.querySelectorAll('[data-animate]');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                        const elementsToAnimate = entry.target.querySelectorAll('h2, .tab-nav, .tab-content-container');
-                        elementsToAnimate.forEach((el, index) => {
-                           el.style.transitionDelay = `${index * 150}ms`;
-                        });
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.1 });
-            animatedSections.forEach(section => observer.observe(section));
-        }
-
-        function changeTab(event, tabID) {
-            let tabContents = document.getElementsByClassName('tab-content');
-            for (let i = 0; i < tabContents.length; i++) {
-                tabContents[i].classList.remove('active');
-            }
-            let tabButtons = document.getElementsByClassName('tab-button');
-            for (let i = 0; i < tabButtons.length; i++) {
-                tabButtons[i].classList.remove('active');
-            }
-            document.getElementById(tabID).classList.add('active');
-            event.currentTarget.classList.add('active');
-        }
-    </script>
 </body>
 </html>
