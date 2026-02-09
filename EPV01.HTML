@@ -23,6 +23,25 @@
             font-family: 'Playfair Display', serif;
         }
 
+        /* --- Barra de Progreso de Lectura --- */
+        #progress-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            z-index: 200; /* Por encima del menú */
+            background: transparent;
+        }
+        
+        #progress-bar {
+            height: 100%;
+            background-color: #22d3ee; /* cyan-400 */
+            width: 0%;
+            box-shadow: 0 0 10px #22d3ee;
+            transition: width 0.1s ease-out;
+        }
+
         /* --- Estilos de Navegación Desktop --- */
         .nav-link {
             position: relative;
@@ -105,7 +124,7 @@
             border-radius: 0.5rem;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
             transition: all 0.2s ease-in-out;
-            z-index: 100;
+            z-index: 90;
         }
 
         .dropdown-link {
@@ -179,47 +198,45 @@
             }
         }
 
-        /* Tooltip Styles for Footnotes - CENTRADO Y ANCHO COMPLETO */
+        /* --- NOTAS AL PIE (Centradas en ventana) --- */
+        .footnote-ref {
+            cursor: pointer;
+            position: relative;
+            display: inline-block;
+        }
+
         .footnote-ref .footnote-tooltip {
             visibility: hidden;
             opacity: 0;
-            transition: opacity 0.3s, visibility 0.3s;
-            position: fixed; /* Fijo respecto a la ventana */
-            bottom: 2rem; /* Separado del borde inferior */
+            transition: opacity 0.3s ease-in-out, visibility 0.3s;
+            
+            /* Posicionamiento FIJO centrado en la ventana inferior */
+            position: fixed;
+            bottom: 30px;
             left: 50%;
-            transform: translateX(-50%); /* Centrado perfecto */
+            transform: translateX(-50%);
             
-            /* Dimensiones máximas para usar todo el ancho */
-            width: 900px; 
-            max-width: 90vw; 
-            max-height: 40vh; /* Altura máxima para no tapar todo */
-            overflow-y: auto; /* Scroll si el texto es muy largo */
+            /* Dimensiones: Ancho completo pero con márgenes */
+            width: 90vw; 
+            max-width: 1000px; /* Límite para pantallas muy grandes */
             
+            /* Estilo visual */
             background-color: rgba(15, 23, 42, 0.98); 
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #cbd5e1;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            font-size: 0.95rem; /* Fuente legible */
+            border: 1px solid rgba(34, 211, 238, 0.3); /* Borde sutil celeste */
+            color: #e2e8f0;
+            padding: 1.5rem 2rem;
+            border-radius: 0.5rem;
+            font-size: 0.95rem; /* Texto legible */
             font-family: 'Inter', sans-serif;
             font-weight: normal;
             line-height: 1.6;
-            z-index: 1000; /* Por encima de todo */
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-            pointer-events: none; 
+            z-index: 1000; /* Máxima prioridad */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
             text-align: justify;
+            pointer-events: none; /* Permite scroll mientras se lee */
         }
 
-        /* Ajuste para móviles: más cerca del borde inferior */
-        @media (max-width: 640px) {
-            .footnote-ref .footnote-tooltip {
-                bottom: 1rem;
-                width: 95vw;
-                padding: 1rem;
-                font-size: 0.85rem;
-            }
-        }
-
+        /* Mostrar al hacer hover */
         .footnote-ref:hover .footnote-tooltip {
             visibility: visible;
             opacity: 1;
@@ -233,8 +250,13 @@
 </head>
 <body class="selection:bg-amber-500 selection:text-slate-900 min-h-screen flex flex-col overflow-x-hidden">
 
+    <!-- Barra de Progreso Superior -->
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+
     <!-- Navegación Responsiva -->
-    <nav class="fixed w-full z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
+    <nav class="fixed w-full z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/5 transition-all duration-300 top-0">
         <div class="w-full px-4 md:px-12">
             <div class="flex justify-between items-center h-16">
                 
@@ -284,11 +306,13 @@
         </div>
     </nav>
 
-    <!-- Script de Navegación -->
+    <!-- Script de Navegación y Barra de Progreso -->
     <script>
         const menuBtn = document.getElementById('menu-btn');
         const mobileMenu = document.getElementById('mobile-menu-container');
+        const progressBar = document.getElementById('progress-bar');
 
+        // Navegación Móvil
         menuBtn.addEventListener('click', () => {
             mobileMenu.classList.toggle('hidden');
             mobileMenu.classList.toggle('flex');
@@ -313,6 +337,14 @@
                 document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             }
         }
+
+        // Lógica de Barra de Progreso
+        window.addEventListener('scroll', () => {
+            const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrollPercentage = (scrollTop / scrollHeight) * 100;
+            progressBar.style.width = scrollPercentage + '%';
+        });
     </script>
 
     <!-- Contenido Principal -->
@@ -553,4 +585,90 @@
                     </h2>
                     <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify px-4 md:px-0">
                         <p>
-                            En este punto no podemos dejar de recordar la respuesta de <span class="text-cyan-400 font-bold">Kant</span> al escepticismo humeano, con su aspiración a aportar esa justificación a priori. Pero tampoco la solución trascendental del problema, que pretende fundamentar la causalidad y su validez objetiva exclusivamente desde la conciencia pura, puede sustraerse a la verdad de que la concreción no es derivable de una de sus abstracciones. Su éxito depende esencialmente, entre otras cosas, de que pueda demostrar que la causalidad es realmente un concepto del entendimiento puro (así como de que pueda mostrar en qué se basa su validez objetiva). Pero un examen sin prejuicios arroja el resultado de que no el entendimiento puro, sino únicamente la concreta vida corporal —en el choque de sus fuerzas, que se sienten a sí mismas, con el mundo— puede ser la fuente de la fuerza, y por tanto de la representación de la causalidad. El entendimiento en sí solamente reconoce el fundamento y la consecuencia, no la causa y el efecto: entre estos últimos existe una concatenación de tipo real, en virtud de la fuerza, y no de tipo ideal, en virtud de la forma. La vivencia de la fuerza viva, concretamente de la propia, en la actividad del cuerpo es la base empírica para las abstr
+                            En este punto no podemos dejar de recordar la respuesta de <span class="text-cyan-400 font-bold">Kant</span> al escepticismo humeano, con su aspiración a aportar esa justificación a priori. Pero tampoco la solución trascendental del problema, que pretende fundamentar la causalidad y su validez objetiva exclusivamente desde la conciencia pura, puede sustraerse a la verdad de que la concreción no es derivable de una de sus abstracciones. Su éxito depende esencialmente, entre otras cosas, de que pueda demostrar que la causalidad es realmente un concepto del entendimiento puro (así como de que pueda mostrar en qué se basa su validez objetiva). Pero un examen sin prejuicios arroja el resultado de que no el entendimiento puro, sino únicamente la concreta vida corporal —en el choque de sus fuerzas, que se sienten a sí mismas, con el mundo— puede ser la fuente de la fuerza, y por tanto de la representación de la causalidad. El entendimiento en sí solamente reconoce el fundamento y la consecuencia, no la causa y el efecto: entre estos últimos existe una concatenación de tipo real, en virtud de la fuerza, y no de tipo ideal, en virtud de la forma. La vivencia de la fuerza viva, concretamente de la propia, en la actividad del cuerpo es la base empírica para las abstracciones de los conceptos universales de eficiencia y de causalidad, y es el <span class="text-amber-500 font-bold">«esquematismo»</span> del movimiento del cuerpo vivo dotado de dirección, no el de una intuición neutral y receptiva, el que media entre la formalidad del entendimiento y el dinamismo de lo real.
+                        </p>
+                        <p>
+                            De esta manera, la causalidad no es un fundamento apriórico de la experiencia, sino ella misma una experiencia fundamental. Esa experiencia se adquiere en el esfuerzo que debo hacer tanto para superar en mi actividad la resistencia de la materia cósmica como para resistir el impacto de la misma. Todo ello tiene lugar a través de y en mi cuerpo, simultáneamente en su exterioridad extensiva y en su interioridad intensiva, cada una de las cuales es un aspecto genuino de mí mismo. Y saliendo desde mi cuerpo hacia fuera, saliendo yo mismo corporalmente, edifico a imagen de su experiencia fundamental la imagen dinámica del mundo: de un mundo de fuerza y resistencia, acción e inercia, causa y efecto.
+                        </p>
+                        <p>
+                            La causalidad, así, no es un apriori formal de la experiencia situado en el entendimiento, sino la extrapolación universal de esa experiencia fundamental efectuada en el propio cuerpo al todo de la realidad. Tiene sus raíces precisamente en el punto de la trascendencia viva y real del yo, en el punto en el que la interioridad se trasciende activamente hacia el exterior y se prolonga en el exterior en virtud de sus efectos. Este punto es el cuerpo vivo intensivo-extensivo, en el que el yo está simultáneamente cabe sí (intensivamente) y en medio del mundo (extensivamente). La causalidad es el hallazgo primario del yo práctico, no del teórico, de su actividad, no de su intuición: es vivencia de aquella y no ley de esta (ver capítulo 2, sección I).
+                        </p>
+                        <p>
+                            Ahora bien, si la extrapolación universal que se realiza desde la propia corporalidad está o no racionalmente justificada, es una cuestión de la crítica filosófica que aquí hemos de dejar abierta. En cualquier caso, es ante todo una pregunta ontológica, y no una pregunta que se plantee en la teoría del conocimiento. También es en la ontología donde tiene su lugar propio el problema del antropomorfismo —dando a este término su más amplio sentido— aquí planteado. La proscripción y la absoluta prohibición bajo la que se hallan todo antropomorfismo o zoomorfismo relativos a la naturaleza podría revelarse en esta forma extrema, que, por cierto, es específicamente dualista y postdualista, como un mero prejuicio (ver capítulo 2, sección II). En efecto, si se da a la cuestión su auténtico sentido, quizá sea verdad que el hombre es la medida de todas las cosas: no en virtud de la legislación promulgada por su razón, ciertamente, pero sí en virtud del paradigma de su totalidad psicofísica, la cual representa el máximo de completitud y concreción ontológica que conocemos. Desde ese paradigma, los tipos de ser van siendo determinados reductivamente mediante progresivas sustracciones ontológicas, hasta llegar al mínimo de la mera materia elemental (en lugar de que la materia más completa vaya siendo constituida desde esta base mediante añadidos acumulativos).
+                        </p>
+                        <p>
+                            Todavía sigue abierta la pregunta de si la vida representa una complejificación cuantitativa en la ordenación de la materia, de modo que su libertad o su teleología no pasan de ser una aparente difuminación de la tan simple como férrea determinación de la materia debida precisamente a esa complejificación acumulada (una difuminación que se debe más bien a nuestra impotencia analítica que a la naturaleza propia de la vida), o si por el contrario la materia <span class="text-amber-500 font-bold">«muerta»</span> debe ser entendida privativamente, como un modo deficiente de las propiedades de la vida sentiente, como su limitación al mínimo de un estado germinal infinitesimal, de manera que en ese caso su determinismo sería libertad dormida, aún por despertar. La justificación ontológica de esta pregunta reside en la circunstancia de que el cuerpo vivo es el prototipo de lo concreto y, en la medida en que es mi cuerpo, es en su inmediatez simultánea de interioridad y exterioridad la única cosa concreta que se me da íntegra en la experiencia: su concreta integridad efectiva nos muestra que la materia en el espacio, pese a que por lo general solamente la experimentamos desde fuera, puede tener un horizonte interno, y que por ello su ser extenso no es necesariamente todo su ser. Vistas las cosas desde la única concreción real, tanto la mera extensión como la mera interioridad se nos muestran como abstracciones.
+                        </p>
+                        <p>
+                            Pero con independencia de esta cuestión metafísica de la unidad de la realidad y de las tesis que quizá quepa derivar de ella, con independencia por tanto de la pregunta que versa acerca del derecho a hacer las citadas extrapolaciones de nuestra corporalidad, sigue en pie el hecho de que sin el cuerpo y su autoexperiencia elemental, sin este punto de partida de nuestra más amplia y universal extrapolación al todo de la realidad, no podríamos obtener representación alguna de la existencia de fuerzas y efectos en el mundo, y por tanto tampoco de una concatenación activa entre todas las cosas: es decir, no tendríamos concepto alguno de naturaleza.
+                        </p>
+                        <p>
+                            El idealismo —mostrándose aquí como un fiel reflejo del materialismo— al situar de lleno al cuerpo vivo entre los objetos externos o los fenómenos de lo extenso, al comprenderlo como objeto de experiencia y no como fuente de la misma, como algo dado al sujeto en lugar de como la realidad activa-pasiva del sujeto mismo, se ha privado de la posibilidad de comprender, más allá de una regla para ordenar externamente determinadas secuencias de fenómenos, una real concatenación de las cosas según su naturaleza propia, ya en la imagen de la causalidad mecánica, ya en la imagen de la causalidad teleológica (a este respecto nada puede decir, por principio, el punto de vista trascendental). Pero sea cual sea la causalidad de que se trate, la crítica humeana estaba plenamente justificada cuando afirmaba que la causalidad no comparece en intuición alguna y que el nexo entre los <span class="text-amber-500 font-bold italic">data</span> no es a su vez un <span class="text-amber-500 font-bold italic">datum</span>, un contenido de la intuición. La fuerza no es ciertamente un <span class="text-amber-500 font-bold italic">datum</span>, sino un <span class="text-amber-500 font-bold italic">actum</span> que se hace presente al hombre en el esfuerzo. Ahora bien, el esfuerzo no es una intuición, y todavía menos una forma de la síntesis de intuiciones. La objetivación del pensamiento permanece vinculada a la intuición, por lo que no puede llegar a nada que no esté contenido en ella.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Sección VII -->
+                <section id="sec-vii" class="mb-24 scroll-mt-32">
+                    <h2 class="text-2xl md:text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">
+                        VII. RESUMEN
+                    </h2>
+                    <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify px-4 md:px-0">
+                        <p>
+                            Así, pues, la renuncia a la inteligibilidad de la vida —el precio que el conocimiento moderno creyó tener que pagar para poder abarcar la mayor parte de la realidad— parece hacer ininteligible también el mundo. Y con la reducción de la causalidad teleológica a la mecánica, por grandes que sean sus ventajas para la descripción analítica, no se ha ganado nada en lo que respecta a la comprensibilidad del nexo mismo: ambos son igual de enigmáticos desde un punto de vista <span class="text-amber-500 font-bold">«objetivo»</span>.
+                        </p>
+                        <p>
+                            Nuestras observaciones aspiraban a mostrar en qué medida el problema de la vida, y con él el problema del cuerpo vivo, deben estar en el centro de la ontología (y hasta cierto punto también en el de la teoría del conocimiento). Vida quiere decir vida material, por lo tanto cuerpo vivo, o más brevemente, ser orgánico. En el cuerpo vivo está atado el nudo del ser, que el dualismo corta, pero no desata. El materialismo y el idealismo intentan deshacer ese nudo, tirando cada uno desde un extremo del mismo, pero quedan ellos mismos presos en él. Que el problema de la vida ocupe una posición central no solo significa que posee una importancia decisiva para valorar cada una de las ontologías totales dadas, sino también que para tratar ese problema es necesario echar mano del conjunto de la ontología.
+                        </p>
+                        <p>
+                            A ese conjunto pertenecen las diferentes ontologías elaboradas hasta ahora a lo largo de la historia, por mucho que tengan más que decir sobre el planteamiento que sobre la solución del problema. Nuestras reflexiones arrojaron el resultado de que de ese testimonio ontológico del pasado que no podemos dejar de tener en cuenta no debemos excluir ni siquiera el <span class="text-amber-500 font-bold">«animismo»</span>, es decir, el monismo panvitalista de los primeros tiempos de la humanidad: no se puede decir que el principio de interpretación del ser que el animismo representa, por preconceptual que sea, esté superado por el conocimiento moderno<span class="relative inline-block footnote-ref group">
+                                <a href="#fn-3" class="text-cyan-400 font-bold cursor-pointer no-underline text-sm align-super">3</a>
+                                <span class="footnote-tooltip">
+                                    Pensemos en el pampsiquismo de un <span class="text-cyan-400 font-bold">Teilhard de Chardin</span> o (en un nivel filosófico considerablemente más alto) en la teoría de <span class="text-cyan-400 font-bold">Whitehead</span> de que toda actualidad es un modo de sentir.
+                                </span>
+                            </span>.
+                        </p>
+                        <p>
+                            Ahora bien, según hemos visto, la fase decisiva para el despliegue de nuestro problema es la constituida por el dualismo, que por lo demás representa también el giro más rico en consecuencias de la historia de las interpretaciones del ser y de sí mismo efectuadas por el hombre: bajo la larga dominación dualista, el problema planteado por la paradoja de la vida recibió su tratamiento más fuertemente antitético, y fue legado sin resolver en su forma más alejada de toda posible conciliación. Y al cabo hemos visto que de las posiciones postdualistas que recibieron unilateralmente, cada una a su manera, la herencia dualista, el materialismo disfruta de una posición de preferencia como escenario del encuentro con el problema de la vida, y presenta ese problema en una forma más inesquivable que el idealismo. También es en el materialismo donde más difícil resulta sobornar al pensador: este se enfrenta aquí con su propia negación, ya que lo que él piensa le niega como ser pensante. En cambio, al dar primacía al pensamiento, el idealista toma de antemano su propio partido, por lo que corre más peligro de olvidar un aspecto de la pregunta que el materialista.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Sección de Notas al Pie (Destino de los enlaces) -->
+                <div class="mt-24 pt-8 border-t border-slate-800 text-xs text-slate-500 font-light px-4 md:px-0">
+                    <h4 class="text-amber-500 font-bold mb-4 uppercase tracking-widest text-xs">Notas al Pie</h4>
+                    
+                    <div id="fn-1" class="mb-6 pl-4 border-l border-slate-800 hover:border-amber-500/50 transition-colors">
+                        <p class="mb-1"><span class="text-cyan-400 font-bold mr-2">1.</span> En este contexto resulta muy instructiva, por ejemplo, la polémica que <span class="text-cyan-400 font-bold">Simplicio</span>, uno de los últimos neoplatónicos, mantuvo en el siglo VI contra su contemporáneo cristiano <span class="text-cyan-400 font-bold">Juan Filopón</span>. Le acusa de blasfemar al comparar la luz del cielo con el fuego ordinario o con una luciérnaga, y el color del cielo con el de las escamas de los peces (<span class="text-cyan-400 font-bold">Simplicio</span>, en <span class="text-amber-500 font-bold italic">Arist. de caelo</span>, ed. Heiberg, pp. 88, 28 ss.; también le reprocha que, contra <span class="text-cyan-400 font-bold">Aristóteles</span>, niegue la eternidad del mundo, ibid., p. 66, 10). Se trata de una última protesta de la moribunda devoción hacia el cosmos contra el ultraje que la religión trascendente infería a la naturaleza: la reducción de su lugar jerárquico al estatus general de las meras cosas creadas. Casi mil años antes, los atenienses habían acusado a <span class="text-cyan-400 font-bold">Anaxágoras</span> de blasfemo por haber equiparado el sol a una bola caliente de metal o de piedra. Entre esos dos sucesos se extiende el auge y la decadencia de la religión cosmológica. El ataque dualista fue más radical que el naturalista de los jonios, que eran «panteístas» en potencia. El naturalismo subsiguiente al dualismo, que ya encontró realizada por este último la tarea de la desdivinización del mundo, es decir, el naturalismo moderno, tenía que ser por tanto más radical que el antiguo, anterior a esa desdivinización. Cf. a este respecto más abajo el capítulo 11, «Gnosis, existencialismo y nihilismo», así como mi obra <span class="text-amber-500 font-bold italic">Gnosis und spätantiker Geist I</span>, Göttingen, 1964, p. 176, nota 2.</p>
+                        <a href="#sec-iii" class="text-amber-500 hover:text-amber-300 text-[10px] uppercase tracking-wider">↩ Volver al texto</a>
+                    </div>
+
+                    <div id="fn-2" class="mb-6 pl-4 border-l border-slate-800 hover:border-amber-500/50 transition-colors">
+                        <p class="mb-1"><span class="text-cyan-400 font-bold mr-2">2.</span> A decir verdad, junto con la propia corporalidad viva ha de negar también la ajena. Pero dado que sólo sabemos de la conciencia ajena o del <span class="text-amber-500 font-bold">«yo»</span> a través de su corporalidad viva, y en general a través de las manifestaciones de lo extenso —para el idealista: como parte de nuestra índole fenoménica y de la síntesis que de ella efectuamos— este punto de vista solamente escapa de la Escila de la corporalidad viva para caer en la Caribdis del solipsismo, al que, por otra parte, todo idealismo consecuente tiene que conducirnos en último término. Ahora bien, a pesar de su inatacabilidad lógica, o quizá más bien a causa de ella, el solipsismo no pasa de ser un truco del pensamiento, y como punto de vista ontológico le falta seriedad: es, para decirlo de una vez, la negación de toda ontología.</p>
+                        <a href="#sec-v" class="text-amber-500 hover:text-amber-300 text-[10px] uppercase tracking-wider">↩ Volver al texto</a>
+                    </div>
+
+                    <div id="fn-3" class="mb-6 pl-4 border-l border-slate-800 hover:border-amber-500/50 transition-colors">
+                        <p class="mb-1"><span class="text-cyan-400 font-bold mr-2">3.</span> Pensemos en el pampsiquismo de un <span class="text-cyan-400 font-bold">Teilhard de Chardin</span> o (en un nivel filosófico considerablemente más alto) en la teoría de <span class="text-cyan-400 font-bold">Whitehead</span> de que toda actualidad es un modo de sentir.</p>
+                        <a href="#sec-vii" class="text-amber-500 hover:text-amber-300 text-[10px] uppercase tracking-wider">↩ Volver al texto</a>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Footer Simple -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-6 md:py-8 mt-24">
+        <div class="w-full px-4 md:px-12 flex flex-col items-center justify-center gap-2">
+            <p class="text-[10px] md:text-[11px] font-medium text-slate-400 text-center">
+                Digitalización basada en la edición impresa.
+            </p>
+            <p class="text-[9px] md:text-[10px] text-slate-600 font-mono text-center">
+                Capítulo 1 | Hans Jonas
+            </p>
+        </div>
+    </footer>
+
+</body>
+</html>
