@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dinámicas no lineales e intencionalidad | Walter J. Freeman</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #94a3b8; /* slate-400 */
+            scroll-behavior: smooth;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 70%);
+            background-attachment: fixed;
+        }
+
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Tipografía y colores específicos */
+        .person-name {
+            color: #22d3ee; /* cyan-400 - Celeste para personajes */
+            font-weight: 700;
+        }
+        
+        .key-concept {
+            color: #f59e0b; /* amber-500 - Ámbar para conceptos */
+            font-weight: 700;
+        }
+
+        /* Clase base para citas - asegura color ámbar */
+        .highlight-quote {
+            color: #fbbf24; /* amber-400 */
+            font-style: italic;
+            border-left-width: 4px;
+            border-left-color: #f59e0b;
+            padding-left: 1.5rem;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+            font-size: 1.25rem; /* text-xl */
+            line-height: 1.75rem;
+        }
+        
+        .quote-translation {
+            display: block;
+            margin-top: 1rem;
+            font-size: 1rem; /* Más pequeño */
+            font-weight: 400;
+            opacity: 0.9;
+            color: #fbbf24; /* Asegurar que la traducción también sea ámbar */
+        }
+
+        /* --- Estilos de Navegación Desktop --- */
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+            cursor: pointer;
+            display: block;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -2px;
+            left: 0;
+            background-color: #f59e0b;
+            transition: width 0.3s ease;
+        }
+        
+        @media (min-width: 768px) {
+            .nav-item:hover .nav-link::after {
+                width: 100%;
+            }
+            .nav-item:hover .dropdown-menu {
+                opacity: 1;
+                visibility: visible;
+                transform: translateX(-50%) translateY(0);
+            }
+            .dropdown-menu {
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%) translateY(10px);
+                min-width: 220px;
+                opacity: 0;
+                visibility: hidden;
+            }
+            .dropdown-menu::before {
+                content: '';
+                position: absolute;
+                top: -6px;
+                left: 50%;
+                transform: translateX(-50%);
+                border-width: 0 6px 6px 6px;
+                border-style: solid;
+                border-color: transparent transparent rgba(255, 255, 255, 0.1) transparent;
+            }
+            .dropdown-menu::after {
+                content: '';
+                position: absolute;
+                top: -20px;
+                left: 0;
+                width: 100%;
+                height: 20px;
+                background: transparent;
+            }
+        }
+
+        .dropdown-menu {
+            background-color: rgba(2, 6, 23, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease-in-out;
+            z-index: 100;
+        }
+
+        .dropdown-link {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            border-radius: 0.25rem;
+            line-height: 1.4;
+        }
+
+        .dropdown-link:hover {
+            color: #f59e0b;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        @media (max-width: 767px) {
+            #mobile-menu-container {
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+            .nav-item {
+                width: 100%;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                padding: 0;
+            }
+            .nav-item-content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.5rem;
+            }
+            .dropdown-menu {
+                position: static;
+                transform: none;
+                opacity: 1;
+                visibility: visible;
+                width: 100%;
+                box-shadow: none;
+                background-color: rgba(0, 0, 0, 0.3);
+                border: none;
+                border-top: 1px solid rgba(255,255,255,0.05);
+                display: none;
+                margin-top: 0;
+            }
+            .arrow-icon {
+                transition: transform 0.3s;
+            }
+            .nav-item.active .arrow-icon {
+                transform: rotate(180deg);
+            }
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        .mermaid .node rect, .mermaid .node circle, .mermaid .node ellipse, .mermaid .node polygon, .mermaid .node path {
+            fill: #1e293b !important;
+            stroke: #f59e0b !important;
+            stroke-width: 2px !important;
+        }
+        .mermaid .label {
+            color: #e2e8f0 !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+        .mermaid .edgePath .path {
+            stroke: #64748b !important;
+            stroke-width: 2px !important;
+        }
+        .mermaid .marker {
+            fill: #64748b !important;
+            stroke: #64748b !important;
+        }
+    </style>
+</head>
+<body class="selection:bg-amber-500 selection:text-slate-900 min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- Navegación Responsiva -->
+    <nav class="fixed w-full z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
+        <div class="w-full px-6 md:px-12">
+            <div class="flex justify-between items-center h-16">
+                
+                <!-- Logo / Marca -->
+                <a href="#" class="flex items-center space-x-2 group">
+                    <div class="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-150 transition-transform"></div>
+                    <span class="text-[10px] md:text-xs font-bold tracking-widest uppercase text-slate-200 group-hover:text-white transition-colors">
+                        O.C.V.M. <span class="text-slate-600 mx-1">|</span> Neurodinámica
+                    </span>
+                </a>
+
+                <!-- Botón Hamburguesa -->
+                <button id="menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+
+                <!-- Menú Desktop & Contenedor Móvil -->
+                <div id="mobile-menu-container" class="hidden md:flex absolute md:static top-16 left-0 w-full md:w-auto bg-slate-950 md:bg-transparent flex-col md:flex-row md:items-center overflow-y-auto md:overflow-visible max-h-[80vh] md:max-h-full transition-all">
+                    
+                    <ul class="flex flex-col md:flex-row md:items-center text-[11px] font-medium uppercase tracking-widest text-slate-400 w-full md:w-auto">
+                        
+                        <!-- 1. Introducción -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#introduccion" class="nav-link text-amber-500 hover:text-amber-400" onclick="closeMobileMenu()">01. Intro</a>
+                            </div>
+                        </li>
+
+                        <!-- 2. Historia -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#historia" class="nav-link hover:text-white" onclick="closeMobileMenu()">02. Teorías</a>
+                                <button class="md:hidden p-2 arrow-icon" onclick="toggleDropdown(this)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu md:w-48">
+                                <a href="#espiritus" class="dropdown-link" onclick="closeMobileMenu()">Espíritus Animales</a>
+                                <a href="#energia" class="dropdown-link" onclick="closeMobileMenu()">Energía Nerviosa</a>
+                                <a href="#informacion" class="dropdown-link" onclick="closeMobileMenu()">Procesamiento de Info</a>
+                            </div>
+                        </li>
+
+                        <!-- 3. Intencionalidad -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#intencionalidad" class="nav-link hover:text-white" onclick="closeMobileMenu()">03. Intencionalidad</a>
+                            </div>
+                        </li>
+
+                        <!-- 4. Neurodinámica -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#neurodinamica" class="nav-link hover:text-white" onclick="closeMobileMenu()">04. Neurodinámica</a>
+                            </div>
+                        </li>
+
+                        <!-- 5. Vinculación Social -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#vinculacion" class="nav-link hover:text-white" onclick="closeMobileMenu()">05. Vinculación Social</a>
+                            </div>
+                        </li>
+
+                        <!-- Resumen y Abstract -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <a href="#resumen" class="nav-link hover:text-white" onclick="closeMobileMenu()">Resumen</a>
+                            </div>
+                        </li>
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Script de Navegación -->
+    <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu-container');
+
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            mobileMenu.classList.toggle('flex');
+        });
+
+        function toggleDropdown(button) {
+            const navItem = button.closest('.nav-item');
+            const dropdown = navItem.querySelector('.dropdown-menu');
+            navItem.classList.toggle('active');
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            } else {
+                dropdown.style.display = 'block';
+            }
+        }
+
+        function closeMobileMenu() {
+            if (window.innerWidth < 768) {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('flex');
+                document.querySelectorAll('.dropdown-menu').forEach(d => d.style.display = 'none');
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            }
+        }
+    </script>
+
+    <!-- Contenido Principal -->
+    <div class="flex-grow pt-32 md:pt-48 pb-16 md:pb-24 w-full">
+        <main class="w-full mx-auto text-center px-4 md:px-12">
+            
+            <!-- Bloque Hero -->
+            <header class="mb-24 relative animate-fade-in-up max-w-[95%] mx-auto">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-amber-500/5 rounded-full blur-3xl -z-10"></div>
+                
+                <h1 class="text-4xl sm:text-5xl md:text-7xl font-black text-slate-100 mb-6 leading-none drop-shadow-2xl break-words">
+                    DINÁMICAS NO LINEALES E INTENCIONALIDAD<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-500 text-xl md:text-3xl block mt-8 font-serif italic tracking-[0.2em] leading-relaxed">
+                        El rol de las teorías cerebrales en las ciencias de la mente
+                    </span>
+                    <span class="block text-lg text-slate-500 mt-4 font-normal tracking-normal italic">
+                        Nonlinear Dynamics and Intentionality: The Role of Brain Theory in Sciences of the Mind
+                    </span>
+                </h1>
+                
+                <p class="mt-8 text-lg text-slate-400 font-medium tracking-wide max-w-4xl mx-auto uppercase">
+                    CAPÍTULO II - <span class="person-name">WALTER J. FREEMAN</span>
+                </p>
+                
+                <div class="mt-16 flex justify-center">
+                    <div class="h-24 w-px bg-gradient-to-b from-amber-500/0 via-amber-500/50 to-amber-500/0"></div>
+                </div>
+            </header>
+
+            <!-- Contenedor de Texto Principal -->
+            <!-- Usamos w-full y max-w-[95%] para ocupar el ancho de la ventana -->
+            <div class="w-full max-w-[95%] mx-auto text-left space-y-24">
+
+                <!-- I. Introducción -->
+                <section id="introduccion">
+                    <h2 class="text-4xl font-serif font-bold text-white mb-10 border-l-4 border-amber-500 pl-8">I. Introducción</h2>
+                    <div class="prose prose-invert prose-xl max-w-none text-slate-300 leading-loose font-light text-justify">
+                        <p>
+                            Muchas gracias al Decano de la Facultad de Ciencias Humanas y Educación, <span class="person-name">Juan Pablo Toro</span>, a la Directora de la escuela de Psicología, <span class="person-name">Pilar Torres</span> y a <span class="person-name">Agustín Ibáñez</span>, mi anfitrión. Este texto hace referencia a la relación entre <span class="key-concept">dinámicas no lineales</span> e <span class="key-concept">intencionalidad</span>. El punto crucial reside en la definición de una <span class="key-concept">teoría cerebral</span>. Esta es esencialmente un cuerpo conceptual basado en la física, química, matemática y biología que explica como billones de neuronas usan la información genética y sensorial durante la conducta dirigida de un organismo. El paso crucial en esta conducta, consiste en la creación de una <span class="key-concept">conducta intencional</span> que se mueve del dominio de la <span class="key-concept">sensación</span> al de la <span class="key-concept">percepción</span>. ¿Cómo hace el cerebro para remplazar las sensaciones con sus propias percepciones con significado? Esta es la pregunta fundamental que pretendo abordar.
+                        </p>
+                        <p>
+                            Por lo tanto, es necesario saber qué implica la <span class="key-concept">percepción</span> más allá de la <span class="key-concept">sensación</span>. La Fenomenología se ha dedicado a este tópico durante un siglo y no obtiene respuesta. El motivo se hace patente con el trabajo de <span class="person-name">Merleau-Ponty</span> (1963), en el que no se distingue sensación de percepción. Los fisiólogos, por otra parte, sí lo hacen, pero aunque son muy buenos analizando las sensaciones, no lo son igualmente para analizar los mecanismos de la percepción. Esta disyuntiva proviene de antecedentes históricos de larga data que analizaré. Primero presentaré la <span class="key-concept">teoría de los espíritus animales</span>, luego la <span class="key-concept">teoría de la energía nerviosa</span> y, por último, la <span class="key-concept">teoría del procesamiento de la información</span>, mostrando su influencia en teorías contemporáneas de la mente y el cerebro. Luego de ello, introduciré mi teoría de <span class="key-concept">neurodinámica</span> y su corolario, la <span class="key-concept">social bonding theory</span>.
+                        </p>
+                        <p class="text-sm text-slate-500 italic mt-8 border-t border-slate-800 pt-4">
+                            N del Editor: El presente texto se obtuvo a partir de la conferencia magistral del Dr. <span class="person-name">Freeman</span>, la cual fue transcripta por <span class="person-name">María Luisa Ilabaca</span>, corregida por el Dr. <span class="person-name">Freeman</span>, traducida y editada por el Dr. <span class="person-name">Agustín Ibáñez</span>. Los editores han agregado con autorización del autor diversas aclaraciones, párrafos y referencias al texto.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- II. La teoría de los espíritus animales -->
+                <section id="historia">
+                    <div id="espiritus">
+                        <h2 class="text-4xl font-serif font-bold text-white mb-10 border-l-4 border-amber-500 pl-8">II. La teoría de los espíritus animales</h2>
+                        <div class="prose prose-invert prose-xl max-w-none text-slate-300 leading-loose font-light text-justify">
+                            <p>
+                                Para describir esta teoría, se debe retornar 2400 años, hacia el tiempo de los antiguos griegos, en el que existían dos teorías antagónicas de la percepción. Una de ellas pertenecía a la escuela de <span class="person-name">Platón</span>, y sostenía que la percepción es básicamente <span class="key-concept">pasiva</span>: implica la extracción de formas del exterior, sobre las cuales la mente opera extrayendo los principios, y formas fundamentales, ideales. El ejemplo clásico es aquél de la cueva en que la luz proviene de afuera y proyecta sombras en las paredes de la cueva. Los trogloditas interpretan esas sombras y determinan las formas que producen las sombras. De esta manera, podría decirse que la información viene desde afuera corrompida por el ruido y las distorsiones de nuestros aparatos sensoriales. La tarea de la mente es básicamente la reconstrucción de <span class="key-concept">formas ideales</span>.
+                            </p>
+                            <p class="text-sm bg-slate-900/50 p-4 rounded border border-slate-800 my-4">
+                                * Esta teoría podría parecer ingenua pero está presente incluso en la operación de <span class="key-concept">redes neuronales artificiales</span> donde la entrada provee instancias de las formas ideales y el trabajo de la red consiste en promediar esta información entrante y luego construir procesos de reconocimiento de patrones. Esas operaciones son familiares a las ciencias computacionales contemporáneas.
+                            </p>
+                            <p>
+                                En oposición a la idea de percepción como un fenómeno pasivo, <span class="person-name">Aristóteles</span> la consideraba un proceso <span class="key-concept">activo</span>, que requería del trabajo continuo del cuerpo, manipulando y registrando las bases para la comprensión de las formas. El mayor error de éste consistió en sostener que el conjunto de aquellos procesos reside en el corazón, no en el cerebro. Dado que el cerebro es más frío que otras partes del cuerpo, concluyó, como físico, que debía tener una función de radiador que enfriaba la sangre. Por ello, a menudo se ha olvidado su énfasis en la primacía de la acción y la noción de <span class="key-concept">percepción activa</span>, muy similar a tendencias recientes de cognición (un ejemplo de ello son los aportes significativos de <span class="person-name">Humberto Maturana</span>, y <span class="person-name">Francisco Varela</span>, este último un científico brillante y tempranamente fallecido).
+                            </p>
+                            <p>
+                                Las teorías griegas platónicas y aristotélicas, se oponen en función de la naturaleza pasiva o activa de la percepción, pero ambas asumen la noción de que la información proviene desde afuera. Ambas teorías también influenciaron posteriores desarrollos teóricos.
+                            </p>
+
+                            <h3 class="text-2xl text-amber-500 font-bold mt-12 mb-6">LA TEORÍA DE LA PERCEPCIÓN ACTIVA TOMISTA</h3>
+                            <p>
+                                La teoría de la percepción activa fue resucitada en la Europa Medieval por <span class="person-name">Tomás de Aquino</span> (1225/1274). En su proyecto de cristianización de la doctrina aristotélica, introdujo una versión propia de la noción de intención. <span class="person-name">Tomás de Aquino</span> es el real creador de la doctrina de la <span class="key-concept">intencionalidad</span>, que concibió a través de la consideración de la percepción como un proceso interno y activo hacia afuera. La palabra latina <span class="key-concept">intendere</span> refiere a la tensión de un arco, el cual es usado para dirigir una flecha, y del cual extraemos el significado de intención. Esta noción de <span class="key-concept">intendere</span> cambió la doctrina aristotélica al sostener la unidad del individuo que no es penetrado por energía u otra cosa desde afuera. Esta tensión hacia fuera de la <span class="key-concept">percepción activa</span>, en contraste con <span class="person-name">Platón</span>, implica la operación de los sentidos como el interjuego de la luz en las propiedades de la pared. Nunca es posible situarse fuera de la cueva, la interpretación debe realizarse desde el interior por asimilación.
+                            </p>
+                            <p>
+                                Este es el significado de otra palabra latina utilizada por <span class="person-name">Santo Tomás</span>, <span class="key-concept">adecuatio</span>, siendo igual o equivalente. <span class="key-concept">Asimilación</span>, no consiste en extraer una representación desde el mundo exterior, es esencialmente la forma corporal al tomar, manipular el mundo, permitiendo la creación de información interna acerca del mundo, en base a las operaciones del cuerpo. Por ejemplo, el concepto de copa es creado por el propio cuerpo, al adecuarse la mano a la forma de la copa en una conducta intencionada de obtener bebida. No existe información transferida desde el exterior en forma de percepción de totalidades, o formas ideales. Esta es la idea en el corazón de tendencias contemporáneas conocidas como <span class="key-concept">embodied cognition</span>. Un proceso comparable en biología es la digestión, cuando consumimos diferentes alimentos. Estos son convertidos a partículas fundamentales, químicos, y luego estos son absorbidos y reconstruidos en nuestros propios órganos, músculos, huesos y sangre. Lo mismo sucede con los sentidos. Los ojos descomponen la luz en fotones capturados por receptores individuales. Nuestros oídos descomponen la música en ondas de sonido que gatillan reacciones de neuronas. Nuestro olfato descompone los olores en moléculas simples capturadas por receptores simples y trasmite trenes de descargas neuronales en axones simples. Estos procesos son el último nivel de información exterior a partir del cual, el cuerpo construye su propia experiencia. Este proceso no consiste en la importación de formas aristotélicas, ni tampoco son la gestación de formas ideales de <span class="person-name">Platón</span>, sino en la construcción de la mente al estilo Tomista.
+                            </p>
+                            <p>
+                                La idea Tomista fue el mayor paso hacia las ciencias de la mente, del cerebro y del cuerpo en los siguientes 400 años. De hecho, el significado de intencionalidad aparece tempranamente en medicina, acuñado por el cirujano italiano <span class="person-name">La Franchi</span>, para referir a <span class="key-concept">primera intención</span> cuando se introduce el curativo de la herida de una cicatriz limpia, o, a <span class="key-concept">segunda intención</span> cuando se interviene en la infección y eventual cicatrización. Intención refiere ya a la autogeneración de la cicatriz, el retorno a la integridad del organismo, la unidad del si mismo biológico... un maravilloso proceso biológico.
+                            </p>
+
+                            <h3 class="text-2xl text-amber-500 font-bold mt-12 mb-6">LA REVOLUCIÓN CARTESIANA</h3>
+                            <p>
+                                La doctrina de la percepción entendida como intencionalidad se extendió 400 años, pero fue rápidamente derrocada por la revolución cartesiana. <span class="person-name">Descartes</span> concibió las operaciones del cerebro en términos de matemáticas y las operaciones del cuerpo en términos de una máquina animal. Y de esta manera, fundó el problema de cómo el alma, que se eleva en algún sentido ideal a las formas matemáticas, interacciona con el cuerpo. Si bien él negaba la posibilidad de que la solución consistiera en la operación del alma piloteando matemáticamente el cuerpo, postulaba que existía un flujo de espíritu a través del cerebro, específicamente a través de los ventrículos y de la glándula pineal situada en la entrada del tercer ventrículo. Ella sería la válvula que controlaba el flujo de los espíritus que mediante el incremento del volumen muscular causan luego la contracción y el movimiento.
+                            </p>
+                            <p>
+                                La teoría cartesiana de los movimientos fue rápidamente descartada por fisiólogos italianos que inventaron una máquina que medía el volumen muscular, mostrando que éste no se amplificaba por el movimiento. Sin embargo, la teoría cartesiana capturó la imaginación de casi todos los científicos, debido al rol atribuido a las matemáticas. Y ello otorgó más énfasis en la consideración del cuerpo y el cerebro como una máquina mecánica. También provocó las bases del <span class="key-concept">dualismo</span> presente en textos actuales de fisiología, neurología y psiquiatría: en ellas es habitual encontrar dos formas de conducta, la conducta de reflejos, la cual es mecánicamente cartesiana y la conducta voluntaria, la cual no es explicada en términos mecánicos y requiere algo más.
+                            </p>
+                            <p>
+                                Este dualismo sentó sus bases en el plano de la investigación inicial del cerebro. Por ejemplo, son clásicas las pinturas de <span class="person-name">Christopher Wren</span>, que basadas en los cerebros de <span class="person-name">Thomas Willis</span> (1621-1675) muestran el llamado círculo de Willis, que consiste en un anillo de arterias alrededor del sector óptico del cuerpo calloso. Este sitio se consideró por mucho tiempo base de los espíritus animales y también el pináculo por donde el alma operaba sobre el cuerpo. Nuevamente esta perspectiva implicaba una división entre la ciencia del cerebro y la ciencia de la mente, porque evocaba una sustancia espiritual que no podía ser medida. Esta división recayó sobre la idea de encontrar localizaciones precisas para fenómenos mentales específicos. Fue el neuroanatomista <span class="person-name">Frank Gall</span> (1835), quien postuló que las variaciones en la superficie del cráneo respondían al desarrollo de distintos fenómenos mentales, estableciendo la ciencia de la <span class="key-concept">frenología</span>. <span class="person-name">Johan Spurzheim</span> popularizó la frenología hacia ámbitos más extensos, pero simultáneamente el descrédito por esta teoría fue total en ámbitos científicos. De esta manera la teoría de los espíritus animales, y la idea que diferentes fenómenos mentales circulaban por las vías nerviosas no encontró más apoyo de la ciencia.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- III. La teoría de la energía nerviosa -->
+                <section id="energia">
+                    <h2 class="text-4xl font-serif font-bold text-white mb-10 border-l-4 border-amber-500 pl-8">III. La teoría de la energía nerviosa</h2>
+                    <div class="prose prose-invert prose-xl max-w-none text-slate-300 leading-loose font-light text-justify">
+                        <p>
+                            Luego del desencanto de la teoría de los espíritus animales, una nueva revolución conceptual se asentó en base a un estudio. <span class="person-name">Johannes Müller</span> había publicado en 1842 que la propagación de los nervios nunca podría ser medida, dado que era infinitamente rápida como corresponde a una propiedad espiritual. Sin embargo, un joven alumno de Müller, <span class="person-name">Herman von Helmholtz</span> (cirujano neuroanatomista) se dedicó a contar meticulosamente las fibras nerviosas de las raíces dorsales y ventrales de la médula espinal. Fue entonces cuando descubrió que podía medir la velocidad de conducción eléctrica (hoy llamada potencial de acción) y así lo hizo: 28 metros por segundo en el nervio de un sapo, a temperatura ambiente. Mediante este ingenioso diseño tecnológico, probó que la transmisión nerviosa no es un espíritu animal, sino una energía que se propaga causal y mecánicamente.
+                        </p>
+                        <p>
+                            Fue el mismo <span class="person-name">von Helmholtz</span> quien sistemáticamente se dedicó a demostrar que la transmisión cerebral estaba basada en energía y no en espíritus, pero encontró un gran problema. La energía nerviosa en el cerebro es tan pequeña que no pudo medirla. A pesar de ello midió la energía de los músculos y probó lo que hoy llamamos la <span class="key-concept">primera ley de la termodinámica</span> (1847). Ella implicó la conservación de la energía. Este principio que fluye en nervios y cerebros no era un espíritu sino energía, y produjo una gran revolución en el mundo científico. Todo el mundo adoptó desde entonces una perspectiva científico-materialista en el ámbito de la indagación cerebral.
+                        </p>
+                        <p>
+                            Esta nueva visión materialista se ve plasmada en los escritos de <span class="person-name">Darwin</span>, en los que sostiene que la transmisión de energía por el nervio ocurre con total independencia de la voluntad, de forma mecánica. Esta idea fue en extremo explotada por <span class="person-name">Herbert Spencer</span>, el principal exponente de las ideas darwinianas. El escribió:
+                        </p>
+                        <blockquote class="highlight-quote text-amber-400 pl-6 border-l-4 my-8 text-2xl">
+                            "It is...an unquestionable truth that, at any moment, the existing quantity of liberated nerve-force, which in an inscrutable way produces in us the state we call feeling, must expend itself in some direction... An overflow of nerve-force, undirected by any motive, will manifestly take the most habitual routes; and, if these do not suffice, will overflow into the less habitual ones." (Spencer, 1893, p. 109).
+                            <span class="quote-translation">
+                                "Es... una verdad incuestionable que, en cualquier momento, la cantidad existente de fuerza nerviosa liberada, que de una manera inescrutable produce en nosotros el estado que llamamos sentimiento, debe gastarse en alguna dirección... Un desbordamiento de fuerza nerviosa, no dirigido por ningún motivo, tomará manifiestamente las rutas más habituales; y, si estas no son suficientes, se desbordará hacia las menos habituales."
+                            </span>
+                        </blockquote>
+                        <p>
+                            La manifestación de cualquier estado mental en cualquier momento, digamos una sensación, constituiría un cambio en la energía liberada que debía ir a alguna parte, y esto pasó a considerarse una verdad incuestionable. Por tanto, cualquier cambio mental podría ser detectado en algún canal o sensor que midiera el cambio de energía. Esta idea fue particularmente explotada por el mayor neurólogo del siglo XIX, <span class="person-name">J. Hughlings Jackson</span>, quien formuló una de los principios más importantes que hoy se usan en la neurología clínica. El definió la actividad epiléptica como una descarga anormal de energía nerviosa, la cual es normalmente controlada en la producción del movimiento y acción voluntaria. Pero lo importante fue que él consideró no sólo la cualidad de la energía, sino su tasa de liberación (Jackson, 1882). Un buen principio de ingeniería debe indicar no sólo cuánto, sino cuán rápido: ello será entonces un indicador de la dinámica. <span class="person-name">Jackson</span> se dedicó intensamente al estudio de las resistencias eléctricas que tienen que ser superadas por la energía nerviosa en el cerebro. De esta manera intuyó en el año 1882 que deberían haber conexiones con resistencias (hoy llamadas sinapsis) pero no publicó nada más al respecto. El mismo <span class="person-name">Sigmund Freud</span> avanzó un poco más en esta línea. Él escribió:
+                        </p>
+                        <blockquote class="highlight-quote text-amber-400 pl-6 border-l-4 my-8 text-2xl">
+                            "[My] approach is derived from clinical observations of 'excessively intense' ideas in hysteria... What I have in mind is the principle of neuronic inertia. It finds expression in the hypothesis of a current passing from dendrites to axon... Memory is made possible by supposing that there are resistances in contacts between the neurons that function as barriers... The hypothesis of 'contact-barriers' is fruitful in many directions." (Freud, 1893, p. 356-359).
+                             <span class="quote-translation">
+                                "[Mi] enfoque se deriva de observaciones clínicas de ideas 'excesivamente intensas' en la histeria... Lo que tengo en mente es el principio de inercia neurónica. Encuentra expresión en la hipótesis de una corriente que pasa de las dendritas al axón... La memoria se hace posible suponiendo que hay resistencias en los contactos entre las neuronas que funcionan como barreras... La hipótesis de las 'barreras de contacto' es fructífera en muchas direcciones."
+                            </span>
+                        </blockquote>
+                        <p>
+                            <span class="person-name">Freud</span> estaba trabajando con la histeria, no con la epilepsia, en donde no existe región o foco en el cerebro que explique la patología. En su formulación del principio de la neurosis por inercia describió la hipótesis de barreras de contacto (contact-barriers), que sostiene que existe una corriente que pasa de la dendrita al axón. Eso es exactamente lo que pensamos hoy en día. La memoria es posible dado que existen resistencias entre las neuronas, y la hipótesis de contacto devino aplicable en muchas direcciones. Tres años mas tarde <span class="person-name">Foster</span> y <span class="person-name">Sherrington</span> (1897) acuñaron el término <span class="key-concept">synapse</span>, fundamental para la comprensión del sistema nervioso.
+                        </p>
+                        <p>
+                            La idea de transmisión de energía a través de resistencias, barreras de contacto, o mejor dicho, sinapsis, implicó un nuevo paradigma para pensar la relación entre mente y cerebro. ¿Pero qué produjo su rápida caída? Incluso <span class="person-name">William James</span>, el fundador del pragmatismo sostenía una idea darwineana de conservación de la energía <span class="highlight-quote text-amber-400">"Consciousness shows it to be what we might expect in an organ added to steer a nervous system grown too complex to regulate itself" (James, 1897, p. 18).
+                            <span class="quote-translation mt-2 block font-normal text-sm">
+                                "La conciencia demuestra ser lo que podríamos esperar en un órgano añadido para dirigir un sistema nervioso que se ha vuelto demasiado complejo para regularse a sí mismo."
+                            </span>
+                            </span> Bella afirmación del principio de regulación de energía. Sin embargo, toda la estructura de la regulación de la energía de la neurología, neurofisiología, psiquiatría y psicología, colapsaron. Ello, debido a que parece obvio que energía nerviosa no es lo mismo que energía física. El ejemplo más simple de esto consiste en colocar dos electrodos de estimulación en el nervio de un sapo y, simultáneamente, excitar ambos. Luego se obtienen dos potenciales de acción, ellos se confrontan y se anulan, desapareciendo. Allí donde se tenía energía, ahora no hay nada. La energía física por supuesto se "ha ido" como calor, pero la energía nerviosa no se ha conservado. Fin al principio de conservación de la energía de los nervios.
+                        </p>
+                        <p>
+                            Entonces, la energía nerviosa como flujo de materia y energía en el cerebro no confirma la primera ley de la termodinámica, y el resultado produjo una catastrófica desintegración de las ciencias de la conducta. Y ustedes pueden ver esto en la transición de <span class="person-name">Freud</span> siendo un muy buen neurólogo hasta convertirse en uno de los escritores de ficción más grandes de el siglo XX. El cambio en <span class="person-name">Freud</span> ilustra una nueva y clara escisión ente la mente y el cerebro. Desapareció la posibilidad de una teoría mental centrada en el estudio del cerebro. Luego, <span class="person-name">Sir James Frazer</span>, escribió su magnífico libro <span class="key-concept">The golden bough</span>, acerca de los árboles místicos y sagrados en Roma. Esas interpretaciones fueron tomadas por <span class="person-name">Carl Gustav Jung</span> y <span class="person-name">Alfred Adler</span>, llevando la teorización de la mente hacia una maravillosa colección de cuentos de hadas sin teorización acerca del cerebro. Igualmente para el caso de los conductistas, de la mano de <span class="person-name">Watson</span> y <span class="person-name">Pavlov</span>, se popularizó el dictum "nosotros no queremos saber nada acerca del cerebro, es una caja negra, pero podemos manipularla a través del refuerzo". Aunque de facto, el conductismo fue una herramienta en extremo exitosa para quienes estábamos en neurobiología estudiando la conducta de los animales, no existía teoría allí, ni valor explicativo para la ciencia.
+                        </p>
+                        <p>
+                            En la psiquiatría, <span class="person-name">Alois Alzheimer</span> fue extremadamente exitoso por aquellos tiempos. Él dedicó muchos años investigando pacientes con distintas patologías, y muchos otros años estudiando la neuroanatomía cerebral de esas patologías. En un conjunto de pacientes, describió lo que hoy denominamos <span class="key-concept">fibrillary tangle formations</span>, que son marcadores de un tipo específico de degeneración neuronal. Igualmente, <span class="person-name">Emil Krapelein</span>, fue el responsable de la mayor taxonomía de enfermedades mentales: esquizofrenia, depresión bipolar, neurosis. Esas clasificaciones se han hiperdesarrollado en el <span class="key-concept">DSM-IV</span> como la biblia de los psiquiatras. Esta taxonomización tiene muchos parecidos con los bestiarios medievales, aunque sin teoría, dado que es investigación a-teórica. Como los conductistas, la cuestión principal consiste en como relacionar una droga con cada individuo y con cada trastorno o enfermedad. El mismo principio para la terapia electro-convulsiva de <span class="person-name">Ugo Cerletti</span>. Si algo va mal, se utiliza un shock, ello producirá mejoría. No teoría.
+                        </p>
+                        <p>
+                            He descrito brevemente el colapso de múltiples dominios luego de la desintegración de la teoría de la energía nerviosa. Pero nunca una teoría es abandonada hasta que emerge otra nueva promesa.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- IV. La teoría del procesamiento de la información -->
+                <section id="informacion">
+                    <h2 class="text-4xl font-serif font-bold text-white mb-10 border-l-4 border-amber-500 pl-8">IV. La teoría del procesamiento de la información</h2>
+                    <div class="prose prose-invert prose-xl max-w-none text-slate-300 leading-loose font-light text-justify">
+                        <p>
+                            Esta nueva teoría es actualmente conocida por casi todo lector, se pueden encontrar escritos acerca de ella todos los días. La metáfora fallida de la energía nerviosa es reemplazada por la metáfora del <span class="key-concept">procesamiento de la información neuronal</span>. El surgimiento de esta metáfora se estabilizó con la teoría de <span class="person-name">Shannon</span> (1948). Ella sostiene que la información no necesita conservarse porque el modelo teórico permite tanto la pérdida como la creación de información. Sin embargo, mostraré que es básicamente la misma metáfora subyacente. La teoría de la conservación de la energía postula una fuente de energía, en algún lugar, de donde ella proviene y hacia donde ella se dirige (ello debe ser así bajo el principio de la conservación). Además, existen canales que tienen capacidad limitada de energía. Esta capacidad limitada, esta tasa de flujo no es sino entendible mediante conceptos de temperatura y entropía. A partir de ello, se define la neg-entropía y tenemos procesamiento de la información. Esto no es, sino, vino nuevo en odres viejos.
+                        </p>
+                        <p>
+                            El actor clave en la historia del la teoría neural del procesamiento de la información no es <span class="person-name">Ramon y Cajal</span>, sino su último alumno graduado, <span class="person-name">Rafael Lorente de No</span>. Yo dudo que muchos de ustedes hayan oído hablar de él. Fue un gran neuroanatomista con una gran visión. Una vez, yo me encontraba dando una conferencia sobre el sistema olfativo, y estaba mostrando cómo mis resultados probaban el concepto de conducción en avalancha de <span class="person-name">Ramon y Cajal</span>. Esta idea sostiene que si se excitan un grupo de microcélulas, ellas excitan a otras y re-excitan las primeras en un feedback positivo, teniendo como consecuencia un incremento masivo en la actividad neuronal por feedback positivo. Pues bien, en la conferencia, un pequeño señor elegantemente vestido se levantó y dijo: "Usted está equivocado". En la conferencia no pude entender lo que él planteaba, pero luego de ella fuimos a compartir un par de cervezas y el me contó que <span class="person-name">Ramón y Cajal</span>, en 1929, le había sugerido no publicar un manuscrito que podría arruinar la carrera de <span class="person-name">Lorente de No</span> y el laboratorio mismo. En ese manuscrito, <span class="person-name">Lorente de No</span> mostraba resultados del cortex entorrinal, usando la técnica de Golgi, que sugería que, en una conexión normal, existían outputs que mostraban propagación en la dirección opuesta a los imputs de las dendritas. Él estaba introduciendo una concepción dinámica que se ilustraba con una flecha indicando <span class="key-concept">retroalimentación</span> en una misma neurona.
+                        </p>
+                        <p>
+                            El motivo que llevaba a <span class="person-name">Ramón y Cajal</span> a repudiar estos resultados era la indeterminación de la señal. Si los resultados de <span class="person-name">Lorente de No</span> eran asumidos, una neurona no podría establecer su propio input a partir de su propio output, por tanto, el sistema nervioso no podía trabajar de esa manera. Esta creencia de <span class="person-name">Ramón y Cajal</span> estaba altamente respaldada por muchos otros cientistas tales como <span class="person-name">Jackson</span>, <span class="person-name">Bartlett</span>, y los principales psicólogos de la época, incluido <span class="person-name">William James</span>. La retroalimentación era inadmisible. <span class="person-name">Lorente de No</span> me contó que él esperó hasta que su mentor falleció, en 1934, y recién entonces publicó el artículo (Lorente de No, 1934), no en una revista de anatomía, sino en una revista de fisiología alemana. La idea fue rápidamente aceptada por <span class="person-name">McCullough</span> & <span class="person-name">Pitts</span> (1943). <span class="person-name">Warren McCullough</span> fue uno de mis profesores en la Universidad de Yale. Él adoptó la noción de retroalimentación entre neuronas como la base para el cálculo neuronal, usando la propiedad de la neurona como un <em>switch</em> binario que genera pulsos on-off brindando las bases para una funcionamiento distribuido de álgebra boolena (o lógica simbólica que usa números como símbolos). La idea fue que esta estructura de feedback entre neuronas permite operaciones de lógica y también otras formas de pensamiento. Esta idea fue tomada por <span class="person-name">John von Neumann</span> (1951), quien fue el arquitecto de la computadora digital programable. La idea también fue tomada por <span class="person-name">Donald Hebb</span> (1949), un neuropsicólogo. Él, al igual que <span class="person-name">McCullough</span>, usó los diagramas de Lorente para explicar la idea de asambleas neuronales que no son otra cosa que las ahora llamadas sinapsis hebbianas. Bajo este principio <span class="person-name">Frank Rosenblatt</span> (1956) inventó el perceptrón y luego surgió un nuevo campo: las redes neuronales (neural networks). Es por ello que consideró a <span class="person-name">Lorente de No</span> como el canal por donde la nueva tecnología del procesamiento de la información se hiper-expandió como herramienta explicativa del cerebro.
+                        </p>
+                        <p>
+                            Sin embargo, posteriormente diversos problemas comenzaron a emerger. Uno de los pioneros en intuir alguno de esos problemas fue <span class="person-name">von Neumann</span>. Él escribió:
+                        </p>
+                        <blockquote class="highlight-quote text-amber-400 pl-6 border-l-4 my-8 text-2xl">
+                            "whatever the language of the brain is, it cannot fail to differ considerably from what we consciously and explicitly consider as mathematics" (van Newman, 1951, p. 81-82).
+                            <span class="quote-translation">
+                                "cualquiera que sea el lenguaje del cerebro, no puede dejar de diferir considerablemente de lo que consciente y explícitamente consideramos como matemáticas."
+                            </span>
+                        </blockquote>
+                        <p>
+                            El lenguaje del cerebro no es matemática. Descansa en paz <span class="person-name">Descartes</span>. Y la razón, sostuvo, es que el cerebro no trabaja con la diestra capacidad lógico-aritmética de las computadoras. Una computadora puede resolver un problema complejo y ella lo resolverá a través de muchos pasos secuenciales con una muy alta precisión. Pero los cerebros resuelven los mismos problemas en muchos menos pasos. No hay números en el cerebro. Similarmente, <span class="person-name">Claude Shannon</span> escribió que el principal problema de la comunicación informática consiste en cómo reproducir un mensaje, no cómo generarlo o significarlo (Shannon, 1948). Frecuentemente los mensajes tienen significado, y a veces los aspectos semánticos son irrelevantes para un problema ingenieril. Y he allí el gran dilema: porque el significado es crucial para nosotros, no la información.
+                        </p>
+                        <p>
+                            Mientras yo realizaba mi postdoctorado en UCLA, la teoría de la información ya se aplicaba a todos los dominios de la investigación cerebral, aunque también ya eran patentes sus problemas. <span class="person-name">Shannon</span> fue invitado a la Universidad para explicar cómo debía ser usada la teoría en este ámbito. Su mensaje fue claro:
+                        </p>
+                        <blockquote class="highlight-quote text-amber-400 pl-6 border-l-4 my-8 text-2xl">
+                            "No lo intenten, la teoría de la información es irrelevante para el funcionamiento cerebral. Tu no tienes códigos pre-existentes en el cerebro con los cuales reconstruir y reproducir un mensaje, y no existe nada en la teoría de la información que iguale la capacidad de generalización y abstracción que existe en los cerebros".
+                        </blockquote>
+                        <p>
+                            Sin embargo, muchas personas no escucharon su mensaje.
+                        </p>
+                        <p>
+                            Hoy en día es fácil observar el uso desenfrenado y contradictorio de la teoría de la información por parte de fisiólogos y psicólogos quienes buscan en el cerebro los "centros" de información. Mi ejemplo favorito es un estudio en el cual la resonancia magnética funcional fue utilizada para determinar dónde es efectuado el procesamiento matemático en hombres y mujeres. Los resultados muestran un punto activado en el lóbulo frontal izquierdo en el caso de los hombres, y dos puntos activos en ambos lóbulos frontales en al caso de las mujeres. Los autores esbozan dos posibles conclusiones al respecto: una es que los hombres son más inteligentes que las mujeres porque pueden resolver la tarea con sólo un hemisferio; y la otra es que las mujeres son más inteligentes que los hombres porque su cerebro trabaja más cooperativamente. Bien, ¿ello suena familiar? Ciertamente, no es sino un renacimiento de una nueva <span class="key-concept">neo-frenología</span>, mediante la localización de módulos especializados, esta vez no a partir de tumbos en la cabezas (como la frenología proponía estudiar) sino mediante puntos rojos en la resonancia magnética funcional. Este uso de la teoría de la información no es sino otro fin próximo de otra gran teoría. Si bien en los últimos años ha habido un considerable desarrollo en este ámbito y dado que los investigadores no quieren encontrar sólo puntos rojos activos, sino redes de puntos activos, ha habido cierto desarrollo mediante método de fusión tecnológica. Pero en el mejor de los casos, es avance de la investigación sin realmente nuevos hechos. Algo esencial se está perdiendo en la teoría de la información.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- V. El valor de la intencionalidad como rasgo esencial de los organismos -->
+                <section id="intencionalidad">
+                    <h2 class="text-4xl font-serif font-bold text-white mb-10 border-l-4 border-amber-500 pl-8">V. El valor de la intencionalidad como rasgo esencial de los organismos</h2>
+                    <div class="prose prose-invert prose-xl max-w-none text-slate-300 leading-loose font-light text-justify">
+                        <p>
+                            Existe un co-desarrollo muy importante a lo largo de los siglos XV al XX, gestado por filósofos, quienes jugaron un rol menos directo en la conceptualización entre cerebro y mente. Particularmente, el trabajo de <span class="person-name">Tomás de Aquino</span>, quien fundó una contrarrevolución al reformular la teoría cartesiana en base a la reedición de Aristóteles. En esta empresa el concepto esencial fue el de <span class="key-concept">intencionalidad</span>, tomándolo de Aristóteles y dándole una nueva forma. Este concepto ya había sido primeramente re-introducido por <span class="person-name">Franz Brentano</span> (1895), con la siguiente pregunta: ¿Cuál es la diferencia entre una máquina que realiza una tarea y que no sabe que la está haciendo, y una tarea que es realizada por humanos? Los seres humanos tienen intención, que implica cierto grado de entendimiento de lo que se está haciendo. Este punto fue tomado por <span class="person-name">Husserl</span>, y luego llevado a la filosofía, hoy conocida como <span class="key-concept">fenomenología</span>, la cual está ampliamente basada en la noción de significado (como representación), y en qué representa este significado, a qué refiere. Este último punto fue discutido formalmente por <span class="person-name">Heidegger</span> (1962), quien afirmaba poseer un concepto de intencionalidad propio, pero en realidad era una reproducción directa de la intencionalidad de <span class="person-name">Tomás de Aquino</span>.
+                        </p>
+                        <p>
+                            Los trabajos tardíos de <span class="person-name">Merleau-Ponty</span> (1963), se acercaron mucho más al pensamiento tomista original en base a la idea de "arco intencional" en la búsqueda de lo que él llamaba máxima tensión, que refiere al punto neurálgico de la intención: la asimilación del mundo por el empuje "hacia fuera" de la intención. Esta fue su afirmación al final de una conferencia de tres días en Francia, luego de que un asistente le preguntara por el núcleo central de sus afirmaciones. Su respuesta fue la siguiente:
+                        </p>
+                        <blockquote class="highlight-quote pl-6 border-l-4 my-8 text-2xl">
+                            "Intencionalidad es percibir, es hacer presente algo a uno mismo a través del cuerpo, las cosas lamentablemente mantienen su lugar en el horizonte perceptual del mundo, la estructuración de esa percepción consiste en colocar cada detalle en el horizonte perceptual en el que se sostiene".
+                        </blockquote>
+                        <p>
+                            En la conferencia nadie entendió su respuesta. ¿Qué quiso él decir? La postura de <span class="person-name">Merleau-Ponty</span>, es muy cercana a la de <span class="person-name">Tomás de Aquino</span>. Hoy día existen dos colegas míos en Berkeley llamados <span class="person-name">John Searle</span> y <span class="person-name">Hubert Dreyfuss</span>, que representan dos principales posturas fenomenológicas actuales. Para <span class="person-name">Searle</span> (1991, 1992), intencionalidad refiere a lo que él llama <span class="key-concept">"aboutness"</span>...si Ud. piensa en algo, o tiene una creencia, es sobre algo, refiere a algo en el exterior. Y el gran problema entonces de la consciencia es la relación interna de la intencionalidad con los objetos en el exterior. <span class="person-name">Dreyfuss</span> (1990), mucho más cercano a <span class="person-name">Heidegger</span> (1962) y <span class="person-name">Merleau-Ponty</span> (1963), en su idea de intencionalidad como <span class="key-concept">cognición corporeizada</span> (embodied cognition) la define como la operación del cuerpo a través del cual se logra una clase de unión o completitud entre el actor y el acto, disolviendo los límites entre sujeto y objeto. Esta definición es muy cercana a la tomista que consiste en la combinación y asimilación a través de la acción y se aleja de la definición de Searle basada en el "aboutness", que conlleva una perspectiva representacional implícita.
+                        </p>
+                        <p>
+                            Mi propia perspectiva de la intención se acerca directamente a la génesis del significado que se produce a través de la acción del cuerpo en un ambiente específico y sigue la línea tomista de la generación desde la intención hacia las cosas. Básicamente en esta perspectiva, la intención posee tres propiedades:
+                        </p>
+                        <ul class="list-none pl-6 space-y-6 my-8 ml-4">
+                            <li class="border-l-2 border-amber-500 pl-4">
+                                <span class="text-amber-500 font-bold block mb-2">(a) Unidad (Unity)</span>
+                                que permite distinguir sí mismo de no-sí mismo, y es algo que poseen los organismos vivos a todos los niveles, principalmente los organismos multicelulares con sistemas inmunológicos, los cuales son procesos de integridad del sí mismo.
+                            </li>
+                            <li class="border-l-2 border-amber-500 pl-4">
+                                <span class="text-amber-500 font-bold block mb-2">(b) Totalidad (wholeness)</span>
+                                Esta idea refiere a las propiedades organísticas de la intencionalidad, la que mejor se expresa como circularidad causal, por ejemplo, cuando una herida tiende a cicatrizar como una propiedad auto-causal del organismo.
+                            </li>
+                            <li class="border-l-2 border-amber-500 pl-4">
+                                <span class="text-amber-500 font-bold block mb-2">(c) Finalmente la direccionalidad (intent)</span>
+                                la cual hace referencia a la propiedad clásica de la intencionalidad, su direccionalidad hacia un estado u objetivo futuro. Esta propiedad del sí mismo implica la dirección (corticalmente dirigida) de la intención hacia un ambiente particular, y sólo los cerebros poseen esta capacidad.
+                            </li>
+                        </ul>
+                        <p>
+                            Estas propiedades de la intencionalidad son relevantes en los organismo biológicos, de forma particular en los organismos más complejos. Cuando leí a los fenomenólogos, particularmente a <span class="person-name">Heidegger</span> y <span class="person-name">Merleau-Ponty</span>, pero tambíen <span class="person-name">John Searle</span> y <span class="person-name">Hubert Dreyfuss</span>, no entendía a lo que ellos referían hasta que pude integrar sus perspectivas dentro de mis propias preguntas acerca del cerebro, y advertí algo que <span class="person-name">Paul Valery</span> había mencionado:
+                        </p>
+                        <blockquote class="highlight-quote text-amber-400 pl-6 border-l-4 my-8 text-2xl">
+                            "I have already explained what I think of literal representation; but one cannot insist enough: there is no true meaning of a text. No author's authority. Whatever he may have wanted to say, he wrote what he wrote. Once published, a text is like an implement that everyone can use as he chooses and according to his means: it is not certain that the maker could use it better than someone else." (Valery, 1957, p. 231).
+                            <span class="quote-translation">
+                                "Ya he explicado lo que pienso de la representación literal; pero no se puede insistir lo suficiente: no hay un verdadero significado de un texto. Ninguna autoridad del autor. Cualquiera que sea lo que haya querido decir, escribió lo que escribió. Una vez publicado, un texto es como un implemento que cada uno puede usar como elija y según sus medios: no es seguro que el creador pudiera usarlo mejor que otro."
+                            </span>
+                        </blockquote>
+                        <p>
+                            Recuerdo una situación en una de mis clases de fisiología respecto al siguiente comentario: No existe significado en las palabras, ellas son simplemente ondas de sonido que viajan, u ondas de luz que provienen de alguna página de un texto. Un estudiante me preguntó: "¿Dr. Freeman, Ud. sostiene que no existe significado en lo que está diciendo?". Yo respondí que sí, pues lo único que él recibe de mí son fotones y fonemas. No existe significado en esas formas de onda, usted tiene que darles forma en su mente. Pero ciertamente el significado tampoco es algo que yo tenga encapsulado en mi cabeza... la respuesta: comunicación entre seres intencionales". Por ello, yo no entendía a <span class="person-name">Merleau-Ponty</span> hasta que yo realmente sabía (construía) lo que él estaba tratando de decir.
+                        </p>
+                        <p>
+                            Y esta idea de la intencionalidad jamás puede ser entendida en términos de procesamiento de la información. Pero sí en términos de la <span class="key-concept">neurodinámica</span>.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- VI. La teoría de la neurodinámica no-lineal -->
+                <section id="neurodinamica">
+                    <h2 class="text-4xl font-serif font-bold text-white mb-10 border-l-4 border-amber-500 pl-8">VI. La teoría de la neurodinámica no-lineal</h2>
+                    <div class="prose prose-invert prose-xl max-w-none text-slate-300 leading-loose font-light text-justify">
+                        <p>
+                            Existe una diferencia distintiva en la tecnología desde la cual nosotros nos aproximamos al estudio del cerebro desde la neurodinámica con respecto a la tecnología usada por el marco del procesamiento de la información. La herramienta principal de las teorías de procesamiento de la información son los microelectrodos que registran la acción de potenciales de acción, los cuales son pulsos, bits, ceros o unos, a partir de los cuales elaboramos redes discretas de procesamiento de la información. Por ello las poblaciones de neuronas masivamente interconectadas no consisten en transmisiones discretas ni lógicas, sino masivas. Los cerebros no son buenos en extraer procesos lógicos, pero lo son para manejar significados. Las redes neuronales artificiales no poseen esta propiedad de significación.
+                        </p>
+                        <p>
+                            Observe usted que los potenciales de campo (field potentials) implican principalmente dendritas, no axones (a diferencia de los microelectrodos y las técnicas de tinción que brindan información axonal). De hecho, las dendritas consumen el 95% de la energía que el cerebro utiliza. Este es un órgano con sólo el 15% de la masa corporal que consume cerca del 20% de energía del cuerpo. Y el 95% de ello va a las dendritas. Los axones son simples mensajeros enviando impulsos de un lugar a otro. Por ello es que las actuales técnicas de electroencefalografía que recogen principalmente la actividad de las dendritas, son buenas herramientas para estudiar los <span class="key-concept">campos de activación</span>.
+                        </p>
+                        <p>
+                            El primer inicio temprano de la consideración del cerebro como un campo de activación electromagnético fue gestado por <span class="person-name">Wolfgang Köhler</span> (1940), que se dedicó durante los años de la Segunda Guerra en las Islas Canarias a estudiar la percepción de los chimpancés. Su principal conclusión fue que una teoría de la percepción debía ser una <span class="key-concept">teoría de campo</span> (Field theory). Sin embargo, él pensaba que la función de campo de activación de la percepción estaba localizada en un medio continuo. Ello implicó un rápido y fatal inicio de la field theory. <span class="person-name">Köhler</span> cometió lo que <span class="person-name">Ryle</span> (1949) llamaría un "error categorial", al confundir una propiedad de una entidad con la totalidad de esa entidad. <span class="person-name">Köhler</span> se dedicó a estudiar las propiedades del nuevo EEG como vehículo de los campos de activación. En esta empresa confundió los campos de activación del EEG con los campos de activación de la percepción. Este error fue rápidamente evidenciado por <span class="person-name">Roger Sperry</span>, quien interrumpió la vía de la corteza visual de gatos con secuencias de mica, las cuales debían alterar el campo de activación del EEG, aunque ello no sucedió. Igualmente <span class="person-name">Sperry</span> colocó agujas de plata en la corteza visual de gatos y macacos (a fin de alterar el campo electromagnético de la corteza) y no observó alteraciones perceptuales en los animales. Ahora sabemos que él no utilizó estimulación suficientemente profunda, en donde existe una gran organización en el cortex, y por ende, la teoría de los campos de activación no fue adecuadamente abordada. Por otra parte, el trabajo reciente de <span class="person-name">Paul Bach-y-Rita</span> y sus colaboradores (Bach-y-Rita, 2005; Danilov, Tyler, Bach-y-Rita, 2004, véase también Freeman, 2005), en sustitución sensoria ha mostrado que con tan sólo el 2% de la superficie cortical (tanto sensorial como motora) es suficiente para desempeñar las principales funciones sensoriales. Ciertamente en el bulbo olfatorio se puede extraer cerca del 95% al 98% de tejido (preservado las entradas y salidas) y es posible mantener las funciones olfativas básicas. Por lo tanto, <span class="person-name">Sperry</span> demostró la inviabilidad de la teoría de campo del EEG como un correlato de los campos de activación perceptuales, pero ciertamente no rechazó la teoría de campo.
+                        </p>
+                        <p>
+                            Pues bien, cual es el principal problema de la teoría del procesamiento de la información: <span class="key-concept">Generalización</span>. <span class="person-name">Carl Lashley</span> mientras trabajaba estudiando las propiedades del tejido cortical organizado lo afirmó claramente:
+                        </p>
+                        <blockquote class="highlight-quote text-amber-400 pl-6 border-l-4 my-8 text-2xl">
+                            "Generalization is one of the most primitive basic functions of organized nervous tissue. Nerve impulses are transmitted through definite cell-to-cell connections. Yet all behavior is determined by masses of excitation. The problem is universal in all activities of the nervous system." (Lashley, 1950, p. 303).
+                            <span class="quote-translation">
+                                "La generalización es una de las funciones básicas más primitivas del tejido nervioso organizado. Los impulsos nerviosos se transmiten a través de conexiones definidas de célula a célula. Sin embargo, todo comportamiento está determinado por masas de excitación. El problema es universal en todas las actividades del sistema nervioso."
+                            </span>
+                        </blockquote>
+                        <p>
+                            Ciertamente, el impulso eléctrico es trasmitido a través de las comunicaciones celulares (que son las sinapsis). Pero esta actividad es ampliamente definida por grandes masas neuronales, que responden a <span class="key-concept">campos de activación</span>. El problema es ¿cómo coordinar toda esta actividad? La respuesta está a la mano hoy día. Mediante el uso de las dinámicas no-lineales para abordar los campos de activación neuronales, puede resolverse el dilema de <span class="person-name">Lashley</span>.
+                        </p>
+                        <p>
+                            Ahora les presentaré un par de ejemplos. El estudio del <span class="key-concept">bulbo olfativo</span> (Freeman, 1987), y su posterior simulación matemática, pueden considerarse el prototipo de esta teoría. En un experimento diseñado por <span class="person-name">Skarda</span> y <span class="person-name">Freeman</span> (1987), 30 conejos fueron condicionados a emitir una señal en respuesta a un odorante y no hacerlo en respuesta a un odorante incondicionado. Se registró la actividad cerebral mediante electro-encefalograma, utilizando una plantilla de 8x8 electrodos crónicamente implantados, espaciados entre 0.5 mm; abarcando el 20% de la superficie del bulbo olfativo. El análisis de los patrones de EEG mostró que la dinámica espacio-temporal antes del condicionamiento era homogénea para todos los odorantes. No se observaron cambios cuando los odorantes no reforzados fueron presentados, pero nuevos patrones emergieron con los odorantes reforzados. Mientras no se efectuara un nuevo condicionamiento, los patrones espaciotemporales mantuvieron su nueva dinámica. El aprendizaje del animal no es sobre un estímulo externo particular, sino que es aprendizaje sobre una situación como totalidad. Es un cambio contextual complejo lo que produce la modificación de los patrones. Los resultados del EEG en forma de patrones espaciotemporales mostraban actividad no-lineal basal. Cuando el animal reconocía un odorante previamente aprendido se producía una drástica transición, haciendo que el patrón cambiara su dinámica espaciotemporal. Este patrón se interpretó como un estado cuasi-periódico, con <span class="key-concept">caos bajo-dimensional</span>. Cada odorante significativo para el animal poseía un particular patrón de campo espaciotemporal con descargas en fase a una particular frecuencia.
+                        </p>
+                        <p>
+                            En dicho experimento, la actividad no-lineal fue propuesta como la forma básica de la actividad neural colectiva para todo proceso perceptual, a manera de una actividad basal que permite el aprendizaje y acceso de patrones espaciotemporales asociados a memoria. <span class="person-name">Skarda</span> & <span class="person-name">Freeman</span> afirmaron: <span class="highlight-quote text-amber-400">"the form in which sensory information is represented in the olfactory bulb is a spatial pattern of chaotic activity covering the entire bulb" (1990, p. 170).
+                            <span class="quote-translation mt-2 block font-normal text-sm">
+                                "la forma en que la información sensorial se representa en el bulbo olfativo es un patrón espacial de actividad caótica que cubre todo el bulbo."
+                            </span>
+                            </span> Los resultados de este experimento me condujeron a pensar que el cerebro no se comporta como un receptor pasivo de actividad perceptual basada en información, sino por el contrario, el cerebro construiría el significado de los eventos según su propia actividad en curso e histórica.
+                        </p>
+                        <p>
+                            En base a este fenómeno construí un modelo de ecuaciones diferenciales no lineales que simula la actividad basal caótica que permite la emergencia de patrones espaciales que responden a odorantes específicos. Los receptores sólo facilitan la formación de asambleas neuronales. Durante la inhalación, todas las neuronas bulbares (no sólo los receptores) son coactivadas, predisponiendo la actividad del bulbo a un cambio de estado. Los receptores desestabilizan el bulbo, al aumentar la interacción global, lo que favorece una transición hacia un estado global nuevo. En este estado, la información transmitida por cada neurona es diseminada en todo el bulbo formando patrones espaciotemporales. Esos patrones son enviados hacia la corteza para ser asociados a memoria y aprendizaje si son biológicamente relevantes, sólo la información relevante no es destruida en la dinámica. Después de la exhalación, el bulbo retorna a un estado de no-linealidad de bajo nivel hasta nuevas interacciones. De esta manera la dinámica no-lineal actúa como un factor que permite desestabilizar al sistema rápidamente (Skarda & Freeman, 1990). Los trabajos originarios del bulbo olfatorio fueron sucesivamente replicados (Freeman & Barric, 2000, 2000). Posteriormente, la investigación se extendió a otros sistemas sensoriales (visual, auditivo y somatosensorial; Freeman, 2003) y a otros animales. Se realizaron estudios de EEG (Freeman & Barric 2000, Freeman, Burks & Holmes, 2003), y se estudió los patrones mesoscópicos en la percepción multisensorial (Freeman, Gaál & Jörsten, 2003). Se postularon transiciones de fase globales inter-hemisféricas asociadas a percepción (Freeman & Rogers, 2003), entre otros resultados.
+                        </p>
+                        <p>
+                            Lo importante de estos experimentos es que lo que se logra es un aprendizaje acerca de un estímulo particular en una situación con una historia del organismo particular. Por primera vez entonces, puede demostrarse que lo que tenemos en el campo de activación neural se corresponde con el aprendizaje perceptual del animal. Si bien la sensación es transmitida por los receptores, la energía que estos producen es remplazada por los potenciales de acción que representa el impacto del estímulo en la actividad del animal. ¿Pero luego qué sucede? El paso siguiente consiste en la creación de un patrón que reemplaza la representación del estímulo. Y no es más una representación en el sentido clásico, es el conocimiento del animal según su historia evolutiva, es <span class="key-concept">intencionalidad</span>.
+                        </p>
+                        <p>
+                            Ahora, yo quisiera dejar en claro que la distinción que estoy sosteniendo es entre sensación y percepción. No es un problema acerca de la relación del alma y el cuerpo, lo nervioso y lo mental, la neurona y el pensamiento. Mi intención no es plantear relaciones causales entre cerebro y mente. Ello es para mi algo sin sentido, inviable, sólo una continuidad de la dualidad cartesiana entre sujeto y objeto. Mi interés es sobre la distinción entre un simple evento y la constitución abstracta de una categoría de conocimiento, la relación entre generalización y abstracción. Esa es la diferencia entre <span class="key-concept">sensación</span> y <span class="key-concept">percepción</span>. Y es la diferencia entre representación e intención. A nivel neurofisiológico es la diferencia entre una perturbación externa, estímulos que son registrados brevemente como representaciones y la acción del organismo que remplaza esta simple estimulación en un patrón auto-organizado. Este corresponde a los "raw sense data" de los psicólogos, a los fantasmas de la doctrina tomista y su relación con la percepción (las especies inteligibles). Las perturbaciones ambientales sólo son los potenciales evocados presentes en la actividad auto-organizada de fondo.
+                        </p>
+                        <p>
+                            La teoría de la neurodinámica no-lineal del cerebro confirma la propuesta de <span class="person-name">Santo Tomás</span>, que por su claridad y relevancia es para mí el mejor de los filósofos. Esta teoría también confirma la perspectiva de los nominalistas, principalmente <span class="person-name">David Hume</span>, quien sostuvo que la única forma en la que podemos entender los universales consiste en aceptar su existencia no en el mundo, sino en la acción de la mente. Mi conclusión es que el conocimiento de un animal (incluidos nosotros mismos) no es una representación del mundo, es la propia actividad creativa de nuestros cerebros en acción. Es un proceso de creación continuo, y usted no puede inyectar conocimiento en los cerebros.
+                        </p>
+                        <p>
+                            Pero, sin embargo, yo quisiera decir unas pocas palabras acerca de los procesos de vinculación social, dado que no sólo son importantes para los psicólogos, sino porque yo creo que la vinculación social es un aspecto crítico de nosotros mismos. Los cerebros construyen su dinámica intencional, la fundación del aprendizaje por experiencia, aquello sobre lo que los fenomenólogos se interesan. Pero el conocimiento no es un proceso aislado, como sucede con algunos estudiantes de doctorado que parecen poseer el "síndrome del graduado". Ello consiste en sumergirse progresivamente en su propio y cada vez más complicado campo de estudio, en el que aprenden más y más acerca de menos y menos, y finalmente no pueden siquiera conversar con las personas de la siguiente puerta del laboratorio. El aprendizaje es un fenómeno social.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- EL COROLARIO DE LA NEURODINÁMICA: LA TEORÍA DE LA VINCULACIÓN SOCIAL -->
+                <section id="vinculacion">
+                    <h2 class="text-4xl font-serif font-bold text-white mb-10 border-l-4 border-amber-500 pl-8">EL COROLARIO DE LA NEURODINÁMICA: LA TEORÍA DE LA VINCULACIÓN SOCIAL</h2>
+                    <div class="prose prose-invert prose-xl max-w-none text-slate-300 leading-loose font-light text-justify">
+                        <p>
+                            Nosotros podemos usar neurodinámicas no lineales para entender y modelar la emergencia del entendimiento entre individuos, que consiste en compartir experiencias y conocimiento. Esto es lo que nosotros tenemos en común. Y por ello necesitamos conocer la dinámica de la socialización y la vinculación. Existe un proceso altamente no reconocido en los diversos ámbitos, y es aquel que yo llamaría <span class="key-concept">"desaprendizaje"</span> (unlearning), que sucede cuando los individuos tienen que redirigir sus propios aprendizajes en un ambiente común, compartido. Este proceso de desaprendizaje ya fue reportado por <span class="person-name">Ivan Pavlov</span>, el cual lo llamó <span class="key-concept">Inhibición transmarginal</span> (transmarginal inhibition), que refiere a la activación del sistema nervioso hasta un punto en el que se detiene y eventualmente colapsa. En versiones extremas de este fenómeno un organismo puede perder toda su cognición, lenguaje, o conciencia. En versiones moderadas de Inhibición transmarginal las personas pueden recuperarse y volver a poseer antiguos aprendizajes. Pero también pueden adquirir nuevos aprendizajes y creencias. Esto fue lo que <span class="person-name">George Orwell</span>, en su libro <span class="key-concept">1984</span>, describió en forma de un proceso de terror y convergencia. <span class="person-name">Sargant</span> (1957), también describió la relación entre este fenómeno pavloviano y lo que el llamó "lavado de cerebro". Él se refería al evangelismo de los siglos XVIII-XIX en Inglaterra y Estados Unidos de América, el cual usaba este fenómeno como una técnica de ingeniería social para crear formas de vinculación. Emociones básicas e intensas, estimuladas por el canto, la danza, el frenesí y el miedo, predisponían a los sujetos para aceptar y cambiar creencias religiosas o sociales. Este es un fenómeno muy popular en la antigua Carolina del Norte, en la que la Inhibición transmarginal hacía cambiar el miedo a los demonios por el miedo a reptiles y serpientes. En diversos contextos de la vida moderna, el fenómeno descrito estuvo presente creando sentido de comunidad en muchas fraternidades, sociedades, logias o agrupaciones. Los militares ponen en acción este fenómeno en los campos militares, a través del entrenamiento corporal combinado con el espíritu militar, la alianza ciega y la obediencia a las órdenes. Equipos de deportes, la escuela de medicina, la escuela de leyes, las corporaciones están basadas en lo mismo, como el caso del famoso Enron Corporation, que desarrolló un mito corporativo. En todos estos ejemplos se ilustra un proceso casi universal de socialización y vinculación.
+                        </p>
+                        <p>
+                            La genética y neuroquímica de la socialización ha evolucionado en mamíferos que requieren un largo cuidado por parte de sus progenitores. Realmente existe un proceso neuroquímico a la base de la vinculación, que proviene de nuestros ascendentes mamíferos. El primer cambio primordial de un mamífero, de cría a adulto, requiere la eliminación selectiva de aprendizajes previos para permitir nuevas conductas y aprendizajes sociales. En los mamíferos la diferencia fundamental está marcada por la <span class="key-concept">oxitocina</span> y <span class="key-concept">vasopresina</span>. Todos nos hemos familiarizado con las complejas operaciones cerebrales del aprendizaje y estas neurohormonas que poseen un rol muy importante en la disolución de las conexiones neuronales, promoviendo nuevas conductas sociales. Es evidente observar que la incuestionable evolución de la raza humana, en los últimos tres millones de años, ha estado basada en la socialización. El cerebro es primordialmente un órgano social, un órgano para permitir asociarse entre personas, y no sólo para aprender. Aprendizaje es esencial, pero es una operación neuronal de la que sabemos poco, y es por ello que sostengo que la neurodinámica puede ser una nueva puerta, que integra, además, el aprendizaje con la socialización desde la niñez a la adultez y en diversas formas de socialización (Freeman, 2003).
+                        </p>
+                        <p>
+                            Mi conclusión es entonces que nosotros podemos usar la teoría cerebral para explicar cómo los cerebros construyen su conducta intencional (Freeman, 1995), algo que ha sido descuidado por los filósofos (claramente ellos refieren sobre la conducta intencional, pero no ha sentado las bases para una aproximación científica de ella). Esta nueva teoría del cerebro abre incluso una nueva vía para entender los aspectos éticos de la conducta (Freeman, 2003).
+                        </p>
+                        <p>
+                            Ese es esencialmente mi mensaje. En mi libro <span class="key-concept">How Brains Make Up Their Minds</span>, pueden encontrar en detalle esta propuesta. Este trabajo ha sido financiado por el NIMH (MH-06686), ONR (N00014-93-1-09380, y NSF (EIA-0130352). Deseo también agradecer a mis colaboradores en el registro de EEG y EMG <span class="person-name">Mark D. Holmes</span> y <span class="person-name">Sampsa Vanhatalo</span>, en el EEG clínico al Harborview Hospital, University of Washington, Seattle, y al equipo de análisis de datos del departamento de Biología celular y Molecular de la University of California at Berkeley. El procesamiento tardío y la programación computacional fueron realizados por <span class="person-name">Linda Rogers</span> y <span class="person-name">Brian Burke</span>. Los datos de animales fueron obtenidos con la ayuda de <span class="person-name">John Barrie</span> y <span class="person-name">Gyöngyi Gaál</span>. Y gracias al auditorio por su paciencia y compañía.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Resumen y Abstract -->
+                <section id="resumen" class="grid grid-cols-1 md:grid-cols-2 gap-12 bg-slate-900/40 p-8 md:p-12 rounded-xl border border-white/5 shadow-xl backdrop-blur-sm">
+                    <div>
+                        <h3 class="text-amber-500 font-bold uppercase tracking-widest text-xs mb-6 border-b border-slate-800 pb-2">Resumen</h3>
+                        <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify">
+                            <p>
+                                ¿Cuál es la relación entre la <span class="key-concept">conducta intencional</span> y las <span class="key-concept">teorías del cerebro</span>? En este capítulo se argumenta que la teoría de la <span class="key-concept">neurodinámica no-lineal</span> del cerebro posee las herramientas necesarias para abordar la intencionalidad y, de esta manera, fundar una nueva base para las ciencias de la mente, incluyendo la conducta social y ética. Para ello se realiza un breve recuento histórico de distintas teorías cerebrales, de los griegos hasta la actualidad. Primero se presenta la teoría de los espíritus animales, luego la teoría de la energía nerviosa, y finalmente la teoría del procesamiento de la información, mostrando su influencia en teorías contemporáneas de la mente y el cerebro. Luego se introduce la teoría de la neurodinámica y su corolario, la teoría de la vinculación social. Finalmente, se esbozan algunas conclusiones acerca de la neurodinámica no lineal.
+                            </p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-amber-500 font-bold uppercase tracking-widest text-xs mb-6 border-b border-slate-800 pb-2">Abstract</h3>
+                        <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify italic">
+                            <p>
+                                ¿What is the relationship between intentional behaviour and brain theories? In this chapter is suggested that the Theory of Non-linear Neurodynamics has the conceptual and practical tools necessary to assess the intentionality, giving the bases for the foundation of the sciences of the mind, including social and ethical behaviour. In order to assess this affirmation, a historical review is presented, from the Greeks to the current theories. First is presented the animal spirits theory, then nervous energy theory and finally the information processing theory, showing its influence in the current cognitive and brain theories. After that the nonlinear neurodynamics brain theory is introduced and its corollary, the social bonding theory. Finally, some conclusions about the neurodynamics are presented.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Footer Simple -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-6 md:py-8 mt-24">
+        <div class="max-w-full mx-auto px-6 md:px-12 flex flex-col items-center justify-center gap-2">
+            <p class="text-[10px] md:text-[11px] font-medium text-slate-400 text-center">
+                Extracto digitalizado de "Nuevos enfoques de la cognición".
+            </p>
+            <p class="text-[9px] md:text-[10px] text-slate-600 font-mono text-center">
+                O.C.V.M. | Walter J. Freeman | Agustín Ibáñez | 2025
+            </p>
+        </div>
+    </footer>
+
+</body>
+</html>
