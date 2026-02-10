@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capítulo 9 - Francisco J. Varela</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- MathJax para Ecuaciones -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: { 950: '#020617' }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 1.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(15px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        html { scroll-behavior: smooth; }
+        ::selection { background-color: rgba(34, 211, 238, 0.2); color: #fff; }
+        
+        .footnote-ref {
+            font-size: 0.7em;
+            vertical-align: super;
+            margin-left: 2px;
+            font-weight: bold;
+            color: #22d3ee;
+            cursor: pointer;
+        }
+
+        .mjx-chtml { color: inherit !important; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-300 antialiased overflow-x-hidden selection:bg-cyan-500/30">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS ---
+        const MenuIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        );
+        const XIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="M6 6 18 18"/></svg>
+        );
+
+        // --- DATA & CONTENT ---
+
+        const AUTHORS = [
+            "Francisco J. Varela", "Maturana", "Miller", "Pattee", "Eigen", "Watson", "Crick", "Galileo", "Pittendrich", "Locker", "Coulter", "Darwin", "Zeleny"
+        ];
+
+        const CONCEPTS = [
+            "Autonomía", "Control", "Información", "autopoiético", "alonomía", "autonomía",
+            "clausura", "circularidades", "representación", "instrucción", "organización",
+            "clausura organizacional", "acoplamiento estructural", "dominio cognitivo", 
+            "explicación simbólica", "explicación operacional", "Aufhebung", "Erklärung", 
+            "Verstehung", "teleonomía", "teleonómico", "código", "mensaje", "símbolo",
+            "restricciones no holónomas", "holónomas", "componibilidad"
+        ];
+
+        const FOOTNOTES = {
+            1: "No intentamos aquí caracterizar la diferencia (si es que existe) entre la sintaxis del lenguaje humano, los mecanismos cognitivos y la codificación genética. Esto no es esencial para nuestros propósitos actuales y merece una discusión independiente (cf. Sección 16.1.3)."
+        };
+
+        const TABLE_OF_CONTENTS = [
+            { 
+                part: "Parte II: Descripciones, Distinciones y Circularidades",
+                items: [
+                    { title: "Capítulo 8: Explicaciones Operacionales", link: "#" },
+                    { title: "Capítulo 9: Explicaciones Simbólicas", link: "#chapter9" },
+                    { title: "Capítulo 10: Marco de Complementariedades", link: "#" },
+                    { title: "Capítulo 11: Calculando Distinciones", link: "#" },
+                    { title: "Capítulo 12: Clausura y Dinámica de Formas", link: "#" },
+                    { title: "Capítulo 13: Eigencomportamiento", link: "#" }
+                ]
+            }
+        ];
+
+        // --- COMPONENTS ---
+
+        const HighlightedText = ({ text, onFootnoteHover, onFootnoteLeave }) => {
+            if (!text || typeof text !== 'string') return text || null;
+            
+            const parts = text.split(/(\[.*?\]|[\s\n]+|"[^"]*")/g);
+
+            return (
+                <span>
+                    {parts.map((part, i) => {
+                        if (!part) return null;
+
+                        if (part.startsWith('"') && part.endsWith('"')) {
+                            return <span key={i} className="text-amber-500 italic font-serif">{part}</span>;
+                        }
+
+                        const footnoteMatch = part.match(/^\[(\d+)\]$/);
+                        if (footnoteMatch) {
+                            const id = footnoteMatch[1];
+                            return (
+                                <span 
+                                    key={i}
+                                    className="footnote-ref px-1 bg-cyan-950/20 rounded border border-cyan-900/50 hover:text-cyan-200 transition-colors"
+                                    onMouseEnter={() => onFootnoteHover(id)}
+                                    onMouseLeave={onFootnoteLeave}
+                                >
+                                    [{id}]
+                                </span>
+                            );
+                        }
+
+                        const cleanWord = part.replace(/[.,;:"()]/g, '');
+                        const lowerPart = part.toLowerCase();
+                        let styleClass = "";
+                        
+                        if (AUTHORS.some(a => lowerPart.includes(a.split(' ').pop().toLowerCase()) && cleanWord.length > 2)) {
+                            styleClass = "text-cyan-400 font-medium";
+                        }
+                        if (CONCEPTS.some(c => lowerPart.includes(c.toLowerCase()) && cleanWord.length > 3)) {
+                            styleClass = "text-amber-500 italic";
+                        }
+
+                        return <span key={i} className={styleClass}>{part}</span>;
+                    })}
+                </span>
+            );
+        };
+
+        const Paragraph = ({ children, onFootnoteHover, onFootnoteLeave }) => (
+            <p className="mb-10 text-lg md:text-xl lg:text-2xl leading-relaxed text-slate-300 font-light text-justify w-full">
+                <HighlightedText text={children} onFootnoteHover={onFootnoteHover} onFootnoteLeave={onFootnoteLeave} />
+            </p>
+        );
+
+        const SectionHeader = ({ children }) => (
+             <h4 className="text-3xl md:text-5xl lg:text-6xl font-serif text-slate-100 mt-32 mb-16 border-l-4 border-cyan-500/50 pl-10 w-full uppercase tracking-tight leading-none">
+                {children}
+            </h4>
+        );
+
+        const SubSectionHeader = ({ children }) => (
+             <h5 className="text-xl md:text-3xl font-sans font-bold text-slate-400 mt-20 mb-10 uppercase tracking-[0.5em] border-b border-slate-800 pb-6 w-full">
+                {children}
+            </h5>
+        );
+
+        // --- APP ---
+
+        function App() {
+            const [activeFootnote, setActiveFootnote] = useState(null);
+            const [progress, setProgress] = useState(0);
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    const winScroll = document.documentElement.scrollTop;
+                    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                    setProgress(winScroll / height);
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            const handleLinkClick = (e, link) => {
+                if (link && link.startsWith('#')) {
+                    e.preventDefault();
+                    const element = document.getElementById(link.substring(1));
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth' });
+                        setIsMenuOpen(false);
+                    }
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-300 font-sans pb-80">
+                    <div className="fixed top-0 left-0 h-1.5 bg-cyan-400 z-50 transition-all duration-75 shadow-[0_0_20px_rgba(34,211,238,0.7)]" style={{ width: `${progress * 100}%` }}></div>
+
+                    <nav className="fixed top-0 w-full z-40 bg-slate-950/80 backdrop-blur-xl border-b border-white/5 h-20">
+                        <div className="w-full px-6 md:px-12 h-full flex items-center justify-between">
+                            <div className="flex items-center gap-4 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
+                                <div className="w-10 h-10 bg-amber-600 rounded flex items-center justify-center text-slate-950 font-serif font-bold text-xl shadow-xl">V</div>
+                                <div className="hidden md:block">
+                                    <h1 className="text-slate-100 font-serif text-sm tracking-widest uppercase font-bold">Francisco J. Varela</h1>
+                                    <span className="text-[10px] text-slate-500 uppercase tracking-widest block mt-0.5 opacity-60">Principios de Autonomía Biológica</span>
+                                </div>
+                            </div>
+                            
+                            <div className="relative">
+                                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-cyan-400 py-3 px-8 border border-cyan-900/50 rounded-full hover:bg-cyan-950/40 transition-all font-bold">
+                                    Índice {isMenuOpen ? <XIcon size={18}/> : <MenuIcon size={18}/>}
+                                </button>
+                                {isMenuOpen && (
+                                    <div className="absolute right-0 mt-6 w-80 sm:w-[500px] bg-slate-900/95 border border-slate-800 shadow-2xl rounded-[2rem] py-10 max-h-[85vh] overflow-y-auto z-50 animate-fade-in ring-1 ring-white/10">
+                                        {TABLE_OF_CONTENTS.map((section, idx) => (
+                                            <div key={idx} className="mb-12">
+                                                <h4 className="px-12 py-2 text-[11px] font-black text-amber-500 uppercase tracking-[0.4em] bg-slate-950/60 mb-6">
+                                                    {section.part}
+                                                </h4>
+                                                {section.items.map((item, i) => (
+                                                    <a key={i} href={item.link} onClick={(e) => handleLinkClick(e, item.link)} className="block px-12 py-4 text-sm md:text-base text-slate-400 hover:bg-slate-800 hover:text-cyan-400 transition-all no-underline border-l-4 border-transparent hover:border-cyan-500">
+                                                        {item.title}
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </nav>
+
+                    <main className="pt-40 px-6 md:px-12 lg:px-20 w-full animate-fade-in">
+                        
+                        <section id="chapter9" className="mb-80 scroll-mt-40">
+                            <div className="mb-48 text-center">
+                                <span className="text-cyan-400 text-xs font-black tracking-[0.6em] uppercase mb-12 block">Capítulo 9</span>
+                                <h2 className="text-6xl md:text-8xl lg:text-[10rem] font-serif text-slate-100 mb-12 uppercase leading-none tracking-tighter">
+                                    Explicaciones Simbólicas
+                                </h2>
+                            </div>
+
+                            <SectionHeader>9.1 Complementariedad Descriptiva</SectionHeader>
+                            
+                            <SubSectionHeader>9.1.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En el capítulo anterior argumentamos que las nociones de información y propósito son, desde el punto de vista de una explicación operacional, prescindibles. Esto se debe a que la organización viva podría definirse sin recurrir a tales nociones y, por tanto, la explicación subyacente a los fenómenos vivos no necesita incluirlas como componentes constitutivos. Además, argumentamos que tales nociones no pueden entrar en la definición de la organización de un sistema, porque pertenecen al dominio del discurso entre observadores. La información y el propósito pueden entrar para fines pedagógicos. No entran en una explicación operacional, para la cual la autopoiesis es completa.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Sin embargo, esta cuestión necesita un mayor desarrollo. Sigo sosteniendo como válida la crítica contra el uso ingenuo de la información y el propósito como nociones que pueden entrar en la definición operacional de un sistema, sobre la misma base que las interacciones materiales [ej., en la definición de Miller (1966) de los sistemas vivos]. Pero hay limitaciones en nuestra presentación unilateral del último capítulo, derivadas del hecho de que no llevamos nuestra crítica lo suficientemente lejos como para recuperar un papel no ingenuo y útil de las nociones informacionales en las descripciones de los fenómenos vivos. Criticó sin una correspondiente Aufhebung.
+                            </Paragraph>
+
+                            <SubSectionHeader>9.1.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                El análisis del Capítulo 8 se basó en el supuesto de que las explicaciones operacionales son, en cierto sentido, intrínsecamente preferibles y suficientes. Esto me parece erróneo en dos sentidos que intentaré aclarar en lo que sigue: (1) otorga a la explicación operacional un estatus epistemológico no compatible con la intención misma de la crítica dirigida contra el "uso ingenuo de la información"; (2) descuida el hecho de que los términos informacionales, aunque pertenecen a una categoría de explicación diferente a la de los términos operacionales utilizados en la autopoiesis, podrían seguir utilizándose como términos explicativos válidos y que, además, diferentes modos de explicación podrían coexistir.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Existe, evidentemente, la necesidad de sobreenfatizar un lado descuidado de una polaridad. Del mismo modo, la autonomía no puede concebirse de hecho sin una consideración complementaria de cómo el sistema también es controlado en un contexto dual; en particular, la autopoiesis y la alonomía son caracterizaciones complementarias más que exclusivas para un sistema. Lo que argumentaré ahora es que una explicación operacional para la fenomenología viva necesita un modo complementario de explicación para ser completa, un modo de explicación al que me he referido como simbólico [cf. Sección 8.2.3; véase también, Pattee (1977)]. Una discusión más profunda de esta visión tiene que comenzar con una consideración muy breve de lo que está en la base de la tendencia a preferir explicaciones puramente operacionales y a relegar los términos informacionales a la categoría de "meramente pedagógicos".
+                            </Paragraph>
+
+                            <SectionHeader>9.2 Modos de Explicación</SectionHeader>
+                            <SubSectionHeader>9.2.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La preferencia por la explicación (puramente) operacional sigue siendo nada más que una preferencia. Tales preferencias provienen de una comunidad de individuos que investigan —una comunidad científica— que, a través de la herencia de una tradición, llegan a acordar ciertos criterios de validez relativos a ciertos valores o intenciones. La preferencia por la causalidad en el sentido común de la ciencia contemporánea proviene de una orientación predominantemente manipulativa, operacional y tecnológica presente en la ciencia durante los últimos 150 años. Dada tal preferencia, las explicaciones operacionales pasaron a ser las explicaciones: las explicaciones no operacionales no poseen poder de manipulación y predicción. La predicción, de hecho, es el signo de una explicación exitosa en este tipo de filosofía, de modo que la causalidad y la predicción son un dúo triunfante que caracteriza a la ciencia moderna, particularmente en el mundo anglosajón.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Este dúo triunfante, sin embargo, tiene que ser analizado en una perspectiva histórica. Junto a las explicaciones operacionales, ha existido otra tradición igualmente destacada que afirma la validez de las explicaciones finalistas o teleológicas, donde los términos de la explicación no son "porqués" sino "para qués". Estos dos modos tradicionales de explicación se caracterizan mejor con las palabras alemanas Erklärung y Verstehung, usualmente traducidas como explicar y comprender (compenetrarse).
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Ahora bien, la intención detrás de una explicación de tipo Verstehung no es la manipulación, sino la comprensión, la comunicación de una perspectiva inteligible con respecto a un dominio fenomenológico. Ejemplos típicos son la explicación teleológica en Aristóteles y las explicaciones vitalistas del siglo XVIII. En la medida en que su orientación principal es comprender y comunicar esta comprensión, tales explicaciones son fundamentalmente diferentes en su orientación de la explicación operacional. Es un hecho histórico que la ciencia occidental ha tomado una posición muy fuerte al preferir la explicación causal desde la época de Galileo y, de hecho, convirtió las explicaciones de tipo Verstehung en un enemigo que debía ser proscrito de la ciencia.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Desde nuestra perspectiva, al final de este siglo XX, teniendo suficiente distancia de la era de la Ilustración, las cosas se ven bastante diferentes. A mi modo de ver, hay cuatro desarrollos principales que han contribuido a alterar la preferencia por la explicación puramente operacional. Primero, la gran renovación dentro de la física, el modelo para el empirismo lógico, tras la constitución de la mecánica cuántica y sus variados problemas epistemológicos, hace que tanto la causalidad ingenua como la objetividad ingenua sean completamente inadecuadas. En segundo lugar, el auge de la ciencia biológica ha introducido en la ciencia la necesidad de considerar fenómenos de una complejidad sin límites en relación con las ciencias físicas. El epítome de este desarrollo es la historia de la genética a través del modelo de Watson-Crick, entrelazando componentes estructurales con la aparente necesidad de una descripción de "codificación". En tercer lugar, tenemos el desarrollo extensivo, vinculado al uso de conceptos biológicos, de la cibernética y la teoría de sistemas en el área del diseño y la prescripción de sistemas, donde las nociones de comunicación y propósito están en el núcleo de lo que no es solo el tema principal, sino de muchas de sus consecuencias prácticas, como las computadoras y los complejos sistemas de regulación en los servicios humanos. Finalmente, y de forma mucho más tenue para el mundo de la ciencia, tenemos el despertar, en las escuelas de pensamiento europeas, de la importancia de la explicación de tipo Verstehung en los asuntos humanos.
+                            </Paragraph>
+
+                            <SubSectionHeader>9.2.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Lo que, sostengo, es esencial entender en esta relación es que ambas formas de explicación se refieren a modos de descripción relativos a alguna perspectiva del observador o, mejor dicho, deberíamos decir, de una comunidad de investigación. En la descripción operacional el supuesto fundamental es que los fenómenos ocurren a través de una red de relaciones nómicas (ajustadas a leyes) que se siguen unas a otras. En la explicación simbólica y comunicativa, el supuesto fundamental es que los fenómenos ocurren a través de un cierto orden o patrón, pero el foco fundamental de atención se centra en ciertos momentos de tal orden, relativos a la comunidad de investigación. Así, estos modos de explicación son exclusivos y contradictorios solo en la medida en que se asume que las leyes de la naturaleza son comprensibles independientemente de una comunidad de investigación, o que no hay patrones nómicos discernibles en el mundo.
+                            </Paragraph>
+
+                            <SectionHeader>9.3 Explicaciones Simbólicas</SectionHeader>
+                            <SubSectionHeader>9.3.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Como discutimos antes, la conexión entre una descripción operacional (como la autopoiesis) y una descripción finalista reside en el observador que establece el nexo. Así, concluimos, el propósito no desempeña ningún papel causal en la autopoiesis y, por tanto, ningún papel en la descripción de la organización del sistema. La misma conclusión fue válida para las nociones de mensaje, información y código. Lo que es significativo en ambas clases de nociones, el propósito y la información, es que el observador elige ignorar la conexión operativa entre clases de eventos y concentrarse en las relaciones resultantes. Esta es una idea importante, y es insuficiente discutirla como una mera maniobra pedagógica.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Esta posibilidad de elegir ignorar los vínculos nómicos intervinientes está en la base de todas las descripciones simbólicas. Lo que es característico de un símbolo es que hay una distancia, una relación algo arbitraria, entre significante y significado. Esto es, por supuesto, muy inmediato en el discurso humano: las palabras y su significado contextual tienen un modo de acoplamiento histórico y estructural tan remoto y complejo que cualquier esfuerzo por seguir tal conexión nómica es inútil. Por lo tanto, para entender el lenguaje, no rastreamos la secuencia de causas desde la forma de onda en el aire hasta la historia de las operaciones cerebrales, sino que simplemente tomamos como un hecho que podemos entender. (Y precisamente porque no podemos reducirlo todo a una explicación causal, ya que vivimos y crecemos dentro del lenguaje, la vida humana tiene la apertura que tiene).
+                            </Paragraph>
+
+                            <SubSectionHeader>9.3.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Hasta ahora hemos argumentado que las descripciones operacionales y simbólicas no se contradicen entre sí, ya que pertenecen a diferentes niveles de descripción entre una comunidad de observadores. A menos que mantengamos claro en nuestra mente que al cambiar los modos de explicación también estamos cambiando el tipo de marco de referencia en el que operamos, todo el asunto se vuelve confuso. Los términos teleonómico-simbólicos se reducen a componentes operativos, como, por ejemplo, al atribuir la especificación de los componentes a un solo componente (ADN), lo cual es una forma (típicamente) inútil de reduccionismo. Estos dos modos de explicación son distintos, pero pueden relacionarse sin reducir uno al otro.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La pregunta que queremos hacer ahora es: ¿Necesitamos ambas formas de explicación? ¿No podemos simplemente proporcionar explicaciones operacionales de un fenómeno y estar satisfechos con ellas? En el caso que nos ocupa, estas preguntas equivaldrían a si la caracterización autopoiética es suficiente para satisfacer nuestra necesidad de explicar el conjunto de la fenomenología de los sistemas vivos. En cierto sentido, ya hemos demostrado que, efectivamente, la autopoiesis de cada individuo basta para generar toda la fenomenología de la autonomía de los sistemas vivos y que, a través de su acoplamiento y complejización, podemos ver en ellas el fundamento de los fenómenos evolutivos e históricos. Por tanto, en principio, todos los fenómenos biológicos pueden reducirse a mecanismos autopoiéticos.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Esto, sin embargo, recuerda a la afirmación de que toda la historia del universo podría predecirse si solo conociéramos todas las posiciones y momentos de todas las partículas del universo para poder calcular sus trayectorias futuras. Este tipo de afirmaciones son, sobre todo, epistemológicas. Lo que estamos diciendo en el caso de la autopoiesis es que, si pudiéramos seguir todas las contingencias apropiadas, la fenomenología biológica se desplegaría a partir del mecanismo autopoiético. Lo que es obvio, sin embargo, es que esta afirmación, aunque señala la suficiencia de la autopoiesis como explicación operacional, no dice nada sobre si es cognitivamente posible o satisfactoria.
+                            </Paragraph>
+
+                            <SubSectionHeader>9.3.3</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Al señalar que la coherencia del comportamiento en una dinámica química es la base de la descripción simbólica, no estamos diciendo nada sobre cómo surge realmente tal comportamiento coherente. Esta no es una cuestión sencilla, y es una que no consideraremos con gran detalle aquí. Parece que el análisis de Pattee en términos de las restricciones no holónomas en los sistemas dinámicos es la descripción más adecuada (cf. Pattee, 1972, 1977). Por ejemplo, la estructura tridimensional de una enzima es un proceso dinámico restringido por la secuencia de aminoácidos especificada por la célula. Estas restricciones determinan una forma que es peculiar a la enzima, y están en la base de su capacidad enzimática. La abreviatura en una descripción simbólica funciona así: Un gen codifica un evento de reconocimiento enzimático. La base física de esta descripción se encuentra en las restricciones no holónomas (no integrables) introducidas en la dinámica físico-química del plegamiento por la secuencia de aminoácidos.
+                            </Paragraph>
+
+                            <SectionHeader>9.4 Explicaciones Complementarias</SectionHeader>
+                            <SubSectionHeader>9.4.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Decir que las explicaciones teleonómico-simbólicas no son realmente necesarias es sucumbir a un prejuicio de nuestra tradición histórica que es hora de revisar, porque en la práctica real no podemos prescindir de las explicaciones operacionales y simbólicas. Una preferencia por las explicaciones operacionales parece estar arraigada en el entendimiento de que las causas están "allá afuera" y reflejan un estado de cosas independiente del descriptor. Esto es, por el mismo argumento utilizado aquí, insostenible. Las causas y las "leyes de la naturaleza" son modos de descripción adoptados por comunidades de investigación para algún propósito intencional (como la manipulación y la predicción), y especifican modos de acuerdo y, por tanto, de acoplamiento con el entorno. Sin embargo, en última instancia, una descripción operacional no es más ni menos que un modo de acuerdo dentro de una comunidad de investigación, y de ninguna manera tiene un estatus intrínsecamente superior a una explicación simbólica. Simplemente tienen consecuencias diferentes.
+                            </Paragraph>
+
+                            <SubSectionHeader>9.4.3</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Consideremos la interacción de las moléculas hormonales con la superficie receptora de una célula. Este tipo de interacción se describe mejor abstrayendo el proceso real de interacción y la descripción detallada de la dinámica autopoiética, y expresándolo en términos de un símbolo (o señal) con un efecto regulador, una descripción que emerge a través de un relato contraído de la dinámica autopoiética de la célula individual. A riesgo de ser molesto, permítanme señalar que no hay nada en la molécula de la hormona que sea informacional; su contenido simbólico viene dado por, primero, el tipo de dinámica determinado por la unidad autopoiética y su dominio de interacciones y, segundo, el observador que desea seguir una cierta coherencia en la dinámica individual y, por tanto, elige contraer una secuencia larga y compleja de cadenas nómicas. Considerar esta interacción célula-hormona en cualquier sentido como "intrínsecamente" informacional, o que el organismo está "captando información" del entorno, sería fundamentalmente erróneo.
+                            </Paragraph>
+
+                            <SectionHeader>9.5 Descripciones Simbólicas Admisibles</SectionHeader>
+                            <SubSectionHeader>9.5.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Dos características principales caracterizan a los símbolos en los sistemas naturales: (1) determinación interna, y (2) composición.
+                            </Paragraph>
+
+                            <div className="space-y-12 my-20 pl-8 md:pl-20 border-l border-slate-800">
+                                <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                    1. Determinación Interna. Un objeto o evento es un símbolo solo si es una ficha para una cadena nómica abreviada que ocurre dentro de los límites de la clausura organizacional del sistema. En otras palabras, siempre que la clausura del sistema determina ciertas regularidades ante interacciones y perturbaciones internas o externas, tales regularidades pueden abreviarse como un símbolo, usualmente el elemento inicial o terminal de la cadena nómica. Un ejemplo típico es el "código" genético. Un triplete de bases nitrogenadas representa o "codifica" un aminoácido en una secuencia de proteínas en la medida en que hay un patrón regular en la dinámica química, que podemos ver repetido una y otra vez. Pero tal patrón dinámico ocurre enteramente dentro de los límites de la clausura de la célula; la propia célula contiene la "interpretación" para el símbolo.
+                                </Paragraph>
+                                <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                    2. Composición. Un proceso que admite una descripción simbólica podría o no ser de interés y potencial ontogénico y filogénico. En otras palabras, de todas las posibles regularidades que pueden surgir de la clausura de un sistema, solo algunas de ellas podrían conducir (a través del acoplamiento estructural o la evolución) a un cambio adaptativo significativo en el dominio cognitivo del sistema. Las regularidades que han sido fértiles y se han conservado en la evolución son aquellas tales que los símbolos que las representan pueden verse como componibles como un lenguaje; en otras palabras, tales que los símbolos individuales, como fichas discretas, pueden interactuar entre sí en una sintaxis capaz de generar nuevos patrones en combinación. [1]
+                                </Paragraph>
+                            </div>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Así, junto a la clausura organizacional, las descripciones simbólicas admisibles son realmente lo que se necesita para dar cuenta tanto de la existencia como del cambio progresivo de los sistemas autónomos en la naturaleza y la cultura. Son visiones complementarias.
+                            </Paragraph>
+
+                            <SubSectionHeader>Fuentes</SubSectionHeader>
+                            <div className="pl-6 border-l border-slate-700 text-sm md:text-base lg:text-xl text-slate-500 italic w-full">
+                                <p className="mb-4">Pattee, H. (1977), Dynamic and linguistic modes in complex systems, Int. J. Gen. Systems 3: 259.</p>
+                                <p>Varela, F. (1978), Describing the logic of the living: adequacies and limitations of the idea of autopoiesis, en Autopoiesis: A Theory of the Living Organization, (M. Zeleny, ed.), Elsevier North-Holland, New York.</p>
+                            </div>
+                        </section>
+                    </main>
+
+                    <footer className="w-full text-center py-24 border-t border-slate-900 text-slate-700 text-xs">
+                        <p className="mb-2 uppercase tracking-[0.6em] font-serif">Principios de Autonomía Biológica</p>
+                        <p>© Francisco J. Varela</p>
+                    </footer>
+
+                    {/* Ventana flotante de notas (Mathematically Centered) */}
+                    {activeFootnote && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 pointer-events-none">
+                            <div className="w-full max-w-5xl bg-black/95 border border-cyan-900/40 text-slate-300 p-10 md:p-16 rounded-[4rem] shadow-[0_0_100px_rgba(0,0,0,1)] backdrop-blur-3xl animate-fade-in ring-1 ring-cyan-500/30 pointer-events-auto relative">
+                                <div className="flex flex-col md:flex-row items-start gap-8 lg:gap-12">
+                                    <span className="text-cyan-400 font-serif text-5xl lg:text-8xl font-bold leading-none select-none shrink-0">
+                                        [{activeFootnote}]
+                                    </span>
+                                    <p className="text-base md:text-lg lg:text-2xl leading-relaxed text-justify font-light tracking-wide italic">
+                                        {FOOTNOTES[activeFootnote]}
+                                    </p>
+                                </div>
+                                <div className="absolute top-8 right-12 text-slate-600 text-xs uppercase tracking-widest font-bold">Nota al pie</div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
