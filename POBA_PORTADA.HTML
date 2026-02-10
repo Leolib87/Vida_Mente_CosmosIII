@@ -1,446 +1,539 @@
-import React, { useState, useEffect } from 'react';
-import { Menu, X, ChevronDown, BookOpen } from 'lucide-react';
-
-// --- DATA & CONTENT ---
-
-const AUTHORS = [
-    "Francisco J. Varela", "C. Bernard", "L. Wittgenstein", "Piaget", 
-    "Nauta", "Rosenberg", "Newell", "Simon", "Humberto Maturana", 
-    "Heinz von Foerster", "Gregory Bateson", "Joseph Goguen", "Ivan Illich", 
-    "Chögyam Trungpa", "Fernando Flores", "Nelson Vaz", "Ernst von Glasersfeld", 
-    "Leonor", "George Klir", "David Moran", "David Whitlock"
-];
-
-// Conceptos traducidos para el resaltado
-const CONCEPTS = [
-    "Autonomía", "Control", "Información", "autopoiético", "alonomía", 
-    "auto-ley", "clausura", "circularidades", "representación", "instrucción", 
-    "in-formación", "acoplamiento estructural", "dominio cognitivo", "red inmune", 
-    "sistema nervioso", "autorreferencial", "recursivo", "clausura operacional",
-    "Les systèmes ne sont pas dans la nature, mais dans l'esprit des hommes",
-    "autonomía de los sistemas vivos", "clausura organizacional", "sistema", "cibernética"
-];
-
-const FOOTNOTES = {
-    1: "Uso aquí la palabra información en su sentido más genérico de semeios. Otras connotaciones que la palabra ha adquirido en su tratamiento Shannoniano son aquí estrictamente secundarias. Véase para una discusión el excelente trabajo de Nauta (1972), The Meaning of Information.",
-    2: "Un tercer y último miembro en esta constelación de conceptos es el de sujeto, como se entiende actualmente en la imagen de un individuo confinado en su cráneo. No entraré en este libro en la discusión de este tema central, aunque se tocan algunos puntos en el último capítulo.",
-    3: "Así, según Newell y Simon (1976), este debería ser uno de los axiomas básicos de construcción de las ciencias de la información."
-};
-
-const TABLE_OF_CONTENTS = [
-    { 
-        part: "Intro",
-        items: [
-            { id: "preface", title: "Prefacio: Información y Control Revisitados" },
-            { id: "acknowledgments", title: "Agradecimientos" }
-        ]
-    },
-    {
-        part: "Parte I: Autonomía de lo Vivo y Clausura Organizacional",
-        items: [
-            { id: "contents", title: "Capítulo 1: Autonomía y Pensamiento Biológico" },
-            { id: "contents", title: "Capítulo 2: Autopoiesis como Organización" },
-            { id: "contents", title: "Capítulo 3: Ejemplo de Teselación" },
-            { id: "contents", title: "Capítulo 4: Encarnaciones de Autopoiesis" },
-            { id: "contents", title: "Capítulo 5: El Individuo en Desarrollo" },
-            { id: "contents", title: "Capítulo 6: Consecuencias de la Autopoiesis" },
-            { id: "contents", title: "Capítulo 7: La Idea de Clausura Organizacional" }
-        ]
-    },
-    {
-        part: "Parte II: Descripciones, Distinciones y Circularidades",
-        items: [
-            { id: "contents", title: "Capítulo 8: Explicaciones Operacionales" },
-            { id: "contents", title: "Capítulo 9: Explicaciones Simbólicas" },
-            { id: "contents", title: "Capítulo 10: Marco de Complementariedades" },
-            { id: "contents", title: "Capítulo 11: Calculando Distinciones" },
-            { id: "contents", title: "Capítulo 12: Clausura y Dinámica de Formas" },
-            { id: "contents", title: "Capítulo 13: Eigencomportamiento" }
-        ]
-    },
-    {
-        part: "Parte III: Procesos Cognitivos",
-        items: [
-            { id: "contents", title: "Capítulo 14: La Red Inmune" },
-            { id: "contents", title: "Capítulo 15: El Sistema Nervioso" },
-            { id: "contents", title: "Capítulo 16: Epistemología Naturalizada" }
-        ]
-    }
-];
-
-// --- COMPONENTS ---
-
-const HighlightedText = ({ text, onFootnoteHover, onFootnoteLeave }) => {
-    if (!text) return null;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Principios de Autonomía Biológica - Francisco J. Varela</title>
     
-    // Separar por espacios y puntuación, manteniendo delimitadores
-    const parts = text.split(/(\[.*?\]|[\s\n]+)/g);
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (para JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Playfair Display & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 
-    return (
-        <span>
-            {parts.map((part, i) => {
-                // Check for Footnote [n]
-                const footnoteMatch = part.match(/^\[(\d+)\]$/);
-                if (footnoteMatch) {
-                    const id = footnoteMatch[1];
-                    return (
-                        <span 
-                            key={i}
-                            className="text-cyan-400 font-bold cursor-pointer hover:underline align-super text-xs ml-0.5"
-                            onMouseEnter={() => onFootnoteHover(id)}
-                            onMouseLeave={onFootnoteLeave}
-                        >
-                            {part}
-                        </span>
-                    );
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            950: '#020617', // Fondo base profundo
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 1s ease-in forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
                 }
-
-                // Limpieza para coincidencia
-                const cleanWord = part.replace(/[.,;:"()]/g, '');
-                const lowerPart = part.toLowerCase();
-                
-                let styleClass = "";
-                
-                // Autores (Cyan)
-                if (AUTHORS.some(author => lowerPart.includes(author.toLowerCase().split(' ').pop().toLowerCase()) && cleanWord.length > 3)) {
-                        styleClass = "text-cyan-400 font-medium";
-                }
-                
-                // Conceptos (Amber)
-                if (CONCEPTS.some(concept => lowerPart.includes(concept.toLowerCase()))) {
-                        styleClass = "text-amber-500 italic";
-                }
-                
-                // Citas largas específicas
-                if (part.includes("Les systèmes") || part.includes("Was wir liefern")) {
-                    styleClass = "text-amber-500 italic font-serif";
-                }
-
-                if (styleClass) {
-                    return <span key={i} className={styleClass}>{part}</span>;
-                }
-                return <span key={i}>{part}</span>;
-            })}
-        </span>
-    );
-};
-
-const Paragraph = ({ children, onFootnoteHover, onFootnoteLeave }) => (
-    // CAMBIO: w-full y text-justify para usar todo el ancho
-    <p className="mb-6 text-lg leading-relaxed text-slate-300 font-light w-full text-justify">
-        <HighlightedText text={children} onFootnoteHover={onFootnoteHover} onFootnoteLeave={onFootnoteLeave} />
-    </p>
-);
-
-const QuoteBlock = ({ children, author }) => (
-    <div className="my-12 pl-8 border-l-4 border-amber-500/50 italic text-slate-400 w-full">
-        <p className="font-serif text-2xl text-amber-500/90 mb-4 leading-snug">"{children}"</p>
-        {author && <p className="text-sm text-cyan-400 uppercase tracking-widest mt-4">— {author}</p>}
-    </div>
-);
-
-// --- MAIN APPLICATION ---
-
-export default function App() {
-    const [activeFootnote, setActiveFootnote] = useState(null);
-    const [progress, setProgress] = useState(0);
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-    // Scroll Progress Listener
-    useEffect(() => {
-        const handleScroll = () => {
-            const totalScroll = document.documentElement.scrollTop || document.body.scrollTop;
-            const windowHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-            const scroll = windowHeight > 0 ? totalScroll / windowHeight : 0;
-            setProgress(Number(scroll));
+            }
         }
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+    </script>
 
-    const scrollToSection = (id) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-            setIsMenuOpen(false);
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
         }
-    };
+        ::-webkit-scrollbar-track {
+            background: #020617; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+        
+        /* Smooth Scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Selection Color */
+        ::selection {
+            background-color: rgba(34, 211, 238, 0.2); /* Cyan-400 with opacity */
+            color: #fff;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-300 antialiased overflow-x-hidden">
+    <div id="root"></div>
 
-    return (
-        <div className="min-h-screen bg-slate-950 text-slate-300 font-sans selection:bg-cyan-500/30">
-            {/* INJECT STYLES for Fonts & Scrollbar */}
-            <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
-                
-                :root {
-                    --font-serif: 'Playfair Display', serif;
-                    --font-sans: 'Inter', sans-serif;
-                }
-                
-                h1, h2, h3, h4, .font-serif {
-                    font-family: var(--font-serif);
-                }
-                
-                body {
-                    font-family: var(--font-sans);
-                    background-color: #020617;
-                }
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-                ::-webkit-scrollbar {
-                    width: 8px;
-                }
-                ::-webkit-scrollbar-track {
-                    background: #020617; 
-                }
-                ::-webkit-scrollbar-thumb {
-                    background: #334155; 
-                    border-radius: 4px;
-                }
-                ::-webkit-scrollbar-thumb:hover {
-                    background: #475569; 
-                }
+        // --- ICONS (SVG Components nativos para evitar errores de dependencias) ---
+        
+        const MenuIcon = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+            </svg>
+        );
 
-                .fade-in {
-                    animation: fadeIn 1s ease-in forwards;
-                    opacity: 0;
-                    transform: translateY(20px);
-                }
-                
-                @keyframes fadeIn {
-                    to { opacity: 1; transform: translateY(0); }
-                }
-            `}</style>
+        const XIcon = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="M18 6 6 18"/><path d="M6 6 18 18"/>
+            </svg>
+        );
 
-            {/* PROGRESS BAR */}
-            <div className="fixed top-0 left-0 h-1 bg-cyan-400 z-50 transition-all duration-100 ease-out" style={{ width: `${progress * 100}%` }}></div>
+        const ChevronDownIcon = ({ size = 24, strokeWidth = 2, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="m6 9 6 6 6-6"/>
+            </svg>
+        );
 
-            {/* NAVIGATION - ACTUALIZADO CON CONTENIDOS */}
-            <nav className="fixed top-0 w-full z-40 bg-slate-950/90 backdrop-blur-md border-b border-white/5 transition-all duration-300">
-                <div className="w-full px-6 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-slate-950 font-serif font-bold">V</div>
-                        <div className="hidden md:block">
-                            <h1 className="text-slate-100 font-serif text-sm tracking-widest uppercase">Francisco J. Varela</h1>
-                            <span className="text-xs text-slate-500 uppercase tracking-wider">Principios de Autonomía Biológica</span>
-                        </div>
-                    </div>
+        // --- DATA & CONTENT ---
+
+        const AUTHORS = [
+            "Francisco J. Varela", "C. Bernard", "L. Wittgenstein", "Piaget", 
+            "Nauta", "Rosenberg", "Newell", "Simon", "Humberto Maturana", 
+            "Heinz von Foerster", "Gregory Bateson", "Joseph Goguen", "Ivan Illich", 
+            "Chögyam Trungpa", "Fernando Flores", "Nelson Vaz", "Ernst von Glasersfeld", 
+            "Leonor", "George Klir", "David Moran", "David Whitlock", "Maturana", "Bateson", "Foerster"
+        ];
+
+        // Conceptos traducidos para el resaltado
+        const CONCEPTS = [
+            "Autonomía", "Control", "Información", "autopoiético", "alonomía", 
+            "auto-ley", "clausura", "circularidades", "representación", "instrucción", 
+            "in-formación", "acoplamiento estructural", "dominio cognitivo", "red inmune", 
+            "sistema nervioso", "autorreferencial", "recursivo", "clausura operacional",
+            "autonomía de los sistemas vivos", "clausura organizacional", "sistema", "cibernética",
+            "codependiente", "complementariedad", "epistemología", "gestalt", "bootstrapping"
+        ];
+
+        const FOOTNOTES = {
+            1: "Uso aquí la palabra información en su sentido más genérico de semeios. Otras connotaciones que la palabra ha adquirido en su tratamiento Shannoniano son aquí estrictamente secundarias. Véase para una discusión el excelente trabajo de Nauta (1972), The Meaning of Information.",
+            2: "Un tercer y último miembro en esta constelación de conceptos es el de sujeto, como se entiende actualmente en la imagen de un individuo confinado en su cráneo. No entraré en este libro en la discusión de este tema central, aunque se tocan algunos puntos en el último capítulo.",
+            3: "Así, según Newell y Simon (1976), este debería ser uno de los axiomas básicos de construcción de las ciencias de la información."
+        };
+
+        // --- TABLA DE CONTENIDOS CON LINKS ---
+        // INSTRUCCIONES: Reemplaza el valor de "link" con la URL deseada.
+        // Ejemplos: 
+        //   Interno: link: "#seccion-id"
+        //   Externo: link: "https://ejemplo.com/capitulo1.html"
+        const TABLE_OF_CONTENTS = [
+            { 
+                part: "Intro",
+                items: [
+                    { title: "Prefacio: Información y Control Revisitados", link: "#preface" },
+                    { title: "Agradecimientos", link: "#acknowledgments" }
+                ]
+            },
+            {
+                part: "Parte I: Autonomía de lo Vivo y Clausura Organizacional",
+                items: [
+                    { title: "Capítulo 1: Autonomía y Pensamiento Biológico", link: "#" }, // AGREGAR LINK AQUI
+                    { title: "Capítulo 2: Autopoiesis como Organización", link: "#" },     // AGREGAR LINK AQUI
+                    { title: "Capítulo 3: Ejemplo de Teselación", link: "#" },             // AGREGAR LINK AQUI
+                    { title: "Capítulo 4: Encarnaciones de Autopoiesis", link: "#" },      // AGREGAR LINK AQUI
+                    { title: "Capítulo 5: El Individuo en Desarrollo", link: "#" },        // AGREGAR LINK AQUI
+                    { title: "Capítulo 6: Consecuencias de la Autopoiesis", link: "#" },   // AGREGAR LINK AQUI
+                    { title: "Capítulo 7: La Idea de Clausura Organizacional", link: "#" } // AGREGAR LINK AQUI
+                ]
+            },
+            {
+                part: "Parte II: Descripciones, Distinciones y Circularidades",
+                items: [
+                    { title: "Capítulo 8: Explicaciones Operacionales", link: "#" },       // AGREGAR LINK AQUI
+                    { title: "Capítulo 9: Explicaciones Simbólicas", link: "#" },          // AGREGAR LINK AQUI
+                    { title: "Capítulo 10: Marco de Complementariedades", link: "#" },     // AGREGAR LINK AQUI
+                    { title: "Capítulo 11: Calculando Distinciones", link: "#" },          // AGREGAR LINK AQUI
+                    { title: "Capítulo 12: Clausura y Dinámica de Formas", link: "#" },    // AGREGAR LINK AQUI
+                    { title: "Capítulo 13: Eigencomportamiento", link: "#" }               // AGREGAR LINK AQUI
+                ]
+            },
+            {
+                part: "Parte III: Procesos Cognitivos",
+                items: [
+                    { title: "Capítulo 14: La Red Inmune", link: "#" },                    // AGREGAR LINK AQUI
+                    { title: "Capítulo 15: El Sistema Nervioso", link: "#" },              // AGREGAR LINK AQUI
+                    { title: "Capítulo 16: Epistemología Naturalizada", link: "#" }        // AGREGAR LINK AQUI
+                ]
+            }
+        ];
+
+        // --- COMPONENTS ---
+
+        const HighlightedText = ({ text, onFootnoteHover, onFootnoteLeave }) => {
+            if (!text || typeof text !== 'string') return text || null;
+            
+            // Separar por espacios y puntuación, manteniendo delimitadores
+            const parts = text.split(/(\[.*?\]|[\s\n]+)/g);
+
+            return (
+                <span>
+                    {parts.map((part, i) => {
+                        // Check for Footnote [n]
+                        const footnoteMatch = part.match(/^\[(\d+)\]$/);
+                        if (footnoteMatch) {
+                            const id = footnoteMatch[1];
+                            return (
+                                <span 
+                                    key={i}
+                                    className="text-cyan-400 font-bold cursor-pointer hover:text-cyan-200 transition-colors align-super text-xs ml-0.5 px-1 bg-cyan-900/20 rounded border border-cyan-900/50"
+                                    onMouseEnter={() => onFootnoteHover(id)}
+                                    onMouseLeave={onFootnoteLeave}
+                                >
+                                    {part}
+                                </span>
+                            );
+                        }
+
+                        // Limpieza para coincidencia
+                        const cleanWord = part.replace(/[.,;:"()]/g, '');
+                        const lowerPart = part.toLowerCase();
+                        
+                        let styleClass = "";
+                        
+                        // Autores (Cyan)
+                        if (AUTHORS.some(author => {
+                            const lastName = author.split(' ').pop().toLowerCase();
+                            return lowerPart.includes(lastName) && cleanWord.length > 3;
+                        })) {
+                                styleClass = "text-cyan-400 font-medium";
+                        }
+                        
+                        // Conceptos (Amber)
+                        if (CONCEPTS.some(concept => lowerPart.includes(concept.toLowerCase()) && cleanWord.length > 3)) {
+                                styleClass = "text-amber-500 italic";
+                        }
+                        
+                        // Citas largas específicas o latín/francés/alemán
+                        if (part.includes("Les systèmes") || part.includes("Was wir liefern") || part.includes("semeios") || part.includes("in-formare")) {
+                            styleClass = "text-amber-500 italic font-serif";
+                        }
+
+                        if (styleClass) {
+                            return <span key={i} className={styleClass}>{part}</span>;
+                        }
+                        return <span key={i}>{part}</span>;
+                    })}
+                </span>
+            );
+        };
+
+        const Paragraph = ({ children, onFootnoteHover, onFootnoteLeave }) => (
+            <p className="mb-8 text-lg md:text-xl leading-loose text-slate-300 font-light w-full text-justify max-w-[90ch] mx-auto">
+                <HighlightedText text={children} onFootnoteHover={onFootnoteHover} onFootnoteLeave={onFootnoteLeave} />
+            </p>
+        );
+
+        const QuoteBlock = ({ children, author }) => (
+            <div className="my-12 pl-6 md:pl-10 border-l-4 border-amber-500/50 text-slate-400 w-full max-w-[85ch] mx-auto">
+                <p className="font-serif text-2xl md:text-3xl text-amber-500/90 mb-4 leading-snug italic">"{children}"</p>
+                {author && <p className="text-xs md:text-sm text-cyan-400 uppercase tracking-widest mt-6 font-bold opacity-80">— {author}</p>}
+            </div>
+        );
+
+        // --- MAIN APPLICATION ---
+
+        function App() {
+            const [activeFootnote, setActiveFootnote] = useState(null);
+            const [progress, setProgress] = useState(0);
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+            // Scroll Progress Listener
+            useEffect(() => {
+                const handleScroll = () => {
+                    const totalScroll = document.documentElement.scrollTop || document.body.scrollTop;
+                    const windowHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                    const scroll = windowHeight > 0 ? totalScroll / windowHeight : 0;
+                    setProgress(Number(scroll));
+                }
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            // Manejador de clic en enlaces
+            const handleLinkClick = (e, link) => {
+                // Si es un ancla interna (#id)
+                if (link && link.startsWith('#')) {
+                    e.preventDefault();
                     
-                    {/* MENÚ DE CONTENIDOS EN EL NAV */}
-                    <div className="relative">
-                        <button 
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-cyan-400 hover:text-cyan-300 transition-colors py-2 px-4 border border-cyan-900/50 rounded hover:bg-cyan-950/30"
-                        >
-                            <span className="hidden sm:inline">Tabla de</span> Contenidos
-                            {isMenuOpen ? <X size={16} /> : <Menu size={16} />}
-                        </button>
+                    if (link === "#") return; // Enlace vacío, no hacer nada
 
-                        {isMenuOpen && (
-                            <div className="absolute right-0 mt-4 w-80 sm:w-96 bg-slate-900 border border-slate-800 shadow-2xl rounded-lg py-2 max-h-[80vh] overflow-y-auto animate-[fadeIn_0.2s_ease-out]">
-                                {TABLE_OF_CONTENTS.map((section, idx) => (
-                                    <div key={idx} className="mb-2">
-                                        {section.part !== "Intro" && (
-                                            <h4 className="px-6 py-2 text-xs font-bold text-amber-500 uppercase tracking-widest bg-slate-950/50">
-                                                {section.part}
-                                            </h4>
-                                        )}
-                                        {section.items.map((item, i) => (
-                                            <button
-                                                key={i}
-                                                onClick={() => scrollToSection(item.id)}
-                                                className="block w-full text-left px-6 py-3 text-sm text-slate-400 hover:bg-slate-800 hover:text-cyan-400 transition-colors border-l-2 border-transparent hover:border-cyan-400"
-                                            >
-                                                {item.title}
-                                            </button>
+                    const id = link.substring(1);
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth' });
+                        setIsMenuOpen(false);
+                    } else {
+                        console.log("Sección no encontrada:", id);
+                        setIsMenuOpen(false);
+                    }
+                }
+                // Si es un enlace externo (http/https), dejamos que el navegador actúe normalmente (target="_blank" opcional)
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-300 font-sans selection:bg-cyan-500/30 pb-32">
+                    
+                    {/* PROGRESS BAR */}
+                    <div className="fixed top-0 left-0 h-1 bg-cyan-400 z-50 transition-all duration-100 ease-out shadow-[0_0_10px_rgba(34,211,238,0.7)]" style={{ width: `${progress * 100}%` }}></div>
+
+                    {/* NAVIGATION */}
+                    <nav className="fixed top-0 w-full z-40 bg-slate-950/80 backdrop-blur-md border-b border-white/5 transition-all duration-300">
+                        <div className="w-full max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+                            <div className="flex items-center gap-4 cursor-pointer" onClick={() => window.scrollTo(0,0)}>
+                                <div className="w-8 h-8 bg-amber-600 rounded-sm flex items-center justify-center text-slate-950 font-serif font-bold shadow-lg shadow-amber-900/20">V</div>
+                                <div className="hidden md:block">
+                                    <h1 className="text-slate-100 font-serif text-sm tracking-widest uppercase font-bold">Francisco J. Varela</h1>
+                                    <span className="text-[10px] text-slate-500 uppercase tracking-widest block mt-0.5">Principios de Autonomía Biológica</span>
+                                </div>
+                            </div>
+                            
+                            {/* MENÚ DE CONTENIDOS EN EL NAV */}
+                            <div className="relative">
+                                <button 
+                                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                    className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-cyan-400 hover:text-cyan-300 transition-colors py-2 px-4 border border-cyan-900/50 rounded hover:bg-cyan-950/30 group"
+                                >
+                                    <span className="hidden sm:inline font-semibold group-hover:drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]">Índice</span>
+                                    {isMenuOpen ? <XIcon size={16} /> : <MenuIcon size={16} />}
+                                </button>
+
+                                {isMenuOpen && (
+                                    <div className="absolute right-0 mt-4 w-80 sm:w-96 bg-slate-900/95 backdrop-blur-xl border border-slate-800 shadow-2xl rounded-lg py-2 max-h-[80vh] overflow-y-auto animate-fade-in z-50">
+                                        {TABLE_OF_CONTENTS.map((section, idx) => (
+                                            <div key={idx} className="mb-2">
+                                                {section.part !== "Intro" && (
+                                                    <h4 className="px-6 py-2 text-[10px] font-bold text-amber-500 uppercase tracking-widest bg-slate-950/50 mt-2 sticky top-0">
+                                                        {section.part}
+                                                    </h4>
+                                                )}
+                                                {section.items.map((item, i) => (
+                                                    <a
+                                                        key={i}
+                                                        href={item.link}
+                                                        onClick={(e) => handleLinkClick(e, item.link)}
+                                                        className="block w-full text-left px-6 py-3 text-xs md:text-sm text-slate-400 hover:bg-slate-800 hover:text-cyan-400 transition-colors border-l-2 border-transparent hover:border-cyan-400 no-underline"
+                                                    >
+                                                        {item.title}
+                                                    </a>
+                                                ))}
+                                            </div>
                                         ))}
                                     </div>
-                                ))}
+                                )}
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    </nav>
+
+                    {/* HERO SECTION (PORTADA) */}
+                    <header className="min-h-screen flex flex-col justify-center items-center text-center px-4 relative overflow-hidden">
+                        {/* Background Effect */}
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 -z-10"></div>
+                        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] -z-10 mix-blend-overlay"></div>
+                        
+                        <div className="animate-fade-in flex flex-col items-center max-w-4xl mx-auto z-10">
+                            <h1 className="text-5xl md:text-7xl lg:text-9xl font-serif text-slate-100 mb-6 leading-[0.9]">
+                                Principios de<br/>
+                                <span className="italic text-slate-400 font-light block mt-4">Autonomía Biológica</span>
+                            </h1>
+                            
+                            <div className="w-24 h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mx-auto my-12 opacity-80"></div>
+                            
+                            <p className="text-2xl md:text-3xl text-amber-500/80 font-serif tracking-widest uppercase mb-4">Francisco J. Varela</p>
+                        </div>
+                        
+                        <div className="absolute bottom-10 animate-bounce text-slate-600">
+                            <ChevronDownIcon size={32} strokeWidth={1} />
+                        </div>
+                    </header>
+
+                    {/* MAIN CONTENT CONTAINER */}
+                    <main className="w-full px-6 py-12 md:py-24 max-w-7xl mx-auto">
+
+                        {/* PREFACE */}
+                        <section id="preface" className="mb-40 scroll-mt-24">
+                            <div className="mb-24 text-center w-full max-w-3xl mx-auto">
+                                <span className="text-cyan-400 text-xs font-bold tracking-[0.3em] uppercase mb-6 block">Introducción</span>
+                                <h2 className="text-5xl md:text-6xl font-serif text-slate-100 mb-6">Prefacio</h2>
+                                <h3 className="text-xl md:text-2xl text-amber-500/60 font-serif italic tracking-wide">Información y Control Revisitados</h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-24 w-full">
+                                <QuoteBlock author="C. Bernard, Introduction à L'Étude de la Médecine Expérimentale (1865)">
+                                    Les systèmes ne sont pas dans la nature, mais dans l'esprit des hommes.
+                                </QuoteBlock>
+
+                                <QuoteBlock author="L. Wittgenstein, Bemerkungen über die Grundlagen de Mathematik (1956)">
+                                    Was wir liefern sind eigentlich Bemerkungen zur Naturgeschichte des Menschen; aber keine kuriose Beiträge, sondern Feststellungen von Fakten, an denen niemand gezweifelt hat, und die dem Bemerktwerden nur entgeben, weil sie sich ständig vor unsern Augen herumtreiben.
+                                </QuoteBlock>
+                            </div>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Dos temas, en contrapunto, son el motivo de este libro. El primero es la autonomía exhibida por los sistemas en la naturaleza. El segundo son sus habilidades cognitivas e informacionales.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Estos dos temas están en relación uno con el otro como el interior y el exterior de un círculo dibujado en un plano, inseparablemente distintos, pero unidos por la mano que los dibuja.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Autonomía significa, literalmente, auto-ley. Para ver lo que esto conlleva, es más fácil contrastarlo con su imagen especular, alonomía o ley externa. Esto es, por supuesto, lo que llamamos control. Estas dos imágenes, autonomía y control, realizan una danza continua. Una representa generación, regulación interna, afirmación de la propia identidad: definición desde el interior. La otra representa consumo, entrada y salida, afirmación de la identidad del otro: definición desde el exterior. Su interacción abarca un amplio rango, desde la genética hasta la psicoterapia.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Todos conocemos bien el control; ha sido cartografiado y formalizado. De ahí el poder del computador y de los servicios orientados al consumidor. Su modelo popular es: algo entra/proceso/algo sale. Estamos a ambos lados de la entrada y la salida, ya sea un sistema económico, un compilador o la mente de una persona. El paradigma fundamental de nuestra interacción con un sistema de control es la instrucción, y los resultados insatisfactorios son errores.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La autonomía ha estado menos de moda. Generalmente se toma como un término más vago y algo moralista, y se descarta como una cuestión de indeterminación. Hay poca comprensión de su importancia genérica, y mucho menos de su representación en términos formales. El paradigma fundamental de nuestra interacción con un sistema autónomo es una conversación, y sus resultados insatisfactorios son quiebres en el entendimiento.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Una intención fundamental de este libro es sacar a la luz la interacción de estas dos nociones e identificar los mecanismos subyacentes que dotan a los sistemas naturales de autonomía. Resulta que estos mecanismos tienen que ver con las omnipresentes circularidades que se encuentran en la naturaleza. Nos vemos llevados a considerar con toda seriedad la imagen tradicional de la serpiente comiéndose su propia cola como la imagen guía para la autonomía como auto-ley y auto-regulación. Pero, ¿qué significa este "auto" (self), más precisamente? Un enfoque en esta pregunta es un hilo conductor a lo largo de este libro, llevándonos a una caracterización de los procesos autorreferenciales y recursivos y sus propiedades como mecanismos fundamentales de la autonomía natural.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La forma en que un sistema es identificado y especificado a través de nuestras interacciones con él no es separable de la forma en que se entiende su rendimiento cognitivo. La caracterización de control está íntimamente ligada a una comprensión de la información [1] como instrucción y representación. En consecuencia, explorar la forma en que un sistema especifica su propia identidad es también explorar lo que sus acciones informacionales pueden significar posiblemente (Piaget, 1969). Así, al discutir la autonomía, somos llevados a una reexaminación de la noción de información misma: lejos de la instrucción, hacia la forma en que la información es construida; lejos de la representación, hacia la forma en que el comportamiento adecuado refleja viabilidad en el funcionamiento del sistema en lugar de una correspondencia con un estado de cosas dado.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Se puede decir que la línea central de pensamiento en este libro es desatar, explícitamente, los nudos de este trío inseparable: la identidad de un sistema, su desempeño en sus interacciones con lo que no es, y cómo nos relacionamos con estos dos dominios distintos. Diferentes preferencias y valores atribuidos a esta tríada determinan cómo vemos un sistema, cómo conceptualizamos la información y qué papel nos atribuimos a nosotros mismos en todo el proceso. Dicho de otra manera: Detrás de las visiones predominantes sobre el control y la información-como-representación, encontramos una constelación de supuestos filosóficos que moldean la forma en que nos relacionamos con la diversidad de seres sintientes [2]. Con esto me refiero a entidades a las que nos vemos obligados a reconocer un lado informacional, una mente de algún tipo, por opaca y simple que sea. No estoy hablando solo de seres vivos individuales, sino de muchos otros agregados como redes ecológicas, complejos gerenciales, conversaciones, sociedades animales; de hecho, dondequiera que haya un sentido de ser distinto de un fondo, junto con la capacidad de lidiar con él a través de acciones cognitivas.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Dado que la mayor parte de nuestras vidas se refiere a cómo vemos a otras entidades y cómo comprendemos lo que transcurre entre nosotros, no es de extrañar que las ciencias de la información, entendidas en este sentido amplio, estén cargadas de connotaciones filosóficas y ético-políticas. Es mi visión que esta área de la ciencia ha sido sustancialmente modelada a imagen de la física y su pathos tecnológico. Una diferencia esencial aquí, sin embargo, es que nosotros y el mundo que nos sostiene pertenecemos a las categorías de ser sintiente y no de átomos y cuásares. En consecuencia, el enfoque prometeico heredado de la física rebota hacia nosotros de una manera rápida y dramática.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                No estoy siendo grandilocuente. El hecho es que, después de las Guerras, la imaginación científica pasó de los vatios a los bits, y en casi nada de tiempo produjo un cambio dramático no solo en la forma de lo que trataba la investigación científica, sino también en la vida de todos. Como en una olla hirviendo, las imágenes de información y procesos de información rodean a todos y a todo lo que tiene interés en relaciones complejas, comunicación y mente. Ideas, campos y aplicaciones se entrecruzan, y no hay sentido de dirección o unificación como la ciencia de antes de la guerra parecía tener. No busco tal unificación aquí en absoluto. En cambio, estoy identificando un supuesto dominante que parece omnipresente en cada profundidad de esta olla hirviendo, y propongo explorar una alternativa.
+                            </Paragraph>
+
+                             <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Rosenberg (1974) ha caracterizado acertadamente la visión dominante de las ciencias de la información como la "gestalt del computador". Tiene razón, creo, en un doble sentido. Primero, es de hecho como una gestalt perceptual en el sentido de una perspectiva favorecida, haciendo muy difícil salir afuera para contemplar dónde uno está parado. Segundo, el computador de hecho encarna la metáfora en términos de la cual todo lo demás se mide. El ritmo rápido en el campo del diseño con su ethos manipulativo inherente ha eclipsado cualquier otra fuente de imágenes y modos de comprensión. La información, para la gestalt del computador, se convierte inequívocamente en lo que se representa, y lo que se representa es una correspondencia entre unidades simbólicas en una estructura y unidades simbólicas en otra estructura. La representación es fundamentalmente una imagen del entorno relevante de un sistema, aunque no necesariamente una copia al carbón [3].
+                            </Paragraph>
+                            
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Desde el punto de vista de los sistemas naturales (incluidos los sociales), la gestalt del computador es, por decir lo menos, cuestionable. No hay nadie en el cerebro a quien podamos referirnos para obtener una asignación de correspondencias, y cualquier intento de verlo como una máquina de procesamiento de entrada-salida puede ser igualmente bien interpretado como la máquina reduciéndonos a una entidad igualmente alónoma. Con cualquiera de la variedad de sistemas naturales y autónomos, todo lo que tenemos son ciertas regularidades conductuales, que son de interés para nosotros como observadores externos que tienen acceso simultáneo a la operación del sistema y a sus interacciones. Tales regularidades, cuando elegimos llamarlas cognitivas e informacionales, siempre nos remiten al carácter unitario del sistema en cuestión, ya sea una célula, un cerebro o una conversación. Desde esta perspectiva, lo que llamamos una representación no es una correspondencia dada por un estado de cosas externo, sino más bien una consistencia con su propio mantenimiento continuo de identidad. Tales regularidades, que elegimos llamar simbólicas, no son operacionales para el sistema, pues somos nosotros quienes estamos estableciendo la correspondencia desde un punto de vista que no está en la operación del sistema. Así, cuando cambiamos de una perspectiva de control a una de autonomía, lo que llamamos información difiere de la gestalt del computador en formas importantes. Cada bit de información es relativo al mantenimiento de la identidad de un sistema, y solo puede describirse en referencia a él, pues no hay diseñador. En este sentido, la información nunca se recoge o transfiere, ni hay diferencia alguna entre entidades informacionales y no informacionales en el ambiente de un sistema.
+                            </Paragraph>
+                            
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Útil como puede ser en los campos del diseño, al paradigma de los procesos cognitivos como representaciones se le ha dado un estatus privilegiado en nuestro pensamiento actual sobre la cognición. Está bien y es bueno que podamos eludir estas distinciones en el dominio del diseño, o en algunos de nuestros tratos con sistemas naturales donde pueden ser tratados análogamente. Tomar este enfoque como una estrategia general y universal para todos los aspectos de los sistemas naturales, incluidas las transacciones humanas, parece increíblemente limitante. De hecho, no es viable en absoluto, como argumentaré en detalle para los dos sistemas cognitivos más ricos en los seres vivos: las redes inmune y nerviosa.
+                            </Paragraph>
+                            
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Es uno de esos interesantes corsi e ricorsi de la historia de las ideas que la fuente de la gestalt del computador fue una comprensión de los sistemas vivos. De esta inspiración inicial, sin embargo, la mayor parte del énfasis parece haberse desplazado hacia la ingeniería y el diseño, mucho más que hacia otras áreas. Estoy argumentando, nuevamente sobre la base de sistemas biológicos, que esta comprensión predominante es unilateral e incompleta.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Estoy afirmando que la información —junto con todas sus nociones estrechamente relacionadas— tiene que ser reinterpretada como codependiente o constructiva, en contraposición a representacional o instructiva. Esto significa, en otras palabras, un cambio de preguntas sobre correspondencia semántica a preguntas sobre patrones estructurales. Una estructura dada determina qué constituye el sistema y cómo puede manejar perturbaciones continuas de sus alrededores, pero no necesita referencia alguna a un mapeo o representación para su operación. No preguntamos cuál es la correspondencia entre el sistema nervioso de un animal y "el" mundo en el que está, sino más bien cuál es la estructura del sistema nervioso mediante la cual puede efectuar la conformación de su dominio de interacciones. La noción de información como representación es en última instancia independiente de la estructura del sistema; pero es para el observador externo —mejor aún, para toda la tradición que describe la situación— que la externalidad del supuesto mundo a ser mapeado existe en absoluto. Al insistir en mirar los procesos cognitivos como actividades de mapeo, uno oscurece sistemáticamente la codependencia, el entrelazamiento íntimo entre la estructura de un sistema y el dominio de actos cognitivos, el mundo informativo que especifica a través de su operación. Los eventos informacionales no tienen calidad sustancial o de "allá afuera"; estamos hablando literalmente de in-formare: aquello que se forma dentro. La in-formación no aparece en ninguna parte excepto en el entrelazamiento relativo entre el descriptor, la unidad y sus interacciones.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Esta idea no es realmente nueva; ha sido familiar para muchas tradiciones científicas y filosóficas. Sin embargo, bajo la imponente influencia del positivismo, ha sido ignorada en el lenguaje y la investigación empírica de la ciencia por ingenieros, biólogos y educadores por igual. Mi argumento echa raíces en la ciencia e intenta corregir este desequilibrio desde el interior. Este cambio de un punto de vista semántico a uno estructural es, en esta etapa, un programa de investigación que apenas comienza a desarrollarse. En este libro exploraré y daré sustancia a solo algunos ítems de este programa. Pero a menos que tomemos en cuenta que hay un lado autónomo en muchos sistemas naturales y sociales, nos meteremos en problemas, no solo en los detalles de la investigación y formalizaciones, sino en la escala más amplia de nuestros tratos con seres sintientes, con la vida, con el medio ambiente y en la comunicación humana. A este respecto, los problemas de la biología son un microcosmos de las cuestiones filosóficas globales con las que lidiamos hoy.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Un principio básico en estas páginas es que no estoy en contra de lo que he llamado la gestalt del computador, ni la estoy rechazando como inútil. Estoy diciendo que es limitada y viable solo en situaciones de autonomía restringida e in-formación fija, que son en realidad las únicas situaciones donde las visiones de control y representacionales pueden emerger en absoluto. La perspectiva que estoy esbozando aquí puede acomodar esta visión estándar y ponerla más en equilibrio. En consecuencia, un concepto muy importante a lo largo de este libro es el de complementariedad, y la interacción constructiva entre dos visiones interdependientes que eleva el nivel de comprensión de uno a un nuevo nivel. No soy un "autonomista" en guerra con los ingenieros de control; pero sí quiero declarar claramente que la visión de control, si se toma sola, conduce a insuficiencias en nuestra comprensión de los sistemas naturales, y a importantes dificultades epistemológicas y políticas. No estoy diciendo qué es mejor; estoy planteando alternativas.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                El hecho de que tome aquí el punto de vista de un historiador natural (y un biólogo además) significa también que no hay discontinuidad con la forma en que estos conceptos pueden verse aplicados a las capacidades cognitivas del hombre y, para el caso, a las dinámicas sociales. Lo que vemos operando en mayor detalle en la autonomía natural —el tema real de este libro— es un reflejo de aquello en lo que nosotros mismos estamos inmersos.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En estricta conformidad con esta visión de in-formación, veremos que la presencia del observador (de la comunidad de observadores, de la tradición) se vuelve más y más tangible, hasta el punto de que tenemos que construir sobre un estilo de pensamiento donde la descripción revela las propiedades del observador en lugar de oscurecerlas (como von Foerster ha remarcado acertadamente). Es una visión del conocimiento y la realidad participativos, que vemos enraizada en los procesos cognitivos e informacionales de la naturaleza desde sus formas celulares más elementales. Hay, de hecho, dos formas distintas en las que la irrupción del observador se hace aparente en esta presentación.
+                            </Paragraph>
+                            
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Por un lado, vemos la necesidad de reconocer el papel del proceso a través del cual distinguimos las unidades o entidades de las que hablamos: la forma en que el mundo se divide en compartimentos distintos, y la forma en que tales discriminaciones y distinciones se relacionan por niveles y relaciones entre niveles. Así, el mantenimiento de la identidad de un sistema —su autonomía— es un dominio distinto e irreductible con respecto al funcionamiento de ese sistema en sus interacciones. Estos dos dominios fenoménicos están relacionados solo a través de nuestras descripciones, y estas relaciones no entran en la operación del sistema que nos ocupa. Cada una de estas visiones es complementaria a la otra, y necesitamos hacerlas explícitas.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Una segunda forma en la que el observador entra en esta visión de las unidades y su información es que nosotros mismos caemos en la misma clase: hay continuidad en el sentido biológico, y en los mecanismos cognitivos que operan en otras partes de la naturaleza. Así, lo que es básicamente válido para la comprensión de la autonomía de los sistemas vivos, para células y ranas, se transfiere a nuestro sistema nervioso y autonomía social, y por ende a una epistemología naturalizada, que no carece de consecuencias. Nos fuerza a una comprensión renovada de lo que puede ser la naturaleza física que es inseparable de nuestra integridad biológica, y lo que nosotros mismos podemos ser que somos inseparables de una tradición.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                De hecho, estos dos modos de "bootstrapping" (arranque) de la comunidad de observadores cierran el círculo para esta presentación y hacen que se mantenga unida cohesivamente. Encarna, una vez más, la misma noción básica de que una perspectiva útil no requiere un terreno objetivo y sólido al cual todo pueda ser finalmente fijado. El sabor de la epistemología adoptada aquí, y asumida por la estructura del libro, es que el conocimiento está de hecho bastante lleno de detalles pero no cuelga de ninguna parte, aparte de su tradición, y no lleva a ninguna parte excepto a una nueva interpretación dentro de esa tradición. Creo que la importancia de llegar a comprender esta realización, exigida por la investigación actual y por el rigor lógico, es trascendental en la ciencia, la ética y la vida personal. Si estas páginas contribuyen una pulgada a esa conciencia, habrán tenido éxito sobradamente a mis ojos. Sin embargo, reitero inmediatamente la advertencia de que no me detendré en estos asuntos en gran detalle. Mi tema es la autonomía en los sistemas naturales. Todas las conexiones e implicaciones con la epistemología y los asuntos humanos serán señaladas, pero no exploradas en extensión.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Hay ciertas personas que han influido en este libro de manera tan penetrante que parece justo mencionarlas desde el principio. Son Humberto Maturana, Heinz von Foerster, Gregory Bateson y Jean Piaget. De todos ellos, solo Maturana está verdaderamente representado en el contenido de estas páginas. Lo que siempre ha inspirado y mantenido mi interés en estos pensadores es que se niegan a establecer líneas de demarcación, y sin embargo mantienen una mirada fija a lo largo de una línea de pensamiento. El pensamiento cobra vida y anima la quietud de las disciplinas. Además, todos ellos hacen de la historia natural una fuente permanente de observación; hay preocupación por la contemplación más que por el diseño. Un tercer rasgo común a estos hombres, y de gran importancia para mí, es la presencia de una epistemología experimental como un fondo explícito para considerar la información y la mente en su sentido más pleno, ya sea en la danza balinesa o la visión de la rana. Esta amplitud de preocupaciones, encarnada en una interacción delicada entre una visión de lo general y la textura de lo específico, es lo que parece ser necesario.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                He tratado de no ser idiosincrásico en mi uso del lenguaje, y escaso en la introducción de nueva nomenclatura. Sin embargo, parece inevitable introducir un cierto número de nuevos conceptos y definiciones si uno va a apuntar a un terreno inexplorado en absoluto. Así, por ejemplo, podría haber formulado la discusión de la autonomía en términos de sistemas completos o totalidades, pero estas nociones han adquirido muchas connotaciones que podrían haber oscurecido lo que quería decir; esta trampa, de hecho, acecha a lo largo del libro. Se proporcionan punteros y referencias cruzadas en cada caso a la literatura relacionada.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                El texto se despliega en tres partes. Estas cubren, respectivamente: la autonomía de los sistemas vivos como una fuente de caracterización de la autonomía en general; formas de representar la complementariedad y las circularidades; y las capacidades cognitivas del sistema autónomo y su información codependiente. Cada una de estas partes puede leerse algo independientemente del resto, según la inclinación del lector.
+                            </Paragraph>
+                            
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                No puedo decir con suficiente fuerza que este libro se ofrece en el espíritu de síntesis y exploración, no de tratado, dogma u opinión establecida. Nada presentado aquí puede considerarse fijo, y soy muy consciente de ello. De hecho, la naturaleza misma del tema, de esbozar un cambio de gestalt sobre la información natural y el control, es predeciblemente intrincada y probable que arroje resultados mixtos. Implica en parte una reinterpretación de lo que parece ya disponible para nosotros, conceptual y experimentalmente, y en parte un proceso bastante difícil de concebir nuevos diseños y ajustarse a nuevas perspectivas. Todo el asunto es en realidad bastante cambiante. Mi razón para publicarlo es que hay suficiente aquí para comenzar y animar una discusión, suficiente de un cuerpo de trabajo para crear debate. Simplemente miro todo esto como señales en un vasto paisaje sin forma, donde se pueden tomar muchas rutas, y tal vez, donde podamos elegir regresar a donde comenzamos con la sensación de verlo de nuevo, más nítidamente.
+                            </Paragraph>
+                        </section>
+
+                        {/* ACKNOWLEDGMENTS */}
+                        <section id="acknowledgments" className="mb-40 scroll-mt-24">
+                            <div className="w-full h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent mb-20"></div>
+                            
+                            <h2 className="text-4xl md:text-5xl font-serif text-slate-100 mb-12 text-center tracking-wide">Agradecimientos</h2>
+                            
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                He sido extraordinariamente afortunado al disfrutar de las enseñanzas y la hermandad intelectual de muchísimas personas. Muchas gracias van primero y ante todo a mi amigo y antiguo maestro Humberto Maturana. En segundo lugar solo a él, estoy profundamente agradecido por lo que he aprendido de Gregory Bateson, Fernando Flores, Joseph Goguen, Ivan Illich, Chögyam Trungpa y Heinz von Foerster. Hay muchos otros amigos y colegas a quienes no listaré aquí, pero con quienes estoy igualmente en deuda. Quizás más que a nadie en particular le debo a la mente colectiva del pueblo de Chile, donde encontré mi inspiración.
+                            </Paragraph>
+                            
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Las etapas iniciales de este trabajo se llevaron a cabo en y con el apoyo de la Universidad de Chile. Continuó en la Universidad Nacional en Costa Rica, que generosamente me alojó en el difícil período después de que dejé mi país desgarrado por la guerra civil. Una gran parte de este libro se produjo mientras estaba con la Escuela de Medicina en la Universidad de Colorado. Estoy en deuda con David Moran y David Whitlock por darme amplia libertad allí. Las etapas finales de redacción se llevaron a cabo en el Instituto de Ciencia del Comportamiento, Universidad de Colorado en Boulder. El apoyo financiero provino de subvenciones de la Fundación Nacional de Ciencias (BMS-73-06766, conjuntamente con D. Moran), y la Fundación Alfred P. Sloan, que me hizo uno de sus becarios para 1976-1978. Finalmente, se deben gracias a George Klir por su aliento y entusiastas esfuerzos editoriales.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Este libro se basa en el trabajo realizado durante un período de ocho años de preocupación con las preguntas centrales de la autonomía y la in-formación. Un motivo básico para escribirlo fue la sensación de que era hora de tirar de los hilos dispares producidos durante este tiempo un poco más cerca, y ofrecer una vista panorámica de hacia dónde estoy tratando de mirar. Excepto por unos pocos capítulos, todo el material incluido ha sido publicado antes. He reelaborado y reescrito todos estos documentos fuente extensamente, y agregado cualquier enlace de conexión que pareciera faltar en esta etapa. A pesar de esto, el lector tendrá que soportar una cierta cantidad de repetición y diferencias en el estilo. Muchos de los documentos fuente fueron escritos en colaboración con otros autores: Joseph Goguen, Louis Kauffman, Humberto Maturana, Nelson Vaz y Ernst von Glasersfeld. Al reelaborar los documentos para este libro, seguramente he violentado su estilo e intención inicial. Estoy profundamente agradecido a todos estos colaboradores por dejarme hacerlo; cualquier éxito que haya tenido en transmitir una idea interesante debería ser compartido por ellos en su totalidad. En todos los casos, al final del capítulo he listado las fuentes explícitamente.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                A mi esposa Leonor le debo más que agradecimiento; le debo todo lo que proviene de un amor vasto y nutritivo.
+                            </Paragraph>
+                        </section>
+
+                    </main>
+
+                    {/* FOOTER */}
+                    <footer className="w-full text-center py-10 border-t border-slate-900 text-slate-600 text-sm">
+                        <p className="mb-2 uppercase tracking-widest font-serif">Principios de Autonomía Biológica</p>
+                        <p>© Francisco J. Varela</p>
+                    </footer>
+
+                    {/* SMART FOOTNOTE PANEL */}
+                    {activeFootnote && (
+                        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl bg-black/90 border border-cyan-900/30 text-slate-300 p-8 rounded-lg shadow-2xl backdrop-blur-xl z-50 animate-fade-in ring-1 ring-cyan-500/20">
+                            <div className="flex items-start gap-6">
+                                <span className="text-cyan-400 font-serif text-3xl font-bold leading-none select-none">[{activeFootnote}]</span>
+                                <p className="text-base md:text-lg leading-relaxed text-justify font-light">{FOOTNOTES[activeFootnote]}</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
-            </nav>
+            );
+        }
 
-            {/* HERO SECTION (PORTADA) */}
-            <header className="min-h-screen flex flex-col justify-center items-center text-center px-4 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 -z-10"></div>
-                <div className="fade-in" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                    {/* DATOS EDITORIALES ELIMINADOS AQUI */}
-                    <h1 className="text-5xl md:text-7xl lg:text-9xl font-serif text-slate-100 mb-8 leading-tight">
-                        Principios de<br/>
-                        <span className="italic text-slate-300">Autonomía Biológica</span>
-                    </h1>
-                    <div className="w-32 h-1 bg-cyan-500 mx-auto mb-10"></div>
-                    <p className="text-3xl md:text-4xl text-slate-300 font-serif tracking-wide mb-16">Francisco J. Varela</p>
-                    {/* DATOS DE CIUDAD/EDITORIAL ELIMINADOS AQUI */}
-                </div>
-                
-                <div className="absolute bottom-10 animate-bounce text-slate-600">
-                    <ChevronDown size={32} />
-                </div>
-            </header>
-
-            {/* MAIN CONTENT CONTAINER - FULL WIDTH */}
-            <main className="w-full px-4 md:px-6 py-12">
-
-                {/* PREFACE */}
-                <section id="preface" className="mb-40">
-                    <div className="mb-20 text-center w-full">
-                        <span className="text-cyan-400 text-xs font-bold tracking-[0.2em] uppercase mb-4 block">Introducción</span>
-                        <h2 className="text-5xl md:text-6xl font-serif text-slate-100 mb-6">Prefacio</h2>
-                        <h3 className="text-2xl text-amber-500/80 font-serif italic">Información y Control Revisitados</h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-20 w-full">
-                        <QuoteBlock author="C. Bernard, Introduction à L'Étude de la Médecine Expérimentale (1865)">
-                            Les systèmes ne sont pas dans la nature, mais dans l'esprit des hommes.
-                        </QuoteBlock>
-
-                        <QuoteBlock author="L. Wittgenstein, Bemerkungen über die Grundlagen de Mathematik (1956)">
-                            Was wir liefern sind eigentlich Bemerkungen zur Naturgeschichte des Menschen; aber keine kuriose Beiträge, sondern Feststellungen von Fakten, an denen niemand gezweifelt hat, und die dem Bemerktwerden nur entgeben, weil sie sich ständig vor unsern Augen herumtreiben.
-                        </QuoteBlock>
-                    </div>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Dos temas, en contrapunto, son el motivo de este libro. El primero es la autonomía exhibida por los sistemas en la naturaleza. El segundo son sus habilidades cognitivas e informacionales.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Estos dos temas están en relación uno con el otro como el interior y el exterior de un círculo dibujado en un plano, inseparablemente distintos, pero unidos por la mano que los dibuja.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Autonomía significa, literalmente, auto-ley. Para ver lo que esto conlleva, es más fácil contrastarlo con su imagen especular, alonomía o ley externa. Esto es, por supuesto, lo que llamamos control. Estas dos imágenes, autonomía y control, realizan una danza continua. Una representa generación, regulación interna, afirmación de la propia identidad: definición desde el interior. La otra representa consumo, entrada y salida, afirmación de la identidad del otro: definición desde el exterior. Su interacción abarca un amplio rango, desde la genética hasta la psicoterapia.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Todos conocemos bien el control; ha sido cartografiado y formalizado. De ahí el poder del computador y de los servicios orientados al consumidor. Su modelo popular es: algo entra/proceso/algo sale. Estamos a ambos lados de la entrada y la salida, ya sea un sistema económico, un compilador o la mente de una persona. El paradigma fundamental de nuestra interacción con un sistema de control es la instrucción, y los resultados insatisfactorios son errores.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        La autonomía ha estado menos de moda. Generalmente se toma como un término más vago y algo moralista, y se descarta como una cuestión de indeterminación. Hay poca comprensión de su importancia genérica, y mucho menos de su representación en términos formales. El paradigma fundamental de nuestra interacción con un sistema autónomo es una conversación, y sus resultados insatisfactorios son quiebres en el entendimiento.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Una intención fundamental de este libro es sacar a la luz la interacción de estas dos nociones e identificar los mecanismos subyacentes que dotan a los sistemas naturales de autonomía. Resulta que estos mecanismos tienen que ver con las omnipresentes circularidades que se encuentran en la naturaleza. Nos vemos llevados a considerar con toda seriedad la imagen tradicional de la serpiente comiéndose su propia cola como la imagen guía para la autonomía como auto-ley y auto-regulación. Pero, ¿qué significa este "auto" (self), más precisamente? Un enfoque en esta pregunta es un hilo conductor a lo largo de este libro, llevándonos a una caracterización de los procesos autorreferenciales y recursivos y sus propiedades como mecanismos fundamentales de la autonomía natural.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        La forma en que un sistema es identificado y especificado a través de nuestras interacciones con él no es separable de la forma en que se entiende su rendimiento cognitivo. La caracterización de control está íntimamente ligada a una comprensión de la información [1] como instrucción y representación. En consecuencia, explorar la forma en que un sistema especifica su propia identidad es también explorar lo que sus acciones informacionales pueden significar posiblemente (Piaget, 1969). Así, al discutir la autonomía, somos llevados a una reexaminación de la noción de información misma: lejos de la instrucción, hacia la forma en que la información es construida; lejos de la representación, hacia la forma en que el comportamiento adecuado refleja viabilidad en el funcionamiento del sistema en lugar de una correspondencia con un estado de cosas dado.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Se puede decir que la línea central de pensamiento en este libro es desatar, explícitamente, los nudos de este trío inseparable: la identidad de un sistema, su desempeño en sus interacciones con lo que no es, y cómo nos relacionamos con estos dos dominios distintos. Diferentes preferencias y valores atribuidos a esta tríada determinan cómo vemos un sistema, cómo conceptualizamos la información y qué papel nos atribuimos a nosotros mismos en todo el proceso. Dicho de otra manera: Detrás de las visiones predominantes sobre el control y la información-como-representación, encontramos una constelación de supuestos filosóficos que moldean la forma en que nos relacionamos con la diversidad de seres sintientes [2]. Con esto me refiero a entidades a las que nos vemos obligados a reconocer un lado informacional, una mente de algún tipo, por opaca y simple que sea. No estoy hablando solo de seres vivos individuales, sino de muchos otros agregados como redes ecológicas, complejos gerenciales, conversaciones, sociedades animales; de hecho, dondequiera que haya un sentido de ser distinto de un fondo, junto con la capacidad de lidiar con él a través de acciones cognitivas.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Dado que la mayor parte de nuestras vidas se refiere a cómo vemos a otras entidades y cómo comprendemos lo que transcurre entre nosotros, no es de extrañar que las ciencias de la información, entendidas en este sentido amplio, estén cargadas de connotaciones filosóficas y ético-políticas. Es mi visión que esta área de la ciencia ha sido sustancialmente modelada a imagen de la física y su pathos tecnológico. Una diferencia esencial aquí, sin embargo, es que nosotros y el mundo que nos sostiene pertenecemos a las categorías de ser sintiente y no de átomos y cuásares. En consecuencia, el enfoque prometeico heredado de la física rebota hacia nosotros de una manera rápida y dramática.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        No estoy siendo grandilocuente. El hecho es que, después de las Guerras, la imaginación científica pasó de los vatios a los bits, y en casi nada de tiempo produjo un cambio dramático no solo en la forma de lo que trataba la investigación científica, sino también en la vida de todos. Como en una olla hirviendo, las imágenes de información y procesos de información rodean a todos y a todo lo que tiene interés en relaciones complejas, comunicación y mente. Ideas, campos y aplicaciones se entrecruzan, y no hay sentido de dirección o unificación como la ciencia de antes de la guerra parecía tener. No busco tal unificación aquí en absoluto. En cambio, estoy identificando un supuesto dominante que parece omnipresente en cada profundidad de esta olla hirviendo, y propongo explorar una alternativa.
-                    </Paragraph>
-
-                     <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Rosenberg (1974) ha caracterizado acertadamente la visión dominante de las ciencias de la información como la "gestalt del computador". Tiene razón, creo, en un doble sentido. Primero, es de hecho como una gestalt perceptual en el sentido de una perspectiva favorecida, haciendo muy difícil salir afuera para contemplar dónde uno está parado. Segundo, el computador de hecho encarna la metáfora en términos de la cual todo lo demás se mide. El ritmo rápido en el campo del diseño con su ethos manipulativo inherente ha eclipsado cualquier otra fuente de imágenes y modos de comprensión. La información, para la gestalt del computador, se convierte inequívocamente en lo que se representa, y lo que se representa es una correspondencia entre unidades simbólicas en una estructura y unidades simbólicas en otra estructura. La representación es fundamentalmente una imagen del entorno relevante de un sistema, aunque no necesariamente una copia al carbón [3].
-                    </Paragraph>
-                    
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Desde el punto de vista de los sistemas naturales (incluidos los sociales), la gestalt del computador es, por decir lo menos, cuestionable. No hay nadie en el cerebro a quien podamos referirnos para obtener una asignación de correspondencias, y cualquier intento de verlo como una máquina de procesamiento de entrada-salida puede ser igualmente bien interpretado como la máquina reduciéndonos a una entidad igualmente alónoma. Con cualquiera de la variedad de sistemas naturales y autónomos, todo lo que tenemos son ciertas regularidades conductuales, que son de interés para nosotros como observadores externos que tienen acceso simultáneo a la operación del sistema y a sus interacciones. Tales regularidades, cuando elegimos llamarlas cognitivas e informacionales, siempre nos remiten al carácter unitario del sistema en cuestión, ya sea una célula, un cerebro o una conversación. Desde esta perspectiva, lo que llamamos una representación no es una correspondencia dada por un estado de cosas externo, sino más bien una consistencia con su propio mantenimiento continuo de identidad. Tales regularidades, que elegimos llamar simbólicas, no son operacionales para el sistema, pues somos nosotros quienes estamos estableciendo la correspondencia desde un punto de vista que no está en la operación del sistema. Así, cuando cambiamos de una perspectiva de control a una de autonomía, lo que llamamos información difiere de la gestalt del computador en formas importantes. Cada bit de información es relativo al mantenimiento de la identidad de un sistema, y solo puede describirse en referencia a él, pues no hay diseñador. En este sentido, la información nunca se recoge o transfiere, ni hay diferencia alguna entre entidades informacionales y no informacionales en el ambiente de un sistema.
-                    </Paragraph>
-                    
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Útil como puede ser en los campos del diseño, al paradigma de los procesos cognitivos como representaciones se le ha dado un estatus privilegiado en nuestro pensamiento actual sobre la cognición. Está bien y es bueno que podamos eludir estas distinciones en el dominio del diseño, o en algunos de nuestros tratos con sistemas naturales donde pueden ser tratados análogamente. Tomar este enfoque como una estrategia general y universal para todos los aspectos de los sistemas naturales, incluidas las transacciones humanas, parece increíblemente limitante. De hecho, no es viable en absoluto, como argumentaré en detalle para los dos sistemas cognitivos más ricos en los seres vivos: las redes inmune y nerviosa.
-                    </Paragraph>
-                    
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Es uno de esos interesantes corsi e ricorsi de la historia de las ideas que la fuente de la gestalt del computador fue una comprensión de los sistemas vivos. De esta inspiración inicial, sin embargo, la mayor parte del énfasis parece haberse desplazado hacia la ingeniería y el diseño, mucho más que hacia otras áreas. Estoy argumentando, nuevamente sobre la base de sistemas biológicos, que esta comprensión predominante es unilateral e incompleta.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Estoy afirmando que la información —junto con todas sus nociones estrechamente relacionadas— tiene que ser reinterpretada como codependiente o constructiva, en contraposición a representacional o instructiva. Esto significa, en otras palabras, un cambio de preguntas sobre correspondencia semántica a preguntas sobre patrones estructurales. Una estructura dada determina qué constituye el sistema y cómo puede manejar perturbaciones continuas de sus alrededores, pero no necesita referencia alguna a un mapeo o representación para su operación. No preguntamos cuál es la correspondencia entre el sistema nervioso de un animal y "el" mundo en el que está, sino más bien cuál es la estructura del sistema nervioso mediante la cual puede efectuar la conformación de su dominio de interacciones. La noción de información como representación es en última instancia independiente de la estructura del sistema; pero es para el observador externo —mejor aún, para toda la tradición que describe la situación— que la externalidad del supuesto mundo a ser mapeado existe en absoluto. Al insistir en mirar los procesos cognitivos como actividades de mapeo, uno oscurece sistemáticamente la codependencia, el entrelazamiento íntimo entre la estructura de un sistema y el dominio de actos cognitivos, el mundo informativo que especifica a través de su operación. Los eventos informacionales no tienen calidad sustancial o de "allá afuera"; estamos hablando literalmente de in-formare: aquello que se forma dentro. La in-formación no aparece en ninguna parte excepto en el entrelazamiento relativo entre el descriptor, la unidad y sus interacciones.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Esta idea no es realmente nueva; ha sido familiar para muchas tradiciones científicas y filosóficas. Sin embargo, bajo la imponente influencia del positivismo, ha sido ignorada en el lenguaje y la investigación empírica de la ciencia por ingenieros, biólogos y educadores por igual. Mi argumento echa raíces en la ciencia e intenta corregir este desequilibrio desde el interior. Este cambio de un punto de vista semántico a uno estructural es, en esta etapa, un programa de investigación que apenas comienza a desarrollarse. En este libro exploraré y daré sustancia a solo algunos ítems de este programa. Pero a menos que tomemos en cuenta que hay un lado autónomo en muchos sistemas naturales y sociales, nos meteremos en problemas, no solo en los detalles de la investigación y formalizaciones, sino en la escala más amplia de nuestros tratos con seres sintientes, con la vida, con el medio ambiente y en la comunicación humana. A este respecto, los problemas de la biología son un microcosmos de las cuestiones filosóficas globales con las que lidiamos hoy.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Un principio básico en estas páginas es que no estoy en contra de lo que he llamado la gestalt del computador, ni la estoy rechazando como inútil. Estoy diciendo que es limitada y viable solo en situaciones de autonomía restringida e in-formación fija, que son en realidad las únicas situaciones donde las visiones de control y representacionales pueden emerger en absoluto. La perspectiva que estoy esbozando aquí puede acomodar esta visión estándar y ponerla más en equilibrio. En consecuencia, un concepto muy importante a lo largo de este libro es el de complementariedad, y la interacción constructiva entre dos visiones interdependientes que eleva el nivel de comprensión de uno a un nuevo nivel. No soy un "autonomista" en guerra con los ingenieros de control; pero sí quiero declarar claramente que la visión de control, si se toma sola, conduce a insuficiencias en nuestra comprensión de los sistemas naturales, y a importantes dificultades epistemológicas y políticas. No estoy diciendo qué es mejor; estoy planteando alternativas.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        El hecho de que tome aquí el punto de vista de un historiador natural (y un biólogo además) significa también que no hay discontinuidad con la forma en que estos conceptos pueden verse aplicados a las capacidades cognitivas del hombre y, para el caso, a las dinámicas sociales. Lo que vemos operando en mayor detalle en la autonomía natural —el tema real de este libro— es un reflejo de aquello en lo que nosotros mismos estamos inmersos.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        En estricta conformidad con esta visión de in-formación, veremos que la presencia del observador (de la comunidad de observadores, de la tradición) se vuelve más y más tangible, hasta el punto de que tenemos que construir sobre un estilo de pensamiento donde la descripción revela las propiedades del observador en lugar de oscurecerlas (como von Foerster ha remarcado acertadamente). Es una visión del conocimiento y la realidad participativos, que vemos enraizada en los procesos cognitivos e informacionales de la naturaleza desde sus formas celulares más elementales. Hay, de hecho, dos formas distintas en las que la irrupción del observador se hace aparente en esta presentación.
-                    </Paragraph>
-                    
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Por un lado, vemos la necesidad de reconocer el papel del proceso a través del cual distinguimos las unidades o entidades de las que hablamos: la forma en que el mundo se divide en compartimentos distintos, y la forma en que tales discriminaciones y distinciones se relacionan por niveles y relaciones entre niveles. Así, el mantenimiento de la identidad de un sistema —su autonomía— es un dominio distinto e irreductible con respecto al funcionamiento de ese sistema en sus interacciones. Estos dos dominios fenoménicos están relacionados solo a través de nuestras descripciones, y estas relaciones no entran en la operación del sistema que nos ocupa. Cada una de estas visiones es complementaria a la otra, y necesitamos hacerlas explícitas.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Una segunda forma en la que el observador entra en esta visión de las unidades y su información es que nosotros mismos caemos en la misma clase: hay continuidad en el sentido biológico, y en los mecanismos cognitivos que operan en otras partes de la naturaleza. Así, lo que es básicamente válido para la comprensión de la autonomía de los sistemas vivos, para células y ranas, se transfiere a nuestro sistema nervioso y autonomía social, y por ende a una epistemología naturalizada, que no carece de consecuencias. Nos fuerza a una comprensión renovada de lo que puede ser la naturaleza física que es inseparable de nuestra integridad biológica, y lo que nosotros mismos podemos ser que somos inseparables de una tradición.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        De hecho, estos dos modos de "bootstrapping" (arranque) de la comunidad de observadores cierran el círculo para esta presentación y hacen que se mantenga unida cohesivamente. Encarna, una vez más, la misma noción básica de que una perspectiva útil no requiere un terreno objetivo y sólido al cual todo pueda ser finalmente fijado. El sabor de la epistemología adoptada aquí, y asumida por la estructura del libro, es que el conocimiento está de hecho bastante lleno de detalles pero no cuelga de ninguna parte, aparte de su tradición, y no lleva a ninguna parte excepto a una nueva interpretación dentro de esa tradición. Creo que la importancia de llegar a comprender esta realización, exigida por la investigación actual y por el rigor lógico, es trascendental en la ciencia, la ética y la vida personal. Si estas páginas contribuyen una pulgada a esa conciencia, habrán tenido éxito sobradamente a mis ojos. Sin embargo, reitero inmediatamente la advertencia de que no me detendré en estos asuntos en gran detalle. Mi tema es la autonomía en los sistemas naturales. Todas las conexiones e implicaciones con la epistemología y los asuntos humanos serán señaladas, pero no exploradas en extensión.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Hay ciertas personas que han influido en este libro de manera tan penetrante que parece justo mencionarlas desde el principio. Son Humberto Maturana, Heinz von Foerster, Gregory Bateson y Jean Piaget. De todos ellos, solo Maturana está verdaderamente representado en el contenido de estas páginas. Lo que siempre ha inspirado y mantenido mi interés en estos pensadores es que se niegan a establecer líneas de demarcación, y sin embargo mantienen una mirada fija a lo largo de una línea de pensamiento. El pensamiento cobra vida y anima la quietud de las disciplinas. Además, todos ellos hacen de la historia natural una fuente permanente de observación; hay preocupación por la contemplación más que por el diseño. Un tercer rasgo común a estos hombres, y de gran importancia para mí, es la presencia de una epistemología experimental como un fondo explícito para considerar la información y la mente en su sentido más pleno, ya sea en la danza balinesa o la visión de la rana. Esta amplitud de preocupaciones, encarnada en una interacción delicada entre una visión de lo general y la textura de lo específico, es lo que parece ser necesario.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        He tratado de no ser idiosincrásico en mi uso del lenguaje, y escaso en la introducción de nueva nomenclatura. Sin embargo, parece inevitable introducir un cierto número de nuevos conceptos y definiciones si uno va a apuntar a un terreno inexplorado en absoluto. Así, por ejemplo, podría haber formulado la discusión de la autonomía en términos de sistemas completos o totalidades, pero estas nociones han adquirido muchas connotaciones que podrían haber oscurecido lo que quería decir; esta trampa, de hecho, acecha a lo largo del libro. Se proporcionan punteros y referencias cruzadas en cada caso a la literatura relacionada.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        El texto se despliega en tres partes. Estas cubren, respectivamente: la autonomía de los sistemas vivos como una fuente de caracterización de la autonomía en general; formas de representar la complementariedad y las circularidades; y las capacidades cognitivas del sistema autónomo y su información codependiente. Cada una de estas partes puede leerse algo independientemente del resto, según la inclinación del lector.
-                    </Paragraph>
-                    
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        No puedo decir con suficiente fuerza que este libro se ofrece en el espíritu de síntesis y exploración, no de tratado, dogma u opinión establecida. Nada presentado aquí puede considerarse fijo, y soy muy consciente de ello. De hecho, la naturaleza misma del tema, de esbozar un cambio de gestalt sobre la información natural y el control, es predeciblemente intrincada y probable que arroje resultados mixtos. Implica en parte una reinterpretación de lo que parece ya disponible para nosotros, conceptual y experimentalmente, y en parte un proceso bastante difícil de concebir nuevos diseños y ajustarse a nuevas perspectivas. Todo el asunto es en realidad bastante cambiante. Mi razón para publicarlo es que hay suficiente aquí para comenzar y animar una discusión, suficiente de un cuerpo de trabajo para crear debate. Simplemente miro todo esto como señales en un vasto paisaje sin forma, donde se pueden tomar muchas rutas, y tal vez, donde podamos elegir regresar a donde comenzamos con la sensación de verlo de nuevo, más nítidamente.
-                    </Paragraph>
-                </section>
-
-                {/* ACKNOWLEDGMENTS */}
-                <section id="acknowledgments" className="mb-40">
-                    <div className="w-full h-px bg-slate-800 mb-20"></div>
-                    
-                    <h2 className="text-4xl md:text-5xl font-serif text-slate-100 mb-10 text-center">Agradecimientos</h2>
-                    
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        He sido extraordinariamente afortunado al disfrutar de las enseñanzas y la hermandad intelectual de muchísimas personas. Muchas gracias van primero y ante todo a mi amigo y antiguo maestro Humberto Maturana. En segundo lugar solo a él, estoy profundamente agradecido por lo que he aprendido de Gregory Bateson, Fernando Flores, Joseph Goguen, Ivan Illich, Chögyam Trungpa y Heinz von Foerster. Hay muchos otros amigos y colegas a quienes no listaré aquí, pero con quienes estoy igualmente en deuda. Quizás más que a nadie en particular le debo a la mente colectiva del pueblo de Chile, donde encontré mi inspiración.
-                    </Paragraph>
-                    
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Las etapas iniciales de este trabajo se llevaron a cabo en y con el apoyo de la Universidad de Chile. Continuó en la Universidad Nacional en Costa Rica, que generosamente me alojó en el difícil período después de que dejé mi país desgarrado por la guerra civil. Una gran parte de este libro se produjo mientras estaba con la Escuela de Medicina en la Universidad de Colorado. Estoy en deuda con David Moran y David Whitlock por darme amplia libertad allí. Las etapas finales de redacción se llevaron a cabo en el Instituto de Ciencia del Comportamiento, Universidad de Colorado en Boulder. El apoyo financiero provino de subvenciones de la Fundación Nacional de Ciencias (BMS-73-06766, conjuntamente con D. Moran), y la Fundación Alfred P. Sloan, que me hizo uno de sus becarios para 1976-1978. Finalmente, se deben gracias a George Klir por su aliento y entusiastas esfuerzos editoriales.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        Este libro se basa en el trabajo realizado durante un período de ocho años de preocupación con las preguntas centrales de la autonomía y la in-formación. Un motivo básico para escribirlo fue la sensación de que era hora de tirar de los hilos dispares producidos durante este tiempo un poco más cerca, y ofrecer una vista panorámica de hacia dónde estoy tratando de mirar. Excepto por unos pocos capítulos, todo el material incluido ha sido publicado antes. He reelaborado y reescrito todos estos documentos fuente extensamente, y agregado cualquier enlace de conexión que pareciera faltar en esta etapa. A pesar de esto, el lector tendrá que soportar una cierta cantidad de repetición y diferencias en el estilo. Muchos de los documentos fuente fueron escritos en colaboración con otros autores: Joseph Goguen, Louis Kauffman, Humberto Maturana, Nelson Vaz y Ernst von Glasersfeld. Al reelaborar los documentos para este libro, seguramente he violentado su estilo e intención inicial. Estoy profundamente agradecido a todos estos colaboradores por dejarme hacerlo; cualquier éxito que haya tenido en transmitir una idea interesante debería ser compartido por ellos en su totalidad. En todos los casos, al final del capítulo he listado las fuentes explícitamente.
-                    </Paragraph>
-
-                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
-                        A mi esposa Leonor le debo más que agradecimiento; le debo todo lo que proviene de un amor vasto y nutritivo.
-                    </Paragraph>
-                </section>
-
-                {/* END OF TEXT - REMOVED TABLE OF CONTENTS SECTION */}
-            </main>
-
-            {/* SMART FOOTNOTE PANEL */}
-            {activeFootnote && (
-                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl bg-black/95 border border-slate-800 text-slate-300 p-8 rounded-lg shadow-2xl backdrop-blur-xl z-50 animate-[fadeIn_0.3s_ease-out]">
-                    <div className="flex items-start gap-6">
-                        <span className="text-cyan-400 font-serif text-3xl font-bold leading-none">[{activeFootnote}]</span>
-                        <p className="text-base leading-relaxed text-justify">{FOOTNOTES[activeFootnote]}</p>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
