@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capítulo 8 - Francisco J. Varela</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (para JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- MathJax para Ecuaciones -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: { 950: '#020617' }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 1.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(15px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        html { scroll-behavior: smooth; }
+        ::selection { background-color: rgba(34, 211, 238, 0.2); color: #fff; }
+        
+        .footnote-ref {
+            font-size: 0.7em;
+            vertical-align: super;
+            margin-left: 2px;
+            font-weight: bold;
+            color: #22d3ee;
+            cursor: pointer;
+        }
+
+        .mjx-chtml { color: inherit !important; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-300 antialiased overflow-x-hidden selection:bg-cyan-500/30">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS (SVG) ---
+        const MenuIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        );
+        const XIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="M6 6 18 18"/></svg>
+        );
+
+        // --- DATA & CONTENT ---
+
+        const AUTHORS = [
+            "Francisco J. Varela", "Maturana", "Goethe", "Spencer-Brown", "Monod", "Ayala", "Goodwin", "Wiener", "Bateson"
+        ];
+
+        const CONCEPTS = [
+            "Autonomía", "Control", "Información", "autopoiético", "alonomía", "autonomía",
+            "clausura", "circularidades", "representación", "instrucción", "organización",
+            "clausura organizacional", "acoplamiento estructural", "dominio cognitivo", 
+            "teleología", "teleonomía", "función", "explicación operacional", "explicación simbólica",
+            "individualidad", "ontogenia", "filogenia", "maquina de Turing", "autorreferencial", "proceso cinético"
+        ];
+
+        const FOOTNOTES = {
+            1: "Esta distinción es fundamental para el resto del libro: lo que es operacional para el sistema no coincide necesariamente con lo que es comunicativo para el observador."
+        };
+
+        const TABLE_OF_CONTENTS = [
+            { 
+                part: "Parte II: Descripciones, Distinciones y Circularidades",
+                items: [
+                    { title: "Introducción Parte II", link: "#part2-intro" },
+                    { title: "Capítulo 8: Explicaciones Operacionales", link: "#chapter8" },
+                    { title: "Capítulo 9: Explicaciones Simbólicas", link: "#" },
+                    { title: "Capítulo 10: Marco de Complementariedades", link: "#" },
+                    { title: "Capítulo 11: Calculando Distinciones", link: "#" },
+                    { title: "Capítulo 12: Clausura y Dinámica de Formas", link: "#" },
+                    { title: "Capítulo 13: Eigencomportamiento", link: "#" }
+                ]
+            }
+        ];
+
+        // --- COMPONENTS ---
+
+        const HighlightedText = ({ text, onFootnoteHover, onFootnoteLeave }) => {
+            if (!text || typeof text !== 'string') return text || null;
+            
+            const parts = text.split(/(\[.*?\]|[\s\n]+|"[^"]*")/g);
+
+            return (
+                <span>
+                    {parts.map((part, i) => {
+                        if (!part) return null;
+
+                        if (part.startsWith('"') && part.endsWith('"')) {
+                            return <span key={i} className="text-amber-500 italic font-serif">{part}</span>;
+                        }
+
+                        const footnoteMatch = part.match(/^\[(\d+)\]$/);
+                        if (footnoteMatch) {
+                            const id = footnoteMatch[1];
+                            return (
+                                <span 
+                                    key={i}
+                                    className="footnote-ref px-1 bg-cyan-950/20 rounded border border-cyan-900/50 hover:text-cyan-200 transition-colors"
+                                    onMouseEnter={() => onFootnoteHover(id)}
+                                    onMouseLeave={onFootnoteLeave}
+                                >
+                                    [{id}]
+                                </span>
+                            );
+                        }
+
+                        const cleanWord = part.replace(/[.,;:"()]/g, '');
+                        const lowerPart = part.toLowerCase();
+                        let styleClass = "";
+                        
+                        if (AUTHORS.some(a => lowerPart.includes(a.split(' ').pop().toLowerCase()) && cleanWord.length > 2)) {
+                            styleClass = "text-cyan-400 font-medium";
+                        }
+                        if (CONCEPTS.some(c => lowerPart.includes(c.toLowerCase()) && cleanWord.length > 3)) {
+                            styleClass = "text-amber-500 italic";
+                        }
+
+                        return <span key={i} className={styleClass}>{part}</span>;
+                    })}
+                </span>
+            );
+        };
+
+        const Paragraph = ({ children, onFootnoteHover, onFootnoteLeave }) => (
+            <p className="mb-10 text-lg md:text-xl lg:text-2xl leading-relaxed text-slate-300 font-light text-justify w-full">
+                <HighlightedText text={children} onFootnoteHover={onFootnoteHover} onFootnoteLeave={onFootnoteLeave} />
+            </p>
+        );
+
+        const SectionHeader = ({ children }) => (
+             <h4 className="text-3xl md:text-5xl lg:text-6xl font-serif text-slate-100 mt-32 mb-16 border-l-4 border-cyan-500/50 pl-10 w-full uppercase tracking-tight leading-none">
+                {children}
+            </h4>
+        );
+
+        const SubSectionHeader = ({ children }) => (
+             <h5 className="text-xl md:text-3xl font-sans font-bold text-slate-400 mt-20 mb-10 uppercase tracking-[0.5em] border-b border-slate-800 pb-6 w-full">
+                {children}
+            </h5>
+        );
+
+        const EquationBlock = ({ tex, label }) => (
+            <div className="flex items-center justify-between my-16 w-full px-8 md:px-24 text-amber-500/90 overflow-x-auto bg-slate-900/20 py-8 rounded-[2rem]">
+                <div className="flex-1 text-center py-4 text-2xl lg:text-4xl">
+                    {`\\[ ${tex} \\]`}
+                </div>
+                {label && <div className="text-slate-500 text-sm md:text-base font-sans ml-4 min-w-[50px]">({label})</div>}
+            </div>
+        );
+
+        // --- APP ---
+
+        function App() {
+            const [activeFootnote, setActiveFootnote] = useState(null);
+            const [progress, setProgress] = useState(0);
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    const winScroll = document.documentElement.scrollTop;
+                    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                    setProgress(winScroll / height);
+                };
+                window.addEventListener('scroll', handleScroll);
+                if (window.MathJax) window.MathJax.typeset();
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            const handleLinkClick = (e, link) => {
+                if (link && link.startsWith('#')) {
+                    e.preventDefault();
+                    const element = document.getElementById(link.substring(1));
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth' });
+                        setIsMenuOpen(false);
+                    }
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-300 font-sans pb-80">
+                    <div className="fixed top-0 left-0 h-1.5 bg-cyan-400 z-50 transition-all duration-75 shadow-[0_0_20px_rgba(34,211,238,0.7)]" style={{ width: `${progress * 100}%` }}></div>
+
+                    <nav className="fixed top-0 w-full z-40 bg-slate-950/80 backdrop-blur-xl border-b border-white/5 h-20">
+                        <div className="w-full px-6 md:px-12 h-full flex items-center justify-between">
+                            <div className="flex items-center gap-4 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
+                                <div className="w-10 h-10 bg-amber-600 rounded flex items-center justify-center text-slate-950 font-serif font-bold text-xl shadow-xl">V</div>
+                                <div className="hidden md:block">
+                                    <h1 className="text-slate-100 font-serif text-sm tracking-widest uppercase font-bold">Francisco J. Varela</h1>
+                                    <span className="text-[10px] text-slate-500 uppercase tracking-widest block mt-0.5 opacity-60">Principios de Autonomía Biológica</span>
+                                </div>
+                            </div>
+                            
+                            <div className="relative">
+                                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-cyan-400 py-3 px-8 border border-cyan-900/50 rounded-full hover:bg-cyan-950/40 transition-all font-bold">
+                                    Índice {isMenuOpen ? <XIcon size={18}/> : <MenuIcon size={18}/>}
+                                </button>
+                                {isMenuOpen && (
+                                    <div className="absolute right-0 mt-6 w-80 sm:w-[500px] bg-slate-900/95 border border-slate-800 shadow-2xl rounded-[2rem] py-10 max-h-[85vh] overflow-y-auto z-50 animate-fade-in ring-1 ring-white/10">
+                                        {TABLE_OF_CONTENTS.map((section, idx) => (
+                                            <div key={idx} className="mb-12">
+                                                <h4 className="px-12 py-2 text-[11px] font-black text-amber-500 uppercase tracking-[0.4em] bg-slate-950/60 mb-6">
+                                                    {section.part}
+                                                </h4>
+                                                {section.items.map((item, i) => (
+                                                    <a key={i} href={item.link} onClick={(e) => handleLinkClick(e, item.link)} className="block px-12 py-4 text-sm md:text-base text-slate-400 hover:bg-slate-800 hover:text-cyan-400 transition-all no-underline border-l-4 border-transparent hover:border-cyan-500">
+                                                        {item.title}
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </nav>
+
+                    <main className="pt-32 px-6 md:px-12 lg:px-20 w-full animate-fade-in">
+                        
+                        {/* PARTE II INTRODUCCIÓN */}
+                        <section id="part2-intro" className="mb-80 scroll-mt-40">
+                            <div className="mb-48 text-center">
+                                <span className="text-amber-500 text-xs font-black tracking-[1em] uppercase mb-16 block opacity-40">Parte II</span>
+                                <h2 className="text-6xl md:text-8xl lg:text-[10rem] font-serif text-slate-100 mb-12 uppercase leading-none tracking-tighter">
+                                    Descripciones, Distinciones
+                                </h2>
+                                <h3 className="text-slate-500 text-4xl md:text-6xl lg:text-7xl font-serif italic font-light tracking-tight">y Circularidades</h3>
+                            </div>
+
+                            <div className="my-20 pl-8 md:pl-16 border-l-4 border-amber-500/30 text-slate-400 py-12 bg-amber-950/10">
+                                <p className="font-serif text-2xl md:text-4xl text-amber-500/90 mb-10 leading-relaxed italic text-justify">
+                                    "Los errores de los observadores surgen de las propiedades de la mente humana. El hombre no puede ni debe despojarse de sus propiedades ni negarlas. Pero puede formarlas y darles una dirección. El hombre quiere estar siempre activo."
+                                </p>
+                                <p className="text-sm md:text-lg text-cyan-400 uppercase tracking-widest font-bold opacity-70">— J. W. Goethe, Beobachtung und Denken (circa 1794)</p>
+                            </div>
+
+                            <div className="my-20 pl-8 md:pl-16 border-l-4 border-amber-500/30 text-slate-400 py-12 bg-amber-950/10">
+                                <p className="font-serif text-2xl md:text-4xl text-amber-500/90 mb-10 leading-relaxed italic text-justify">
+                                    "Un universo nace cuando un espacio es cercenado o separado... Al rastrear la forma en que representamos tal separación, podemos empezar a reconstruir, con una exactitud y una cobertura que parece casi asombrosa, las formas básicas subyacentes a la ciencia lingüística, matemática, física y biológica, y podemos empezar a ver cómo las leyes familiares de nuestra propia experiencia se siguen inexorablemente del acto original de separación."
+                                </p>
+                                <p className="text-sm md:text-lg text-cyan-400 uppercase tracking-widest font-bold opacity-70">— G. Spencer-Brown, Leyes de la Forma (1969)</p>
+                            </div>
+                        </section>
+
+                        {/* CAPÍTULO 8 */}
+                        <section id="chapter8" className="mb-80 scroll-mt-40">
+                            <div className="mb-48 text-center">
+                                <span className="text-cyan-400 text-xs font-black tracking-[0.6em] uppercase mb-12 block">Capítulo 8</span>
+                                <h2 className="text-6xl md:text-8xl lg:text-[10rem] font-serif text-slate-100 mb-12 uppercase leading-none tracking-tighter">
+                                    Explicaciones Operacionales
+                                </h2>
+                                <h3 className="text-slate-500 text-4xl md:text-6xl lg:text-7xl font-serif italic font-light tracking-tight tracking-widest">y la Prescindibilidad de la Información</h3>
+                            </div>
+
+                            <SectionHeader>8.1 Introducción</SectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                El estudio de la autopoiesis deja muy claro que no podemos evitar poner en el centro de nuestra atención las formas en que nuestras elecciones y propiedades cognitivas se reflejan, una y otra vez. Parecería que cuanto más nos alejamos del mundo idealizado de bolas de billar de la física del siglo XIX, más difícil resulta contemplar las propias explicaciones de un dominio fenomenológico sin poner, al mismo tiempo y en el centro, al agente observador.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En esta Parte mostramos cómo el estudio de la autonomía y de las descripciones de los sistemas en general no puede distinguirse de un estudio de las propiedades del descriptor, y que el sistema y el observador aparecen como un par inseparable. Además, desarrollamos un enfoque de complementariedad dualista para las propiedades descriptivas del observador. Lo hacemos, primero, mediante un estudio detallado de una cuestión central planteada en el estudio de los sistemas vivos, a saber, la cuestión del propósito y la información en la caracterización de la organización viva.
+                            </Paragraph>
+
+                            <SectionHeader>8.2 Ausencia de Propósito</SectionHeader>
+                            <SubSectionHeader>8.2.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La teleología, la teleonomía y la información son nociones empleadas en el discurso, pedagógico y explicativo, sobre los sistemas vivos, y a veces se afirma que son características definitorias esenciales de su organización. Nuestro objetivo actual es mostrar que, a la luz de la discusión anterior, estas y otras nociones son innecesarias para la definición de la organización viva, y que pertenecen a un dominio descriptivo distinto e independiente del dominio en el que se describen las operaciones del sistema vivo.
+                            </Paragraph>
+
+                            <SubSectionHeader>8.2.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Se suele mantener que la característica más notable de los sistemas vivos es una organización con propósito, o lo que es lo mismo, la posesión de un proyecto o programa interno representado y realizado en y a través de su organización estructural. Así, la ontogenia se considera generalmente como un proceso integrado de desarrollo hacia un estado adulto, a través del cual se alcanzan ciertas estructuras que permiten al organismo realizar ciertas funciones según el proyecto innato que lo define en relación con el entorno. También la filogenia se ve como la historia de transformaciones adaptativas mediante procesos reproductivos destinados a satisfacer el proyecto de la especie, con completa subordinación del individuo a este fin. Además, es evidente que existen organismos que incluso pueden parecer capaces de especificar algún propósito de antemano (como en la escritura de este libro) y conducir todas sus actividades hacia este logro. Este elemento de propósito aparente (la posesión de un proyecto o programa en la organización de los sistemas vivos), que se ha llamado teleonomía sin implicar connotaciones vitalistas, se considera frecuentemente como una característica definitoria necesaria, si no suficiente, para su caracterización (ej., Monod, 1970; Ayala, 1970).
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                El propósito o los objetivos, sin embargo, no son características de la organización de ninguna máquina (aloi- o autopoiética); estas nociones pertenecen al dominio de nuestro discurso sobre nuestras acciones, es decir, pertenecen al dominio de las descripciones comunicativas, y cuando se aplican a una máquina o a cualquier sistema independiente de nosotros, reflejan el hecho de que consideramos a la máquina o al sistema en algún contexto envolvente. En general, el observador pone la máquina, ya sea conceptual o concretamente, en algún uso, y así define un conjunto de circunstancias que causan que la máquina cambie, siguiendo una cierta trayectoria de variaciones en su salida. La conexión entre estas salidas, las entradas correspondientes y su relación con el contexto en el que el observador las incluye, determina lo que llamamos el objetivo o propósito de la máquina; este objetivo reside necesariamente en ese dominio del observador que define el contexto y establece los nexos.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                De manera similar, la noción de función surge en la descripción realizada por el observador de los componentes de una máquina o sistema en referencia a una entidad envolvente, que puede ser la máquina completa o parte de ella, y cuyos estados constituyen el objetivo que los cambios en los componentes deben provocar. Al decir que una función de P es X, debemos prestar mucha atención al carácter de X. Debe ser algo como "circulación", "soporte", etc. Todas estas nociones suponen un esquema conceptual más amplio y abarcador: circulación en algo, soporte de algo. Una descripción funcional incluye necesariamente un contexto mayor al que X hace referencia.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Por el contrario, para cada estructura u organización, se puede señalar una subestructura y describir su rendimiento en forma de una descripción funcional. Considérese:
+                            </Paragraph>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 my-20">
+                                <div className="space-y-6">
+                                    <EquationBlock tex="S_1: \text{La función de la capa de electrones es equilibrar las cargas nucleares.}" />
+                                    <EquationBlock tex="S_2: \text{La capa de electrones equilibra las cargas nucleares.}" />
+                                </div>
+                                <div className="space-y-6">
+                                    <EquationBlock tex="T_1: \text{La función del ADN es codificar proteínas.}" />
+                                    <EquationBlock tex="T_2: \text{El ADN participa en la especificación de las proteínas.}" />
+                                </div>
+                            </div>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                ¿Cuáles son las diferencias en estas frases? Podemos interpretarlas de la siguiente manera: En el caso $S_1$ se está haciendo referencia a una estructura perfectamente definida, el átomo, para la cual ya tenemos una formulación explícita de su teoría. Así, aunque $S_1$ es comprensible, es totalmente prescindible en favor de $S_2$, que es una afirmación que puede interpretarse como una mera consecuencia de la estructura total. Para el segundo conjunto, la prescindibilidad de $T_1$ en favor de $T_2$, aunque pensable, es más sutil. Esto surge porque las frases se refieren a un sistema que está incluido en uno mucho mayor, la célula. Uno puede ciertamente tratar la síntesis de proteínas como un sistema aislado (es decir, en un experimento in vitro), pero en la célula su condición de subsistema hace posible su descripción funcional. Así, una descripción funcional, cuando no es prescindible, es sintomática de la falta de una teoría para la organización o estructura del sistema en el que ocurre el subsistema descrito en términos funcionales.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En general, la ocurrencia muy común de descripciones funcionales en biología se relaciona con el hecho de que normalmente los sistemas estudiados son subsistemas de otros más inclusivos. Dentro de un subsistema dado, considerado aislado, las descripciones funcionales desaparecen o son prescindibles. Del mismo modo, la prescindibilidad de la descripción funcional es posible cuando se da la estructura u organización del sistema en general, sin posibles extensiones adicionales, y los subsistemas se convierten en consecuencias de la estructura general, como en el caso del átomo mencionado anteriormente, o de cualquier máquina bien definida. Por lo tanto, no hablamos de la función del estado $q_x$ de una máquina de Turing, excepto para fines pedagógicos.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Una vez más, por muy directas que sean las conexiones causales entre los cambios de estado de los componentes y el estado en el que se originan en el sistema total, las implicaciones en términos de diseño aludidas por la noción de función son establecidas por el observador y pertenecen exclusivamente a su dominio de descripción. En consecuencia, dado que las relaciones implícitas en las nociones de funciones no son constitutivas de la organización de un sistema autopoiético, no pueden utilizarse para explicar su funcionamiento.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Lo que señalaremos más adelante, sin embargo, es que el valor comunicativo de una descripción funcional no es eliminado por el análisis operacional de la misma como una instancia particular. Claramente, un análisis operacional hará posible y modificará la precisión de la descripción funcional, pero no eliminará su valor comunicativo simplemente porque no depende de él. Considerar a los sistemas vivos como máquinas es señalar su organización. Encontrar que en el análisis de tales máquinas las descripciones funcionales ocurren con frecuencia, y que todavía no resulta cómodo prescindir de ellas como dispositivos operacionales, indica la falta de una teoría del tipo de máquinas que son los sistemas vivos. Solo con tal teoría la función perderá su supuesto valor operacional y conservará meramente su valor como herramienta comunicativa.
+                            </Paragraph>
+
+                            <SubSectionHeader>8.2.3</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Una explicación puede caracterizarse como una forma de discurso que pretende hacer inteligible un dominio fenomenológico que ha sido registrado. Este es el negocio de la ciencia. Además, cuando algún dominio se considera explicado y, por tanto, se hace inteligible, lo es en referencia a un grupo social de observadores.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Deberíamos distinguir ahora entre una explicación simbólica (o comunicativa) y una operacional (o causal). En ambos casos los fenómenos registrados se reformulan o reproducen en términos conceptuales que se consideran apropiados. La diferencia radica en que, en una explicación operacional, se supone que los términos de tales reformulaciones y las categorías utilizadas pertenecen al dominio en el que operan los sistemas que generan los fenómenos. En una explicación simbólica, se considera que los términos de la reformulación pertenecen a un contexto más envolvente, en el cual el observador proporciona vínculos y nexos que no se supone que operen en el dominio en el que operan los sistemas mismos que generan los fenómenos.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Una característica distintiva de una explicación operacional es que propone sistemas y componentes conceptuales (o concretos) que pueden reproducir los fenómenos registrados. Esto puede suceder a través de la especificación de la organización y estructura de un sistema, como en el marco mecanicista adoptado aquí. Esto es así porque la organización de una máquina, sea autopoiética o alopoiética, solo establece relaciones entre componentes y reglas para sus interacciones y transformaciones, de una manera que especifica las condiciones de emergencia de los diferentes estados de la máquina, que luego surgen como un resultado necesario siempre que tales condiciones ocurren. Se deduce, entonces, que las nociones de propósito y función no tienen valor explicativo en el dominio fenomenológico que pretenden iluminar, porque no participan como elementos operacionales, causales, en la reformulación de ninguno de sus fenómenos [1]. Esto no excluye que sean adecuadas para una descripción comunicativa. En consecuencia, una predicción de un estado futuro de una máquina consiste solo en la realización acelerada de sus estados sucesivos en la mente de un observador, y cualquier referencia a un estado anterior para explicar uno posterior en términos funcionales o de propósito es una forma alternativa de su descripción, realizada en la perspectiva de su observación mental simultánea de los dos estados, que induce en la mente del oyente una realización abreviada de la máquina. Por lo tanto, cualquier máquina, cualquier parte de una, o cualquier proceso que siga un curso predecible puede ser descrito por un observador como dotado de un proyecto, un propósito o una función, si es manejado adecuadamente por él con respecto a un contexto envolvente.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En consecuencia, si los sistemas vivos son máquinas autopoiéticas físicas, la teleonomía se convierte en un término descriptivo, que no revela ninguna característica de su organización, pero que revela la consistencia en su funcionamiento dentro del dominio de la observación. Los sistemas vivos, como máquinas autopoiéticas físicas, son sistemas sin propósito.
+                            </Paragraph>
+
+                            <SectionHeader>8.3 Individualidad</SectionHeader>
+                            <SubSectionHeader>8.3.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La eliminación de la noción de teleonomía como característica definitoria nos obliga a considerar la organización del individuo como la cuestión central para la comprensión de la organización de los sistemas vivos; del mismo modo para cualquier otro sistema autónomo.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                De hecho, un sistema vivo se especifica como un individuo, como un elemento unitario de interacciones, por su organización autopoiética, la cual determina que cualquier cambio en él deba tener lugar subordinado a su mantenimiento, y establece así las condiciones de contorno que especifican qué pertenece a él y qué no pertenece a él en la concreción de su realización. Si la subordinación de todos los cambios en un sistema vivo al mantenimiento de su organización autopoiética no tuviera lugar (directa o indirectamente), perdería ese aspecto de su organización que lo define como una unidad, y por tanto se desintegraría. Por supuesto, es cierto para toda unidad, sea cual sea la forma en que se defina, que la pérdida de su organización definitoria resulta en su desintegración; la peculiaridad de los sistemas vivos, sin embargo, es que se desintegran siempre que se pierde su organización autopoiética, no solo que pueden desintegrarse. Como consecuencia, todo cambio debe ocurrir en cada sistema vivo sin interferir con su funcionamiento como una unidad en una historia de cambio estructural en la que la organización autopoiética permanece invariante. Así, la ontogenia es tanto una expresión de la individualidad de los sistemas vivos como el modo a través del cual se realiza esta individualidad. Como proceso, la ontogenia es, pues, la expresión del devenir de un sistema que en cada momento es la unidad en su plenitud, y no constituye una transición de un estado incompleto (embrionario) a uno más completo o final (adulto).
+                            </Paragraph>
+
+                            <SubSectionHeader>8.3.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La noción de desarrollo surge, al igual que la noción de propósito, en un contexto de observación más envolvente y, por tanto, pertenece a otro dominio que el de la organización autopoiética del sistema vivo. Del mismo modo, la conducta de una máquina autopoiética que un observador puede presenciar es el reflejo de las trayectorias de cambios que ésta experimenta en el proceso de mantener constante su organización a través del control de las variables que pueden ser desplazadas por perturbaciones, y a través de la especificación en este mismo proceso de los valores alrededor de los cuales estas variables se mantienen en cada momento. La máquina autopoiética no tiene entradas ni salidas. Por lo tanto, si existe alguna correlación entre eventos independientes que ocurren regularmente y que la perturban, y las transiciones de estado a estado que surgen de estas perturbaciones, las cuales el observador puede pretender revelar, entonces esta correlación pertenece a la historia de la máquina en el contexto de la observación, y no al funcionamiento de su organización autopoiética.
+                            </Paragraph>
+
+                            <SubSectionHeader>8.3.3</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Esto no quiere decir, sin embargo, que al definir el sistema vivo en un contexto diferente, el observador no pueda utilizar consistentemente tales regularidades y definir un sistema diferente con entradas que controlan salidas a través de ciertas transiciones internas, sin considerar la naturaleza autopoiética de las fuentes de esas transiciones. En un sentido que se desarrollará más adelante, este es un cambio natural de contexto, de la autonomía de un sistema a su dependencia de las restricciones o el control del entorno en el que opera. Es obvio que realizamos tal cambio hacia una perspectiva alternativa o dual y, además, parece que es absolutamente necesario hacerlo. El problema radica en las distinciones inadecuadas entre los diferentes dominios en los que se encuentra tal descripción alternativa, y por tanto en la extensión confusa de términos explicativos de un dominio a otro.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Tal confusión ocurre, por ejemplo, cuando se dice que un organismo tiene una representación del entorno dentro de sí mismo, y esta supuesta representación se asigna a algún componente estructural —ej., una molécula receptora en la membrana celular. Esto es, a la luz de la discusión anterior, un error de categoría que surge de una valoración inadecuada del papel del observador. Tales inadecuaciones han llevado a la creencia generalizada de que afirmaciones como "este organismo capta la información del entorno" son significativas en algún sentido. De hecho, debido a los errores de categoría que contiene, no solo es engañoso, sino rotundamente incorrecto, como mostraremos más adelante en el libro con cierto detalle para los dominios cognitivos de los sistemas inmune y nervioso. Por lo tanto, trabajar sobre estos puntos y mantener un buen registro de qué términos de explicación pertenecen a qué dominio no es en absoluto un ejercicio fútil de lógica y epistemología, sino una necesidad muy definida si queremos recuperar la utilidad de conceptos como propósito e información para los sistemas naturales.
+                            </Paragraph>
+
+                            <SubSectionHeader>8.3.4</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Nociones como especificación y orden utilizadas para caracterizar la autopoiesis en la célula son nociones referenciales; es decir, no tienen sentido fuera del contexto en el que se definen. Así, cuando hablamos de relaciones de especificación, nos referimos a la especificación de componentes en el contexto de aquello que define al sistema como autopoiético. Cualquier otro elemento de especificidad que pueda entrar, por muy necesario que sea para la viabilidad de los componentes, lo damos por sentado, siempre que no esté definido a través de la organización autopoiética. Lo mismo ocurre con la noción de orden. Las relaciones de orden se refieren al establecimiento de procesos que aseguran la presencia de los componentes en la concatenación que resulta en la autopoiesis. No se pretende ninguna otra referencia, por muy concebible que sea dentro de otras perspectivas de descripción.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Del mismo modo, las nociones como codificación y transmisión de información no entran en la realización de un sistema autopoiético concreto, porque no constituyen elementos causales en él. Así, la noción de especificidad no implica codificación, información o instrucciones; solo describe ciertas relaciones, determinadas por y dependientes de la organización autopoiética, que resultan en la producción de los componentes específicos. La dimensión adecuada es la de las relaciones de especificidad. Decir que el sistema, o parte de él, codifica para la especificidad es un nombre inapropiado. Esto se debe a que tal expresión representa un mapeo de un proceso que ocurre en el espacio de la autopoiesis sobre un proceso que ocurre en el espacio del diseño humano, y no es una reformulación operacional del fenómeno. La noción de codificación es una noción comunicativa que representa las interacciones del observador, no un fenómeno operativo en el dominio de la autopoiesis.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Lo mismo se aplica a la noción de regulación. Esta noción es válida en el dominio de la explicación simbólica, y refleja la observación y descripción simultáneas de las transiciones interdependientes del sistema que ocurren en un orden especificado y a velocidades especificadas hacia ciertos estados. La dimensión correspondiente en un sistema autopoiético es la de las relaciones de producción de orden, pero aquí de nuevo, solo en el contexto de la autopoiesis y no de ningún estado particular del sistema tal como aparecería proyectado en nuestro dominio de comunicación.
+                            </Paragraph>
+
+                            <SubSectionHeader>Fuentes</SubSectionHeader>
+                            <div className="pl-6 border-l border-slate-700 text-sm md:text-base lg:text-xl text-slate-500 italic w-full">
+                                <p className="mb-4">Maturana, H., y F. Varela (1975), Autopoietic Systems: A Characterization of the Living Organization, Biological Computer Lab. Rep. 9.4. Universidad de Illinois, Urbana. Reimpreso en Maturana y Varela (1979).</p>
+                                <p>Varela, F., y H. Maturana (1972), Mechanism and biological explanation. Phil. Sci. 39: 378.</p>
+                            </div>
+                        </section>
+                    </main>
+
+                    <footer className="w-full text-center py-24 border-t border-slate-900 text-slate-700 text-xs">
+                        <p className="mb-2 uppercase tracking-[0.6em] font-serif">Principios de Autonomía Biológica</p>
+                        <p>© Francisco J. Varela</p>
+                    </footer>
+
+                    {/* Ventana flotante de notas (Mathematically Centered) */}
+                    {activeFootnote && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 pointer-events-none">
+                            <div className="w-full max-w-5xl bg-black/95 border border-cyan-900/40 text-slate-300 p-10 md:p-16 rounded-[4rem] shadow-[0_0_100px_rgba(0,0,0,1)] backdrop-blur-3xl animate-fade-in ring-1 ring-cyan-500/30 pointer-events-auto relative">
+                                <div className="flex flex-col md:flex-row items-start gap-8 lg:gap-12">
+                                    <span className="text-cyan-400 font-serif text-5xl lg:text-8xl font-bold leading-none select-none shrink-0">
+                                        [{activeFootnote}]
+                                    </span>
+                                    <p className="text-base md:text-lg lg:text-2xl leading-relaxed text-justify font-light tracking-wide italic">
+                                        {FOOTNOTES[activeFootnote]}
+                                    </p>
+                                </div>
+                                <div className="absolute top-8 right-12 text-slate-600 text-xs uppercase tracking-widest font-bold">Nota al pie</div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
