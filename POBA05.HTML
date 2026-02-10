@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Francisco J. Varela - Capítulo 5</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- MathJax -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: { 950: '#020617' }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 1.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(15px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        html { scroll-behavior: smooth; }
+        ::selection { background-color: rgba(34, 211, 238, 0.2); color: #fff; }
+        .footnote-ref {
+            font-size: 0.7em;
+            vertical-align: super;
+            margin-left: 2px;
+            font-weight: bold;
+            color: #22d3ee;
+            cursor: pointer;
+        }
+        .mjx-chtml { color: inherit !important; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-300 antialiased overflow-x-hidden selection:bg-cyan-500/30">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS (SVG) ---
+        const MenuIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        );
+        const XIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="M6 6 18 18"/></svg>
+        );
+
+        // --- DATA & CONTENT ---
+
+        const AUTHORS = [
+            "Francisco J. Varela", "Maturana", "Eigen", "Schuster", "Henderson", "Sartre"
+        ];
+
+        const CONCEPTS = [
+            "Autonomía", "autopoiético", "autonomía", "clausura", "organización", "identidad",
+            "ontogenia", "acoplamiento estructural", "autorreproducción", "replicación", "copia",
+            "evolución", "selección", "especie", "unidad", "espacio físico", "espacio autopoiético",
+            "adaptación", "historia de transformaciones", "dinámica", "clausura organizacional"
+        ];
+
+        const TABLE_OF_CONTENTS = [
+            { 
+                part: "Parte I: Autonomía de lo Vivo y Clausura Organizacional",
+                items: [
+                    { title: "Capítulo 1: Autonomía y Pensamiento Biológico", link: "#" },
+                    { title: "Capítulo 2: La Autopoiesis como Organización", link: "#" }, 
+                    { title: "Capítulo 3: Ejemplo de Teselación", link: "#" },
+                    { title: "Capítulo 4: Encarnaciones de la Autopoiesis", link: "#" },
+                    { title: "Capítulo 5: El Individuo en el Desarrollo y la Evolución", link: "#chapter5" },
+                    { title: "Capítulo 6: Consecuencias de la Autopoiesis", link: "#" },
+                    { title: "Capítulo 7: La Idea de Clausura Organizacional", link: "#" }
+                ]
+            }
+        ];
+
+        // --- COMPONENTS ---
+
+        const HighlightedText = ({ text, onFootnoteHover, onFootnoteLeave }) => {
+            if (!text || typeof text !== 'string') return text || null;
+            const parts = text.split(/(\[\d+\]|[\s\n]+)/g);
+
+            return (
+                <span>
+                    {parts.map((part, i) => {
+                        const footnoteMatch = part.match(/^\[(\d+)\]$/);
+                        if (footnoteMatch) {
+                            const id = footnoteMatch[1];
+                            return (
+                                <span 
+                                    key={i}
+                                    className="footnote-ref px-1 bg-cyan-950/20 rounded border border-cyan-900/50 hover:text-cyan-200 transition-colors"
+                                    onMouseEnter={() => onFootnoteHover(id)}
+                                    onMouseLeave={onFootnoteLeave}
+                                >
+                                    [{id}]
+                                </span>
+                            );
+                        }
+
+                        const cleanWord = part.replace(/[.,;:"()]/g, '');
+                        const lowerPart = part.toLowerCase();
+                        let styleClass = "";
+                        
+                        if (AUTHORS.some(a => lowerPart.includes(a.split(' ').pop().toLowerCase()) && cleanWord.length > 2)) {
+                            styleClass = "text-cyan-400 font-medium";
+                        }
+                        if (CONCEPTS.some(c => lowerPart.includes(c.toLowerCase()) && cleanWord.length > 3)) {
+                            styleClass = "text-amber-500 italic";
+                        }
+
+                        return <span key={i} className={styleClass}>{part}</span>;
+                    })}
+                </span>
+            );
+        };
+
+        const Paragraph = ({ children, onFootnoteHover, onFootnoteLeave }) => (
+            <p className="mb-10 text-lg md:text-xl lg:text-2xl leading-relaxed text-slate-300 font-light text-justify w-full">
+                <HighlightedText text={children} onFootnoteHover={onFootnoteHover} onFootnoteLeave={onFootnoteLeave} />
+            </p>
+        );
+
+        const SectionHeader = ({ children }) => (
+             <h4 className="text-3xl md:text-5xl font-serif text-slate-100 mt-32 mb-16 border-l-4 border-cyan-500/50 pl-10 w-full uppercase tracking-tight leading-none">
+                {children}
+            </h4>
+        );
+
+        const SubSectionHeader = ({ children }) => (
+             <h5 className="text-xl md:text-3xl font-sans font-bold text-slate-400 mt-20 mb-10 uppercase tracking-[0.5em] border-b border-slate-800 pb-6 w-full">
+                {children}
+            </h5>
+        );
+
+        // --- APP ---
+
+        function App() {
+            const [progress, setProgress] = useState(0);
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    const winScroll = document.documentElement.scrollTop;
+                    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                    setProgress(winScroll / height);
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            const handleLinkClick = (e, link) => {
+                if (link && link.startsWith('#')) {
+                    e.preventDefault();
+                    const element = document.getElementById(link.substring(1));
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth' });
+                        setIsMenuOpen(false);
+                    }
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-300 font-sans pb-80">
+                    <div className="fixed top-0 left-0 h-1.5 bg-cyan-400 z-50 transition-all duration-75 shadow-[0_0_20px_rgba(34,211,238,0.7)]" style={{ width: `${progress * 100}%` }}></div>
+
+                    <nav className="fixed top-0 w-full z-40 bg-slate-950/80 backdrop-blur-xl border-b border-white/5 h-20">
+                        <div className="w-full px-6 md:px-12 h-full flex items-center justify-between">
+                            <div className="flex items-center gap-4 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
+                                <div className="w-10 h-10 bg-amber-600 rounded flex items-center justify-center text-slate-950 font-serif font-bold text-xl shadow-xl">V</div>
+                                <div className="hidden md:block">
+                                    <h1 className="text-slate-100 font-serif text-sm tracking-widest uppercase font-bold">Francisco J. Varela</h1>
+                                    <span className="text-[10px] text-slate-500 uppercase tracking-widest block mt-0.5 opacity-60">Principios de Autonomía Biológica</span>
+                                </div>
+                            </div>
+                            
+                            <div className="relative">
+                                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-cyan-400 py-3 px-8 border border-cyan-900/50 rounded-full hover:bg-cyan-950/40 transition-all font-bold">
+                                    Índice {isMenuOpen ? <XIcon size={18}/> : <MenuIcon size={18}/>}
+                                </button>
+                                {isMenuOpen && (
+                                    <div className="absolute right-0 mt-6 w-80 sm:w-[500px] bg-slate-900/95 border border-slate-800 shadow-2xl rounded-[2rem] py-10 max-h-[85vh] overflow-y-auto z-50 animate-fade-in ring-1 ring-white/10">
+                                        {TABLE_OF_CONTENTS.map((section, idx) => (
+                                            <div key={idx} className="mb-12">
+                                                <h4 className="px-12 py-2 text-[11px] font-black text-amber-500 uppercase tracking-[0.4em] bg-slate-950/60 mb-6">
+                                                    {section.part}
+                                                </h4>
+                                                {section.items.map((item, i) => (
+                                                    <a key={i} href={item.link} onClick={(e) => handleLinkClick(e, item.link)} className="block px-12 py-4 text-sm md:text-base text-slate-400 hover:bg-slate-800 hover:text-cyan-400 transition-all no-underline border-l-4 border-transparent hover:border-cyan-500">
+                                                        {item.title}
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </nav>
+
+                    <main className="pt-40 px-6 md:px-12 lg:px-20 w-full animate-fade-in">
+                        
+                        <section id="chapter5" className="mb-80 scroll-mt-40">
+                            <div className="mb-48 text-center">
+                                <span className="text-cyan-400 text-xs font-black tracking-[0.6em] uppercase mb-12 block">Capítulo 5</span>
+                                <h2 className="text-6xl md:text-8xl lg:text-[10rem] font-serif text-slate-100 mb-12 uppercase leading-none tracking-tighter">
+                                    El Individuo en el Desarrollo
+                                </h2>
+                                <h3 className="text-slate-500 text-4xl md:text-6xl lg:text-7xl font-serif italic font-light tracking-tight">y la Evolución</h3>
+                            </div>
+
+                            <SectionHeader>5.1 Introducción</SectionHeader>
+                            <Paragraph>
+                                Los sistemas vivos encarnan la organización viva. Los sistemas vivos son sistemas autopoiéticos en el espacio físico. La diversidad de los sistemas vivos es evidente; también es evidente que esta diversidad depende de la reproducción y la evolución. Sin embargo, la reproducción y la evolución no entran en la caracterización de la organización viva como autopoiesis, y los sistemas vivos se definen como unidades por su autopoiesis. Esto es significativo porque pone de manifiesto que la fenomenología de los sistemas vivos depende de su condición de unidades autopoiéticas. De hecho, la reproducción requiere la existencia de una unidad que deba ser reproducida, y es necesariamente secundaria al establecimiento de dicha unidad: la evolución requiere la reproducción y la posibilidad de cambio, a través de la reproducción de aquello que evoluciona, y es necesariamente secundaria al establecimiento de la reproducción. Se deduce que la evaluación adecuada de la fenomenología de los sistemas vivos, incluyendo la reproducción y la evolución, requiere su evaluación adecuada como unidades autopoiéticas.
+                            </Paragraph>
+
+                            <SectionHeader>5.2 Subordinación a la Condición de Unidad</SectionHeader>
+                            <Paragraph>
+                                La unidad (distinguibilidad de un fondo y, por tanto, de otras unidades) es la única condición necesaria para la existencia en cualquier dominio dado. De hecho, la naturaleza de una unidad y el dominio en el que existe están especificados por el proceso de su distinción y determinación; esto es así independientemente de si ese proceso es conceptual (como cuando un observador define una unidad mediante una operación de distinción en su dominio de discurso y descripción), o físico (como cuando una unidad autónoma llega a establecerse mediante el funcionamiento real de sus propiedades definitorias que afirman su distinción de un fondo a través de su operación real en el espacio físico). En consecuencia, los diferentes tipos de unidad difieren necesariamente en el dominio en el que se establecen y, al tener diferentes dominios de existencia, pueden o no interactuar según si estos dominios interactúan o no.
+                            </Paragraph>
+                            <Paragraph>
+                                La distinción de unidad, entonces, no es una noción abstracta de validez puramente conceptual para fines descriptivos o analíticos, sino que es una noción operativa que se refiere al proceso a través del cual una unidad se afirma o se define: las condiciones que especifican una unidad determinan su fenomenología. En los sistemas vivos, estas condiciones pueden rastrearse hasta su organización autopoiética. De hecho, la autopoiesis implica la subordinación de todo cambio en el sistema autopoiético al mantenimiento de su organización autopoiética y, dado que esta organización define al sistema como una unidad, implica la subordinación total de la fenomenología del sistema al mantenimiento de su unidad. Esta subordinación tiene las siguientes consecuencias:
+                            </Paragraph>
+
+                            <div className="space-y-16 my-20 pl-8 md:pl-20 border-l border-slate-800">
+                                <Paragraph>
+                                    1. El establecimiento de una unidad define el dominio de su fenomenología, pero la forma en que la unidad está constituida —su estructura— define el tipo de fenomenología que genera en ese dominio. Se deduce que la forma particular adoptada por la fenomenología de cada unidad autopoiética (biológica) depende de la forma particular en que se realiza su autopoiesis individual. También se deduce que el dominio de las transformaciones ontogénicas (incluyendo la conducta) de cada individuo es el dominio de las trayectorias homeorréticas a través de las cuales puede mantener su autopoiesis.
+                                </Paragraph>
+                                <Paragraph>
+                                    2. Toda la fenomenología biológica está necesariamente determinada y realizada a través de individuos (es decir, a través de unidades autopoiéticas en el espacio físico), y consiste en todas las trayectorias de transformaciones que experimentan, individualmente o en grupos, en el proceso de mantener invariantes sus relaciones definitorias individuales. Que en el proceso de sus interacciones las unidades autopoiéticas constituyan o no unidades adicionales es irrelevante para la subordinación de la fenomenología biológica al mantenimiento de la identidad de los individuos. De hecho, si se produce una nueva unidad que no es autopoiética, su fenomenología, que dependerá necesariamente de su organización, será biológica o no según su dependencia de la autopoiesis de sus componentes, y dependerá o no en consecuencia del mantenimiento de estos como unidades autopoiéticas. Si la nueva unidad es autopoiética, entonces su fenomenología es biológica y depende obviamente del mantenimiento de su autopoiesis, que a su vez puede depender o no de la autopoiesis de sus componentes.
+                                </Paragraph>
+                                <Paragraph>
+                                    3. La identidad de una unidad autopoiética se mantiene mientras siga siendo autopoiética, es decir, mientras ella, como unidad en el espacio físico, siga siendo una unidad en el espacio autopoiético, independientemente de cuánto pueda transformarse por lo demás en el proceso de mantener su autopoiesis.
+                                </Paragraph>
+                            </div>
+
+                            <SectionHeader>5.3 Plasticidad de la Ontogenia: Acoplamiento Estructural</SectionHeader>
+                            <Paragraph>
+                                La ontogenia es la historia de la transformación estructural de una unidad. En consecuencia, la ontogenia de un sistema vivo es la historia del mantenimiento de su identidad a través de la autopoiesis continua en el espacio físico. Por el mero hecho de que un sistema autopoiético físico es un sistema dinámico, realizado a través de relaciones de producción de componentes que implican interacciones y transformaciones físicas concretas, es una consecuencia necesaria de la organización autopoiética de un sistema vivo que su ontogenia tenga lugar en el espacio físico.
+                            </Paragraph>
+                            <Paragraph>
+                                Dado que la forma en que un sistema autopoiético mantiene su identidad depende de su forma particular de ser autopoiético (es decir, de su estructura particular), las diferentes clases de sistemas autopoiéticos tienen diferentes clases de ontogenias. Además, dado que un sistema autopoiético no tiene entradas ni salidas, todos los cambios que pueda experimentar sin pérdida de identidad, y por tanto con mantenimiento de sus relaciones definitorias, están necesariamente determinados por su organización invariante. En consecuencia, la fenomenología de un sistema autopoiético es necesariamente siempre proporcional a las deformaciones que sufre sin pérdida de identidad, y con el entorno deformante en el que se encuentra: de lo contrario, se desintegraría.
+                            </Paragraph>
+                            <Paragraph>
+                                Como consecuencia de la invarianza de la organización autopoiética, la forma en que se realiza la autopoiesis en cualquier unidad dada puede cambiar durante su ontogenia, con la única restricción de que esto ocurra sin pérdida de identidad, es decir, a través de una autopoiesis ininterrumpida. Aunque los cambios que un sistema autopoiético puede experimentar sin pérdida de identidad mientras compensa sus deformaciones bajo interacciones están determinados por su organización, la secuencia de tales cambios está determinada por la secuencia de estas deformaciones. Hay dos fuentes de deformaciones para un sistema autopoiético tal como se le presentan a un observador: una está constituida por el entorno como fuente de sucesos independientes en el sentido de que estos no están determinados por la organización del sistema; la otra está constituida por el propio sistema como fuente de estados que surgen de compensaciones de deformaciones, pero que ellos mismos pueden constituir deformaciones que generen nuevos cambios compensatorios. En la fenomenología de la organización autopoiética estas dos fuentes de perturbaciones son indistinguibles, y en cada sistema autopoiético se entrelazan para formar una única ontogenia. Así, aunque en un sistema autopoiético todos los cambios están determinados internamente, para un observador su ontogenia refleja en parte su historia de interacciones con un entorno independiente. En consecuencia, dos sistemas autopoiéticos por lo demás equivalentes pueden tener ontogenias diferentes.
+                            </Paragraph>
+                            <Paragraph>
+                                En resumen: las interacciones continuas de un sistema estructuralmente plástico en un entorno con perturbaciones recurrentes producirán una selección continua de la estructura del sistema. Esta estructura determinará, por un lado, el estado del sistema y su dominio de perturbaciones permitidas, y por otro permitirá al sistema operar en un entorno sin desintegrarse. Nos referimos a este proceso como acoplamiento estructural (Maturana, 1977). Si podemos considerar que el entorno del sistema es también un sistema estructuralmente plástico, entonces el sistema y el entorno tendrán una historia entrelazada de transformaciones estructurales, seleccionando mutuamente sus trayectorias.
+                            </Paragraph>
+
+                            <SectionHeader>5.4 Reproducción y las Complicaciones de la Unidad</SectionHeader>
+                            <SubSectionHeader>5.4.1</SubSectionHeader>
+                            <Paragraph>
+                                La reproducción requiere una unidad que sea reproducida; por eso la reproducción es operativamente secundaria al establecimiento de la unidad, y no puede entrar como característica definitoria de la organización de los sistemas vivos. Además, dado que los sistemas vivos se caracterizan por su organización autopoiética, la reproducción debe haber surgido necesariamente como una complicación de la autopoiesis durante la autopoiesis, y su origen debe verse y comprenderse como secundario e independiente del origen de la organización viva. La dependencia de la reproducción con respecto a la existencia de la unidad que debe ser reproducida no es un problema trivial de precedencia, sino que es un problema operativo en el origen del sistema reproducido y sus relaciones con el mecanismo reproductor. Para comprender la reproducción y sus consecuencias en los sistemas autopoiéticos debemos analizar brevemente la naturaleza operativa de este proceso en relación con la autopoiesis.
+                            </Paragraph>
+                            <Paragraph>
+                                Hay tres fenómenos que deben distinguirse en relación con la noción de reproducción: replicación, copia y autorreproducción.
+                            </Paragraph>
+                            <div className="space-y-12 my-16 pl-8 md:pl-20 border-l border-slate-800">
+                                <Paragraph>
+                                    1. <strong>Replicación</strong>. Un sistema que genera sucesivamente unidades diferentes de sí mismo, pero en principio idénticas entre sí, y con una organización que el sistema determina en ese proceso, es un sistema replicador. La replicación, entonces, no es diferente de la producción repetitiva. Cualquier distinción entre estos procesos surge como una cuestión de descripción en el énfasis que el observador pone en el origen de la organización equivalente de las unidades producidas sucesivamente, y en la relevancia que esta equivalencia tiene en un dominio diferente de aquel en el que tiene lugar la producción repetitiva.
+                                </Paragraph>
+                                <Paragraph>
+                                    2. <strong>Copia</strong>. La copia tiene lugar siempre que un objeto o fenómeno dado es mapeado mediante algún procedimiento sobre un sistema diferente, de modo que se realiza en él un objeto o fenómeno isomórfico. En la noción de copia el énfasis se pone en el proceso de mapeo, independientemente de cómo se realice, incluso si la operación de mapeo es realizada por la propia unidad modelo.
+                                </Paragraph>
+                                <Paragraph>
+                                    3. <strong>Autorreproducción</strong>. La autorreproducción tiene lugar cuando una unidad produce otra con una organización similar a la suya, a través de un proceso que está acoplado al proceso de su propia producción. Es evidente que solo los sistemas autopoiéticos pueden tener autorreproducción molecular, porque solo ellos se realizan a través de un proceso de autoproducción (autopoiesis) en el espacio físico.
+                                </Paragraph>
+                            </div>
+
+                            <SubSectionHeader>5.4.2</SubSectionHeader>
+                            <Paragraph>
+                                En los sistemas vivos conocidos actualmente en la Tierra, la autopoiesis y la reproducción están directamente acopladas y, por tanto, estos sistemas son verdaderos sistemas autorreproductores. De hecho, en ellos la reproducción es un momento de la autopoiesis, y el mismo mecanismo que constituye a una constituye a la otra. Las consecuencias de tal acoplamiento son primordiales: (1) La autorreproducción debe tener lugar durante la autopoiesis; en consecuencia, la red de individuos así producidos es necesariamente autónoma en el sentido de que no requiere para su establecimiento un mecanismo independiente de la determinación autopoiética de las unidades autorreproductoras. (2) La autorreproducción es una forma de autopoiesis; por lo tanto, la variación y la constancia en cada paso reproductivo no son independientes, y ambas deben ocurrir como expresiones de la autopoiesis. (3) La variación a través de la autorreproducción de la forma en que se realiza la autopoiesis solo puede surgir como una modificación durante la autopoiesis de una estructura autopoiética funcional preexistente.
+                            </Paragraph>
+
+                            <SectionHeader>5.5 Evolución, una Red Histórica</SectionHeader>
+                            <SubSectionHeader>5.5.1</SubSectionHeader>
+                            <Paragraph>
+                                Un fenómeno histórico es un proceso de cambio en el que cada uno de los estados sucesivos de un sistema cambiante surge como una modificación de un estado anterior en una transformación causal, y no de novo como un suceso independiente. La noción de historia puede utilizarse tanto para referirse a los antecedentes de un fenómeno dado como a la sucesión de acontecimientos que le dieron origen, como para caracterizar el fenómeno dado como un proceso. Por lo tanto, dado que una explicación causal se da siempre en el presente como una reformulación del fenómeno que se quiere explicar en el dominio de interacciones de sus componentes, la historia de un fenómeno como descripción de sus antecedentes no puede contribuir a su explicación, porque los antecedentes no son componentes del fenómeno al que preceden o generan.
+                            </Paragraph>
+
+                            <SubSectionHeader>5.5.2</SubSectionHeader>
+                            <Paragraph>
+                                Si por evolución nos referimos a lo que ha tenido lugar en la historia de la transformación de los sistemas vivos terrestres, entonces la evolución como proceso es la historia del cambio de un patrón de organización encarnado en unidades independientes generadas secuencialmente a través de pasos reproductivos, en los que la organización definitoria particular de cada unidad surge como una modificación de la anterior (o anteriores), que constituye así tanto su antecedente secuencial como histórico. En consecuencia, la evolución requiere la reproducción secuencial y el cambio en cada paso reproductivo. Sin reproducción secuencial como proceso reproductivo en el que la organización definitoria de cada unidad de la secuencia constituye el antecedente de la organización definitoria de la siguiente, no hay historia; sin cambio en cada paso reproductivo secuencial, no hay evolución.
+                            </Paragraph>
+
+                            <SubSectionHeader>5.5.3</SubSectionHeader>
+                            <Paragraph>
+                                La ontogenia y la evolución son fenómenos completamente diferentes, tanto en su apariencia como en sus consecuencias. En la ontogenia —la historia de la transformación de una unidad— la identidad de la unidad, en cualquier espacio en el que exista, nunca se interrumpe. En la evolución —un proceso de cambio histórico— hay una sucesión de identidades, generadas a través de la reproducción secuencial, que constituyen una red histórica, y lo que cambia (evoluciona), es decir, el patrón de organización de las unidades generadas sucesivamente, existe en un dominio diferente al de las unidades que lo encarnan. Es inadecuado hablar de evolución en la historia de cambio de una sola unidad en cualquier espacio en que exista; las unidades solo tienen ontogenias. Así, es inadecuado hablar de la evolución del universo, o de la evolución química de la Tierra; solo se debería hablar de la ontogenia del universo o de la historia química de la Tierra. Asimismo, solo hay una evolución biológica en la medida en que hay una reproducción secuencial de los sistemas vivos.
+                            </Paragraph>
+
+                            <SubSectionHeader>5.5.4</SubSectionHeader>
+                            <Paragraph>
+                                La selección, como proceso en una población de unidades, es un proceso de realización diferencial en un contexto que especifica las organizaciones unitarias que pueden realizarse. En una población de unidades autopoiéticas la selección es un proceso de realización diferencial de la autopoiesis y, por tanto, si se trata de unidades autopoiéticas autorreproductoras, de autorreproducción diferencial. En consecuencia, si hay reproducción secuencial y posibilidad de cambio en cada paso reproductivo, entonces la selección puede hacer que la transformación del patrón de organización reproducible encarnado en cada unidad sucesiva sea una función recursiva del dominio de interacciones que esa misma unidad autopoiética especifica.
+                            </Paragraph>
+
+                            <SubSectionHeader>5.5.5</SubSectionHeader>
+                            <Paragraph>
+                                Una especie es el resultado del proceso de selección en una población o colección de poblaciones de individuos reproductivamente interconectados, que son así nodos en una red histórica. Estos individuos comparten un acervo genético, es decir, un patrón de organización autopoiética fundamentalmente equivalente bajo transformaciones históricas. Históricamente, una especie surge cuando una red reproductiva de este tipo desarrolla una red reproductiva independiente como una rama que, al ser una red histórica independiente (reproductivamente separada), tiene una historia independiente. Se dice que lo que evoluciona es la especie y que los individuos en su existencia histórica están subordinados a esta evolución. En un sentido descriptivo superficial esto tiene sentido, pero la especie existe como unidad solo en el dominio histórico, mientras que los individuos que constituyen los nodos de esta red histórica existen en el espacio físico. Estrictamente, lo que evoluciona es un patrón de organización autopoiética encarnado en muchas variaciones particulares en una colección de individuos transitorios que juntos definen una red histórica reproductiva. La especie es una noción descriptiva que representa un fenómeno histórico; no constituye un componente causal en la fenomenología de la evolución.
+                            </Paragraph>
+
+                            <SubSectionHeader>5.5.6</SubSectionHeader>
+                            <Paragraph>
+                                No se puede enfatizar demasiado que para que la evolución tenga lugar como una historia real de cambio de un patrón de organización a través de su encarnación en unidades generadas sucesivamente, la reproducción debe permitir el cambio en la organización reproducida secuencialmente. En los sistemas vivos actuales la reproducción tiene lugar como una modificación de la autopoiesis y está ligada a ella. Esto es de esperar. Originalmente se formaron probablemente muchos tipos de unidades autopoiéticas, que competirían mutuamente por los precursores. Si alguna clase de ellas tenía alguna posibilidad de autorreproducción, es evidente que desplazaría inmediatamente por selección a las otras formas no reproductoras.
+                            </Paragraph>
+                            <Paragraph>
+                                En resumen, una vez que el proceso autorreproductor más simple tiene lugar en un sistema autopoiético, la evolución está en marcha y la autorreproducción puede entrar en una historia de cambio, con el consiguiente desplazamiento total de cualquier unidad autopoiética coexistente no autorreproductora. De ahí el vínculo entre autopoiesis y autorreproducción en los sistemas vivos terrestres. Por supuesto, no es posible decir ahora qué ocurrió realmente en el origen de la evolución biológica. El hecho es que en los sistemas vivos actuales la autorreproducción está crucialmente asociada a los ácidos nucleicos y a su papel en la especificación de las proteínas. Parece que esto no podría haber sido así si la asociación ácido nucleico-proteína no fuera una condición virtualmente constitutiva del proceso autopoiético original, que se asoció secundariamente con la reproducción y la variación, como sugieren los estudios de Eigen (1971) y Eigen y Schuster (1977).
+                            </Paragraph>
+
+                            <SubSectionHeader>Fuente</SubSectionHeader>
+                            <div className="pl-6 border-l border-slate-700 text-sm md:text-base lg:text-xl text-slate-500 italic w-full">
+                                <p className="mb-4">Maturana, H., y F. Varela (1975), Autopoietic Systems: A Characterization of the Living Organization, Biological Computer Lab. Rep. 9.4, Univ. of Illinois, Urbana. Reimpreso en Maturana y Varela (1979).</p>
+                            </div>
+                        </section>
+                    </main>
+
+                    <footer className="w-full text-center py-24 border-t border-slate-900 text-slate-700 text-xs">
+                        <p className="mb-2 uppercase tracking-[0.6em] font-serif">Principios de Autonomía Biológica</p>
+                        <p>© Francisco J. Varela</p>
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
