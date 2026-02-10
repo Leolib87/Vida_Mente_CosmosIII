@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capítulo 3 - Francisco J. Varela</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (para JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- MathJax para Ecuaciones -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: { 950: '#020617' }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 1.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(15px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        html { scroll-behavior: smooth; }
+        ::selection { background-color: rgba(34, 211, 238, 0.2); color: #fff; }
+        
+        .footnote-ref {
+            font-size: 0.7em;
+            vertical-align: super;
+            margin-left: 2px;
+            font-weight: bold;
+            color: #22d3ee;
+            cursor: pointer;
+        }
+
+        /* Estilo para que el renderizado de MathJax sea consistente */
+        .mjx-chtml { color: inherit !important; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-300 antialiased overflow-x-hidden selection:bg-cyan-500/30">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS (SVG) ---
+        const MenuIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        );
+        const XIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="M6 6 18 18"/></svg>
+        );
+
+        // --- DATA & CONTENT ---
+
+        const AUTHORS = [
+            "Francisco J. Varela", "Burks", "von Neumann", "Conway", "Eigen", "Winkler", "Zeleny", "Pierre", "Fox", "Bangham", "Pattee", "Guiloff", "Maturana", "Uribe", "Henderson", "Sartre"
+        ];
+
+        const CONCEPTS = [
+            "Autonomía", "Control", "Información", "autopoiético", "alonomía", "autonomía",
+            "auto-ley", "clausura", "circularidades", "representación", "instrucción", "organización",
+            "in-formación", "autopoiesis", "teselación", "sustratos", "catalizadores", "eslabones", "unión",
+            "concatenación", "desintegración", "identidad", "reproducción", "evolución", "neobiogénesis", "liposoma", "microsferas"
+        ];
+
+        const FOOTNOTES = {
+            1: "Los detalles de la computación se dan en el Apéndice A. Para facilitar la apreciación de los desarrollos del modelo, las Figuras 3-1 y 3-2 se han dibujado a partir del listado de la simulación por computadora, cambiando los símbolos realmente utilizados en los cálculos."
+        };
+
+        const TABLE_OF_CONTENTS = [
+            { 
+                part: "Parte I: Autonomía de lo Vivo y Clausura Organizacional",
+                items: [
+                    { title: "Introducción Parte I", link: "#part1-intro" },
+                    { title: "Capítulo 1: Autonomía y Pensamiento Biológico", link: "#" },
+                    { title: "Capítulo 2: La Autopoiesis como Organización", link: "#" }, 
+                    { title: "Capítulo 3: Un Ejemplo de Teselación de la Autopoiesis", link: "#chapter3" },
+                    { title: "Capítulo 4: Encarnaciones de Autopoiesis", link: "#" },
+                    { title: "Capítulo 5: El Individuo en Desarrollo", link: "#" },
+                    { title: "Capítulo 6: Consecuencias de la Autopoiesis", link: "#" },
+                    { title: "Capítulo 7: La Idea de Clausura Organizacional", link: "#" }
+                ]
+            }
+        ];
+
+        // --- COMPONENTS ---
+
+        const HighlightedText = ({ text, onFootnoteHover, onFootnoteLeave }) => {
+            if (!text || typeof text !== 'string') return text || null;
+            const parts = text.split(/(\[\d+\]|[\s\n]+)/g);
+
+            return (
+                <span>
+                    {parts.map((part, i) => {
+                        const footnoteMatch = part.match(/^\[(\d+)\]$/);
+                        if (footnoteMatch) {
+                            const id = footnoteMatch[1];
+                            return (
+                                <span 
+                                    key={i}
+                                    className="footnote-ref px-1 bg-cyan-950/20 rounded border border-cyan-900/50 hover:text-cyan-200 transition-colors"
+                                    onMouseEnter={() => onFootnoteHover(id)}
+                                    onMouseLeave={onFootnoteLeave}
+                                >
+                                    [{id}]
+                                </span>
+                            );
+                        }
+
+                        const cleanWord = part.replace(/[.,;:"()]/g, '');
+                        const lowerPart = part.toLowerCase();
+                        let styleClass = "";
+                        
+                        if (AUTHORS.some(a => lowerPart.includes(a.split(' ').pop().toLowerCase()) && cleanWord.length > 2)) {
+                            styleClass = "text-cyan-400 font-medium";
+                        }
+                        if (CONCEPTS.some(c => lowerPart.includes(c.toLowerCase()) && cleanWord.length > 3)) {
+                            styleClass = "text-amber-500 italic";
+                        }
+
+                        return <span key={i} className={styleClass}>{part}</span>;
+                    })}
+                </span>
+            );
+        };
+
+        const Paragraph = ({ children, onFootnoteHover, onFootnoteLeave }) => (
+            <p className="mb-10 text-lg md:text-xl lg:text-2xl leading-relaxed text-slate-300 font-light text-justify w-full">
+                <HighlightedText text={children} onFootnoteHover={onFootnoteHover} onFootnoteLeave={onFootnoteLeave} />
+            </p>
+        );
+
+        const EquationBlock = ({ tex, label }) => (
+            <div className="flex items-center justify-between my-12 w-full px-8 md:px-16 text-amber-500/90 overflow-x-auto">
+                <div className="flex-1 text-center py-4 text-2xl">
+                    {`\\[ ${tex} \\]`}
+                </div>
+                {label && <div className="text-slate-500 text-sm md:text-base font-sans ml-4 min-w-[50px]">({label})</div>}
+            </div>
+        );
+
+        const FigureBox = ({ id, caption, linkPlaceholder }) => (
+            <div className="my-24 w-full group">
+                <div className="w-full bg-slate-900/50 border border-slate-800 rounded-[3rem] overflow-hidden transition-all duration-500 group-hover:border-cyan-900/50 group-hover:bg-slate-900">
+                    <div className="aspect-[21/9] flex items-center justify-center relative">
+                        {/* ESPACIO PARA INSERTAR EL LINK DE LA IMAGEN EN src */}
+                        <img 
+                            src="" 
+                            alt={caption}
+                            className="max-w-full max-h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity"
+                            onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'block';
+                            }}
+                        />
+                        <div className="hidden text-center p-20">
+                            <p className="text-slate-700 font-serif italic text-2xl mb-4">[Espacio para Figura {id}]</p>
+                            <code className="text-cyan-600/50 text-xs break-all">src="{linkPlaceholder}"</code>
+                        </div>
+                    </div>
+                </div>
+                <div className="mt-10 px-10 md:px-20 text-center">
+                    <p className="text-slate-500 text-sm md:text-lg leading-relaxed italic text-justify">
+                        <span className="text-cyan-500 font-bold uppercase tracking-[0.2em] not-italic mr-4">Figura {id}.</span>
+                        {caption}
+                    </p>
+                </div>
+            </div>
+        );
+
+        const SectionHeader = ({ children }) => (
+             <h4 className="text-3xl md:text-5xl font-serif text-slate-100 mt-32 mb-16 border-l-4 border-cyan-500/50 pl-10 w-full uppercase tracking-tight">
+                {children}
+            </h4>
+        );
+
+        const SubSectionHeader = ({ children }) => (
+             <h5 className="text-xl md:text-3xl font-sans font-bold text-slate-400 mt-20 mb-10 uppercase tracking-[0.5em] border-b border-slate-800 pb-6 w-full">
+                {children}
+            </h5>
+        );
+
+        // --- APP ---
+
+        function App() {
+            const [activeFootnote, setActiveFootnote] = useState(null);
+            const [progress, setProgress] = useState(0);
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    const winScroll = document.documentElement.scrollTop;
+                    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                    setProgress(winScroll / height);
+                };
+                window.addEventListener('scroll', handleScroll);
+                // Trigger MathJax typeset on render
+                if (window.MathJax) window.MathJax.typeset();
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            const handleLinkClick = (e, link) => {
+                if (link && link.startsWith('#')) {
+                    e.preventDefault();
+                    const element = document.getElementById(link.substring(1));
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth' });
+                        setIsMenuOpen(false);
+                    }
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-300 font-sans pb-80">
+                    <div className="fixed top-0 left-0 h-1.5 bg-cyan-400 z-50 transition-all duration-75 shadow-[0_0_20px_rgba(34,211,238,0.7)]" style={{ width: `${progress * 100}%` }}></div>
+
+                    <nav className="fixed top-0 w-full z-40 bg-slate-950/80 backdrop-blur-xl border-b border-white/5 h-20">
+                        <div className="w-full px-6 md:px-12 h-full flex items-center justify-between">
+                            <div className="flex items-center gap-4 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
+                                <div className="w-10 h-10 bg-amber-600 rounded flex items-center justify-center text-slate-950 font-serif font-bold text-xl shadow-xl">V</div>
+                                <div className="hidden md:block">
+                                    <h1 className="text-slate-100 font-serif text-sm tracking-widest uppercase font-bold">Francisco J. Varela</h1>
+                                    <span className="text-[10px] text-slate-500 uppercase tracking-widest block mt-0.5 opacity-60">Principios de Autonomía Biológica</span>
+                                </div>
+                            </div>
+                            
+                            <div className="relative">
+                                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-cyan-400 py-3 px-8 border border-cyan-900/50 rounded-full hover:bg-cyan-950/40 transition-all font-bold">
+                                    Índice {isMenuOpen ? <XIcon size={18}/> : <MenuIcon size={18}/>}
+                                </button>
+                                {isMenuOpen && (
+                                    <div className="absolute right-0 mt-6 w-80 sm:w-[500px] bg-slate-900/95 border border-slate-800 shadow-2xl rounded-[2rem] py-10 max-h-[85vh] overflow-y-auto z-50 animate-fade-in ring-1 ring-white/10">
+                                        {TABLE_OF_CONTENTS.map((section, idx) => (
+                                            <div key={idx} className="mb-12">
+                                                <h4 className="px-12 py-2 text-[11px] font-black text-amber-500 uppercase tracking-[0.4em] bg-slate-950/60 mb-6">
+                                                    {section.part}
+                                                </h4>
+                                                {section.items.map((item, i) => (
+                                                    <a key={i} href={item.link} onClick={(e) => handleLinkClick(e, item.link)} className="block px-12 py-4 text-sm md:text-base text-slate-400 hover:bg-slate-800 hover:text-cyan-400 transition-all no-underline border-l-4 border-transparent hover:border-cyan-500">
+                                                        {item.title}
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </nav>
+
+                    <main className="pt-32 px-6 md:px-12 lg:px-20 w-full animate-fade-in">
+                        
+                        {/* SECCIÓN PARTE I */}
+                        <section id="part1-intro" className="mb-80 scroll-mt-40">
+                            <div className="mb-48 text-center">
+                                <span className="text-amber-500 text-xs font-black tracking-[1em] uppercase mb-16 block opacity-40">Parte I</span>
+                                <h2 className="text-6xl md:text-8xl lg:text-[10rem] font-serif text-slate-100 mb-12 uppercase leading-none tracking-tighter">
+                                    Autonomía de lo Vivo
+                                </h2>
+                                <h3 className="text-slate-500 text-4xl md:text-6xl lg:text-7xl font-serif italic font-light tracking-tight">y Clausura Organizacional</h3>
+                            </div>
+                        </section>
+
+                        {/* CAPÍTULO 3 */}
+                        <section id="chapter3" className="mb-80 scroll-mt-40">
+                            <div className="mb-40 text-center">
+                                <span className="text-cyan-400 text-xs font-black tracking-[0.6em] uppercase mb-8 block">Capítulo 3</span>
+                                <h2 className="text-5xl md:text-7xl lg:text-[9rem] font-serif text-slate-100 tracking-tighter leading-none">Un Ejemplo de Teselación</h2>
+                                <h3 className="text-slate-500 text-4xl md:text-6xl font-serif italic mt-8">de la Autopoiesis</h3>
+                            </div>
+
+                            <SectionHeader>3.1 El Modelo</SectionHeader>
+                            
+                            <SubSectionHeader>3.1.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Para que lo anterior sea un poco menos abstracto, deseo presentar en este punto un modelo sencillo que despliega la organización autopoiética. Este modelo se presenta en un espacio imaginario de componentes de dos dimensiones, al modo de los autómatas de teselación (Burks, 1970). Como resultará obvio, el modelo está inspirado en el tipo de producciones químicas existentes en una célula viva; de hecho, el modelo puede tomarse como una simplificación de tales producciones.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Este modelo es significativo en dos aspectos: por un lado, permite observar la organización autopoiética en funcionamiento en un sistema más simple que cualquier sistema vivo conocido, así como su generación espontánea a partir de componentes; por otro lado, puede permitir el desarrollo de herramientas formales para el análisis y la síntesis de sistemas autopoiéticos.
+                            </Paragraph>
+
+                            <SubSectionHeader>3.1.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                El modelo consiste en un universo bidimensional donde numerosos elementos ("sustratos") y unos pocos ("catalizadores") se mueven aleatoriamente en los espacios de una cuadrícula cuadrática. Estos elementos están dotados de propiedades específicas que determinan interacciones que pueden dar lugar a la producción de otros elementos ("eslabones") que tienen propiedades propias, incluida la capacidad de interacción ("unión"). Sean las interacciones y transformaciones las siguientes:
+                            </Paragraph>
+
+                            <div className="space-y-4">
+                                <div className="text-center text-slate-500 text-xs uppercase tracking-[0.3em] font-bold">Composición:</div>
+                                <EquationBlock tex="\ast + 2O \rightarrow \ast + L" label="3.1" />
+                                
+                                <div className="text-center text-slate-500 text-xs uppercase tracking-[0.3em] font-bold mt-12">Concatenación:</div>
+                                <EquationBlock tex="L - L - \cdots - L + L \rightarrow L - L - \cdots - L \quad (n \rightarrow n+1)" label="3.2" />
+                                
+                                <div className="text-center text-slate-500 text-xs uppercase tracking-[0.3em] font-bold mt-12">Desintegración:</div>
+                                <EquationBlock tex="L \rightarrow 2O" label="3.3" />
+                            </div>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La interacción (3.1) entre el catalizador * y dos elementos de sustrato 2O es responsable de la composición de un eslabón no unido. Estos eslabones pueden unirse mediante la interacción (3.2), que concatena estos eslabones unidos en cadenas de L no ramificadas. Una cadena así producida puede cerrarse sobre sí misma, formando un recinto que suponemos penetrable por los O, pero no por *. Se supone que la desintegración (3.3) es independiente del estado de los eslabones, es decir, de si están libres o unidos, y puede verse como una decadencia espontánea o como resultado de una colisión con un elemento de sustrato.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Para visualizar la dinámica del sistema, mostramos dos secuencias (Figuras 3-1 y 3-2) de etapas sucesivas de transformación, tal como se obtuvieron del listado de una simulación por computadora de este sistema [1].
+                            </Paragraph>
+
+                            <FigureBox 
+                                id="3-1"
+                                linkPlaceholder="URL_IMAGEN_CAPITULO3_FIG1"
+                                caption="Los primeros siete instantes (0 → 6) de una ejecución de computadora, mostrando el surgimiento espontáneo de una unidad en este dominio bidimensional. Las interacciones entre el sustrato O y el catalizador * producen cadenas de eslabones unidos L que eventualmente encierran al catalizador, cerrando así una red de interacciones que constituye una unidad autopoiética en este dominio. (De Varela et al., 1974)."
+                            />
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Si una cadena de L se cierra sobre sí misma encerrando un elemento * (Figura 3-1), los L producidos dentro del recinto por la interacción (3.1) pueden reemplazar en la cadena, mediante (3.2), los elementos L que decaen como resultado de (3.3) (Figura 3-2). De este modo se produce una unidad que constituye una red de producciones de componentes que generan y participan en la red de producciones que produjo estos componentes, realizando efectivamente la red como una entidad distinguible en el universo donde existen los elementos.
+                            </Paragraph>
+                            
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Dentro de este universo, estos sistemas satisfacen la organización autopoiética. De hecho, el elemento * y los elementos O producen elementos L en un recinto formado por una cadena bidimensional de L; como resultado, los L producidos en el recinto reemplazan a los L decadentes del límite, de modo que el recinto permanece cerrado para * bajo un recambio continuo de elementos, y bajo una generación recursiva de la red de producciones, que permanece así invariante (Figura 3-1 y 3-2). Esta unidad no puede describirse en términos geométricos, porque no está definida por las relaciones espaciales de sus componentes. Si se detuvieran todos los procesos del sistema en un momento en que * está encerrado por la cadena, de modo que las relaciones espaciales entre los componentes se volvieran fijas, se tendría de hecho un sistema definible en términos de relaciones espaciales, es decir, un cristal, pero no una unidad autopoiética.
+                            </Paragraph>
+
+                            <FigureBox 
+                                id="3-2"
+                                linkPlaceholder="URL_IMAGEN_CAPITULO3_FIG2"
+                                caption="Cuatro instantes sucesivos (44 → 47) en la misma ejecución de computadora de la Figura 3-1, mostrando la regeneración del límite roto por la desintegración espontánea de los eslabones. La producción continua de eslabones restablece el borde de la unidad bajo cambios de forma y recambio de componentes. (De Varela et al., 1974)."
+                            />
+
+                            <SectionHeader>3.2 Interpretaciones</SectionHeader>
+
+                            <SubSectionHeader>3.2.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Debería resultar evidente a partir de este modelo que los procesos generados por las propiedades de los componentes [(3.1)-(3.3)] pueden concatenarse de varias maneras. La organización autopoiética es solo una de ellas, pero es la que, por definición, implica la realización de una unidad dinámica. Los mismos componentes pueden generar otras organizaciones alopoiéticas; por ejemplo, una cadena que se define como una secuencia de L es claramente alopoiética, ya que la producción de los componentes que la realizan como unidad no entra en su definición como tal. Por tanto, la organización autopoiética no está representada ni encarnada en (3.1)-(3.3), como en general ninguna organización está representada ni encarnada en las propiedades que la realizan.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En el caso descrito, como en un amplio espectro de otros estudios que genéricamente pueden llamarse autómatas de teselación (von Neumann, 1966; Burks, 1970), el punto de partida es una generalización de la situación física. De hecho, se define un espacio donde interactúan componentes espacialmente distinguibles, encarnando así la concatenación de procesos que conducen a eventos entre los componentes. Esto es, por supuesto, lo que ocurre en el dominio molecular, donde tiene lugar la autopoiesis tal como la conocemos. Sin embargo, con el fin de explicar y estudiar la noción de autopoiesis, se puede adoptar una visión más general, como hemos hecho aquí, y volver al dominio de la teselación, donde el espacio físico es sustituido por cualquier espacio (uno bidimensional en el modelo) y las moléculas por entidades dotadas de algunas propiedades. La fenomenología permanece inalterada en todos los casos: el automantenimiento autónomo de una unidad mientras su organización permanece invariante en el tiempo.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Es evidente que para tener sistemas autopoiéticos, los componentes no pueden tener propiedades simples. En el presente caso, exigimos que los componentes tuvieran especificidad de interacciones, formas de vinculación, movilidad y desintegración. Ninguna de estas propiedades es prescindible para la formación de este sistema autopoiético. La característica necesaria es la presencia de un límite producido por una dinámica tal que el límite cree las condiciones requeridas para esta dinámica.
+                            </Paragraph>
+
+                            <SubSectionHeader>3.2.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Es interesante observar que, aunque inspirado en la idea de autopoiesis, este autómata de teselación posee cierto interés independiente (véase también Zeleny y Pierre, 1976; Zeleny, 1977). Es fundamentalmente distinto de otros modelos de teselación, como el conocido juego de la "vida" de Conway (Gardner, 1971) y los otros lúcidos juegos propuestos por Eigen y Winkler (1976), porque en estos modelos la propiedad esencial estudiada es la de la reproducción y la evolución, y no la del automantenimiento individual. In otras palabras, el proceso por el cual una unidad se mantiene a sí misma es fundamentalmente diferente del proceso por el cual puede duplicarse de una forma u otra. La producción no conlleva la reproducción, pero la reproducción sí conlleva alguna forma de automantenimiento o identidad. En el caso de von Neumann, Conway y Eigen, la cuestión de la identidad o el automantenimiento de las unidades que observan en el proceso de reproducción y evolución queda a un lado y se da por sentada; no es en absoluto la cuestión que se plantean estos autores.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Qué tan fácilmente un modelo autopoiético como el presentado arriba podría generalizarse a tres dimensiones es una pregunta abierta. No parece haber ninguna dificultad conceptual implicada. Sin embargo, sospecho que una dimensión adicional requerirá un aumento significativo de la complejidad de las propiedades de los componentes, y se perderá la sencillez de las reglas encarnadas en (3.1)-(3.3). Un estudio más que merecería cierta atención es cuánta más complejidad en las reglas de interacción se requeriría para que este sencillo modelo bidimensional se reprodujera a sí mismo, acercándolo así a los estudios de von Neumann y Eigen mencionados anteriormente. Este estudio parece particularmente importante a la luz del difícil problema que plantea la combinación entre el automantenimiento y la reproducción, que requiere alguna combinación de procesos puramente dinámicos de producción y procesos (discretos) de especificación de componentes (ej. Eigen, 1971; Pattee, 1977).
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Otro punto interesante de este modelo de teselación es que las propiedades de los componentes mínimamente requeridas para producir la dinámica autopoiética podrían ser esclarecedoras para el tipo de propiedades requeridas en el dominio molecular. Por tanto, este tipo de estudios encierran potencialmente una clave tanto para la síntesis de unidades autopoiéticas moleculares como para la comprensión de la neobiogénesis. Creemos que la síntesis de la autopoiesis molecular puede intentarse en la actualidad, como sugieren estudios como los realizados sobre microsferas y liposomas (Fox, 1965; Bangham, 1968) cuando se analizan en el marco actual. Consideremos, por ejemplo, un liposoma cuyos componentes lipídicos de la membrana se producen y/o modifican mediante reacciones entre sus componentes que tienen lugar solo en las condiciones de concentración producidas dentro de la membrana del liposoma. Tal liposoma constituiría un sistema autopoiético. Los experimentos en este sentido no han hecho más que empezar (Guiloff, 1978).
+                            </Paragraph>
+
+                            <SubSectionHeader>Fuente</SubSectionHeader>
+                            <div className="pl-6 border-l border-slate-700 text-sm md:text-base lg:text-xl text-slate-500 italic w-full">
+                                <p className="mb-4">Varela, F., H. Maturana, y R. Uribe (1974), Autopoiesis: the organization of living systems, its characterization and a model, Biosystems 5:187.</p>
+                            </div>
+                        </section>
+                    </main>
+
+                    <footer className="w-full text-center py-32 border-t border-slate-900 text-slate-700 text-xs">
+                        <p className="mb-2 uppercase tracking-[0.8em] font-serif">Francisco J. Varela</p>
+                        <p>© Principios de Autonomía Biológica</p>
+                    </footer>
+
+                    {/* Ventana flotante de notas (Bottom Center wide) */}
+                    {activeFootnote && (
+                        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[95%] max-w-7xl bg-black/95 border border-cyan-900/40 text-slate-300 p-10 md:p-16 rounded-[4rem] shadow-2xl backdrop-blur-3xl z-50 animate-fade-in ring-1 ring-cyan-500/30">
+                            <div className="flex items-start gap-12 lg:gap-20">
+                                <span className="text-cyan-400 font-serif text-4xl lg:text-8xl font-bold leading-none select-none">[{activeFootnote}]</span>
+                                <p className="text-base md:text-lg lg:text-2xl leading-relaxed text-justify font-light tracking-wide">{FOOTNOTES[activeFootnote]}</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
