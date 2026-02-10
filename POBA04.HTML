@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Francisco J. Varela - Capítulo 4</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (para JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- MathJax para Ecuaciones -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: { 950: '#020617' }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 1.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(15px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        html { scroll-behavior: smooth; }
+        ::selection { background-color: rgba(34, 211, 238, 0.2); color: #fff; }
+        
+        .footnote-ref {
+            font-size: 0.7em;
+            vertical-align: super;
+            margin-left: 2px;
+            font-weight: bold;
+            color: #22d3ee;
+            cursor: pointer;
+        }
+
+        .mjx-chtml { color: inherit !important; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-300 antialiased overflow-x-hidden selection:bg-cyan-500/30">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS (SVG Nativos) ---
+        const MenuIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        );
+        const XIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="M6 6 18 18"/></svg>
+        );
+
+        // --- DATA & CONTENT ---
+
+        const AUTHORS = [
+            "Francisco J. Varela", "Eigen", "Schuster", "Maturana", "Henderson", "Sartre"
+        ];
+
+        const CONCEPTS = [
+            "Autonomía", "Control", "Información", "autopoiético", "alonomía", "autonomía",
+            "clausura", "circularidades", "representación", "instrucción", "organización",
+            "dinámica autopoiética", "relaciones constitutivas", "relaciones de especificación", 
+            "relaciones de orden", "topología", "límites físicos", "identidad", "nucleicos", 
+            "metabolitos", "teleonómico", "hiperciclo", "evolución molecular", "neobiogénesis", "viabilidad"
+        ];
+
+        const FOOTNOTES = {
+            1: "Uso aquí la palabra información en su sentido más genérico de semeios. Otras connotaciones que la palabra ha adquirido en su tratamiento Shannoniano son aquí estrictamente secundarias. Véase para una discusión el excelente trabajo de Nauta (1972), The Meaning of Information."
+        };
+
+        const TABLE_OF_CONTENTS = [
+            { 
+                part: "Parte I: Autonomía de lo Vivo y Clausura Organizacional",
+                items: [
+                    { title: "Capítulo 1: Autonomía y Pensamiento Biológico", link: "#" },
+                    { title: "Capítulo 2: La Autopoiesis como Organización", link: "#" }, 
+                    { title: "Capítulo 3: Un Ejemplo de Teselación de la Autopoiesis", link: "#" },
+                    { title: "Capítulo 4: Encarnaciones de la Autopoiesis", link: "#chapter4" },
+                    { title: "Capítulo 5: El Individuo en Desarrollo", link: "#" },
+                    { title: "Capítulo 6: Consecuencias de la Autopoiesis", link: "#" },
+                    { title: "Capítulo 7: La Idea de Clausura Organizacional", link: "#" }
+                ]
+            }
+        ];
+
+        // --- COMPONENTS ---
+
+        const HighlightedText = ({ text, onFootnoteHover, onFootnoteLeave }) => {
+            if (!text || typeof text !== 'string') return text || null;
+            const parts = text.split(/(\[\d+\]|[\s\n]+)/g);
+
+            return (
+                <span>
+                    {parts.map((part, i) => {
+                        const footnoteMatch = part.match(/^\[(\d+)\]$/);
+                        if (footnoteMatch) {
+                            const id = footnoteMatch[1];
+                            return (
+                                <span 
+                                    key={i}
+                                    className="footnote-ref px-1 bg-cyan-950/20 rounded border border-cyan-900/50 hover:text-cyan-200 transition-colors"
+                                    onMouseEnter={() => onFootnoteHover(id)}
+                                    onMouseLeave={onFootnoteLeave}
+                                >
+                                    [{id}]
+                                </span>
+                            );
+                        }
+
+                        const cleanWord = part.replace(/[.,;:"()]/g, '');
+                        const lowerPart = part.toLowerCase();
+                        let styleClass = "";
+                        
+                        if (AUTHORS.some(a => lowerPart.includes(a.split(' ').pop().toLowerCase()) && cleanWord.length > 3)) {
+                            styleClass = "text-cyan-400 font-medium";
+                        }
+                        if (CONCEPTS.some(c => lowerPart.includes(c.toLowerCase()) && cleanWord.length > 3)) {
+                            styleClass = "text-amber-500 italic";
+                        }
+
+                        return <span key={i} className={styleClass}>{part}</span>;
+                    })}
+                </span>
+            );
+        };
+
+        const Paragraph = ({ children, onFootnoteHover, onFootnoteLeave }) => (
+            <p className="mb-10 text-lg md:text-xl lg:text-2xl leading-relaxed text-slate-300 font-light text-justify w-full">
+                <HighlightedText text={children} onFootnoteHover={onFootnoteHover} onFootnoteLeave={onFootnoteLeave} />
+            </p>
+        );
+
+        const FigureBox = ({ id, caption, linkPlaceholder }) => (
+            <div className="my-24 w-full group">
+                <div className="w-full bg-slate-900/50 border border-slate-800 rounded-[3rem] overflow-hidden transition-all duration-500 group-hover:border-cyan-900/50 group-hover:bg-slate-900">
+                    <div className="aspect-[16/10] flex items-center justify-center relative">
+                        {/* ESPACIO PARA INSERTAR EL LINK DE LA IMAGEN EN src */}
+                        <img 
+                            src="" 
+                            alt={caption}
+                            className="max-w-full max-h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity"
+                            onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'block';
+                            }}
+                        />
+                        <div className="hidden text-center p-20">
+                            <p className="text-slate-700 font-serif italic text-2xl mb-4">[Espacio para Figura {id}]</p>
+                            <code className="text-cyan-600/50 text-xs break-all font-mono">src="{linkPlaceholder}"</code>
+                        </div>
+                    </div>
+                </div>
+                <div className="mt-10 px-10 md:px-24 text-center">
+                    <p className="text-slate-500 text-sm md:text-lg leading-relaxed italic text-justify">
+                        <span className="text-cyan-500 font-bold uppercase tracking-[0.2em] not-italic mr-4">Figura {id}.</span>
+                        {caption}
+                    </p>
+                </div>
+            </div>
+        );
+
+        const SectionHeader = ({ children }) => (
+             <h4 className="text-3xl md:text-5xl font-serif text-slate-100 mt-32 mb-16 border-l-4 border-cyan-500/50 pl-10 w-full uppercase tracking-tight leading-none">
+                {children}
+            </h4>
+        );
+
+        const SubSectionHeader = ({ children }) => (
+             <h5 className="text-xl md:text-3xl font-sans font-bold text-slate-400 mt-20 mb-10 uppercase tracking-[0.5em] border-b border-slate-800 pb-6 w-full">
+                {children}
+            </h5>
+        );
+
+        // --- APP ---
+
+        function App() {
+            const [activeFootnote, setActiveFootnote] = useState(null);
+            const [progress, setProgress] = useState(0);
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    const winScroll = document.documentElement.scrollTop;
+                    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                    setProgress(winScroll / height);
+                };
+                window.addEventListener('scroll', handleScroll);
+                if (window.MathJax) window.MathJax.typeset();
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            const handleLinkClick = (e, link) => {
+                if (link && link.startsWith('#')) {
+                    e.preventDefault();
+                    const element = document.getElementById(link.substring(1));
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth' });
+                        setIsMenuOpen(false);
+                    }
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-300 font-sans pb-80">
+                    <div className="fixed top-0 left-0 h-1.5 bg-cyan-400 z-50 transition-all duration-75 shadow-[0_0_20px_rgba(34,211,238,0.7)]" style={{ width: `${progress * 100}%` }}></div>
+
+                    <nav className="fixed top-0 w-full z-40 bg-slate-950/80 backdrop-blur-xl border-b border-white/5 h-20">
+                        <div className="w-full px-6 md:px-12 h-full flex items-center justify-between">
+                            <div className="flex items-center gap-4 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
+                                <div className="w-10 h-10 bg-amber-600 rounded flex items-center justify-center text-slate-950 font-serif font-bold text-xl shadow-xl">V</div>
+                                <div className="hidden md:block">
+                                    <h1 className="text-slate-100 font-serif text-sm tracking-widest uppercase font-bold">Francisco J. Varela</h1>
+                                    <span className="text-[10px] text-slate-500 uppercase tracking-widest block mt-0.5 opacity-60">Principios de Autonomía Biológica</span>
+                                </div>
+                            </div>
+                            
+                            <div className="relative">
+                                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-cyan-400 py-3 px-8 border border-cyan-900/50 rounded-full hover:bg-cyan-950/40 transition-all font-bold">
+                                    Índice {isMenuOpen ? <XIcon size={18}/> : <MenuIcon size={18}/>}
+                                </button>
+                                {isMenuOpen && (
+                                    <div className="absolute right-0 mt-6 w-80 sm:w-[500px] bg-slate-900/95 border border-slate-800 shadow-2xl rounded-[2rem] py-10 max-h-[85vh] overflow-y-auto z-50 animate-fade-in ring-1 ring-white/10">
+                                        {TABLE_OF_CONTENTS.map((section, idx) => (
+                                            <div key={idx} className="mb-12">
+                                                <h4 className="px-12 py-2 text-[11px] font-black text-amber-500 uppercase tracking-[0.4em] bg-slate-950/60 mb-6">
+                                                    {section.part}
+                                                </h4>
+                                                {section.items.map((item, i) => (
+                                                    <a key={i} href={item.link} onClick={(e) => handleLinkClick(e, item.link)} className="block px-12 py-4 text-sm md:text-base text-slate-400 hover:bg-slate-800 hover:text-cyan-400 transition-all no-underline border-l-4 border-transparent hover:border-cyan-500">
+                                                        {item.title}
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </nav>
+
+                    {/* Contenido Principal - Parte directamente desde Capítulo 4 */}
+                    <main className="pt-40 px-6 md:px-12 lg:px-20 w-full animate-fade-in">
+                        
+                        <section id="chapter4" className="mb-80 scroll-mt-40">
+                            <div className="mb-48 text-center">
+                                <span className="text-cyan-400 text-xs font-black tracking-[0.6em] uppercase mb-12 block">Capítulo 4</span>
+                                <h2 className="text-6xl md:text-8xl lg:text-[10rem] font-serif text-slate-100 mb-12 uppercase leading-none tracking-tighter">
+                                    Encarnaciones de la Autopoiesis
+                                </h2>
+                            </div>
+
+                            <SectionHeader>4.1 Dinámica Autopoiética</SectionHeader>
+                            
+                            <SubSectionHeader>4.1.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Que una célula es un sistema autopoiético resulta evidente en su ciclo vital. Lo que no es obvio es cómo la célula es una encarnación molecular de la autopoiesis, tal como debería desprenderse de su análisis en términos de lo que podemos llamar las "dimensiones" de su dinámica autopoiética.
+                            </Paragraph>
+
+                            <div className="space-y-24 my-24 pl-8 md:pl-20 border-l border-slate-800">
+                                <div className="space-y-8">
+                                    <h6 className="text-amber-500 font-serif text-3xl lg:text-4xl italic tracking-tight">1. Producción de Relaciones Constitutivas</h6>
+                                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                        Las relaciones constitutivas son relaciones que determinan la topología de la organización autopoiética y, por tanto, sus límites físicos. La producción de relaciones constitutivas mediante la producción de los componentes que sostienen estas relaciones es una de las dimensiones definitorias de un sistema autopoiético. En la célula, tales relaciones constitutivas se establecen mediante la producción de moléculas (proteínas, lípidos, carbohidratos y ácidos nucleicos) que determinan la topología de las relaciones de producción en general; es decir, moléculas que determinan las relaciones de vecindad física necesarias para que los componentes sostengan las relaciones que los definen. La célula define sus límites físicos mediante la producción de relaciones constitutivas que especifican su topología. No hay especificación dentro de la célula de lo que ella no es.
+                                    </Paragraph>
+                                </div>
+
+                                <div className="space-y-8">
+                                    <h6 className="text-amber-500 font-serif text-3xl lg:text-4xl italic tracking-tight">2. Producción de Relaciones de Especificación</h6>
+                                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                        Las relaciones de especificación son relaciones que determinan la identidad (propiedades) de los componentes de la organización autopoiética y, por tanto, en el caso de las células, su viabilidad física. El establecimiento de relaciones de especificación, mediante la producción de componentes que pueden sostener estas relaciones, es otra de las dimensiones definitorias de un sistema autopoiético. En la célula, tales relaciones de especificación se producen principalmente mediante la producción de ácidos nucleicos y proteínas que determinan la identidad de las relaciones de producción en general. En la célula esto se obtiene obviamente, por un lado, mediante relaciones de especificidad entre el ADN, el ARN y las proteínas, y por otro lado, mediante relaciones de especificidad entre enzimas y sustratos. Tal producción de relaciones de especificidad se mantiene solo dentro del sustrato topológico definido por la producción de relaciones de constitución. No hay producción en la célula como sistema autopoiético de relaciones de especificación que no pertenezcan a ella.
+                                    </Paragraph>
+                                </div>
+
+                                <div className="space-y-8">
+                                    <h6 className="text-amber-500 font-serif text-3xl lg:text-4xl italic tracking-tight">3. Producción de Relaciones de Orden</h6>
+                                    <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                        Las relaciones de orden son aquellas que determinan la dinámica de la organización autopoiética al determinar la concatenación de la producción de relaciones de constitución, especificación y orden y, por tanto, su realización real. El establecimiento de relaciones de orden mediante la producción de componentes que controlan la producción de relaciones (de constitución, especificación y orden) constituye la tercera dimensión de la dinámica autopoiética. En la célula, las relaciones de orden se establecen principalmente por la producción de componentes (metabolitos, ácidos nucleicos y proteínas) que controlan la velocidad de producción de las relaciones de constitución, especificación y orden. Las relaciones de orden conforman así una red de relaciones paralelas y secuenciales de constitución, especificación y orden que constituyen a la célula como una unidad topológica dinámica invariante. No hay ordenamiento a través de la organización autopoiética de la célula de procesos que no le pertenezcan.
+                                    </Paragraph>
+                                </div>
+                            </div>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Si se examina una célula, resulta evidente que el ADN participa en la especificación de los polipéptidos y, por tanto, de las proteínas, enzimáticas y estructurales, que participan específicamente en la producción de proteínas, ácidos nucleicos, lípidos, glúcidos y metabolitos. Los metabolitos (que incluyen todas las moléculas pequeñas, monómeros o no, producidos en la célula) participan en la regulación de la velocidad de los diversos procesos y reacciones que constituyen la célula, estableciendo una red de velocidades interrelacionadas en procesos interconectados paralela y secuencialmente, tanto por compuerta (gating) como por participación constitutiva, de tal manera que todas las reacciones son funciones del estado de la red de transformación que integran. Todos los procesos ocurren ligados a una topología determinada por su participación en los procesos de producción de relaciones constitutivas.
+                            </Paragraph>
+
+                            <SubSectionHeader>4.1.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En el uso corriente, los procesos celulares se simplifican suponiendo que la especificación es efectuada principalmente por los ácidos nucleicos, la constitución por las proteínas y el orden (regulación) por los metabolitos. El proceso autopoiético, sin embargo, es cerrado en el sentido de que está enteramente especificado por sí mismo, y tal simplificación representa nuestra relación cognitiva con él, pero no lo reproduce operativamente. In el sistema real, la especificación tiene lugar en todos los puntos donde su organización determina un proceso específico (síntesis de proteínas, acción enzimática, permeabilidad selectiva); el ordenamiento tiene lugar en todos los puntos donde se encuentran dos o más procesos (cambios de velocidad o secuencia, efectos alostéricos, inhibición competitiva y no competitiva, facilitación, inactivación) determinados por la estructura de los componentes participantes; la constitución ocurre en todos los lugares donde la estructura de los componentes determina relaciones de vecindad física (membranas, partículas, sitios activos en enzimas). 
+                            </Paragraph>
+                            
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Lo que hace de este sistema una unidad con identidad e individualidad es que todas las relaciones de producción están coordinadas en un sistema describible como poseedor de una organización invariante. En tal sistema, cualquier deformación en cualquier lugar es compensada, no devolviendo el sistema a un estado idéntico en sus componentes tal como podría describirse considerando su estructura en un momento dado, sino más bien manteniendo constante su organización definida por la relación de las producciones que constituyen la autopoiesis. Lo único que define a la célula como unidad (como individuo) es su autopoiesis y, por tanto, la única restricción impuesta a la existencia de la célula es el mantenimiento de la autopoiesis. Todo lo demás (es decir, su estructura) puede variar: las relaciones de topología, especificidad y orden pueden variar siempre que constituyan una red en un espacio autopoiético.
+                            </Paragraph>
+
+                            <SectionHeader>4.2 Cuestiones de Origen</SectionHeader>
+
+                            <SubSectionHeader>4.2.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La producción de relaciones de constitución, especificación y orden no son características exclusivas de los sistemas autopoiéticos. Son inherentes a las interacciones unitarias en general, y a las interacciones moleculares en particular; dependen de las propiedades de las unidades o moléculas expresadas en las relaciones geométricas y energéticas que puedan adoptar. Así, las propiedades geométricas de las moléculas determinan las relaciones de constitución, es decir, la topología, las vecindades físicas o las relaciones espaciales en las que pueden entrar. Las propiedades químicas de las moléculas determinan sus interacciones posibles y, por tanto, las relaciones de especificidad, que son una dimensión independiente de las relaciones de constitución. Juntas determinan la secuencia y concatenación de las interacciones moleculares, es decir, las relaciones de orden.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En consecuencia, la autopoiesis puede surgir en un sistema molecular si las relaciones de producción se concatenan de tal manera que produzcan componentes que especifiquen al sistema como una unidad que existe solo mientras es producida activamente por tal concatenación de procesos. Esto es decir que la autopoiesis surge en un sistema molecular solo cuando la relación que concatena estas relaciones es producida y mantenida constante mediante la producción de los componentes moleculares que constituyen el sistema a través de esta concatenación. Por lo tanto, en general, la cuestión del origen de un sistema autopoiético es una cuestión sobre las condiciones que deben satisfacerse para el establecimiento de una dinámica autopoiética. Este problema, entonces, no es químico, en términos de qué moléculas participaron o pueden participar en el proceso, sino general, de qué relaciones deben satisfacer las moléculas o cualquier unidad constitutiva.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Un ejemplo claro de esta situación son los estudios de Eigen sobre el origen de la vida (Eigen, 1971, 1973; Eigen y Schuster, 1977), con los sucesivos pasos de estabilidad en las reacciones químicas que podrían haber conducido a un sistema similar a la célula y, en particular, a algo parecido a un código genético. Mediante métodos analíticos derivados de la termodinámica del no-equilibrio, combinados con simulaciones por computadora, Eigen muestra cómo las presiones selectivas podrían haberse ejercido en el proceso de evolución molecular. Curiosamente, concluye que para este proceso es de importancia central una concatenación circular de procesos, como el hiperciclo de la Figura 4-1. En esta situación generalizada, los procesos de especificación, constitución y orden se relacionan de una manera típicamente autopoiética, aunque Eigen no ha puesto énfasis en la generación de límites, ya que su interés reside en los procesos de especificación.
+                            </Paragraph>
+
+                            <FigureBox 
+                                id="4-1"
+                                linkPlaceholder="URL_IMAGEN_CAPITULO4_FIG1_HYPERCYCLE"
+                                caption="Hiperciclo autoproductor de Eigen. Una molécula similar al ARN ($I_i$) sirve como especificación para una molécula catalítica ($E_i$). Cada rama de $E_i$ puede incluir varios otros procesos (ej. polimerización, regulación), pero una de estas ramas proporciona un acoplamiento al portador $I_{i+1}$. Estos vínculos se cierran, de modo que $E_n$ potencia la formación de $I_1$. El hiperciclo, estudiado mediante un sistema de ecuaciones diferenciales no lineales, se postula como una unidad de selección en la evolución temprana de la vida. (Según Eigen, 1974)."
+                            />
+
+                            <SubSectionHeader>4.2.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                El establecimiento de un sistema autopoiético no puede ser un proceso gradual: o un sistema es autopoiético o no lo es. De hecho, su establecimiento no puede ser gradual porque un sistema autopoiético se define como un sistema, es decir, se define como una unidad topológica por su organización. Por tanto, o bien se forma una unidad topológica a través de su organización autopoiética, y el sistema autopoiético está ahí y permanece, o no hay unidad topológica, o bien se forma una unidad topológica de una manera diferente y no hay sistema autopoiético sino algo más. En consecuencia, no hay ni puede haber sistemas intermedios. Podemos describir un sistema y hablar de él como si fuera un sistema que, con poca transformación, llegaría a ser un sistema autopoiético, porque podemos imaginar diferentes sistemas con los que compararlo, pero tal sistema sería intermedio solo en nuestra descripción, y en ningún sentido organizacional sería un sistema de transición.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En general, el problema del origen de los sistemas autopoiéticos tiene dos aspectos: uno se refiere a su viabilidad y el otro a la posibilidad de su ocurrencia espontánea. El primer aspecto puede enunciarse de la siguiente manera: el establecimiento de cualquier sistema depende de la presencia de los componentes que lo constituyen y de los tipos de interacciones en los que puedan entrar; así, dados los componentes adecuados y la concatenación adecuada de sus interacciones, el sistema se realiza. La cuestión concreta de la viabilidad de un sistema autopoiético molecular es, entonces, la cuestión de las condiciones en las que diferentes procesos químicos pueden concatenarse para formar unidades topológicas que constituyan redes relacionales en el espacio autopoiético. 
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                El segundo aspecto puede enunciarse de la siguiente manera: dada la viabilidad de los sistemas autopoiéticos, y dada la existencia de sistemas autopoiéticos terrestres, existen condiciones naturales bajo las cuales estos pueden generarse espontáneamente. Concretamente, la pregunta sería: ¿cuáles fueron o son las condiciones naturales bajo las cuales los componentes de los sistemas autopoiéticos surgieron o surgen espontáneamente en la Tierra? Esta pregunta no puede responderse independientemente de la manera en que se responda a la cuestión de la viabilidad, particularmente en lo que respecta a la viabilidad de uno o varios tipos diferentes de sistemas autopoiéticos moleculares. La presencia hoy de un modo de organización autopoiética en la Tierra (el sistema ácido nucleico-proteína) no puede tomarse como indicio de que la cuestión de la viabilidad tenga una sola respuesta.
+                            </Paragraph>
+
+                            <SubSectionHeader>Fuente</SubSectionHeader>
+                            <div className="pl-6 border-l border-slate-700 text-sm md:text-base lg:text-xl text-slate-500 italic w-full">
+                                <p className="mb-4">Maturana, H., y F. Varela (1975), Autopoietic Systems: A Characterization of the Living Organization, Biological Computer Lab. Rep. 9.4, Univ. of Illinois, Urbana. Reimpreso en Maturana y Varela (1979).</p>
+                            </div>
+                        </section>
+                    </main>
+
+                    {/* Footer Minimalista */}
+                    <footer className="w-full text-center py-24 border-t border-slate-900 text-slate-700 text-xs">
+                        <p className="mb-2 uppercase tracking-[0.6em] font-serif">Francisco J. Varela</p>
+                        <p>© Principios de Autonomía Biológica</p>
+                    </footer>
+
+                    {/* Ventana flotante de notas (Bottom Center wide) */}
+                    {activeFootnote && (
+                        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[95%] max-w-7xl bg-black/95 border border-cyan-900/40 text-slate-300 p-10 md:p-16 rounded-[4rem] shadow-2xl backdrop-blur-3xl z-50 animate-fade-in ring-1 ring-cyan-500/30">
+                            <div className="flex items-start gap-12 lg:gap-20">
+                                <span className="text-cyan-400 font-serif text-4xl lg:text-8xl font-bold leading-none select-none">[{activeFootnote}]</span>
+                                <p className="text-base md:text-lg lg:text-2xl leading-relaxed text-justify font-light tracking-wide">{FOOTNOTES[activeFootnote]}</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
