@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capítulo 6 - Francisco J. Varela</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (para JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- MathJax -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: { 950: '#020617' }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 1.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(15px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        html { scroll-behavior: smooth; }
+        ::selection { background-color: rgba(34, 211, 238, 0.2); color: #fff; }
+        
+        .footnote-ref {
+            font-size: 0.7em;
+            vertical-align: super;
+            margin-left: 2px;
+            font-weight: bold;
+            color: #22d3ee;
+            cursor: pointer;
+        }
+
+        .mjx-chtml { color: inherit !important; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-300 antialiased overflow-x-hidden selection:bg-cyan-500/30">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS (SVG) ---
+        const MenuIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        );
+        const XIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="M6 6 18 18"/></svg>
+        );
+
+        // --- DATA & CONTENT ---
+
+        const AUTHORS = [
+            "Francisco J. Varela", "Maturana", "Goodwin", "Darwin", "Henderson", "Sartre"
+        ];
+
+        const CONCEPTS = [
+            "Autonomía", "Control", "Información", "autopoiético", "alonomía", "autonomía",
+            "clausura", "circularidades", "representación", "instrucción", "organización",
+            "mecanicista", "estática", "fenomenología", "estructura", "identidad", 
+            "teoría de la autopoiesis", "biología teórica", "epistemología", "evolutivo",
+            "genético", "Darwinismo", "selección natural", "dominio cognitivo", 
+            "acoplamiento estructural", "dominio lingüístico", "dominio consensual"
+        ];
+
+        const FOOTNOTES = {
+            1: "Para una discusión detallada sobre la relación entre la historia de la biología y la teoría de sistemas, véase el Capítulo 2."
+        };
+
+        const TABLE_OF_CONTENTS = [
+            { 
+                part: "Parte I: Autonomía de lo Vivo y Clausura Organizacional",
+                items: [
+                    { title: "Capítulo 1: Autonomía y Pensamiento Biológico", link: "#" },
+                    { title: "Capítulo 2: La Autopoiesis como Organización", link: "#" }, 
+                    { title: "Capítulo 3: Ejemplo de Teselación", link: "#" },
+                    { title: "Capítulo 4: Encarnaciones de la Autopoiesis", link: "#" },
+                    { title: "Capítulo 5: El Individuo en el Desarrollo y la Evolución", link: "#" },
+                    { title: "Capítulo 6: Sobre las Consecuencias de la Autopoiesis", link: "#chapter6" },
+                    { title: "Capítulo 7: La Idea de Clausura Organizacional", link: "#" }
+                ]
+            }
+        ];
+
+        // --- COMPONENTS ---
+
+        const HighlightedText = ({ text, onFootnoteHover, onFootnoteLeave }) => {
+            if (!text || typeof text !== 'string') return text || null;
+            const parts = text.split(/(\[\d+\]|[\s\n]+)/g);
+
+            return (
+                <span>
+                    {parts.map((part, i) => {
+                        const footnoteMatch = part.match(/^\[(\d+)\]$/);
+                        if (footnoteMatch) {
+                            const id = footnoteMatch[1];
+                            return (
+                                <span 
+                                    key={i}
+                                    className="footnote-ref px-1 bg-cyan-950/20 rounded border border-cyan-900/50 hover:text-cyan-200 transition-colors"
+                                    onMouseEnter={() => onFootnoteHover(id)}
+                                    onMouseLeave={onFootnoteLeave}
+                                >
+                                    [{id}]
+                                </span>
+                            );
+                        }
+
+                        const cleanWord = part.replace(/[.,;:"()]/g, '');
+                        const lowerPart = part.toLowerCase();
+                        let styleClass = "";
+                        
+                        if (AUTHORS.some(a => lowerPart.includes(a.split(' ').pop().toLowerCase()) && cleanWord.length > 2)) {
+                            styleClass = "text-cyan-400 font-medium";
+                        }
+                        if (CONCEPTS.some(c => lowerPart.includes(c.toLowerCase()) && cleanWord.length > 3)) {
+                            styleClass = "text-amber-500 italic";
+                        }
+
+                        return <span key={i} className={styleClass}>{part}</span>;
+                    })}
+                </span>
+            );
+        };
+
+        const Paragraph = ({ children, onFootnoteHover, onFootnoteLeave }) => (
+            <p className="mb-10 text-lg md:text-xl lg:text-2xl leading-relaxed text-slate-300 font-light text-justify w-full">
+                <HighlightedText text={children} onFootnoteHover={onFootnoteHover} onFootnoteLeave={onFootnoteLeave} />
+            </p>
+        );
+
+        const SectionHeader = ({ children }) => (
+             <h4 className="text-3xl md:text-5xl font-serif text-slate-100 mt-32 mb-16 border-l-4 border-cyan-500/50 pl-10 w-full uppercase tracking-tight leading-none">
+                {children}
+            </h4>
+        );
+
+        const SubSectionHeader = ({ children }) => (
+             <h5 className="text-xl md:text-3xl font-sans font-bold text-slate-400 mt-20 mb-10 uppercase tracking-[0.5em] border-b border-slate-800 pb-6 w-full">
+                {children}
+            </h5>
+        );
+
+        // --- APP ---
+
+        function App() {
+            const [activeFootnote, setActiveFootnote] = useState(null);
+            const [progress, setProgress] = useState(0);
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    const winScroll = document.documentElement.scrollTop;
+                    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                    setProgress(winScroll / height);
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            const handleLinkClick = (e, link) => {
+                if (link && link.startsWith('#')) {
+                    e.preventDefault();
+                    const element = document.getElementById(link.substring(1));
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth' });
+                        setIsMenuOpen(false);
+                    }
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-300 font-sans pb-80">
+                    <div className="fixed top-0 left-0 h-1.5 bg-cyan-400 z-50 transition-all duration-75 shadow-[0_0_20px_rgba(34,211,238,0.7)]" style={{ width: `${progress * 100}%` }}></div>
+
+                    <nav className="fixed top-0 w-full z-40 bg-slate-950/80 backdrop-blur-xl border-b border-white/5 h-20">
+                        <div className="w-full px-6 md:px-12 h-full flex items-center justify-between">
+                            <div className="flex items-center gap-4 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
+                                <div className="w-10 h-10 bg-amber-600 rounded flex items-center justify-center text-slate-950 font-serif font-bold text-xl shadow-xl">V</div>
+                                <div className="hidden md:block">
+                                    <h1 className="text-slate-100 font-serif text-sm tracking-widest uppercase font-bold">Francisco J. Varela</h1>
+                                    <span className="text-[10px] text-slate-500 uppercase tracking-widest block mt-0.5 opacity-60">Capítulo 6</span>
+                                </div>
+                            </div>
+                            
+                            <div className="relative">
+                                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-cyan-400 py-3 px-8 border border-cyan-900/50 rounded-full hover:bg-cyan-950/40 transition-all font-bold">
+                                    Índice {isMenuOpen ? <XIcon size={18}/> : <MenuIcon size={18}/>}
+                                </button>
+                                {isMenuOpen && (
+                                    <div className="absolute right-0 mt-6 w-80 sm:w-[500px] bg-slate-900/95 border border-slate-800 shadow-2xl rounded-[2rem] py-10 max-h-[85vh] overflow-y-auto z-50 animate-fade-in ring-1 ring-white/10">
+                                        {TABLE_OF_CONTENTS.map((section, idx) => (
+                                            <div key={idx} className="mb-12">
+                                                <h4 className="px-12 py-2 text-[11px] font-black text-amber-500 uppercase tracking-[0.4em] bg-slate-950/60 mb-6">
+                                                    {section.part}
+                                                </h4>
+                                                {section.items.map((item, i) => (
+                                                    <a key={i} href={item.link} onClick={(e) => handleLinkClick(e, item.link)} className="block px-12 py-4 text-sm md:text-base text-slate-400 hover:bg-slate-800 hover:text-cyan-400 transition-all no-underline border-l-4 border-transparent hover:border-cyan-500">
+                                                        {item.title}
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </nav>
+
+                    <main className="pt-40 px-6 md:px-12 lg:px-20 w-full animate-fade-in">
+                        
+                        <section id="chapter6" className="mb-80 scroll-mt-40">
+                            <div className="mb-48 text-center">
+                                <span className="text-cyan-400 text-xs font-black tracking-[0.6em] uppercase mb-12 block">Capítulo 6</span>
+                                <h2 className="text-6xl md:text-8xl lg:text-[10rem] font-serif text-slate-100 mb-12 uppercase leading-none tracking-tighter">
+                                    Sobre las Consecuencias
+                                </h2>
+                                <h3 className="text-slate-500 text-4xl md:text-6xl lg:text-7xl font-serif italic font-light tracking-tight">de la Autopoiesis</h3>
+                            </div>
+
+                            <SectionHeader>6.1 Introducción</SectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La autopoiesis en el espacio físico es necesaria y suficiente para caracterizar a un sistema como sistema vivo. La reproducción y la evolución, tal como ocurren en los sistemas vivos conocidos, y todos los fenómenos derivados de ellas, surgen como procesos secundarios subordinados a su existencia y operación como unidades autopoiéticas. Por lo tanto, la fenomenología biológica se fundamenta en la fenomenología de los sistemas autopoiéticos en el espacio físico. Para que un fenómeno sea un fenómeno biológico es necesario que dependa de una forma u otra de la autopoiesis de una o más unidades autopoiéticas físicas. Este ha sido el argumento hasta ahora. Sigamos ahora algunas de sus implicaciones.
+                            </Paragraph>
+
+                            <SectionHeader>6.2 Implicaciones Biológicas</SectionHeader>
+                            <SubSectionHeader>6.2.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Consideramos primero la autopoiesis en el espacio físico. Un sistema vivo es un sistema vivo porque es un sistema autopoiético en el espacio físico, y es una unidad en el espacio físico debido a su autopoiesis como mecanismo de identidad. En consecuencia, cualquier transformación estructural que un sistema vivo pueda sufrir al mantener su identidad debe ocurrir de una manera determinada por, y subordinada a, su autopoiesis definitoria; por lo tanto, en un sistema vivo la pérdida de autopoiesis es la desintegración como unidad y la pérdida de identidad, es decir, la muerte.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                El espacio físico se define por componentes que pueden determinarse mediante operaciones que los caracterizan en términos de propiedades tales como masas, fuerzas, aceleraciones, distancias, campos, etc. Además, tales propiedades mismas se definen por las interacciones de los componentes que caracterizan. En el espacio físico así entendido, pueden tener lugar dos tipos esenciales de fenomenología según la forma en que los componentes participan en su generación: la fenomenología estática y la mecanicista (dinámica, similar a una máquina). La fenomenología estática es una fenomenología de relaciones entre propiedades de componentes; la fenomenología mecanicista es una fenomenología de relaciones entre procesos realizados a través de las propiedades de los componentes.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                ¿Qué ocurre con la fenomenología biológica de los sistemas vivos individuales? Es decir, ¿qué ocurre con la fenomenología de los sistemas autopoiéticos que tiene lugar en el espacio físico? Dado que un sistema vivo se define como un sistema por la concatenación de procesos de producción de componentes que generan los procesos que los producen y constituyen al sistema como una unidad en el espacio físico, los fenómenos biológicos son necesariamente fenómenos de relaciones entre procesos que satisfacen la autopoiesis de los sistemas vivos participantes. En consecuencia, bajo ninguna circunstancia se define un fenómeno biológico por las propiedades de sus elementos componentes; siempre se define y constituye por una concatenación de procesos en relaciones subordinadas a la autopoiesis de al menos un sistema vivo. Por ejemplo, la colisión accidental de dos animales en carrera, como un encuentro corporal de sistemas vivos, no es un fenómeno biológico (aunque pueda tener consecuencias biológicas), pero el contacto corporal de dos animales en el cortejo sí lo es.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Estrictamente, entonces, aunque los fenómenos biológicos y estáticos son fenómenos físicos porque se realizan a través de las propiedades de sus componentes físicos, difieren porque los fenómenos estáticos son fenómenos de relaciones entre propiedades de componentes, mientras que los fenómenos biológicos son fenómenos de relaciones entre procesos. Por lo tanto, los fenómenos biológicos, como fenómenos de relaciones entre procesos, son una subclase de los fenómenos mecanicistas que los constituyen, y se definen a través de la participación de estos procesos en la realización de al menos un sistema autopoiético. La fenomenología de los sistemas vivos, entonces, es la fenomenología mecanicista de las máquinas autopoiéticas físicas.
+                            </Paragraph>
+
+                            <SubSectionHeader>6.2.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Llegamos ahora a la dualidad entre organización y estructura. Como fenomenología mecanicista de las máquinas autopoiéticas físicas, la fenomenología biológica está perfectamente bien definida y, en principio, es susceptible de tratamiento teórico a través de la teoría de la autopoiesis. Se deduce que tal teoría, como teoría formal, será una teoría de la concatenación de procesos de producción que constituyen sistemas autopoiéticos, y no una teoría de las propiedades de los componentes de los sistemas vivos. Esto no dice nada, sin embargo, de las dificultades de tal teoría formal. De hecho, es evidente que estamos en una etapa en la que las herramientas analíticas para la comprensión de los procesos cooperativos y paralelos son escasas, como se muestra dramáticamente en el trabajo de Goodwin (1970, 1976).
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                También se deduce que una biología teórica sería posible solo como una teoría de la fenomenología biológica, y no como la aplicación de nociones físicas o químicas, que pertenecen a un dominio fenomenológico diferente, al análisis de los fenómenos biológicos. De hecho, debería ser evidente ahora que cualquier intento de explicar un fenómeno biológico en términos estáticos o mecanicistas no autopoiéticos sería un intento de reformularlo en términos de relaciones entre propiedades de componentes, o relaciones entre procesos que no producen una unidad en el espacio físico, y por lo tanto necesariamente fracasaría.
+                            </Paragraph>
+
+                            <SubSectionHeader>6.2.3</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Finalmente, la caracterización de los sistemas vivos como sistemas autopoiéticos físicos debe entenderse con valor universal, es decir, la autopoiesis en el espacio físico debe verse como la definición de los sistemas vivos en cualquier lugar del universo, por muy diferentes que sean por lo demás de los terrestres. Esta no es una limitación de nuestra imaginación; es una declaración sobre la naturaleza de la fenomenología biológica: la fenomenología biológica no es ni más ni menos que la fenomenología de los sistemas autopoiéticos en el espacio físico.
+                            </Paragraph>
+
+                            <SectionHeader>6.3 Consecuencias Epistemológicas</SectionHeader>
+                            <SubSectionHeader>6.3.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La pregunta epistemológica básica en el dominio de los problemas biológicos es la que se refiere a la validez de las afirmaciones hechas sobre los sistemas biológicos. Es ahora obvio que las afirmaciones científicas adquieren su validez a través de su efectividad operativa. Sin embargo, cualquier observación implica una epistemología: un cuerpo de nociones conceptuales que determina la perspectiva de las observaciones.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                El desarrollo de la noción darwiniana de evolución, con su énfasis en la especie, la selección natural y la aptitud, tuvo un impacto en los asuntos humanos que fue más allá de la explicación de la diversidad. Tuvo una significación sociológica porque parecía ofrecer una explicación de la fenomenología social en una sociedad competitiva, así como una justificación científica para la subordinación del destino de los individuos a los valores trascendentales supuestamente encarnados en nociones como la humanidad, el estado y la sociedad. 
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Hemos demostrado, sin embargo, que estos argumentos no son válidos para justificar la subordinación del individuo a la especie, porque la fenomenología biológica se basa en la autonomía de los individuos, y sin individuos no hay fenomenología biológica alguna. La organización del individuo es autopoiética, y sobre este hecho descansa toda su significación: se define a través de su existencia, y su existencia es autopoiética. Así, en el reino de la biología vemos reflejada la elección ética y, en última instancia, política de dejar fuera la visión de la autonomía de las cosas. La comprensión de la vida se convierte en un espejo de nuestras elecciones epistemológicas, que se trasladan a las acciones humanas.
+                            </Paragraph>
+
+                            <SubSectionHeader>6.3.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Un dominio fenomenológico está definido por las propiedades de la unidad o unidades que lo constituyen. Dos dominios fenomenológicos se intersecan solo en la medida en que tienen unidades generativas comunes; de lo contrario son completamente independientes. Los sistemas autopoiéticos generan diferentes dominios fenomenológicos al generar unidades cuyas propiedades son diferentes de las de las unidades que los generan.
+                            </Paragraph>
+
+                            <SubSectionHeader>6.3.3</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                El dominio de todas las interacciones en las que un sistema autopoiético puede entrar sin pérdida de identidad es su dominio cognitivo; o, en otras palabras, el dominio cognitivo de un sistema autopoiético es el dominio de todas las descripciones que puede posiblemente realizar. El conocimiento es relativo al dominio cognitivo del conocedor. Intrínsecamente, entonces, no es posible ningún conocimiento "absoluto", y la validación de todo conocimiento relativo posible se logra a través de la autopoiesis exitosa o la viabilidad.
+                            </Paragraph>
+
+                            <SubSectionHeader>6.3.4</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Los sistemas autopoiéticos pueden interactuar entre sí bajo condiciones que resultan en un acoplamiento estructural (conductual). Estas son interacciones comunicativas. Si los organismos acoplados son capaces de una conducta plástica que resulta en que sus estructuras se modifiquen permanentemente, entonces generarán un dominio consensual de conducta. Tal dominio de interacciones comunicativas es un dominio lingüístico.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En tal dominio consensual, las interacciones comunicativas y lingüísticas son intrínsecamente no informativas: el organismo A no determina ni puede determinar la conducta del organismo B, porque debido a la naturaleza de la organización autopoiética misma, cada cambio que un organismo sufre está necesaria e inevitablemente determinado por su propia organización. Un dominio lingüístico es intrínsecamente no informativo, aunque un observador pueda describirlo como si lo fuera.
+                            </Paragraph>
+
+                            <SubSectionHeader>Fuentes</SubSectionHeader>
+                            <div className="pl-6 border-l border-slate-700 text-sm md:text-base lg:text-xl text-slate-500 italic w-full">
+                                <p className="mb-4">Maturana, H., y F. Varela (1975), Autopoietic Systems: A Characterization of the Living Organization, Biological Computer Lab. Rep. 9.4, Univ. of Illinois, Urbana. Reimpreso en Maturana y Varela (1979).</p>
+                                <p>Maturana, H. (1975), The organization of the living: a theory of the living organization, Int. J. Man-Machine Studies 7: 313.</p>
+                            </div>
+                        </section>
+                    </main>
+
+                    <footer className="w-full text-center py-24 border-t border-slate-900 text-slate-700 text-xs">
+                        <p className="mb-2 uppercase tracking-[0.6em] font-serif">Principios de Autonomía Biológica</p>
+                        <p>© Francisco J. Varela</p>
+                    </footer>
+
+                    {/* Smart Footnote Panel */}
+                    {activeFootnote && (
+                        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[95%] max-w-7xl bg-black/95 border border-cyan-900/40 text-slate-300 p-10 md:p-16 rounded-[4rem] shadow-2xl backdrop-blur-3xl z-50 animate-fade-in ring-1 ring-cyan-500/30">
+                            <div className="flex items-start gap-12 lg:gap-20">
+                                <span className="text-cyan-400 font-serif text-4xl lg:text-8xl font-bold leading-none select-none">[{activeFootnote}]</span>
+                                <p className="text-base md:text-lg lg:text-2xl leading-relaxed text-justify font-light tracking-wide">{FOOTNOTES[activeFootnote]}</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
