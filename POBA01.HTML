@@ -1,0 +1,382 @@
+import React, { useState, useEffect } from 'react';
+import { Menu, X, ChevronDown } from 'lucide-react';
+
+// --- DATA & CONTENT ---
+
+const AUTHORS = [
+    "Francisco J. Varela", "C. Bernard", "L. Wittgenstein", "Piaget", 
+    "Nauta", "Rosenberg", "Newell", "Simon", "Humberto Maturana", 
+    "Heinz von Foerster", "Gregory Bateson", "Joseph Goguen", "Ivan Illich", 
+    "Chögyam Trungpa", "Fernando Flores", "Nelson Vaz", "Ernst von Glasersfeld", 
+    "Leonor", "George Klir", "David Moran", "David Whitlock", "Aristóteles", 
+    "Descartes", "Darwin", "Monod", "Paul Weiss", "Conrad Waddington", "Berthelemy", "L. Henderson", "J. P. Sartre"
+];
+
+// Conceptos para el resaltado automático (Ámbar)
+const CONCEPTS = [
+    "Autonomía", "Control", "Información", "autopoiético", "alonomía", 
+    "auto-ley", "clausura", "circularidades", "representación", "instrucción", 
+    "in-formación", "acoplamiento estructural", "dominio cognitivo", "red inmune", 
+    "sistema nervioso", "autorreferencial", "recursivo", "clausura operacional",
+    "autonomía de los sistemas vivos", "clausura organizacional", "sistema", "cibernética",
+    "vitalismo", "mecanicismo", "teleonómico", "ADN", "totalidad", "diversidad", "evolución",
+    "autopoiesis", "máquina", "unidad", "fenomenología", "propósito", "dialéctica"
+];
+
+const FOOTNOTES = {
+    4: "En este libro \"máquinas\" y \"sistemas\" se usan indistintamente. Obviamente conllevan connotaciones diferentes, pero las diferencias son inesenciales para mi propósito, excepto al ver la relación entre la historia del mecanicismo biológico y la tendencia moderna al análisis sistémico. Máquinas y sistemas apuntan a la caracterización de una clase de unidades en términos de su organización."
+};
+
+const TABLE_OF_CONTENTS = [
+    {
+        part: "Parte I: Autonomía de lo Vivo y Clausura Organizacional",
+        items: [
+            { id: "part1-intro", title: "Introducción Parte I" },
+            { id: "chapter1", title: "Capítulo 1: Autonomía y Pensamiento Biológico" },
+            { id: "chapter2", title: "Capítulo 2: Autopoiesis como Organización" }, 
+            { id: "chapter3", title: "Capítulo 3: Ejemplo de Teselación" }, 
+            { id: "chapter4", title: "Capítulo 4: Encarnaciones de Autopoiesis" }, 
+            { id: "chapter5", title: "Capítulo 5: El Individuo en Desarrollo" }, 
+            { id: "chapter6", title: "Capítulo 6: Consecuencias de la Autopoiesis" }, 
+            { id: "chapter7", title: "Capítulo 7: La Idea de Clausura Organizacional" } 
+        ]
+    },
+    {
+        part: "Parte II: Descripciones, Distinciones y Circularidades",
+        items: [
+            { id: "chapter8", title: "Capítulo 8: Explicaciones Operacionales" }, 
+            { id: "chapter9", title: "Capítulo 9: Explicaciones Simbólicas" },
+            { id: "chapter10", title: "Capítulo 10: Marco de Complementariedades" },
+            { id: "chapter11", title: "Capítulo 11: Calculando Distinciones" },
+            { id: "chapter12", title: "Capítulo 12: Clausura y Dinámica de Formas" },
+            { id: "chapter13", title: "Capítulo 13: Eigencomportamiento" }
+        ]
+    },
+    {
+        part: "Parte III: Procesos Cognitivos",
+        items: [
+            { id: "chapter14", title: "Capítulo 14: La Red Inmune" }, 
+            { id: "chapter15", title: "Capítulo 15: El Sistema Nervioso" },
+            { id: "chapter16", title: "Capítulo 16: Epistemología Naturalizada" }
+        ]
+    }
+];
+
+// --- COMPONENTS ---
+
+const HighlightedText = ({ text, onFootnoteHover, onFootnoteLeave }) => {
+    if (!text) return null;
+    
+    const parts = text.split(/(\[.*?\]|[\s\n]+)/g);
+
+    return (
+        <span>
+            {parts.map((part, i) => {
+                // Detectar Nota al Pie [n]
+                const footnoteMatch = part.match(/^\[(\d+)\]$/);
+                if (footnoteMatch) {
+                    const id = footnoteMatch[1];
+                    return (
+                        <span 
+                            key={i}
+                            className="text-cyan-400 font-bold cursor-pointer hover:underline align-super text-xs ml-0.5"
+                            onMouseEnter={() => onFootnoteHover(id)}
+                            onMouseLeave={onFootnoteLeave}
+                        >
+                            {part}
+                        </span>
+                    );
+                }
+
+                const cleanWord = part.replace(/[.,;:"()]/g, '');
+                const lowerPart = part.toLowerCase();
+                
+                let styleClass = "";
+                
+                // Autores (Cyan)
+                if (AUTHORS.some(author => {
+                    const lastName = author.toLowerCase().split(' ').pop();
+                    return lowerPart.includes(lastName) && cleanWord.length > 3;
+                })) {
+                        styleClass = "text-cyan-400 font-medium";
+                }
+                
+                // Conceptos (Amber)
+                if (CONCEPTS.some(concept => lowerPart.includes(concept.toLowerCase()))) {
+                        styleClass = "text-amber-500 italic";
+                }
+                
+                if (styleClass) {
+                    return <span key={i} className={styleClass}>{part}</span>;
+                }
+                return <span key={i}>{part}</span>;
+            })}
+        </span>
+    );
+};
+
+const Paragraph = ({ children, onFootnoteHover, onFootnoteLeave, className = "" }) => (
+    <p className={`mb-6 text-lg leading-relaxed text-slate-300 font-light w-full text-justify ${className}`}>
+        <HighlightedText text={children} onFootnoteHover={onFootnoteHover} onFootnoteLeave={onFootnoteLeave} />
+    </p>
+);
+
+const QuoteBlock = ({ children, author }) => (
+    <div className="my-12 pl-8 border-l-4 border-amber-500/50 italic text-slate-400 w-full">
+        <p className="font-serif text-2xl text-amber-500/90 mb-4 leading-snug">
+            "{children}"
+        </p>
+        {author && <p className="text-sm text-cyan-400 uppercase tracking-widest mt-4">— {author}</p>}
+    </div>
+);
+
+const SectionTitle = ({ number, title }) => (
+    <div className="mt-32 mb-12 border-b border-slate-800 pb-8 w-full">
+        <span className="text-cyan-400 text-sm font-bold tracking-[0.2em] uppercase block mb-2">{number}</span>
+        <h2 className="text-4xl md:text-5xl font-serif text-slate-100">{title}</h2>
+    </div>
+);
+
+const SubSectionTitle = ({ number, title }) => (
+    <div className="mt-16 mb-8 w-full">
+        <h3 className="text-2xl font-serif text-slate-200">
+            <span className="text-amber-500 mr-2">{number}</span> {title}
+        </h3>
+    </div>
+);
+
+// --- MAIN APPLICATION ---
+
+export default function App() {
+    const [activeFootnote, setActiveFootnote] = useState(null);
+    const [progress, setProgress] = useState(0);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    // Scroll Progress Listener
+    useEffect(() => {
+        const handleScroll = () => {
+            const totalScroll = document.documentElement.scrollTop || document.body.scrollTop;
+            const windowHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scroll = windowHeight > 0 ? totalScroll / windowHeight : 0;
+            setProgress(Number(scroll));
+        }
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const scrollToSection = (id) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+            setIsMenuOpen(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-slate-950 text-slate-300 font-sans selection:bg-cyan-500/30 overflow-x-hidden">
+            {/* INJECT STYLES */}
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+                
+                :root {
+                    --font-serif: 'Playfair Display', serif;
+                    --font-sans: 'Inter', sans-serif;
+                }
+                
+                h1, h2, h3, h4, .font-serif { font-family: var(--font-serif); }
+                body { font-family: var(--font-sans); background-color: #020617; }
+
+                /* Custom Scrollbar */
+                ::-webkit-scrollbar { width: 8px; }
+                ::-webkit-scrollbar-track { background: #020617; }
+                ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+                ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+                .fade-in { animation: fadeIn 1s ease-in forwards; opacity: 0; transform: translateY(20px); }
+                @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+            `}</style>
+
+            {/* PROGRESS BAR */}
+            <div className="fixed top-0 left-0 h-1 bg-cyan-400 z-50 transition-all duration-100 ease-out" style={{ width: `${progress * 100}%` }}></div>
+
+            {/* NAVIGATION */}
+            <nav className="fixed top-0 w-full z-40 bg-slate-950/90 backdrop-blur-md border-b border-white/5 transition-all duration-300">
+                <div className="w-full px-6 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-slate-950 font-serif font-bold">V</div>
+                        <div className="hidden md:block">
+                            <h1 className="text-slate-100 font-serif text-sm tracking-widest uppercase">Francisco J. Varela</h1>
+                            <span className="text-xs text-slate-500 uppercase tracking-wider">Principios de Autonomía Biológica</span>
+                        </div>
+                    </div>
+                    
+                    <div className="relative">
+                        <button 
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-cyan-400 hover:text-cyan-300 transition-colors py-2 px-4 border border-cyan-900/50 rounded hover:bg-cyan-950/30"
+                        >
+                            <span className="hidden sm:inline">Tabla de</span> Contenidos
+                            {isMenuOpen ? <X size={16} /> : <Menu size={16} />}
+                        </button>
+
+                        {isMenuOpen && (
+                            <div className="absolute right-0 mt-4 w-80 sm:w-96 bg-slate-900 border border-slate-800 shadow-2xl rounded-lg py-2 max-h-[80vh] overflow-y-auto animate-[fadeIn_0.2s_ease-out]">
+                                {TABLE_OF_CONTENTS.map((section, idx) => (
+                                    <div key={idx} className="mb-2">
+                                        <h4 className="px-6 py-2 text-xs font-bold text-amber-500 uppercase tracking-widest bg-slate-950/50">
+                                            {section.part}
+                                        </h4>
+                                        {section.items.map((item, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => scrollToSection(item.id)}
+                                                className="block w-full text-left px-6 py-3 text-sm text-slate-400 hover:bg-slate-800 hover:text-cyan-400 transition-colors border-l-2 border-transparent hover:border-cyan-400"
+                                            >
+                                                {item.title}
+                                            </button>
+                                        ))}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </nav>
+
+            {/* HERO SECTION */}
+            <header className="min-h-screen flex flex-col justify-center items-center text-center px-4 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 -z-10"></div>
+                <div className="fade-in" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+                    <h1 className="text-5xl md:text-7xl lg:text-9xl font-serif text-slate-100 mb-8 leading-tight">
+                        Principios de<br/>
+                        <span className="italic text-slate-300">Autonomía Biológica</span>
+                    </h1>
+                    <div className="w-32 h-1 bg-cyan-500 mx-auto mb-10"></div>
+                    <p className="text-3xl md:text-4xl text-slate-300 font-serif tracking-wide mb-16">Francisco J. Varela</p>
+                </div>
+                
+                <div className="absolute bottom-10 animate-bounce text-slate-600">
+                    <ChevronDown size={32} />
+                </div>
+            </header>
+
+            {/* MAIN CONTENT CONTAINER */}
+            <main className="w-full px-4 md:px-8 lg:px-12 py-12">
+
+                {/* --- PART I: INTRO --- */}
+                <section id="part1-intro" className="mb-40 pt-24 min-h-[80vh] flex flex-col justify-center w-full">
+                    <div className="text-center mb-24">
+                        <span className="text-amber-500 text-sm font-bold tracking-[0.3em] uppercase block mb-6">Parte I</span>
+                        <h2 className="text-5xl md:text-7xl font-serif text-slate-100 uppercase tracking-widest leading-tight">
+                            Autonomía de lo Viviente y<br />
+                            <span className="text-slate-400">Clausura Organizacional</span>
+                        </h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-16 w-full">
+                        <QuoteBlock author="L. Henderson, The Fitness of the Environment (1926)">
+                            Mientras las ideas sobre la naturaleza de los seres vivos permanezcan vagas y mal definidas, es claramente imposible, por regla general, distinguir entre una adaptación del organismo al entorno y un caso de adecuación del entorno para la vida, en el sentido más general. Evidentemente, para responder a tales preguntas debemos poseer ideas claras y precisas y definiciones de las cosas vivas. La vida debe, por un proceso arbitrario de lógica, cambiarse de la cosa variable que es a una variable independiente o un invariante, despojada de muchas de sus cualidades más interesantes sin duda, pero sin invitar ya a la falacia a través de nuestra incapacidad de percibir claramente las preguntas involucradas.
+                        </QuoteBlock>
+
+                        <QuoteBlock author="J. P. Sartre, Critique de la Raison Dialectique (1960)">
+                            Quizás se diga que la hipótesis metafísica de una dialéctica de la Naturaleza es más interesante cuando se usa para comprender el paso de la materia inorgánica a los cuerpos organizados y la evolución de la vida sobre el globo. Es cierto. Solo haré notar que esta interpretación formal de la vida y de la evolución seguirá siendo solo un sueño piadoso mientras los sabios no tengan los medios de utilizar como hipótesis directriz la noción de totalidad y la de totalización. No sirve de nada decretar que la evolución de las especies o que la aparición de la vida son momentos de la "dialéctica de la Naturaleza" mientras ignoremos cómo apareció la vida y cómo se transforman las especies. Por el momento, la biología, en el dominio concreto de sus investigaciones, permanece positivista y analítica. Puede ser que un conocimiento más profundo de su objeto le dé, por sus contradicciones, la obligación de considerar el organismo en su totalidad, es decir, dialécticamente, y de considerar todos los hechos biológicos en su relación de interioridad. Eso puede ser, pero no es seguro.
+                        </QuoteBlock>
+                    </div>
+                </section>
+
+                {/* --- CHAPTER 1 --- */}
+                <section id="chapter1" className="mb-40 w-full">
+                    <SectionTitle number="Capítulo 1" title="Autonomía y Pensamiento Biológico" />
+
+                    <SubSectionTitle number="1.1" title="Evolución y el Individuo" />
+                    
+                    <div className="pl-4 border-l-2 border-slate-900 ml-2 mb-8 w-full">
+                        <span className="text-slate-500 font-mono text-xs mb-2 block">1.1.1</span>
+                        <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                            La descripción, invención y manipulación de unidades generadas a través de distinciones está en la base de toda investigación científica y racional.
+                        </Paragraph>
+                        <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                            Esto no es menos cierto para las unidades vivas. Lo que es peculiar en ellas, sin embargo, es que en nuestra experiencia común, las unidades vivas afirman su individualidad, es decir, las cosas vivas aparecen como unidades autónomas de una diversidad desconcertante dotadas de la capacidad de reproducirse. En estos encuentros la autonomía aparece tan obviamente como una característica esencial de los sistemas vivos que, siempre que se observa algo que parece tenerla, el enfoque ingenuo es considerarlo vivo. Sin embargo, la autonomía, aunque continuamente revelada en la capacidad de autoafirmación de los sistemas vivos para mantener su identidad a través de la compensación activa de deformaciones, parece ser hasta ahora la más esquiva de sus propiedades.
+                        </Paragraph>
+                        <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                            Autonomía y diversidad, el mantenimiento de la identidad y el origen de la variación en el modo en que se mantiene esta identidad, son los desafíos básicos presentados por la fenomenología de los sistemas vivos a los que los hombres han dirigido durante siglos su curiosidad sobre la vida.
+                        </Paragraph>
+                        <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                            En la búsqueda de una comprensión de la autonomía, el pensamiento clásico, dominado por Aristóteles, creó el vitalismo al dotar a los sistemas vivos de un componente impulsor intencional no material que lograba expresión a través de la realización de sus formas. Después de Aristóteles, y como variaciones de sus nociones fundamentales, la historia de la biología registra muchas teorías que intentan de una u otra forma abarcar toda la fenomenología de los sistemas vivos bajo alguna fuerza organizadora peculiar (Hall, 1968). Sin embargo, cuanto más buscaban los biólogos la formulación explícita de una u otra de estas fuerzas organizadoras especiales, más se decepcionaban al encontrar solo lo que podían encontrar en cualquier otro lugar del mundo físico: moléculas, potenciales e interacciones materiales ciegas gobernadas por leyes físicas sin propósito. De ahí que, bajo la presión de la experiencia inevitable y el empuje definido del pensamiento cartesiano, surgió una perspectiva diferente, y el mecanicismo ganó gradualmente precedencia en el mundo biológico al insistir en que los únicos factores que operaban en la organización de los sistemas vivos eran factores físicos, y que ninguna fuerza organizadora vital no material era necesaria. De hecho, parece ahora evidente que cualquier fenómeno biológico, una vez definido adecuadamente, puede describirse como surgido de la interacción de procesos físico-químicos cuyas relaciones están especificadas por el contexto de su definición.
+                        </Paragraph>
+                        <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                            La diversidad ha sido eliminada como fuente de desconcierto en la comprensión de la fenomenología de los sistemas vivos por el pensamiento darwiniano y la genética de partículas, que han tenido éxito en proporcionar una explicación para ella sin recurrir a ninguna fuerza directora peculiar. Sin embargo, la influencia de estas nociones, a través de su explicación del cambio evolutivo, ha ido más allá de la mera contabilidad de la diversidad: ha desplazado completamente el énfasis en la evaluación de la fenomenología biológica del individuo a la especie, de la unidad al origen de sus partes, de la organización presente de los sistemas vivos a su determinación ancestral.
+                        </Paragraph>
+                        <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                            Hoy las dos corrientes de pensamiento representadas por las explicaciones físico-químicas y evolutivas están trenzadas juntas. El análisis molecular parece permitir la comprensión de la reproducción y la variación; el análisis evolutivo parece dar cuenta de cómo estos procesos podrían haber llegado a ser. Aparentemente estamos en un punto en la historia de la biología donde las dificultades básicas han sido eliminadas.
+                        </Paragraph>
+                    </div>
+
+                    <div className="pl-4 border-l-2 border-slate-900 ml-2 mb-8 w-full">
+                        <span className="text-slate-500 font-mono text-xs mb-2 block">1.1.2</span>
+                        <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                            Los biólogos, sin embargo, se sienten incómodos cuando miran la fenomenología de los sistemas vivos como un todo. Muchos manifiestan esta incomodidad negándose a decir qué es un sistema vivo. Otros intentan abarcar las ideas presentes bajo teorías comprensivas gobernadas por nociones organizadoras, como los principios de la teoría de la información (e.g., Miller, 1966), que requieren de los biólogos la misma comprensión que quieren proporcionar.
+                        </Paragraph>
+                        <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                            La pregunta siempre presente es: ¿Qué es común a todos los sistemas vivos que nos permite calificarlos como vivos? Si no es una fuerza vital, si no es un principio organizador de algún tipo, entonces ¿qué?
+                        </Paragraph>
+                        <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                            En otras palabras, a pesar de su diversidad, todos los sistemas vivos comparten una organización común que reconocemos implícitamente al llamarlos "vivos". No hay una comprensión o formulación clara de tal organización. De hecho, la pregunta misma es extraña para la mayoría de los biólogos —con algunas excepciones notables— porque los grandes desarrollos en biología molecular han llevado a un énfasis excesivo en componentes aislados, y a un desprecio de las preguntas pertenecientes a lo que hace al sistema vivo una unidad cooperativa coherente, autónoma, que está viva independientemente de si se reproduce o no. Como resultado, los procesos que son dependientes de la historia (evolución, ontogénesis) e independientes de la historia (organizaciones individuales) han sido confundidos. Pero estos dos tipos de procesos deben mantenerse separados y explicarse en términos relacionados, pero distintos. Un ejemplo reciente muy bueno es la idea de Monod del aparato teleonómico como una caracterización de la organización viva (Monod, 1970). La capacidad y tendencia del material genético a reproducirse y preservarse generación tras generación a través de la codificación de especies moleculares en el ADN es señalada por Monod como la clave de la vida. Esto, sin embargo, empuja todas las propiedades pertenecientes a la unidad individual como un todo cooperativo coherente (la célula funcional, por ejemplo) hacia una sola especie molecular, el ADN, que ahora contiene alguna descripción abstracta del proyecto teleogénico de la célula. Irónicamente, al llevar este tipo de mecanicismo a tal extremo, Monod se encuentra filosóficamente cerca de los vitalistas, quienes insistían en una reducción similar de las características de "vida" a algún componente distinto de las relaciones cooperativas de la unidad celular (Maturana, 1977; Berthelemy, 1971). De hecho, las consideraciones teleonómicas y evolutivas dejan intacta la cuestión de la naturaleza de la organización de la unidad viva.
+                        </Paragraph>
+                    </div>
+
+                    <div className="pl-4 border-l-2 border-slate-900 ml-2 mb-8 w-full">
+                        <span className="text-slate-500 font-mono text-xs mb-2 block">1.1.3</span>
+                        <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                            Nuestro esfuerzo es comprender la naturaleza de la organización viva. Sin embargo, en este enfoque hacemos un punto de partida del carácter unitario de un sistema vivo. Sostengo que el pensamiento evolutivo, a través de su énfasis en la diversidad, la reproducción y la especie para explicar la dinámica del cambio, ha oscurecido la necesidad de mirar la naturaleza autónoma de las unidades vivas para la comprensión de la fenomenología biológica. También pienso que el mantenimiento de la identidad y la invariancia de las relaciones definitorias en las unidades vivas están en la base de toda posible transformación ontogénica y evolutiva en los sistemas biológicos, y esto pretendo explorar. Así, nuestro propósito en esta primera parte del libro es comprender la organización de los sistemas vivos en relación a su carácter unitario.
+                        </Paragraph>
+                    </div>
+
+                    <SubSectionTitle number="1.2" title="Moléculas y Vida" />
+
+                    <div className="pl-4 border-l-2 border-slate-900 ml-2 mb-8 w-full">
+                        <span className="text-slate-500 font-mono text-xs mb-2 block">1.2.1</span>
+                        <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                            Nuestra aproximación será mecanicista: No se aducirán fuerzas o principios que no se encuentren en el universo físico. Sin embargo, nuestro problema es la organización viva, y por lo tanto nuestro interés no estará en las propiedades de los componentes, sino en los procesos y relaciones entre procesos realizados a través de componentes.
+                        </Paragraph>
+                        <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                            Esto debe entenderse claramente. Una explicación es siempre una reformulación de un fenómeno de tal manera que sus elementos aparezcan operacionalmente conectados en su generación. Además, una explicación es siempre dada por nosotros como observadores, y es central distinguir en ella lo que pertenece al sistema como constitutivo de su fenomenología de lo que pertenece a las necesidades de nuestro dominio de descripción, y por ende a nuestras interacciones con él, sus componentes y el contexto en el que se observa. Dado que nuestro dominio descriptivo surge porque contemplamos simultáneamente la unidad y sus interacciones en el dominio de observación, las nociones que surgen de necesidades cognitivas y expositivas en el dominio de descripción no pertenecen a las nociones explicativas para una organización constitutiva de la unidad (fenómeno). Volveremos a este importante tema muy a menudo en este libro.
+                        </Paragraph>
+                        <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                            Además, una explicación puede tomar diferentes formas según la naturaleza del fenómeno explicado. Así, para explicar el movimiento de un cuerpo que cae uno recurre a propiedades de la materia, y a leyes que describen la conducta de cuerpos materiales según estas propiedades (leyes cinéticas y gravitacionales), mientras que para explicar la organización de una planta de control uno recurre a relaciones y leyes que describen la conducta de relaciones. En el primer caso, los materiales del paradigma causal son cuerpos y sus propiedades; en el segundo caso, son relaciones y sus relaciones, independientemente de la naturaleza de los cuerpos que las satisfacen. En este último caso, en nuestras explicaciones de la organización de los sistemas vivos, estaremos tratando con las relaciones que los componentes físicos actuales deben satisfacer para constituir tal sistema, no con la identificación de estos componentes. Es nuestra suposición que hay una organización que es común a todos los sistemas vivos, cualquiera que sea la naturaleza de sus componentes. Dado que nuestro tema es esta organización, no las formas particulares en que puede realizarse, no haremos distinciones entre clases o tipos de sistemas vivos.
+                        </Paragraph>
+                    </div>
+
+                    <div className="pl-4 border-l-2 border-slate-900 ml-2 mb-8 w-full">
+                        <span className="text-slate-500 font-mono text-xs mb-2 block">1.2.2</span>
+                        <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                            Al adoptar esta filosofía, estamos de hecho simplemente adoptando la filosofía básica que anima la cibernética y la teoría de sistemas, con las calificaciones a estos nombres que se discutieron en el Prefacio. Esto es, creo, nada más y nada menos que la esencia de un mecanicismo moderno. Al decir que los sistemas vivos son "máquinas" estamos apuntando a varias nociones que deberían hacerse explícitas. Primero, implicamos una visión no animista, que debería ser innecesario discutir más. Segundo, estamos enfatizando que un sistema vivo se define por su organización, y por lo tanto que puede explicarse como se explica cualquier organización, es decir, en términos de relaciones, no de propiedades de componentes. Finalmente, estamos señalando desde el principio el dinamismo aparente en los sistemas vivos y que la palabra "máquina" o "sistema" connota [4].
+                        </Paragraph>
+                        <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                            Estamos haciendo, entonces, una pregunta fundamental: ¿Cuál es la organización de los sistemas vivos, qué tipo de máquinas son, y cómo está determinada su fenomenología, incluyendo la reproducción y la evolución, por su organización unitaria?
+                        </Paragraph>
+                    </div>
+
+                    <div className="mt-12 pt-8 border-t border-slate-900 text-sm text-slate-500 w-full">
+                        <p className="font-bold text-slate-400 mb-2 uppercase tracking-wider">Fuentes del Capítulo</p>
+                        <ul className="space-y-2">
+                            <li>Maturana, H. y F. Varela (1975), Autopoietic Systems: A Characterization of the Living Organization, Biological Computer Lab. Rep. 9.4. Univ. of Illinois, Urbana. Reimpreso en Maturana y Varela (1979).</li>
+                            <li>Varela, F., H. Maturana, y R. Uribe (1974), Autopoiesis: The Organization of Living Systems, Its Characterization and a Model, Biosystems 5:187.</li>
+                        </ul>
+                    </div>
+                </section>
+
+            </main>
+
+            {/* SMART FOOTNOTE PANEL */}
+            {activeFootnote && (
+                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl bg-black/95 border border-slate-800 text-slate-300 p-8 rounded-lg shadow-2xl backdrop-blur-xl z-50 animate-[fadeIn_0.3s_ease-out]">
+                    <div className="flex items-start gap-6">
+                        <span className="text-cyan-400 font-serif text-3xl font-bold leading-none">[{activeFootnote}]</span>
+                        <p className="text-base leading-relaxed text-justify">{FOOTNOTES[activeFootnote]}</p>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
