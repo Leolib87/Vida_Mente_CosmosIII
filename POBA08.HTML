@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capítulo 7 - Francisco J. Varela</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (para JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- MathJax para Ecuaciones -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: { 950: '#020617' }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 1.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(15px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        html { scroll-behavior: smooth; }
+        ::selection { background-color: rgba(34, 211, 238, 0.2); color: #fff; }
+        
+        .footnote-ref {
+            font-size: 0.7em;
+            vertical-align: super;
+            margin-left: 2px;
+            font-weight: bold;
+            color: #22d3ee;
+            cursor: pointer;
+        }
+
+        .mjx-chtml { color: inherit !important; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-300 antialiased overflow-x-hidden selection:bg-cyan-500/30">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS ---
+        const MenuIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        );
+        const XIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="M6 6 18 18"/></svg>
+        );
+
+        // --- DATA & CONTENT ---
+
+        const AUTHORS = [
+            "Francisco J. Varela", "Maturana", "Beer", "Zeleny", "Pierre", "Androsov", "Pontriagyn", 
+            "Eigen", "Schuster", "Iberall", "Bateson", "Wiener", "Church", "Goguen", "Bråten", 
+            "Alker", "Schwember", "Burns", "Dupuy", "Robert", "Goffman", "Berger", "Luckman", 
+            "Morin", "Castoriadis", "Flores", "Winnograd", "Moscovici"
+        ];
+
+        const CONCEPTS = [
+            "Autonomía", "Control", "Información", "autopoiético", "alonomía", "autonomía",
+            "clausura", "circularidades", "representación", "instrucción", "organización",
+            "clausura organizacional", "acoplamiento estructural", "dominio cognitivo", 
+            "autopoiesis", "sistemas de orden superior", "clausura operacional", "identidad", 
+            "viabilidad", "hermenéutico", "consensual", "lingüístico", "fenomenología", 
+            "tesis de clausura", "computabilidad", "acoplamiento"
+        ];
+
+        const FOOTNOTES = {
+            1: "Esta subordinación es crucial para entender la emergencia de lo multicelular. Véase la discusión detallada en Maturana y Varela (1979)."
+        };
+
+        const TABLE_OF_CONTENTS = [
+            { 
+                part: "Parte I: Autonomía de lo Vivo y Clausura Organizacional",
+                items: [
+                    { title: "Capítulo 1: Autonomía y Pensamiento Biológico", link: "#" },
+                    { title: "Capítulo 2: La Autopoiesis como Organización", link: "#" }, 
+                    { title: "Capítulo 3: Ejemplo de Teselación", link: "#" },
+                    { title: "Capítulo 4: Encarnaciones de la Autopoiesis", link: "#" },
+                    { title: "Capítulo 5: El Individuo en el Desarrollo y la Evolución", link: "#" },
+                    { title: "Capítulo 6: Sobre las Consecuencias de la Autopoiesis", link: "#" },
+                    { title: "Capítulo 7: La Idea de Clausura Organizacional", link: "#chapter7" }
+                ]
+            }
+        ];
+
+        // --- COMPONENTS ---
+
+        const HighlightedText = ({ text, onFootnoteHover, onFootnoteLeave }) => {
+            if (!text || typeof text !== 'string') return text || null;
+            
+            // Regex to split quotes and footnote markers
+            const parts = text.split(/(\[.*?\]|[\s\n]+|"[^"]*")/g);
+
+            return (
+                <span>
+                    {parts.map((part, i) => {
+                        if (!part) return null;
+
+                        // Check for quotes (Amber)
+                        if (part.startsWith('"') && part.endsWith('"')) {
+                            return <span key={i} className="text-amber-500 italic font-serif">{part}</span>;
+                        }
+
+                        // Check for Footnote [n]
+                        const footnoteMatch = part.match(/^\[(\d+)\]$/);
+                        if (footnoteMatch) {
+                            const id = footnoteMatch[1];
+                            return (
+                                <span 
+                                    key={i}
+                                    className="footnote-ref px-1 bg-cyan-950/20 rounded border border-cyan-900/50 hover:text-cyan-200 transition-colors"
+                                    onMouseEnter={() => onFootnoteHover(id)}
+                                    onMouseLeave={onFootnoteLeave}
+                                >
+                                    [{id}]
+                                </span>
+                            );
+                        }
+
+                        const cleanWord = part.replace(/[.,;:"()]/g, '');
+                        const lowerPart = part.toLowerCase();
+                        let styleClass = "";
+                        
+                        if (AUTHORS.some(a => lowerPart.includes(a.split(' ').pop().toLowerCase()) && cleanWord.length > 2)) {
+                            styleClass = "text-cyan-400 font-medium";
+                        }
+                        if (CONCEPTS.some(c => lowerPart.includes(c.toLowerCase()) && cleanWord.length > 3)) {
+                            styleClass = "text-amber-500 italic";
+                        }
+
+                        return <span key={i} className={styleClass}>{part}</span>;
+                    })}
+                </span>
+            );
+        };
+
+        const Paragraph = ({ children, onFootnoteHover, onFootnoteLeave }) => (
+            <p className="mb-10 text-lg md:text-xl lg:text-2xl leading-relaxed text-slate-300 font-light text-justify w-full">
+                <HighlightedText text={children} onFootnoteHover={onFootnoteHover} onFootnoteLeave={onFootnoteLeave} />
+            </p>
+        );
+
+        const SectionHeader = ({ children }) => (
+             <h4 className="text-3xl md:text-5xl lg:text-6xl font-serif text-slate-100 mt-32 mb-16 border-l-4 border-cyan-500/50 pl-10 w-full uppercase tracking-tight leading-none">
+                {children}
+            </h4>
+        );
+
+        const SubSectionHeader = ({ children }) => (
+             <h5 className="text-xl md:text-3xl font-sans font-bold text-slate-400 mt-20 mb-10 uppercase tracking-[0.5em] border-b border-slate-800 pb-6 w-full">
+                {children}
+            </h5>
+        );
+
+        // --- APP ---
+
+        function App() {
+            const [activeFootnote, setActiveFootnote] = useState(null);
+            const [progress, setProgress] = useState(0);
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    const winScroll = document.documentElement.scrollTop;
+                    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                    setProgress(winScroll / height);
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            const handleLinkClick = (e, link) => {
+                if (link && link.startsWith('#')) {
+                    e.preventDefault();
+                    const element = document.getElementById(link.substring(1));
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth' });
+                        setIsMenuOpen(false);
+                    }
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-300 font-sans pb-80">
+                    {/* Barra de progreso superior */}
+                    <div className="fixed top-0 left-0 h-1.5 bg-cyan-400 z-50 transition-all duration-75 shadow-[0_0_20px_rgba(34,211,238,0.7)]" style={{ width: `${progress * 100}%` }}></div>
+
+                    {/* Navegación Fija */}
+                    <nav className="fixed top-0 w-full z-40 bg-slate-950/80 backdrop-blur-xl border-b border-white/5 h-20">
+                        <div className="w-full px-6 md:px-12 h-full flex items-center justify-between">
+                            <div className="flex items-center gap-4 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
+                                <div className="w-10 h-10 bg-amber-600 rounded flex items-center justify-center text-slate-950 font-serif font-bold text-xl shadow-xl">V</div>
+                                <div className="hidden md:block">
+                                    <h1 className="text-slate-100 font-serif text-sm tracking-widest uppercase font-bold">Francisco J. Varela</h1>
+                                    <span className="text-[10px] text-slate-500 uppercase tracking-widest block mt-0.5 opacity-60">Principios de Autonomía Biológica</span>
+                                </div>
+                            </div>
+                            
+                            <div className="relative">
+                                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-cyan-400 py-3 px-8 border border-cyan-900/50 rounded-full hover:bg-cyan-950/40 transition-all font-bold">
+                                    Índice {isMenuOpen ? <XIcon size={18}/> : <MenuIcon size={18}/>}
+                                </button>
+                                {isMenuOpen && (
+                                    <div className="absolute right-0 mt-6 w-80 sm:w-[500px] bg-slate-900/95 border border-slate-800 shadow-2xl rounded-[2rem] py-10 max-h-[85vh] overflow-y-auto z-50 animate-fade-in ring-1 ring-white/10">
+                                        {TABLE_OF_CONTENTS.map((section, idx) => (
+                                            <div key={idx} className="mb-12">
+                                                <h4 className="px-12 py-2 text-[11px] font-black text-amber-500 uppercase tracking-[0.4em] bg-slate-950/60 mb-6">
+                                                    {section.part}
+                                                </h4>
+                                                {section.items.map((item, i) => (
+                                                    <a key={i} href={item.link} onClick={(e) => handleLinkClick(e, item.link)} className="block px-12 py-4 text-sm md:text-base text-slate-400 hover:bg-slate-800 hover:text-cyan-400 transition-all no-underline border-l-4 border-transparent hover:border-cyan-500">
+                                                        {item.title}
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </nav>
+
+                    {/* Contenido Principal */}
+                    <main className="pt-40 px-6 md:px-12 lg:px-20 w-full animate-fade-in">
+                        
+                        <section id="chapter7" className="mb-80 scroll-mt-40">
+                            <div className="mb-48 text-center">
+                                <span className="text-cyan-400 text-xs font-black tracking-[0.6em] uppercase mb-12 block">Capítulo 7</span>
+                                <h2 className="text-6xl md:text-8xl lg:text-[10rem] font-serif text-slate-100 mb-12 uppercase leading-none tracking-tighter">
+                                    La Idea de Clausura
+                                </h2>
+                                <h3 className="text-slate-500 text-4xl md:text-6xl lg:text-7xl font-serif italic font-light tracking-tight uppercase tracking-widest">Organizacional</h3>
+                            </div>
+
+                            <SectionHeader>7.1 Sistemas Autopoiéticos de Orden Superior</SectionHeader>
+                            
+                            <SubSectionHeader>7.1.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Siempre que la conducta de dos o más unidades es tal que existe un dominio en el que la conducta de cada una es una función de la conducta de las otras, se dice que están acopladas en ese dominio. El acoplamiento surge como resultado de las modificaciones mutuas que las unidades interactuantes experimentan en el curso de sus interacciones sin pérdida de identidad. Si la identidad de las unidades interactuantes se pierde en el curso de sus interacciones, puede generarse una nueva unidad como resultado de ello, pero no se produce ningún acoplamiento. En general, sin embargo, el acoplamiento conduce también a la generación de una nueva unidad que puede existir en un dominio diferente en el que las unidades acopladas componentes conservan su identidad. La forma en que esto ocurre, así como el dominio en el que se realiza la nueva unidad, depende de las propiedades de las unidades componentes.
+                            </Paragraph>
+
+                            <SubSectionHeader>7.1.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                El acoplamiento en los sistemas vivos es un suceso frecuente, y la naturaleza del acoplamiento de los sistemas vivos está determinada por su organización autopoiética. Esto es así porque los sistemas autopoiéticos pueden interactuar entre sí sin pérdida de identidad siempre que sus respectivas trayectorias de autopoiesis constituyan fuentes recíprocas de perturbación compensable. Además, debido a su organización, los sistemas autopoiéticos pueden acoplarse y constituir una nueva unidad mientras sus trayectorias individuales de autopoiesis se convierten en fuentes recíprocas de especificación del entorno del otro, si sus perturbaciones recíprocas no sobrepasan sus respectivos rangos de tolerancia para la variación sin pérdida de autopoiesis. Como consecuencia, el acoplamiento permanece invariante, mientras que los sistemas acoplados sufren cambios estructurales que se generan a través del acoplamiento y, por tanto, son proporcionales a él. Estas consideraciones se aplican también al acoplamiento de unidades autopoiéticas y no autopoiéticas, con las modificaciones obvias en relación con la retención de la identidad de estas últimas. En general, entonces, el acoplamiento de los sistemas autopoiéticos con otras unidades, autopoiéticas o no, se realiza a través de su autopoiesis.
+                            </Paragraph>
+
+                            <SubSectionHeader>7.1.3</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Un sistema generado a través del acoplamiento de unidades autopoiéticas puede, en una primera aproximación, ser visto por un observador como autopoiético en la medida en que su realización depende de la autopoiesis de las unidades que lo integran. Sin embargo, si tal sistema no está definido por relaciones de producción de componentes que generen estas relaciones y lo definan como una unidad en un espacio dado, sino por otras relaciones (ya sea entre componentes o entre procesos), entonces no es un sistema autopoiético, y el observador está equivocado. La autopoiesis aparente de tal sistema es incidental a la autopoiesis de las unidades acopladas que lo constituyen, y no intrínseca a su organización. Por el contrario, si un sistema se realiza a través del acoplamiento de unidades autopoiéticas y se define por relaciones de producción de componentes que generan estas relaciones y lo constituyen como una unidad en algún espacio, entonces es un sistema autopoiético en ese espacio. Si la autopoiesis de un sistema autopoiético conlleva la autopoiesis de las unidades autopoiéticas acopladas que lo realizan, entonces se denomina sistema autopoiético de orden superior.
+                            </Paragraph>
+
+                            <SubSectionHeader>7.1.4</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Un sistema autopoiético puede convertirse en componente de otro sistema si algunos aspectos de su trayectoria de cambio autopoiético pueden participar en la realización de este otro sistema. Un observador puede describir un componente autopoiético de un sistema compuesto como desempeñando un papel alopoiético en la realización del sistema mayor al que contribuye a realizar a través de su autopoiesis. En otras palabras, la unidad autopoiética funciona en el contexto del sistema compuesto de una manera que el observador describiría como alopoiética. Confundir estas dos formas de descripción oscurecería tanto el modo en que una unidad autopoiética se convierte en tal, como el modo en que puede constituir una unidad de orden superior. La presentación adecuada de este rasgo de la observación es a través de la dualidad de autonomía y control en la cognición del observador.
+                            </Paragraph>
+
+                            <SubSectionHeader>7.1.5</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Si la autopoiesis de las unidades componentes de un sistema autopoiético compuesto se ajusta a roles alopoiéticos que, a través de la producción de relaciones de constitución, especificación y orden, definen una unidad autopoiética, entonces el sistema compuesto se convierte por derecho propio en una unidad autopoiética de segundo orden. Esto ha ocurrido realmente en la Tierra con la evolución del patrón multicelular de organización. Cuando esto ocurre, los sistemas autopoiéticos (vivos) componentes quedan necesariamente subordinados, en la forma en que realizan su autopoiesis, a las restricciones (mantenimiento) de la autopoiesis de la unidad autopoiética de orden superior que ellos, a través de su acoplamiento, definen topológicamente en el espacio físico [1].
+                            </Paragraph>
+
+                            <SectionHeader>7.2 Variedades de Sistemas Autónomos</SectionHeader>
+                            
+                            <SubSectionHeader>7.2.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Los fenómenos biológicos dependen de la autopoiesis de los individuos implicados. ¿Qué ocurre con los sistemas sociales humanos: son ellos, como sistemas de seres humanos acoplados, también sistemas biológicos? ¿Hasta qué punto las relaciones que caracterizan a una sociedad humana son isomorfas a la autopoiesis de los individuos que la integran? La respuesta a esta pregunta no es trivial y tiene implicaciones éticas y políticas. Como en el caso de los sistemas vivos, lo que es evidente es un grado de autonomía en la forma en que tales unidades están presentes en nuestra experiencia. Tienen un dominio o espacio definido en el que existen (normalmente no el espacio físico), y tienen componentes que las integran y relaciones entre estos componentes tales que la unidad alcanza coherencia.
+                            </Paragraph>
+
+                            <SubSectionHeader>7.2.3</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Lo que otros sistemas autónomos tienen en común con los sistemas vivos es que en ellos también el reconocimiento adecuado de la unidad está íntimamente ligado al espacio especificado por la organización y operación de la unidad. Esto es precisamente lo que connota la autonomía: la afirmación de la identidad del sistema a través de su funcionamiento de tal manera que la observación procede a través del acoplamiento entre el observador y la unidad en el dominio en el que ocurre la operación de la unidad. Sin embargo, la idea de autopoiesis está, por definición, restringida a relaciones de producción de algún tipo, y se refiere a límites topológicos. Estas dos condiciones son claramente insatisfactorias para otros sistemas que exhiben autonomía, como una sociedad animal o una institución. Creo que caracterizar una institución como autopoiética es un error de categoría: confunden autopoiesis con autonomía. Podemos tomar las lecciones ofrecidas por la autonomía de los sistemas vivos y convertirlas en una caracterización operativa de la autonomía en general.
+                            </Paragraph>
+
+                            <SubSectionHeader>7.2.4</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Los sistemas autónomos son sistemas mecanicistas (dinámicos) definidos como una unidad por su organización. Diremos que los sistemas autónomos poseen clausura organizacional. Es decir, su organización se caracteriza por procesos tales que: (1) los procesos están relacionados como una red, de modo que dependen recursivamente unos de otros en la generación y realización de los propios procesos, y (2) constituyen al sistema como una unidad reconocible en el espacio (dominio) en el que existen los procesos.
+                            </Paragraph>
+
+                            <div className="space-y-12 my-20 pl-8 md:pl-20 border-l border-slate-800">
+                                <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                    1. Los procesos que especifican una organización cerrada pueden ser de cualquier tipo: producción de componentes, descripciones de eventos, reordenamiento de elementos y, en general, computaciones de cualquier tipo. Si consideramos procesos de producción de componentes en el espacio físico, la clausura organizacional es idéntica a la autopoiesis.
+                                </Paragraph>
+                                <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                    2. Una vez que surge esta circularidad, los procesos constituyen una organización que se computa a sí misma, que alcanza la coherencia a través de su propia operación y no a través de la intervención de contingencias del entorno. Si se rompe la clausura de la organización, la unidad desaparece. Esto es característico de los sistemas autónomos.
+                                </Paragraph>
+                                <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                    3. Solo cuando la organización y la distinción están vinculadas tenemos un sistema autónomo, y esto solo puede ocurrir a través de la clausura organizacional.
+                                </Paragraph>
+                                <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                    4. En cierto sentido, la idea de clausura organizacional generaliza la noción clásica de estabilidad de un sistema. En el presente enfoque, la noción de estabilidad se generaliza a la de coherencia o viabilidad entendida como la capacidad de ser distinguido en algún dominio.
+                                </Paragraph>
+                                <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                    5. En la clausura organizacional, nada impide que el propio observador forme parte del proceso de especificación del sistema, siendo un eslabón en la red de procesos. Esto es el círculo hermenéutico de interpretación-acción.
+                                </Paragraph>
+                                <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                    6. Una vez establecida una unidad mediante la clausura, ésta especificará un dominio con el que puede interactuar sin pérdida de su identidad: un dominio cognitivo para la unidad.
+                                </Paragraph>
+                            </div>
+
+                            <div className="my-24 p-16 md:p-32 bg-cyan-950/20 border border-cyan-900/50 rounded-[4rem] text-center shadow-2xl">
+                                <h6 className="text-cyan-500 text-xs font-black tracking-[0.5em] uppercase mb-10 opacity-60">Tesis Fundamental</h6>
+                                <p className="font-serif text-4xl md:text-6xl lg:text-7xl text-cyan-400 italic leading-tight tracking-tighter">
+                                    "Todo sistema autónomo posee clausura organizacional."
+                                </p>
+                            </div>
+
+                            <SubSectionHeader>7.2.6</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Existen consecuencias primordiales si un sistema exhibe clausura organizacional. Debido a que la clausura y la identidad del sistema están entrelazadas, es una consecuencia necesaria para un sistema organizacionalmente cerrado subordinar todos los cambios al mantenimiento de su identidad. Esto lo discutimos extensamente en relación con los sistemas vivos. Lo que rara vez se comprende es que si podemos decir legítimamente que, por ejemplo, una estructura corporativa posee clausura organizacional, el mismo tipo de automantenimiento de la identidad se trasladará sin cambios a este dominio fenomenológico.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Esto no quiere decir que algunos sistemas sociales sean sistemas vivos y se comporten como tales; significa que la clausura organizacional genera un dominio de conducta autónoma en esta unidad que es similar a lo vivo, pero de características muy diferentes. Las consecuencias prácticas de esta visión de las situaciones sociales son dramáticas, pues nos obligan a distinguir muy claramente entre la organización de, digamos, una corporación, y el propósito que se le atribuye. Si la corporación exhibe clausura, su conducta será tal que todas las perturbaciones y cambios estarán subordinados al mantenimiento de la identidad del sistema.
+                            </Paragraph>
+
+                            <SubSectionHeader>7.2.7</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La discusión detallada de la autonomía de los sistemas vivos ha establecido una agenda clara para el resto de nuestra investigación. Hay dos temas distintos que se interpenetran. Por un lado, el papel y la presencia del observador. Por otro lado, el papel de los fenómenos recursivos y autorreferenciales en la determinación de la identidad de un sistema. Estos dos temas principales convergen y se convierten operativamente en uno en los casos en que el descriptor y los procesos del sistema son los mismos. Estos temas los consideraremos sucesivamente en los capítulos que siguen.
+                            </Paragraph>
+
+                            <SubSectionHeader>Fuentes</SubSectionHeader>
+                            <div className="pl-6 border-l border-slate-700 text-sm md:text-base lg:text-xl text-slate-500 italic w-full">
+                                <p className="mb-4">Maturana, H., y F. Varela (1975), Autopoietic Systems: A Characterization of the Living Organization, Biological Computer Lab. Rep. 9.4, Univ. of Illinois, Urbana. Reimpreso en Maturana y Varela (1979).</p>
+                                <p className="mb-4">Varela, F. y J. Goguen (1978), The arithmetics of closure, en Progress in Cybernetics and Systems Research (R. Trappl et al., eds.). Vol. III, Hemisphere Publ. Co., Washington. También en: J. Cybernetics, 8: 1-34.</p>
+                                <p className="mb-4">Varela, F. (1978), On being autonomous: the lessons of natural history for systems theory, en Applied General Systems Research (G. Klir, ed.), Plenum Press, New York.</p>
+                                <p>Varela, F. (1978), Describing the logic of the living: adequacies and limitations of the idea of autopoiesis, en Autopoiesis: A Theory of the Living Organization (M. Zeleny, ed.), Elsevier North Holland, New York.</p>
+                            </div>
+                        </section>
+                    </main>
+
+                    <footer className="w-full text-center py-24 border-t border-slate-900 text-slate-700 text-xs">
+                        <p className="mb-2 uppercase tracking-[0.6em] font-serif">Principios de Autonomía Biológica</p>
+                        <p>© Francisco J. Varela</p>
+                    </footer>
+
+                    {/* Panel de Notas Inteligente */}
+                    {activeFootnote && (
+                        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[95%] max-w-7xl bg-black/95 border border-cyan-900/40 text-slate-300 p-10 md:p-16 rounded-[4rem] shadow-2xl backdrop-blur-3xl z-50 animate-fade-in ring-1 ring-cyan-500/30">
+                            <div className="flex items-start gap-12 lg:gap-20">
+                                <span className="text-cyan-400 font-serif text-4xl lg:text-8xl font-bold leading-none select-none">[{activeFootnote}]</span>
+                                <p className="text-base md:text-lg lg:text-2xl leading-relaxed text-justify font-light tracking-wide">{FOOTNOTES[activeFootnote]}</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
