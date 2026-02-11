@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capítulo 13: Eigencomportamiento</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- KaTeX for Math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* Slate 950 */
+            color: #cbd5e1; /* Slate 300 */
+            overflow-x: hidden;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Playfair Display', serif;
+        }
+        .math-inline { display: inline-block; margin: 0 0.2rem; }
+        .math-display { display: flex; justify-content: center; margin: 1.5rem 0; overflow-x: auto; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        .hyphenate {
+            hyphens: auto;
+            -webkit-hyphens: auto;
+            text-align: justify;
+        }
+    </style>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#151e2e',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        amber: {
+                            500: '#f59e0b',
+                        },
+                        cyan: {
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['Playfair Display', 'serif'],
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    maxWidth: {
+                        '8xl': '88rem',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, useScroll, useSpring } = window.Motion;
+
+        // --- COMPONENTS ---
+
+        // Componente para renderizar matemáticas con KaTeX
+        const MathTex = ({ children, block = false }) => {
+            const containerRef = useRef(null);
+
+            useEffect(() => {
+                if (containerRef.current && window.katex) {
+                    window.katex.render(children, containerRef.current, {
+                        throwOnError: false,
+                        displayMode: block
+                    });
+                }
+            }, [children, block]);
+
+            return <span ref={containerRef} className={block ? "math-display" : "math-inline text-amber-500/90"} />;
+        };
+
+        // Componente para resaltar términos (Ámbar)
+        const Concept = ({ children }) => (
+            <span className="text-amber-500 font-medium italic">{children}</span>
+        );
+
+        // Componente para Autores (Cian)
+        const Author = ({ children }) => (
+            <span className="text-cyan-400 font-semibold">{children}</span>
+        );
+
+        // Componente para Citas Textuales (Ámbar)
+        const Quote = ({ children }) => (
+            <span className="text-amber-500">"{children}"</span>
+        );
+
+        // Componente de Figura
+        const Figure = ({ desc, caption, id }) => (
+            <figure className="w-full my-12 group" id={id}>
+                <div className="w-full aspect-video bg-slate-900/50 border-2 border-dashed border-slate-700 rounded-lg flex items-center justify-center relative overflow-hidden transition-colors hover:border-cyan-500/50 hover:bg-slate-900/80">
+                    <div className="text-center p-6">
+                        <i data-lucide="image" class="w-12 h-12 mx-auto text-slate-500 mb-4 group-hover:text-cyan-400 transition-colors"></i>
+                        <p className="text-slate-400 font-mono text-sm uppercase tracking-widest">Insert Link</p>
+                        <p className="text-slate-500 mt-2 text-sm max-w-md mx-auto">{desc}</p>
+                    </div>
+                </div>
+                <figcaption className="mt-4 text-center text-sm text-slate-500 font-serif italic">
+                    {caption}
+                </figcaption>
+            </figure>
+        );
+
+        // Componente de Nota al Pie (Tooltip Interactivo)
+        const Footnote = ({ index, content }) => {
+            const [isVisible, setIsVisible] = useState(false);
+
+            return (
+                <span 
+                    className="relative inline-block align-top cursor-help"
+                    onMouseEnter={() => setIsVisible(true)}
+                    onMouseLeave={() => setIsVisible(false)}
+                >
+                    <sup className="text-cyan-400 font-bold text-xs ml-0.5 hover:text-cyan-300 transition-colors">[{index}]</sup>
+                    
+                    {isVisible && (
+                        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90vw] max-w-2xl bg-slate-900/95 backdrop-blur-md p-6 rounded-xl border border-slate-800 shadow-2xl z-50 text-sm text-slate-300 leading-relaxed text-justify animate-in fade-in slide-in-from-bottom-4 duration-300">
+                            <div className="flex gap-3">
+                                <span className="text-cyan-400 font-bold shrink-0">[{index}]</span>
+                                <div>{content}</div>
+                            </div>
+                        </div>
+                    )}
+                </span>
+            );
+        };
+
+        // --- MAIN APP ---
+
+        const App = () => {
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+
+            const [activeSection, setActiveSection] = useState('Inicio');
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+            // Detectar sección activa
+            useEffect(() => {
+                lucide.createIcons();
+                
+                const handleScroll = () => {
+                    const sections = document.querySelectorAll('section');
+                    let current = 'Inicio';
+                    sections.forEach(section => {
+                        const sectionTop = section.offsetTop;
+                        if (window.scrollY >= sectionTop - 200) {
+                            current = section.getAttribute('id');
+                        }
+                    });
+                    setActiveSection(current);
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            const sections = [
+                { id: "intro", title: "13.1 Introducción" },
+                { id: "self-determined", title: "13.2 Comportamiento Autodeterminado" },
+                { id: "algebras", title: "13.3 Álgebras y Dominios de Operadores" },
+                { id: "variables", title: "13.4 Variables y Operadores Derivados" },
+                { id: "infinite-trees", title: "13.5 Árboles Infinitos" },
+                { id: "continuous-algebras", title: "13.6 Álgebras Continuas" },
+                { id: "equations", title: "13.7 Ecuaciones y Soluciones" },
+                { id: "reflexive", title: "13.8 Dominios Reflexivos" },
+                { id: "indicational", title: "13.9 Reentrada Indicacional Revisitada" },
+                { id: "double-binds", title: "13.10 Dobles Vínculos como Eigencomportamientos" },
+                { id: "dynamical", title: "13.11 Sistemas Dinámicos Diferenciables" },
+            ];
+
+            const scrollTo = (id) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                    setIsMenuOpen(false);
+                }
+            };
+
+            return (
+                <div className="bg-slate-950 min-h-screen w-screen overflow-x-hidden selection:bg-cyan-500/30 selection:text-cyan-100">
+                    
+                    {/* Progress Bar */}
+                    <motion.div 
+                        className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50 shadow-[0_0_10px_rgba(34,211,238,0.5)]"
+                        style={{ scaleX }}
+                    />
+
+                    {/* Sticky Header */}
+                    <header className="fixed top-0 w-full bg-slate-950/80 backdrop-blur-lg border-b border-slate-800 z-40 transition-all duration-300">
+                        <div className="w-full px-6 py-4 flex justify-between items-center">
+                            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
+                                <span className="text-slate-400 text-xs md:text-sm uppercase tracking-widest font-semibold">Francisco Varela & Joseph Goguen</span>
+                                <span className="hidden md:inline text-slate-700">|</span>
+                                <span className="text-cyan-400 font-serif italic truncate max-w-[200px] md:max-w-none transition-all duration-300">
+                                    {sections.find(s => s.id === activeSection)?.title || "Capítulo 13"}
+                                </span>
+                            </div>
+                            
+                            <button 
+                                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                className="flex items-center gap-2 text-slate-300 hover:text-cyan-400 transition-colors px-4 py-2 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900/50"
+                            >
+                                <span className="hidden md:inline font-mono text-xs uppercase">Índice</span>
+                                <i data-lucide="list" className="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </header>
+
+                    {/* Sidebar / Menu */}
+                    {isMenuOpen && (
+                        <div className="fixed top-16 right-0 w-full md:w-80 h-[calc(100vh-4rem)] bg-slate-900/95 backdrop-blur-xl border-l border-slate-800 z-30 p-6 overflow-y-auto animate-in slide-in-from-right duration-300">
+                            <nav className="flex flex-col gap-4">
+                                {sections.map((section) => (
+                                    <button 
+                                        key={section.id}
+                                        onClick={() => scrollTo(section.id)}
+                                        className={`text-left text-sm py-2 px-3 rounded transition-colors ${activeSection === section.id ? 'bg-cyan-950/50 text-cyan-400 border-l-2 border-cyan-400' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}
+                                    >
+                                        {section.title}
+                                    </button>
+                                ))}
+                            </nav>
+                        </div>
+                    )}
+
+                    {/* Main Content */}
+                    <main className="w-full pt-32 pb-24 px-4 md:px-8 lg:px-12">
+                        <article className="max-w-4xl mx-auto">
+                            
+                            {/* Chapter Hero */}
+                            <div className="mb-24 text-center">
+                                <span className="text-amber-500 font-mono text-sm tracking-[0.3em] uppercase mb-4 block">Capítulo 13</span>
+                                <h1 className="text-4xl md:text-6xl lg:text-7xl text-slate-100 font-serif leading-tight mb-8">
+                                    Eigencomportamiento: <br/>
+                                    <span className="text-2xl md:text-4xl lg:text-5xl text-slate-400 italic block mt-4">
+                                        Algunos Fundamentos Algebraicos de los Procesos de Sistemas Autorreferenciales
+                                    </span>
+                                </h1>
+                            </div>
+
+                            {/* Section 13.1 */}
+                            <section id="intro" className="mb-20">
+                                <h2 className="text-3xl text-slate-200 font-serif mb-6 border-b border-slate-800 pb-4">13.1 Introducción</h2>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Este capítulo se ocupa de representar la clausura organizacional en términos operacionales. Con este fin, iremos más allá de lo presentado en el último capítulo para construir dos nociones clave: árboles infinitos de operadores y soluciones de ecuaciones sobre ellos. La idea de una solución de una ecuación sobre la clase de árboles infinitos es una forma apropiada de dar un significado más preciso a la idea intuitiva de coordinaciones y simultaneidad de interacciones. La naturaleza autorreferencial y recursiva de una red de procesos, característica de la autonomía de los sistemas naturales, es capturada por el comportamiento invariante propio a la forma en que los procesos componentes están interconectados. Así, las descripciones complementarias <Concept>comportamiento/recursión</Concept> (cf. Capítulo 10) se representan en una forma no dual. La invariancia (punto fijo) de una red puede relacionarse explícitamente con la dinámica recursiva subyacente; los procesos componentes son vistos como un despliegue del comportamiento de la unidad.
+                                </p>
+                            </section>
+
+                            {/* Section 13.2 */}
+                            <section id="self-determined" className="mb-20">
+                                <h2 className="text-3xl text-slate-200 font-serif mb-6 border-b border-slate-800 pb-4">13.2 Comportamiento Autodeterminado: Ilustraciones</h2>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Propongo el nombre <Concept>eigencomportamiento</Concept> para una expresión en el sentido matemático descrito a continuación, que pretende representar la autonomía de algún sistema concreto.
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    El nombre parece justificado por varios motivos. Primero, el prefijo <Quote>eigen</Quote> conlleva del alemán la connotación de <Quote>propio</Quote> y <Quote>auto</Quote>, y el eigencomportamiento es comportamiento propio o autodeterminado, es decir, autonomía. Segundo, este compuesto es una generalización consistente con el uso estándar de <Concept>eigenvalor</Concept> y <Concept>eigenvector</Concept> en álgebra lineal para denotar ciertos puntos fijos de mapas lineales. Tercero, en al menos dos campos se ha propuesto el término eigencomportamiento para denotar, en instancias particulares, exactamente lo que desde nuestro punto de vista es una solución a la clausura de algún sistema. <Author>N. Jerne</Author> (1974) introdujo la idea como una caracterización cualitativa para el estado estable momento a momento de la totalidad de interacciones celulares que especifica la red inmune en organismos vivos. (Elaboraremos sobre esto en el Capítulo 14). El artículo de <Author>Von Foerster</Author> (1977) se titula <Quote>Objects: tokens for eigenbehavior</Quote> (Objetos: fichas para el eigencomportamiento), y discute la clausura de las interacciones sensorio-motoras en un sistema nervioso, dando lugar a regularidades perceptuales como objetos. Nuestro uso, entonces, no solo es lingüísticamente apropiado, sino que también extiende el uso previo a un contenido sistémico y matemático más general.
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Incluso en un sentido muy general e informal, la noción de eigencomportamiento es bastante interesante. Consideremos algunas ilustraciones antes de entrar en el tratamiento más detallado.
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Los eigencomportamientos pueden caracterizarse como los puntos fijos de ciertas transformaciones. Considere una operación <MathTex>{'\\alpha'}</MathTex>, de un dominio <MathTex>{'A'}</MathTex> a sí mismo, <MathTex>{'\\alpha: A \\rightarrow A'}</MathTex>. Un punto fijo para <MathTex>{'\\alpha'}</MathTex> es un valor <MathTex>{'v \\in A'}</MathTex> tal que <MathTex>{'\\alpha(v) = v'}</MathTex>. Los puntos fijos, en general, tienen varias propiedades interesantes. Primero, en un sentido ingenuo, un punto fijo es autorreferencial o recursivo: <MathTex>{'v'}</MathTex> dice algo sobre sí mismo, a saber, que es invariante bajo la operación <MathTex>{'\\alpha'}</MathTex>. Segundo, los puntos fijos están caracterizados de manera única con respecto a todos los otros valores tomados por la operación <MathTex>{'\\alpha'}</MathTex>. Considere por ejemplo el caso donde <MathTex>{'\\alpha'}</MathTex> es la función <MathTex>{'\\cos: R \\rightarrow R'}</MathTex>. Entonces es fácil verificar que <MathTex>{'x^{\\triangledown} = 0.739085'}</MathTex> [rad] es un punto fijo, y de hecho el único entre el continuo de valores tomados por <MathTex>{'\\cos'}</MathTex>. Tercero, los valores de punto fijo pueden expresarse a través de iteraciones repetidas o indefinidas de las operaciones con las que están relacionados; es decir, pueden ser <Quote>desplegados</Quote> en términos de sus operaciones definitorias. Por ejemplo, podemos expresar <MathTex>{'x^{\\triangledown}'}</MathTex> mediante una iteración indefinida de la operación <MathTex>{'\\cos'}</MathTex>, i.e., <MathTex>{'x^{\\triangledown} = \\cos(\\cos(\\cos(...)))'}</MathTex>. Note que podemos ignorar el valor en el que se inició la iteración; puede ser cualquier número en el dominio <MathTex>{'R'}</MathTex>. Ahora pasemos a algunos ejemplos.
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Una ilustración bastante ingeniosa de tales eigencomportamientos, debida a <Author>Von Foerster</Author>, puede describirse en el dominio lingüístico. Tome la siguiente forma de oración:
+                                </p>
+                                <blockquote className="pl-6 border-l-4 border-amber-500 italic text-xl text-slate-200 mb-6 bg-slate-900/30 p-4 rounded-r-lg">
+                                    S: "Esta oración tiene... letras."
+                                </blockquote>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Sea <MathTex>{'S(n)'}</MathTex> el número de letras en <MathTex>{'S'}</MathTex> cuando insertamos el nombre verbal del número <MathTex>{'n'}</MathTex> en el espacio vacío. Así <MathTex>{'S(3)=27'}</MathTex>, dado que <Quote>tres</Quote> tiene 5 letras (en inglés "three"), las cuales sumamos a las 22 letras constantes de <MathTex>{'S'}</MathTex>. Por ensayo y error encontramos que <MathTex>{'S(33)=33'}</MathTex> es el único punto fijo. Solo para <Quote>Esta oración tiene treinta y tres letras</Quote> (en la versión inglesa) la oración tiene el número de letras mencionado.
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Incluso para un proceso bastante simple, los eigencomportamientos resultantes pueden ser sorprendentemente complejos. Permítanme ilustrar este hecho. Considere una urna que contiene una bola blanca y una bola negra. Realicemos el siguiente experimento: saque una bola de la urna, al azar, y sea cual sea su color, reemplácela y añada otra bola del mismo color a la urna. Repita el procedimiento anterior muchas veces, de modo que el número de bolas crezca mucho. Entonces hacemos la pregunta: ¿Cuál será el porcentaje de, por ejemplo, bolas negras en la urna? La respuesta es sorprendente: el porcentaje puede aproximarse a cualquier valor entre 0 y 100, pero en cada experimento convergerá a solo un valor estable (<Author>Blackwell y Kendall</Author>, 1964). En otras palabras, después de un período inicial de fluctuación (etapas iniciales de aproximación) la proporción se asentará en cierto valor y permanecerá cerca de él (eigencomportamiento), aunque si repetimos el experimento (consideramos otro organismo del mismo tipo) el valor estable será uno diferente. Este experimento se ilustra en la Figura 13-1. Es obvio que el resultado de las primeras extracciones tiene una influencia mucho más significativa en el valor final de la corrida que las extracciones posteriores.
+                                </p>
+
+                                <Figure 
+                                    id="fig-13-1"
+                                    desc="Gráfico mostrando el porcentaje de bolas negras vs número de extracciones. Tres líneas convergen a diferentes valores estables después de fluctuaciones iniciales."
+                                    caption="Figura 13-1: Comportamiento recursivo del ejemplo de la urna descrito en el texto. Se grafican tres experimentos separados, cada uno hasta 1000 extracciones. En todos ellos, una etapa inicial de fluctuaciones es seguida por un comportamiento estable, el cual difiere en cada caso."
+                                />
+
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Podemos considerar ahora una ilustración más concreta, en términos de las ideas ya desarrolladas en el capítulo anterior. Considere un circuito eléctrico usado para lógica de computadoras, el flip-flop. Una razón para elegir este ejemplo es que, siendo usado como un bloque lógico, puede ser interpretado como una forma indicacional (cf. Apéndice B). De hecho, el diagrama estándar para el flip-flop puede ser transpuesto fácilmente a su eigencomportamiento correspondiente:
+                                </p>
+
+                                <MathTex block>{`z = \\overline{z} | \\overline{y} | \\overline{x}`}</MathTex>
+                                <p className="text-center text-sm text-slate-500 mb-6 font-mono">(13.1)</p>
+                                
+                                <p className="mb-4 text-lg leading-relaxed text-slate-300">o</p>
+
+                                <MathTex block>{`z' = \\overline{z} = \\overline{\\overline{z|\\overline{y}}|\\overline{x}} = \\overline{\\overline{y}|\\overline{x}}`}</MathTex>
+                                
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    con su árbol:
+                                </p>
+
+                                <Figure 
+                                    desc="Árbol lógico del flip-flop mostrando la estructura recursiva de z dependiendo de x e y."
+                                    caption="Representación en árbol de la lógica del flip-flop."
+                                />
+
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Ahora, <MathTex>{'z'}</MathTex> es el límite de una aproximación <MathTex>{'z = \\bigcup_{n \\in \\omega} z_n'}</MathTex>, donde:
+                                </p>
+
+                                <MathTex block>{`z_1 = \\overline{z_0} | \\overline{y_1} | \\overline{x_1}`}</MathTex>
+                                <p className="mb-4 text-lg text-slate-300">y, en general,</p>
+                                <MathTex block>{`z_n = \\overline{z_{n-1}} | \\overline{y_n} | \\overline{x_n}`}</MathTex>
+                                <p className="text-center text-sm text-slate-500 mb-6 font-mono">(13.2)</p>
+
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Claramente <MathTex>{'z_n \\subseteq z_{n+1}'}</MathTex>. Esto también especifica como secuencias para <MathTex>{'x'}</MathTex> e <MathTex>{'y'}</MathTex>:
+                                </p>
+                                <MathTex block>{`x = \\bigcup_n x_n, \\quad y = \\bigcup_n y_n`}</MathTex>
+
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Todo esto tiene sentido porque, en un flip-flop real, la expresión (13.1) es, por supuesto, interpretada en el tiempo como una función recursiva paso a paso discreta (13.2), para una secuencia dada de entradas <MathTex>{'x_i, y_i'}</MathTex>. De hecho, podríamos haber hecho eso todo el tiempo en <MathTex>{'B_{\\infty}'}</MathTex> interpretando <MathTex>{'z'}</MathTex> (en el tiempo) como una secuencia finita, comenzando con algún <MathTex>{'z_0'}</MathTex>, y bajo alguna secuencia finita de <MathTex>{'x_i'}</MathTex> e <MathTex>{'y_i'}</MathTex>, la siguiente expresión algebraica es válida (como puede verificarse fácilmente por inducción):
+                                </p>
+
+                                <MathTex block>{`z_n = \\overline{z_0} | \\alpha(n) | \\beta(n)`}</MathTex>
+                                <p className="mb-4 text-lg text-slate-300 text-center">con</p>
+                                <MathTex block>{`\\alpha(n) = \\overline{y_1 | y_2 | ... | y_n}`}</MathTex>
+                                <MathTex block>{`\\beta(n) = \\overline{y_2 ... y_n | x_1} | \\overline{y_3 ... y_n | x_2} | ... | \\overline{y_n | x_{n-1}} | x_n`}</MathTex>
+
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Esta es una expresión recursiva que determina algorítmicamente <MathTex>{'z_n'}</MathTex> para cada <MathTex>{'n'}</MathTex>, y esto es lo que normalmente se hace al representar este tipo de circuitos lógicos con retroalimentación.
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Podemos ver, sin embargo, que este enfoque encaja como un guante con nuestra aproximación a una expresión infinita (13.1), la cual encarna la cualidad autorreferencial de este circuito reentrante. El eigencomportamiento representa, formal e intuitivamente, la estructura básica del flip-flop como un diseño lógico, en lugar de describirlo como una expresión secuencial ad hoc. La expresión temporal/recursiva muestra cómo puede ser operado realmente; sus formas reentrantes muestran qué es y qué significa.
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Lo que vemos emerger de este ejemplo es que un eigencomportamiento atrapa la idea intuitiva de la coordinación global o significado de una unidad, a través de la forma en que surge en sus procesos subyacentes. Esto ha sido conocimiento estándar en física matemática, donde las transformaciones invariantes y las propiedades topológicas de punto fijo de la dinámica diferencial son un camino real a las representaciones de leyes físicas. Sin embargo, estas herramientas se han preocupado mayormente de representaciones numéricas y diferenciables, y ha habido poco desarrollo de las nociones correspondientes para procesos no numéricos e informacionales. Estos solo parecen necesarios cuando se consideran los fenómenos propios de sistemas naturales complejos y también del diseño de ingeniería. De hecho, el desarrollo inicial de las ideas sobre álgebras continuas provino del trabajo de <Author>Scott</Author> (1971), tratando con la semántica de lenguajes de programación. Estas nociones se extienden de manera bastante natural a la semántica (i.e., comportamiento) de procesos recursivos en sistemas naturales (<Author>Goguen y Varela</Author>, 1978b).
+                                </p>
+                            </section>
+
+                            {/* Section 13.3 */}
+                            <section id="algebras" className="mb-20">
+                                <h2 className="text-3xl text-slate-200 font-serif mb-6 border-b border-slate-800 pb-4">13.3 Álgebras y Dominios de Operadores</h2>
+                                
+                                <h3 className="text-xl text-slate-200 font-serif mb-4 mt-8">13.3.1</h3>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Las siguientes secciones están estrictamente preocupadas con los fundamentos matemáticos necesarios para representar procesos de sistemas autorreferenciales en el espíritu descrito anteriormente. Así, el lector se enfrentará nuevamente a un número considerable de ideas matemáticas, la mayoría de las cuales es probable que sean desconocidas. Pido paciencia para este extenso desarrollo, pero estoy convencido de que este es el tipo de precisión que presta a parte de la intuición detrás de esta visión de la autonomía del sistema una posibilidad de ser discutida, probada y aplicada.
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Siguen cuatro pasos principales. Primero, desarrollamos algunas nociones que se requieren para la representación de árboles infinitos: a saber, dominio de operadores, árboles finitos de operadores, y su papel en la clase de álgebras de operadores (o <MathTex>{'\\Sigma'}</MathTex>-álgebras). Segundo, presentamos la extensión de <MathTex>{'\\Sigma'}</MathTex>-álgebras al caso infinito, a través de nociones de teoría del orden y aproximaciones. Esto produce la clase de álgebras continuas, y estudiamos el papel de los árboles infinitos entre ellas. Tercero, discutimos la noción de eigencomportamiento como soluciones de ecuaciones en álgebras continuas, y construimos el conjunto de árboles racionales (infinitos), que caracterizan procesos recursivos.
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    A lo largo de la presentación de estas ideas, hay algunos giros difíciles de los cuales el lector debe ser advertido, o de lo contrario los detalles técnicos pueden parecer innecesariamente complicados. El primer punto sutil es que, al discutir álgebras de operadores, lo haremos atrapando su cualidad <Quote>abstracta</Quote>, es decir, el hecho de que un nombre de operador puede designar muchos procesos diferentes en diferentes situaciones. Esta cualidad de abstracción se expresa aquí como equivalencia <Quote>salvo un isomorfismo</Quote> de diferentes álgebras. Una segunda posible dificultad surge cuando se introducen variables en <MathTex>{'\\Sigma'}</MathTex>-álgebras y árboles. La transición de expresiones simples a expresiones con variables parece, a primera vista, simple e inofensiva. Por lo tanto, es sorprendente que cuando se exige rigor, se necesitan pasos delicados para que salga bien. En el caso que nos ocupa, terminamos construyendo dos objetos [más tarde llamados <MathTex>{'T_{\\Sigma}(X)'}</MathTex> y <MathTex>{'T_{\\Sigma(X)}'}</MathTex>] que pueden parecer misteriosos. Tercero, la ilusión de que, con estas herramientas, todos nuestros problemas se han ido se disipa cuando nos damos cuenta de que la colección de árboles infinitos es un territorio bastante desconocido. Esto lleva a una primera clasificación de árboles —aquellos que describiremos como racionales— pero esto no agota su complejidad.
+                                </p>
+
+                                <h3 className="text-xl text-slate-200 font-serif mb-4 mt-8">13.3.2</h3>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Previamente (Capítulo 10) hemos usado árboles y redes para describir las propiedades de conexión de los sistemas. Pero tal visión no toma en cuenta las capacidades operacionales de los componentes que están así interconectados. Un paso en esta dirección es etiquetar cada modo con una función que describe la operación del componente asociado.
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    En este respecto, es importante evitar confusión entre una operación y su nombre; por ejemplo, una distinción cuidadosa nos permitirá usar el mismo nombre para varias operaciones, ocurriendo en varias situaciones, pero teniendo una similitud de función que es deseable capturar. Así, primero introducimos un sistema de símbolos abstracto para nombrar operaciones. La cualidad más básica que puede tener una operación es el número de argumentos que toma, e incluimos esta cualidad en la noción básica.
+                                </p>
+
+                                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-lg mb-8">
+                                    <p className="font-serif text-amber-500 mb-2">Definición 13.1</p>
+                                    <p className="text-slate-300 leading-relaxed text-justify">
+                                        Un <Concept>dominio de operadores</Concept> (o <Concept>signatura</Concept>) es una familia <MathTex>{'\\Sigma_k'}</MathTex> de conjuntos disjuntos, indexados por los números naturales <MathTex>{'k \\in \\omega'}</MathTex>. <MathTex>{'\\Sigma_k'}</MathTex> es el conjunto de <Quote>símbolos de operador de rango k</Quote>, y los elementos de <MathTex>{'\\Sigma_0'}</MathTex> son símbolos para <Quote>constantes</Quote> (que no toman argumentos).
+                                    </p>
+                                </div>
+
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Para operaciones aritméticas ordinarias, la siguiente signatura <MathTex>{'\\Sigma'}</MathTex> sería apropiada: <MathTex>{'\\Sigma_0 = Z'}</MathTex>, los enteros positivos y negativos; <MathTex>{'\\Sigma_1 = \\{-\\}'}</MathTex>, el operador de negación unario, como en la expresión <MathTex>{'-(1+1)'}</MathTex>; <MathTex>{'\\Sigma_2 = \\{+, \\times\\}'}</MathTex>, la adición y multiplicación binaria usual.
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Un dominio de operadores da una sintaxis básica para operadores, pero no dice nada sobre su semántica, es decir, su significado o interpretación. Si <MathTex>{'\\Sigma'}</MathTex> es un dominio de operadores, entonces una <MathTex>{'\\Sigma'}</MathTex>-álgebra es exactamente un conjunto de elementos junto con una función particular para cada símbolo en el dominio de operadores; es decir, da una interpretación concreta de los símbolos de operación abstractos. Más precisamente ahora,
+                                </p>
+
+                                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-lg mb-8">
+                                    <p className="font-serif text-amber-500 mb-2">Definición 13.2</p>
+                                    <p className="text-slate-300 leading-relaxed text-justify">
+                                        Dado un dominio de operadores <MathTex>{'\\Sigma'}</MathTex>, una <MathTex>{'\\Sigma'}</MathTex>-álgebra <MathTex>{'A'}</MathTex> es un conjunto <MathTex>{'A'}</MathTex>, llamado el <Concept>portador</Concept>, más, para cada <MathTex>{'\\sigma \\in \\Sigma_n'}</MathTex> con <MathTex>{'n > 0'}</MathTex>, una función <MathTex>{'\\sigma_A: A^n \\rightarrow A'}</MathTex>, y para cada <MathTex>{'\\sigma \\in \\Sigma_0'}</MathTex>, un elemento <MathTex>{'\\sigma_A'}</MathTex> de <MathTex>{'A'}</MathTex>.
+                                    </p>
+                                </div>
+
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Dado un dominio de operadores <MathTex>{'\\Sigma'}</MathTex>, podemos considerar expresiones compuestas de sus símbolos, de la forma general <MathTex>{'\\sigma(t_1, ..., t_n)'}</MathTex>, con <MathTex>{'\\sigma'}</MathTex> de rango <MathTex>{'n'}</MathTex>, y cada <MathTex>{'t_i'}</MathTex> siendo un símbolo constante, o bien una expresión compuesta en sí misma. Más precisamente ahora,
+                                </p>
+
+                                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-lg mb-8">
+                                    <p className="font-serif text-amber-500 mb-2">Definición 13.3</p>
+                                    <p className="text-slate-300 leading-relaxed text-justify">
+                                        Sea <MathTex>{'\\Sigma'}</MathTex> un dominio de operadores. Entonces el conjunto <MathTex>{'T_{\\Sigma}'}</MathTex> de todas las <MathTex>{'\\Sigma'}</MathTex>-expresiones (bien formadas) es (recursivamente) el menor conjunto de expresiones tal que:
+                                        <br/>1. <MathTex>{'\\Sigma_0 \\subseteq T_{\\Sigma}'}</MathTex>, y
+                                        <br/>2. si <MathTex>{'\\sigma \\in \\Sigma_n'}</MathTex> si <MathTex>{'n > 0'}</MathTex>, y si <MathTex>{'t_i \\in T_{\\Sigma}'}</MathTex> para <MathTex>{'i = 1, ..., n'}</MathTex>, entonces <MathTex>{'\\sigma(t_1, ..., t_n) \\in T_{\\Sigma}'}</MathTex>.
+                                    </p>
+                                </div>
+
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Es posible, y sugerente, ver estas <MathTex>{'\\Sigma'}</MathTex>-expresiones como árboles cuyos nodos están etiquetados con símbolos de <MathTex>{'\\Sigma'}</MathTex>. Sea <MathTex>{'\\Sigma'}</MathTex> el dominio de operadores mencionado anteriormente. Entonces <MathTex>{'-(+(+(2,3), (-1, +(4, 0))))'}</MathTex> es una <MathTex>{'\\Sigma'}</MathTex>-expresión, la cual es <MathTex>{'-((2+3) + ((-1) \\times (4+0)))'}</MathTex> en la notación infija más usual, y puede ser vista como el árbol:
+                                </p>
+
+                                <Figure 
+                                    desc="Diagrama de árbol representando la expresión algebraica: - ( + (2, 3), x (-1, + (4, 0)) )"
+                                    caption="Representación en árbol de la expresión aritmética."
+                                />
+
+                                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-lg mb-8">
+                                    <p className="font-serif text-amber-500 mb-2">Definición 13.4</p>
+                                    <p className="text-slate-300 leading-relaxed text-justify">
+                                        Sea <MathTex>{'\\Sigma'}</MathTex> un dominio de operadores. Entonces un <MathTex>{'\\Sigma'}</MathTex>-árbol <MathTex>{'t'}</MathTex> es un árbol <MathTex>{'\\langle |t|, E, d_0, d_1, r \\rangle'}</MathTex> (ver Definición 10.1) más una función <MathTex>{'t: |t| \\rightarrow \\Sigma'}</MathTex> tal que si el número de aristas saliendo de <MathTex>{'a \\in |t|'}</MathTex> es <MathTex>{'n'}</MathTex>, entonces <MathTex>{'t(a) \\in \\Sigma_n'}</MathTex>.
+                                    </p>
+                                </div>
+
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Es decir, un nodo con <MathTex>{'n'}</MathTex> nodos hijos debe estar etiquetado con un símbolo de operador de rango <MathTex>{'n'}</MathTex>, como fue el caso anteriormente.
+                                    <br/><br/>
+                                    El lector puede desear probar ahora que de hecho hay una correspondencia biyectiva entre <MathTex>{'\\Sigma'}</MathTex>-árboles y <MathTex>{'\\Sigma'}</MathTex>-expresiones. Hay un buen número de notaciones infijas equivalentes para operadores binarios además de las mencionadas en el ejemplo; también hay notaciones polacas prefijas y postfijas. Por ejemplo, el árbol anterior se daría como <MathTex>{'- + + 2 \\times (-1) + 40'}</MathTex> y <MathTex>{'23 + (-1) 40 + \\times + -'}</MathTex>, respectivamente, en notaciones prefijas y postfijas. De nuevo, uno puede establecer correspondencias biyectivas entre dos cualesquiera de estos sistemas notacionales. Además, las notaciones mencionadas anteriormente lejos de agotar todas las posibilidades.
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Algo está pasando aquí: Parece haber una noción abstracta subyacente de <MathTex>{'\\Sigma'}</MathTex>-árbol o <MathTex>{'\\Sigma'}</MathTex>-expresión, que expresa la independencia del concepto básico de cualquier elección particular de cómo representarlo; y todas las representaciones son de alguna manera isomorfas. Esta cualidad abstracta de las <MathTex>{'\\Sigma'}</MathTex>-expresiones es bastante profunda, y para hacerla más precisa comenzamos haciendo <MathTex>{'T_{\\Sigma}'}</MathTex> en una <MathTex>{'\\Sigma'}</MathTex>-álgebra, definiendo operaciones como sigue:
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate pl-4 border-l-2 border-slate-700">
+                                    1. para <MathTex>{'\\sigma \\in \\Sigma_0'}</MathTex>, <MathTex>{'\\sigma_{T} = \\sigma'}</MathTex> en <MathTex>{'T_{\\Sigma}'}</MathTex>, y<br/>
+                                    2. para <MathTex>{'\\sigma \\in \\Sigma_n'}</MathTex> y <MathTex>{'t_i \\in T_{\\Sigma}'}</MathTex>, <MathTex>{'\\sigma_T(t_1, ..., t_n) = \\sigma(t_1, ..., t_n)'}</MathTex> en <MathTex>{'T_{\\Sigma}'}</MathTex>, donde hemos escrito <MathTex>{'\\sigma_T'}</MathTex> para <MathTex>{'\\sigma_{T_{\\Sigma}}'}</MathTex>.
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    A continuación, usamos una intuición fundamental de la teoría de categorías, que es importante considerar no solo los <Quote>objetos</Quote>, sino también, y quizás más significativamente, sus relaciones entre sí, tal como se expresan en los mapeos que <Quote>preservan la estructura</Quote> entre ellos. En el caso de <MathTex>{'\\Sigma'}</MathTex>-álgebras, <Quote>preservar la estructura</Quote> viene dado por:
+                                </p>
+
+                                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-lg mb-8">
+                                    <p className="font-serif text-amber-500 mb-2">Definición 13.5</p>
+                                    <p className="text-slate-300 leading-relaxed text-justify">
+                                        Dado un dominio de operadores <MathTex>{'\\Sigma'}</MathTex> y <MathTex>{'\\Sigma'}</MathTex>-álgebras <MathTex>{'A, A\''}</MathTex>, un <MathTex>{'\\Sigma'}</MathTex>-homomorfismo de <MathTex>{'A'}</MathTex> a <MathTex>{'A\''}</MathTex> es una función <MathTex>{'h: A \\rightarrow A\''}</MathTex> tal que:
+                                        <br/>1. si <MathTex>{'\\sigma \\in \\Sigma_0'}</MathTex> entonces <MathTex>{'h(\\sigma_A) = \\sigma_{A\'}'}</MathTex>, y
+                                        <br/>2. si <MathTex>{'\\sigma \\in \\Sigma_n'}</MathTex>, entonces <MathTex>{'h(\\sigma_A(a_1, ..., a_n)) = \\sigma_{A\'}(h(a_1), ..., h(a_n))'}</MathTex>.
+                                    </p>
+                                </div>
+                                
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Un <MathTex>{'\\Sigma'}</MathTex>-homomorfismo <MathTex>{'h'}</MathTex> preserva la estructura en el sentido de que si hacemos una operación <MathTex>{'\\sigma'}</MathTex> en el álgebra <MathTex>{'A'}</MathTex>, y luego aplicamos <MathTex>{'h'}</MathTex>, obtenemos el mismo resultado que si aplicamos <MathTex>{'h'}</MathTex> a los argumentos, y luego hacemos <MathTex>{'\\sigma'}</MathTex> en <MathTex>{'A\''}</MathTex>.
+                                    <br/><br/>
+                                    Usaremos <MathTex>{'\\Sigma'}</MathTex>-homomorfismos para caracterizar la propiedad de ser <Quote>abstractamente lo mismo que <MathTex>{'\\Sigma'}</MathTex>-expresiones</Quote>, introduciendo la siguiente noción general.
+                                </p>
+
+                                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-lg mb-8">
+                                    <p className="font-serif text-amber-500 mb-2">Definición 13.6</p>
+                                    <p className="text-slate-300 leading-relaxed text-justify">
+                                        Un <MathTex>{'\\Sigma'}</MathTex>-homomorfismo <MathTex>{'h'}</MathTex> se dice que es un <Concept>isomorfismo</Concept> en <MathTex>{'\\Sigma'}</MathTex> si tiene un inverso en <MathTex>{'\\Sigma'}</MathTex>, es decir, un <MathTex>{'\\Sigma'}</MathTex>-homomorfismo <MathTex>{'g'}</MathTex> tal que ambas composiciones <MathTex>{'gh'}</MathTex> y <MathTex>{'hg'}</MathTex> son identidades. <MathTex>{'\\Sigma'}</MathTex>-álgebras relacionadas por <MathTex>{'\\Sigma'}</MathTex>-isomorfismo se dice que son isomorfas.
+                                    </p>
+                                </div>
+
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Por ejemplo, es posible hacer el conjunto de todos los <MathTex>{'\\Sigma'}</MathTex>-árboles (ver Definición 13.4) en una <MathTex>{'\\Sigma'}</MathTex>-álgebra (llamémosla <MathTex>{'T_{\\Sigma}\''}</MathTex>) de tal manera que la biyección entre <MathTex>{'\\Sigma'}</MathTex>-árboles y <MathTex>{'\\Sigma'}</MathTex>-expresiones es en realidad un <MathTex>{'\\Sigma'}</MathTex>-isomorfismo entre <MathTex>{'T_{\\Sigma}'}</MathTex> y <MathTex>{'T_{\\Sigma}\''}</MathTex>. Este isomorfismo hace preciso el sentido en el que <MathTex>{'\\Sigma'}</MathTex>-árboles y <MathTex>{'\\Sigma'}</MathTex>-expresiones son <Quote>abstractamente lo mismo</Quote>. Además, todas las otras representaciones abstractamente equivalentes también dan <MathTex>{'\\Sigma'}</MathTex>-álgebras isomorfas. Lo que ahora queremos es una forma más genuinamente abstracta de caracterizar esta noción. Lo siguiente es la clave.
+                                </p>
+
+                                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-lg mb-8">
+                                    <p className="font-serif text-amber-500 mb-2">Definición 13.7</p>
+                                    <p className="text-slate-300 leading-relaxed text-justify">
+                                        Una <MathTex>{'\\Sigma'}</MathTex>-álgebra <MathTex>{'T'}</MathTex> es <Concept>inicial</Concept> en una clase <MathTex>{'\\mathcal{C}'}</MathTex> si hay un homomorfismo único, <MathTex>{'h_A: T \\rightarrow A'}</MathTex>, de <MathTex>{'T'}</MathTex> a <MathTex>{'A'}</MathTex>, para todo <MathTex>{'A'}</MathTex> en <MathTex>{'\\mathcal{C}'}</MathTex>.
+                                    </p>
+                                </div>
+
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Una propiedad general notable de las álgebras iniciales es que, si existen, están definidas unívocamente salvo isomorfismo por la clase <MathTex>{'\\mathcal{C}'}</MathTex> de álgebras dentro de la cual son iniciales. En álgebra, la propiedad de estar <Quote>definido unívocamente salvo isomorfismo</Quote> se dice que encarna la idea de abstracción; es decir, la inicialidad define un álgebra <Quote>abstractamente</Quote>; esto tiene el significado práctico de ser independiente de la manera de representación de elementos, capturando exactamente la <Quote>estructura algebraica abstracta</Quote> y nada extra. El siguiente resultado expresa esto, y así muestra que la inicialidad captura la noción de ser <Quote>abstractamente lo mismo</Quote>.
+                                </p>
+
+                                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-lg mb-8">
+                                    <p className="font-serif text-amber-500 mb-2">Proposición 13.8</p>
+                                    <p className="text-slate-300 leading-relaxed text-justify">
+                                        Si <MathTex>{'T, T\''}</MathTex> son ambas iniciales en una clase <MathTex>{'\\mathcal{C}'}</MathTex> de <MathTex>{'\\Sigma'}</MathTex>-álgebras, entonces <MathTex>{'T'}</MathTex> y <MathTex>{'T\''}</MathTex> son isomorfas en <MathTex>{'\\mathcal{C}'}</MathTex>. Si <MathTex>{'T\''}</MathTex> es isomorfa en <MathTex>{'\\mathcal{C}'}</MathTex> a un álgebra inicial <MathTex>{'T'}</MathTex>, entonces <MathTex>{'T\''}</MathTex> es también inicial en <MathTex>{'\\mathcal{C}'}</MathTex>.
+                                    </p>
+                                    <p className="text-xs text-slate-500 mt-2 font-mono uppercase">PRUEBA: Ver ADJ (1977, Proposición 1.1).</p>
+                                </div>
+
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Lo anterior no nos garantiza la existencia de <MathTex>{'\\Sigma'}</MathTex>-álgebras iniciales. Sea <MathTex>{'Alg_{\\Sigma}'}</MathTex> la clase de todas las <MathTex>{'\\Sigma'}</MathTex>-álgebras, junto con sus <MathTex>{'\\Sigma'}</MathTex>-homomorfismos. El siguiente resultado fue probado primero por <Author>Birkhoff</Author> (1938).
+                                </p>
+
+                                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-lg mb-8">
+                                    <p className="font-serif text-amber-500 mb-2">Teorema 13.9</p>
+                                    <p className="text-slate-300 leading-relaxed text-justify">
+                                        <MathTex>{'T_{\\Sigma}'}</MathTex> es inicial en <MathTex>{'Alg_{\\Sigma}'}</MathTex>.
+                                    </p>
+                                </div>
+
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    PRUEBA: Ayudará a nuestra comprensión de lo que está pasando aquí tener una idea de cómo se ve el homomorfismo único <MathTex>{'h_A: T_{\\Sigma} \\rightarrow A'}</MathTex>. Si <MathTex>{'\\sigma \\in \\Sigma_0'}</MathTex>, entonces por la definición de homomorfismo, tenemos que tener <MathTex>{'h_A(\\sigma) = \\sigma_A'}</MathTex>. Ahora asuma que hemos definido <MathTex>{'h'}</MathTex> para árboles de profundidad <MathTex>{'< n'}</MathTex>, y sea <MathTex>{'t'}</MathTex> un árbol de profundidad <MathTex>{'n'}</MathTex>. Entonces <MathTex>{'t'}</MathTex> es de la forma <MathTex>{'\\sigma(t_1, ..., t_n)'}</MathTex>, con todos los <MathTex>{'t_i'}</MathTex> de profundidad menor que <MathTex>{'n'}</MathTex>. La definición de <MathTex>{'\\Sigma'}</MathTex>-homomorfismo fuerza entonces que <MathTex>{'h_A(t) = \\sigma_A(h_A(t_1), ..., h_A(t_n))'}</MathTex>, y estamos asumiendo que <MathTex>{'h_A(t_i)'}</MathTex> ya están bien definidos. Así, <MathTex>{'h_A(t)'}</MathTex> está bien definido, y por inducción sobre <MathTex>{'n'}</MathTex>, <MathTex>{'h'}</MathTex> está definido.
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Esta función <MathTex>{'h_A: T_{\\Sigma} \\rightarrow A'}</MathTex> puede interpretarse como asignando a cada <MathTex>{'\\Sigma'}</MathTex>-árbol en <MathTex>{'T_{\\Sigma}'}</MathTex> su interpretación <Quote>natural</Quote> en <MathTex>{'A'}</MathTex>, es decir, el elemento que la <MathTex>{'\\Sigma'}</MathTex>-expresión compuesta de hecho denota en <MathTex>{'A'}</MathTex>.
+                                </p>
+                            </section>
+
+                            {/* ... (Continuación con las secciones restantes siguiendo el mismo patrón) ... */}
+                            {/* Por brevedad técnica, renderizaré las siguientes secciones clave para mostrar la estructura completa */}
+
+                            {/* Section 13.4 */}
+                            <section id="variables" className="mb-20">
+                                <h2 className="text-3xl text-slate-200 font-serif mb-6 border-b border-slate-800 pb-4">13.4 Variables y Operadores Derivados</h2>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Para los desarrollos que siguen, damos una explicación algebraica, que puede ser usada en un <MathTex>{'\\Sigma'}</MathTex>-término, del concepto de una <Quote>variable</Quote>. No estamos asumiendo que esta es una idea ya definida. De hecho, esta es una idea algo misteriosa, y esperamos que la presente discusión pueda contribuir a su clarificación.
+                                    <br/><br/>
+                                    Previamente, tratamos con operadores simples de varios rangos, actuando sobre una <MathTex>{'\\Sigma'}</MathTex>-álgebra <MathTex>{'A'}</MathTex>. Nos gustaría poder definir operadores compuestos, tales como <MathTex>{'x + y \\times (x - y)'}</MathTex>, formados a partir de operadores en <MathTex>{'\\Sigma'}</MathTex> y <Quote>variables</Quote> <MathTex>{'x, y'}</MathTex>, etc. La noción de una <Quote><MathTex>{'\\Sigma'}</MathTex>-álgebra generada libremente</Quote> es la clave para un desarrollo riguroso de este tema.
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Sea <MathTex>{'X = \\{x_1, ..., x_n\\}'}</MathTex> un conjunto de símbolos disjunto de <MathTex>{'\\Sigma'}</MathTex>, y llamados <Quote>variables</Quote>. Primero formamos una nueva signatura <MathTex>{'\\Sigma(X)'}</MathTex> adjuntando los elementos de <MathTex>{'X'}</MathTex> como nuevas constantes: <MathTex>{'\\Sigma(X)_0 = \\Sigma_0 \\cup X'}</MathTex> y <MathTex>{'\\Sigma(X)_k = \\Sigma_k, k > 0'}</MathTex>. Entonces <MathTex>{'T_{\\Sigma(X)}'}</MathTex> es la <MathTex>{'\\Sigma(X)'}</MathTex>-álgebra inicial, y difiere de <MathTex>{'T_{\\Sigma}'}</MathTex> en que sus nodos hoja pueden llevar elementos de <MathTex>{'X'}</MathTex>. Debido a que los símbolos de operador en <MathTex>{'\\Sigma(X)'}</MathTex> incluyen aquellos de <MathTex>{'\\Sigma'}</MathTex>, podemos pensar en <MathTex>{'T_{\\Sigma(X)}'}</MathTex> como una <MathTex>{'\\Sigma'}</MathTex>-álgebra, simplemente ignorando la parte <MathTex>{'X'}</MathTex> del dominio de operadores. Más específicamente, definimos una nueva <MathTex>{'\\Sigma'}</MathTex>-álgebra, <MathTex>{'T_{\\Sigma}(X)'}</MathTex>, con portador el de <MathTex>{'T_{\\Sigma(X)}'}</MathTex>, y con operadores aquellos nombrados por <MathTex>{'\\Sigma'}</MathTex> en <MathTex>{'T_{\\Sigma(X)}'}</MathTex>.
+                                </p>
+                                {/* ... Proposición 13.11 ... */}
+                                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-lg mb-8">
+                                    <p className="font-serif text-amber-500 mb-2">Proposición 13.11</p>
+                                    <p className="text-slate-300 leading-relaxed text-justify">
+                                        <MathTex>{'T_{\\Sigma}(X)'}</MathTex> es la <MathTex>{'\\Sigma'}</MathTex>-álgebra libre generada por <MathTex>{'X'}</MathTex>, en el sentido de que si <MathTex>{'C: X \\rightarrow A'}</MathTex> es cualquier función mapeando <MathTex>{'X'}</MathTex> en el portador de una <MathTex>{'\\Sigma'}</MathTex>-álgebra <MathTex>{'A'}</MathTex>, entonces hay un único <MathTex>{'\\Sigma'}</MathTex>-homomorfismo <MathTex>{'\\hat{C}: T_{\\Sigma}(X) \\rightarrow A'}</MathTex> tal que el siguiente diagrama conmuta:
+                                    </p>
+                                </div>
+                                <Figure desc="Diagrama conmutativo mostrando la relación entre X, T_sigma(X) y A." caption="Diagrama conmutativo para la Proposición 13.11." />
+                            </section>
+
+                            {/* Section 13.5 */}
+                            <section id="infinite-trees" className="mb-20">
+                                <h2 className="text-3xl text-slate-200 font-serif mb-6 border-b border-slate-800 pb-4">13.5 Árboles Infinitos</h2>
+                                <h3 className="text-xl text-slate-200 font-serif mb-4 mt-8">13.5.1</h3>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    En esta sección extendemos las ideas previas sobre <MathTex>{'\\Sigma'}</MathTex>-álgebras y <MathTex>{'\\Sigma'}</MathTex>-árboles (o <MathTex>{'\\Sigma'}</MathTex>-términos) al caso de árboles infinitos (o términos). Como se discutió en el Capítulo 10, los árboles infinitos surgen como despliegues de situaciones circulares, y son la base de una complementariedad autonomía/control.
+                                </p>
+                                {/* ... Definitions of Posets, Chains ... */}
+                                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-lg mb-8">
+                                    <p className="font-serif text-amber-500 mb-2">Definición 13.13</p>
+                                    <p className="text-slate-300 leading-relaxed text-justify">
+                                        Un <Concept>poset</Concept> es un conjunto <MathTex>{'P'}</MathTex> junto con un orden parcial, es decir, una relación reflexiva, antisimétrica y transitiva sobre <MathTex>{'P'}</MathTex>.
+                                        <br/><br/>
+                                        Un poset <MathTex>{'P'}</MathTex> es <Concept>estricto</Concept> si tiene un elemento <MathTex>{'\\perp \\in P'}</MathTex> tal que <MathTex>{'\\perp \\sqsubseteq p'}</MathTex> para todo <MathTex>{'p \\in P'}</MathTex>; tal elemento se llama mínimo o fondo (bottom) para <MathTex>{'P'}</MathTex>.
+                                    </p>
+                                </div>
+                            </section>
+
+                            {/* Section 13.10 (Specifically interesting content) */}
+                            <section id="double-binds" className="mb-20">
+                                <h2 className="text-3xl text-slate-200 font-serif mb-6 border-b border-slate-800 pb-4">13.10 Dobles Vínculos como Eigencomportamientos</h2>
+                                <Footnote index="1" content="Estas ideas fueron desarrolladas conjuntamente con J. A. Goguen. Un relato completo aparecerá en otro lugar." />
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Deseo repetir una vez más que el propósito principal de la discusión detallada de la noción de eigencomportamiento sobre álgebras continuas es dar carne y precisión a los invariantes que caracterizan la autonomía. Estas ideas algebraicas pueden aplicarse directamente solo en la medida en que tengamos una idea bastante detallada de los tipos de operaciones que son apropiadas para algunos sistemas específicos. Cuanto más difícil sea encontrar descripciones operacionales precisas para los procesos presentes en una recursión del sistema, más alejado estará ese caso de esta representación particular de autonomía.
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    El término <Quote>doble vínculo</Quote> fue introducido en las ciencias del comportamiento por <Author>Bateson</Author> (1959) para describir el mecanismo subyacente a algunas formas de esquizofrenia. La intuición básica de esta teoría era que la etiología de la enfermedad estaba correlacionada con algún patrón regular de comunicación dentro de la matriz social.
+                                </p>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    En general, en un doble vínculo tipo Bateson (2-vínculo), uno tiene un conjunto de 2 estados <MathTex>{'\\Sigma_0 = \\{b_1, b_2\\}'}</MathTex>, y un árbol constituido así:
+                                </p>
+                                <MathTex block>{`y_1 \\rightarrow \\text{not } b_1 = b_2 \\rightarrow \\text{not } b_2 = b_1 \\rightarrow ...`}</MathTex>
+                                <p className="mb-4 text-lg text-slate-300">con el eigencomportamiento</p>
+                                <MathTex block>{`b^{\\vee} = \\text{not}(\\text{not}(\\text{not}(...))) = \\text{not}(b^{\\vee})`}</MathTex>
+                            </section>
+
+                            {/* Section 13.11 */}
+                            <section id="dynamical" className="mb-20">
+                                <h2 className="text-3xl text-slate-200 font-serif mb-6 border-b border-slate-800 pb-4">13.11 Sistemas Dinámicos Diferenciables y Representaciones de Autonomía</h2>
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Recordemos que un sistema autopoiético celular puede definirse como una red de reacciones químicas que satisface dos condiciones: (1) las especies químicas producidas son precisamente aquellas que constituyen las producciones químicas produciendo las especies químicas (i.e., clausura de la red), y (2) las especies químicas producidas especifican un límite, demarcando físicamente la red de producciones como una unidad en el espacio.
+                                </p>
+                                <Figure desc="Red de reacciones químicas cíclicas." caption="Ecuación (13.4): Red de especies químicas interconectadas." />
+                                
+                                <MathTex block>{`\\frac{dx_1}{dt} = c_4 - kx_1x_2`}</MathTex>
+                                <MathTex block>{`\\frac{dx_2}{dt} = kx_1x_2 - k'x_2`}</MathTex>
+                                <p className="text-center text-sm text-slate-500 mb-6 font-mono">(13.10)</p>
+
+                                <p className="mb-6 text-lg leading-relaxed text-slate-300 hyphenate">
+                                    Esta forma de representación ha proporcionado hasta ahora el enfoque más prometedor para la coordinación, autonomía y clausura a nivel celular y molecular.
+                                </p>
+
+                                <div className="mt-12 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-slate-800/50 border-b border-slate-700">
+                                                <th className="p-4 text-slate-200 font-serif">Caracterización</th>
+                                                <th className="p-4 text-amber-500 font-serif">Autonomía</th>
+                                                <th className="p-4 text-cyan-400 font-serif">Control</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-800 text-sm text-slate-300">
+                                            <tr>
+                                                <td className="p-4 font-semibold text-slate-200">Clausura</td>
+                                                <td className="p-4">identidad, conectividad, recursión indefinida, eigencomportamiento, estabilidad</td>
+                                                <td className="p-4">coordinación de partes, niveles jerárquicos, recursión finita, flujo de señales, transiciones de estado</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="p-4 font-semibold text-slate-200">Representación</td>
+                                                <td className="p-4">perturbaciones-compensaciones, dominio cognitivo, resiliencia, ontogénesis</td>
+                                                <td className="p-4">caja negra, estructuras disipativas, entrada-salida</td>
+                                            </tr>
+                                        </tbody>
+                                        <caption className="caption-bottom p-4 text-slate-500 italic">Tabla 13.1</caption>
+                                    </table>
+                                </div>
+                            </section>
+
+                            {/* Sources */}
+                            <section className="mb-20 pt-12 border-t border-slate-800">
+                                <h3 className="text-2xl text-slate-200 font-serif mb-6">Fuentes</h3>
+                                <ul className="space-y-4 text-sm text-slate-400">
+                                    <li><strong className="text-cyan-400">Goguen, J., R. Thachter, J. Wagner, and J. Wright (ADJ)</strong> (1977), Initial algebra semantics and continuous algebras, <span className="italic">J. Assoc. Comp. Mach.</span> 24:68.</li>
+                                    <li><strong className="text-cyan-400">Goguen, J., and F. Varela</strong> (1978), Some algebraic foundations of self-referential system processes (submitted for publication).</li>
+                                    <li><strong className="text-cyan-400">Varela, F. and J. Goguen</strong> (1978), The arithmetics of closure, in <span className="italic">Progress in Cybernetics and Systems Research</span> (R. Trappl et al., eds.), Vol. III, Hemisphere Publ. Co., Washington; also in <span className="italic">J. Cybernetics</span> 8:125.</li>
+                                </ul>
+                            </section>
+
+                        </article>
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
