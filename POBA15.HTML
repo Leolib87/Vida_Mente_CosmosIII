@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capítulo 15: El Sistema Nervioso como una Red Cerrada</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            950: '#020617',
+                        }
+                    },
+                }
+            }
+        }
+    </script>
+
+    <!-- React, ReactDOM, Framer Motion -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+
+    <!-- MathJax for Scientific Equations -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body {
+            background-color: #020617;
+            color: #cbd5e1;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+        .text-justify-custom {
+            text-align: justify;
+            hyphens: auto;
+            -webkit-hyphens: auto;
+            text-justify: inter-word;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+        .hero-gradient {
+            background: radial-gradient(circle at 50% 50%, rgba(30, 41, 59, 0.4) 0%, rgba(2, 6, 23, 1) 100%);
+        }
+        .section-number {
+            font-feature-settings: "tnum";
+            letter-spacing: 0.1em;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, AnimatePresence, useScroll, useSpring } = window.Motion;
+
+        // --- Custom SVG Icons ---
+        const MenuIcon = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+        );
+        const CloseIcon = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        );
+        const InfoIcon = () => (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        );
+
+        // --- Academic Content Components ---
+        const Concept = ({ children }) => <span className="text-amber-500 font-semibold">{children}</span>;
+        const Author = ({ children }) => <span className="text-cyan-400 font-medium tracking-tight whitespace-nowrap">{children}</span>;
+        
+        const SectionMarker = ({ children }) => (
+            <div className="flex items-center gap-4 mb-4">
+                <div className="h-px w-8 bg-cyan-900" />
+                <span className="section-number font-mono text-cyan-500 text-sm md:text-base font-bold uppercase tracking-widest">{children}</span>
+            </div>
+        );
+
+        const QuoteBlock = ({ text, author, source }) => (
+            <div className="my-16 px-8 md:px-16">
+                <div className="max-w-4xl mx-auto border-l-4 border-amber-500/20 pl-8 py-2">
+                    <p className="font-serif italic text-2xl md:text-3xl leading-relaxed text-amber-500/90 mb-6 text-justify-custom">
+                        “{text}”
+                    </p>
+                    <cite className="not-italic text-xs md:text-sm text-slate-500 font-mono tracking-widest uppercase">
+                        — <Author>{author}</Author> <span className="mx-2">|</span> {source}
+                    </cite>
+                </div>
+            </div>
+        );
+
+        const NoteRef = ({ id, onHover, onLeave }) => (
+            <sup 
+                className="text-cyan-400 cursor-pointer font-bold px-1 hover:text-cyan-200 transition-all duration-300 select-none"
+                onMouseEnter={() => onHover(id)}
+                onMouseLeave={onLeave}
+                onClick={() => onHover(id)}
+            >
+                [{id}]
+            </sup>
+        );
+
+        const Figure = ({ label, description }) => (
+            <figure className="my-24 w-full">
+                <div className="w-full aspect-[21/7] bg-slate-900/30 border border-slate-800 rounded-[2rem] flex flex-col items-center justify-center p-12 transition-all duration-700 hover:bg-slate-900/50 hover:border-slate-700 overflow-hidden relative group">
+                    <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
+                    <div className="relative z-10 text-slate-600 text-[10px] font-mono mb-4 tracking-[0.5em] uppercase">Documentación Gráfica</div>
+                    <div className="relative z-10 text-slate-400 text-xl font-serif mb-8 text-center italic">[Enlace de Imagen: {label}]</div>
+                    <div className="relative z-10 w-14 h-14 rounded-full border border-slate-700 flex items-center justify-center text-slate-600 group-hover:text-cyan-500 group-hover:border-cyan-500/50 transition-all duration-500 group-hover:scale-110">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    </div>
+                </div>
+                <figcaption className="mt-10 text-center max-w-5xl mx-auto px-6">
+                    <span className="block text-slate-300 font-bold mb-4 uppercase tracking-[0.3em] text-xs">{label}</span>
+                    <span className="text-slate-500 text-sm leading-[1.8] text-justify-custom block font-light italic">{description}</span>
+                </figcaption>
+            </figure>
+        );
+
+        const footnotesData = {
+            1: "Considere la siguiente declaración: 'El cerebro es un conjunto inquieto de células que recibe información continuamente, la elabora y la percibe, y toma decisiones' (Kuffler y Nichols, 1976:3). Y esta otra: 'He encontrado necesario suponer que el perceptor tiene ciertas estructuras cognitivas, llamadas esquemas, que funcionan para captar la información que el entorno ofrece' (Neisser, 1976:xii).",
+            2: "Hanson lo expresa claramente: 'La gente, no sus ojos, ven. Las cámaras y los globos oculares son ciegos' (1958:9).",
+            3: "Una colección interesante de artículos que discuten el impacto de esta formulación de Powers se puede encontrar en ASC Forum (Nos. 3, 4; 1976). De hecho, la mayoría de los argumentos aducidos aquí podrían darse también para la teoría de la clausura del sistema nervioso."
+        };
+
+        const App = () => {
+            const [activeNote, setActiveNote] = useState(null);
+            const [isSidebarOpen, setSidebarOpen] = useState(false);
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
+
+            const scrollTo = (id) => {
+                document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+                setSidebarOpen(false);
+            };
+
+            const handleNoteHover = (id) => setActiveNote(footnotesData[id]);
+            const handleNoteLeave = () => setActiveNote(null);
+
+            return (
+                <div className="min-h-screen w-screen bg-slate-950 font-sans selection:bg-cyan-900/60 selection:text-cyan-100">
+                    
+                    <motion.div className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50 shadow-[0_0_15px_rgba(6,182,212,0.5)]" style={{ scaleX }} />
+
+                    <header className="fixed top-0 w-full h-20 bg-slate-950/90 backdrop-blur-2xl border-b border-slate-900 z-40 px-8 md:px-16 flex items-center justify-between transition-all">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] uppercase tracking-[0.6em] text-slate-500 font-black">Sistemas Autónomos</span>
+                            <span className="text-slate-100 font-serif text-sm md:text-base opacity-90 tracking-tight">Capítulo 15 <span className="mx-2 opacity-30 text-xs">/</span> El Sistema Nervioso</span>
+                        </div>
+                        <button 
+                            onClick={() => setSidebarOpen(true)}
+                            className="group p-4 hover:bg-slate-900 rounded-full transition-all text-slate-400 hover:text-cyan-400 border border-transparent hover:border-slate-800"
+                        >
+                            <MenuIcon />
+                        </button>
+                    </header>
+
+                    <AnimatePresence>
+                        {isSidebarOpen && (
+                            <>
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/90 backdrop-blur-md z-50" />
+                                <motion.nav 
+                                    initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} 
+                                    className="fixed right-0 top-0 h-full w-full md:w-[28rem] bg-slate-900/40 border-l border-white/5 z-[60] p-16 shadow-2xl flex flex-col backdrop-blur-3xl"
+                                >
+                                    <div className="flex justify-between items-center mb-24">
+                                        <h2 className="font-serif text-4xl text-slate-100 tracking-tighter italic">Estructura</h2>
+                                        <button onClick={() => setSidebarOpen(false)} className="text-slate-500 hover:text-white transition-all transform hover:rotate-90"><CloseIcon /></button>
+                                    </div>
+                                    <div className="space-y-8">
+                                        {[
+                                            { id: 'sec-15-1', label: '15.1 El Sistema de los Tejidos Nerviosos' },
+                                            { id: 'sec-15-2', label: '15.2 Cambio y Acoplamiento Estructural' },
+                                            { id: 'sec-15-3', label: '15.3 Percepción e Invariancias' },
+                                            { id: 'sec-15-4', label: '15.4 La Constancia de Tamaño' },
+                                            { id: 'sec-15-5', label: '15.5 Piaget y el Conocimiento' },
+                                            { id: 'sec-15-6', label: '15.6 Interdependencia en Redes Neurales' }
+                                        ].map((item) => (
+                                            <button 
+                                                key={item.id}
+                                                onClick={() => scrollTo(item.id)} 
+                                                className="group flex items-center w-full text-left text-xs uppercase tracking-[0.3em] text-slate-400 hover:text-cyan-400 transition-all font-bold"
+                                            >
+                                                <span className="w-12 h-px bg-slate-800 mr-6 group-hover:w-20 group-hover:bg-cyan-500 transition-all" /> 
+                                                {item.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </motion.nav>
+                            </>
+                        )}
+                    </AnimatePresence>
+
+                    <AnimatePresence>
+                        {activeNote && (
+                            <motion.div 
+                                initial={{ opacity: 0, y: 30, x: '-50%' }}
+                                animate={{ opacity: 1, y: 0, x: '-50%' }}
+                                exit={{ opacity: 0, y: 30, x: '-50%' }}
+                                className="fixed bottom-12 left-1/2 -translate-x-1/2 w-[95vw] max-w-3xl bg-slate-900/98 backdrop-blur-2xl border border-slate-800 p-10 rounded-[2rem] shadow-[0_30px_100px_-20px_rgba(0,0,0,1)] z-[100] text-sm leading-relaxed text-justify-custom text-slate-300"
+                            >
+                                <div className="flex items-start gap-6">
+                                    <span className="text-cyan-500 mt-1 shrink-0 p-2 bg-cyan-500/10 rounded-full"><InfoIcon /></span>
+                                    <p className="font-sans italic">{activeNote}</p>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    <main className="w-full hero-gradient pt-20">
+                        
+                        <section className="min-h-screen flex flex-col items-center justify-center text-center px-8 pt-32 pb-40 relative">
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 1.5, ease: "easeOut" }}
+                                className="max-w-7xl w-full"
+                            >
+                                <h2 className="font-mono text-cyan-500 tracking-[1.2em] text-[10px] md:text-xs mb-12 uppercase font-black opacity-70">Fenomenología de la Organización</h2>
+                                
+                                <div className="relative inline-block mb-16 px-4">
+                                    <h1 className="font-serif text-6xl md:text-[8rem] text-white leading-tight tracking-tight drop-shadow-2xl">
+                                        El Sistema Nervioso <br/> 
+                                        <span className="italic font-light text-slate-400 block mt-6 text-5xl md:text-8xl">
+                                            como una <span className="text-cyan-500/90 font-semibold relative inline-block">
+                                                Red Cerrada
+                                                <span className="absolute -bottom-4 left-0 w-full h-1 bg-cyan-500/30 rounded-full blur-sm" />
+                                            </span>
+                                        </span>
+                                    </h1>
+                                </div>
+
+                                <div className="max-w-4xl mx-auto mt-20">
+                                    <p className="text-slate-400 font-serif italic text-2xl md:text-4xl leading-snug tracking-tight">
+                                        “La organización del sistema nervioso como una red neuronal finita se define por relaciones de clausura en las interacciones generadas en la red.”
+                                    </p>
+                                </div>
+                            </motion.div>
+                            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 opacity-30">
+                                <span className="text-[10px] font-mono tracking-widest uppercase">Iniciar Lectura</span>
+                                <div className="w-px h-12 bg-gradient-to-b from-cyan-500 to-transparent" />
+                            </div>
+                        </section>
+
+                        <div className="w-full px-4 md:px-12 lg:px-24 pb-80">
+                            <div className="max-w-[100rem] mx-auto space-y-56">
+
+                                {/* 15.1 */}
+                                <section id="sec-15-1" className="space-y-16">
+                                    <div className="space-y-4 border-l-2 border-cyan-500/40 pl-10">
+                                        <span className="font-mono text-cyan-500 text-xs tracking-[0.4em] uppercase font-black">Sección 15.1</span>
+                                        <h3 className="font-serif text-5xl md:text-6xl text-slate-50 tracking-tighter italic">El Sistema de los Tejidos Nerviosos</h3>
+                                    </div>
+                                    
+                                    <div className="space-y-12 text-xl md:text-2xl leading-[1.9] text-justify-custom text-slate-300 font-light">
+                                        <SectionMarker>15.1.1</SectionMarker>
+                                        <p>
+                                            En ninguna parte, parece, predomina tanto la <Concept>filosofía del control</Concept> como en el estudio del sistema nervioso. De hecho, casi todos los investigadores en neurociencia aceptarán como dogma que (1) el sistema nervioso actúa <Concept>“captando información”</Concept> del entorno y <Concept>“procesándola”</Concept>, y que (2) este “procesamiento” es adecuado porque existe una <Concept>“representación del mundo exterior en la mente”</Concept> del animal (o del ser humano).<NoteRef id={1} onHover={handleNoteHover} onLeave={handleNoteLeave} /> El cerebro es una máquina para producir una imagen precisa del mundo. En ninguna parte las nociones desarrolladas en el dominio del diseño han echado raíces más profundas que en este campo; <Concept>el cerebro como computadora</Concept> es, a estas alturas, una noción de sentido común.
+                                        </p>
+                                        <p>
+                                            Vis-à-vis esta opinión predominante, podría parecer arrogante proponer un punto de vista que es casi el opuesto, a saber, que el sistema nervioso opera como una <Concept>red cerrada sin entradas ni salidas</Concept>, que su operación cognitiva refleja únicamente su organización, y que la información es impuesta al entorno y no captada de él. El argumento, en este caso, sigue de cerca al presentado para el sistema inmune. La diferencia es, sin embargo, que el sistema nervioso goza de una historia considerablemente más larga como campo de pensamiento, y que cualquier conclusión que se considere válida para él tendrá un impacto más amplio en nuestra comprensión de lo que es el conocimiento. A pesar de esta dificultad, sostendré que debemos considerar al sistema nervioso como un <Concept>sistema autónomo</Concept>, y que al hacerlo hay consecuencias significativas para lo que la representación y la comunicación pueden significar posiblemente. Desde este punto de vista, el enfoque desde la <Concept>Gestalt computacional del procesamiento de información</Concept> se convierte en una aproximación restringida. Como en el caso del sistema inmune, la evidencia antigua se reinterpreta, los problemas desaparecen y surgen otros nuevos.
+                                        </p>
+                                        <p>
+                                            He aprendido a ver el sistema nervioso como un sistema cerrado de <Author>Humberto Maturana</Author>, quien lo propuso explícitamente por primera vez en 1969 (ver también <Author>Maturana</Author>, 1975, 1977). Considero que la intuición de <Author>Maturana</Author> es un paso fundamental. Él ha proporcionado un vínculo básico entre los procesos materiales y sistémicos en el sistema nervioso, con una visión epistemológica profunda del conocimiento en el hombre y la naturaleza. Lo que emerge no es todavía un programa de investigación bien definido, sino una posibilidad abierta, que interpretaré y desarrollaré más adelante en el contexto de este libro.
+                                        </p>
+
+                                        <SectionMarker>15.1.2</SectionMarker>
+                                        <p>
+                                            El <Concept>comportamiento</Concept> puede definirse sucintamente como los cambios estructurales por los que puede pasar un organismo mientras mantiene su <Concept>autopoiesis</Concept>. El sistema nervioso permite al organismo una gama variada y rica de comportamientos posibles.
+                                        </p>
+                                        <p>
+                                            Al estudiar el comportamiento de un animal, uno se sorprende por el hecho de que lo que podemos describir como interacciones pasadas determinan la conducta en el presente como si, encarnadas en modificaciones del sistema nervioso, actuaran como <Concept>componentes causales que generan el comportamiento</Concept>. Parece que esta observación básica es la fuente fundamental de la visión de que el sistema nervioso debe tener <Concept>representaciones almacenadas adecuadas</Concept>, ya sean genéticas u ontogenéticas (es decir, ya sean innatas o aprendidas). De ahí las analogías con las nociones informáticas de almacenamiento y procesamiento. Desde el punto de vista aquí discutido, esta interpretación es innecesaria, pues confunde dos dominios fenomenales: lo que pertenece al sistema como unidad, y lo que pertenece a la historia del <Concept>acoplamiento estructural</Concept>. Estos dos dominios requieren explicaciones diferentes: una operativa y otra simbólica. Al mantener esta distinción en mente, la función del sistema nervioso puede analizarse sin contradicción en términos de (1) su operación, que está siempre en el presente, como en todo sistema determinista (y como todo neurofisiólogo sabe), y (2) su desempeño, que nosotros, como comunidad de observadores, necesitamos resumir en términos de trayectorias de acoplamiento estructural, p. ej., recuerdo, aprendizaje y representación. Re-formulemos ahora la organización del sistema nervioso en estos términos.
+                                        </p>
+                                        <p>
+                                            El sistema nervioso es una red de neuronas interactuantes acopladas de tres maneras al organismo del cual es un componente:
+                                        </p>
+                                        <div className="pl-12 border-l-2 border-slate-800 space-y-12 my-24 py-6 text-slate-400 italic bg-slate-900/20 rounded-r-3xl">
+                                            <p>1. El organismo, incluyendo el sistema nervioso, proporciona el <Concept>entorno físico y bioquímico para la autopoiesis de las neuronas</Concept> así como para todas las demás células, y por lo tanto es una fuente posible de perturbaciones físicas y bioquímicas que pueden alterar las propiedades de las neuronas y así conducir al acoplamiento 2 o 3.</p>
+                                            <p>2. Existen estados del organismo (físicos y bioquímicos) que <Concept>cambian el estado de actividad del sistema nervioso como un todo</Concept> al actuar sobre las superficies receptoras de algunas de sus neuronas componentes, y así conducen al acoplamiento 3.</p>
+                                            <p>3. Existen estados del sistema nervioso que cambian el estado del organismo (físico o bioquímico) y conducen recursivamente a los acoplamientos 1 y 2.</p>
+                                        </div>
+                                        <p>
+                                            A través de este acoplamiento, el sistema nervioso participa en la generación de las relaciones autopoiéticas que definen al organismo que integran y, en consecuencia, su estructura está subordinada a esta participación.
+                                        </p>
+
+                                        <SectionMarker>15.1.3</SectionMarker>
+                                        <p>
+                                            Las <Concept>neuronas</Concept> determinan sus propios límites a través de su autopoiesis, y son las unidades anatómicas del sistema nervioso. Hay muchas clases de neuronas que se distinguen por sus formas, pero todas ellas, independientemente de la clase morfológica a la que pertenezcan, tienen ramas que las ponen en relaciones operativas directas o indirectas con otras neuronas de otro modo separadas.
+                                        </p>
+                                        <p>
+                                            Funcionalmente (es decir, visto como un componente alopoiético del sistema nervioso), una neurona tiene una <Concept>superficie colectora</Concept>, un elemento conductor y una <Concept>superficie efectora</Concept>, cuyas posiciones relativas, formas y extensiones son diferentes en diferentes clases de neuronas. La superficie colectora es la parte donde recibe influencias aferentes (sinápticas o no) de las superficies efectoras de otras neuronas o de la suya propia. La superficie efectora es la parte que afecta a la superficie colectora de otras neuronas o a la suya propia. Dependiendo de su tipo, una neurona puede tener sus superficies colectora y efectora total o parcialmente separadas por un elemento conductor (ausencia o presencia de inhibición presináptica), o puede tener ambas superficies completamente interconectadas, sin elemento conductor entre ellas (como con las células amacrinas en la retina).
+                                        </p>
+                                        <p>
+                                            Las interacciones entre las superficies colectora y efectora pueden ser <Concept>excitatorias o inhibitorias</Concept> según el tipo de neurona involucrada. Las influencias excitatorias causan un cambio en el estado de actividad de la superficie colectora, que puede conducir a un cambio en la superficie efectora, mientras que las inhibitorias <Concept>“derivan” (shunt)</Concept> el efecto para que no alcance la superficie efectora o lo haga con eficacia reducida.
+                                        </p>
+                                        <p>
+                                            Operativamente, el estado de actividad de una neurona está determinado tanto por su <Concept>estructura interna</Concept> (propiedades de membrana, grosor de ramas, etc.) como por las influencias aferentes. Inversamente, la efectividad de una neurona para cambiar el estado de otras neuronas depende de la estructura interna de estas últimas. Esto es así porque las influencias no se suman linealmente, sino que dependen de la posición relativa de sus puntos de acción. Además, la estructura interna de una neurona cambia a lo largo de su vida, tanto por determinaciones genéticas como por su historia de interacciones.
+                                        </p>
+                                        <p>
+                                            Esto tiene tres consecuencias generales:
+                                        </p>
+                                        <ol className="list-decimal pl-16 space-y-8 text-slate-400 font-mono text-base md:text-lg tracking-tight leading-relaxed">
+                                            <li>Muchas configuraciones de influencias de entrada producen la misma configuración de salida.</li>
+                                            <li>Los cambios en la estructura interna cambian la <Concept>función de transferencia</Concept> de la neurona.</li>
+                                            <li>Ninguna célula o clase de células por sí sola puede determinar las propiedades de la red neural que integra.</li>
+                                        </ol>
+
+                                        <SectionMarker>15.1.4</SectionMarker>
+                                        <p>
+                                            La descripción anterior replantea el conocimiento estándar sobre el sistema nervioso (ver <Author>Kuffler y Nichols</Author>, 1977). La pregunta es: ¿Qué significa esto operativamente? Diremos que, operativamente, el sistema nervioso es una <Concept>red cerrada de neuronas interactuantes</Concept> tal que un cambio de actividad en una neurona siempre conduce a un cambio de actividad en otras neuronas (Maturana, 1969). Por lo tanto, la organización del sistema nervioso se define por <Concept>relaciones de clausura</Concept> en las interacciones generadas en la red.
+                                        </p>
+                                        <p>
+                                            Las neuronas sensoriales y efectoras no son una excepción, porque toda actividad sensorial conduce a actividad en las superficies efectoras, y toda actividad efectora conduce a cambios en las superficies sensoriales. Como sistema cerrado, el sistema nervioso <Concept>no tiene entradas ni salidas</Concept>. Para el sistema nervioso no hay adentro ni afuera. La distinción entre causas internas y externas solo puede hacerla un observador que especifica los límites.
+                                        </p>
+                                    </div>
+                                </section>
+
+                                {/* 15.2 */}
+                                <section id="sec-15-2" className="space-y-16">
+                                    <div className="space-y-4 border-l-2 border-cyan-500/40 pl-10">
+                                        <span className="font-mono text-cyan-500 text-xs tracking-[0.4em] uppercase font-black">Sección 15.2</span>
+                                        <h3 className="font-serif text-5xl md:text-6xl text-slate-50 tracking-tighter italic">Cambio y Acoplamiento Estructural</h3>
+                                    </div>
+                                    <div className="space-y-12 text-xl md:text-2xl leading-[1.9] text-justify-custom text-slate-300 font-light">
+                                        <SectionMarker>15.2.1</SectionMarker>
+                                        <p>
+                                            Cualquier cambio en la estructura del sistema nervioso surge de un cambio en las propiedades de sus neuronas. El punto significativo es que estos cambios surgen en el <Concept>acoplamiento del sistema nervioso y el organismo</Concept> a través de su operación subordinada a la autopoiesis de este último. El sistema nervioso está acoplado al organismo tanto en su dominio de interacciones como en su dominio de transformaciones internas.
+                                        </p>
+                                        <SectionMarker>15.2.2</SectionMarker>
+                                        <p>
+                                            La conectividad del sistema nervioso está determinada por las formas de sus neuronas. Debido a su constitución como una red de interacciones laterales, paralelas, secuenciales y recursivas, el sistema nervioso <Concept>se cierra sobre sí mismo en todos los niveles</Concept>. En consecuencia, la organización es esencialmente <Concept>invariante ante mutilaciones</Concept>; lo que queda tras una ablación opera como un todo diferente con propiedades distintas, no como un sistema al que se le han restado propiedades selectivamente.
+                                        </p>
+                                        <p>
+                                            Intrínsecamente, <Concept>no hay posibilidad de localización operativa</Concept> en el sistema nervioso. Sin embargo, cada lesión localizada produce una <Concept>desconexión específica</Concept> entre sus partes, y por ende un cambio específico en su dominio de estados posibles.
+                                        </p>
+                                        <SectionMarker>15.2.3</SectionMarker>
+                                        <p>
+                                            El sistema nervioso opera como un sistema autónomo que mantiene invariantes las relaciones que definen su participación en la autopoiesis del organismo. El resultado es el <Concept>acoplamiento estructural</Concept> de dos fenomenologías constitutivamente diferentes: la fenomenología del sistema nervioso como sistema cerrado, y la fenomenología del entorno. Ambas están trenzadas de tal manera que el dominio de estados posibles del sistema nervioso se ve continuamente como <Concept>conmensurable</Concept> con el dominio de estados del entorno.
+                                        </p>
+                                        <SectionMarker>15.2.4</SectionMarker>
+                                        <p>
+                                            El cambio en el dominio de estados posibles que tiene lugar a través de la ontogenia del organismo como resultado de sus interacciones constituye el <Concept>aprendizaje</Concept>. Las nociones de adquisición de representaciones del entorno o de adquisición de información no representan ningún aspecto de la operación del sistema nervioso. Lo mismo se aplica a la memoria y el recuerdo: son descripciones simbólicas del observador.
+                                        </p>
+                                    </div>
+                                </section>
+
+                                {/* 15.3 */}
+                                <section id="sec-15-3" className="space-y-16">
+                                    <div className="space-y-4 border-l-2 border-cyan-500/40 pl-10">
+                                        <span className="font-mono text-cyan-500 text-xs tracking-[0.4em] uppercase font-black">Sección 15.3</span>
+                                        <h3 className="font-serif text-5xl md:text-6xl text-slate-50 tracking-tighter italic">Percepción e Invariancias</h3>
+                                    </div>
+                                    <div className="space-y-12 text-xl md:text-2xl leading-[1.9] text-justify-custom text-slate-300 font-light">
+                                        <p>
+                                            La percepción sensorial no puede entenderse como un proceso de entrada. <Concept>La percepción y la acción no pueden separarse</Concept>, ya que la percepción es una expresión de la clausura del sistema nervioso.<NoteRef id={2} onHover={handleNoteHover} onLeave={handleNoteLeave} /> En términos positivos, la percepción es equivalente a la <Concept>construcción de invariancias</Concept> a través de un acoplamiento sensorial-motor por medio del cual el organismo se vuelve viable. El ruido ambiental se convierte en objetos a través de la clausura.
+                                        </p>
+                                        <p>
+                                            <Author>von Holst</Author> y <Author>Mittelstaedt</Author> (1950) introdujeron el <Concept>“Principio de Re-aferencia”</Concept>.
+                                        </p>
+                                        <QuoteBlock 
+                                            text="En lugar de preguntar sobre la relación entre una aferiencia dada y la eferencia evocada, partimos en la dirección opuesta preguntando: ¿Qué sucede en el SNC con la aferiencia (re-aferencia) que es evocada a través de los efectores y receptores por la eferencia?" 
+                                            author="von Holst & Mittelstaedt"
+                                            source="1950"
+                                        />
+                                        
+                                        <Figure 
+                                            label="Figura 15-Diagrama de Locomoción" 
+                                            description="El comportamiento global (locomoción) surge de la coordinación de bucles sensorial-motores recursivos. El oscilador central despliega acciones en los músculos, que activan propioceptores, los cuales re-informan al oscilador manteniendo el eigenbehavior del paso." 
+                                        />
+
+                                        <p>
+                                            El comportamiento (locomoción) es claramente distinto de la operación del sistema nervioso. Para este último, solo hay invariancias que mantener. Para el observador, hay invariancias en el acoplamiento estructural que describe como <Concept>objetos</Concept>: rocas, paredes. Suponer que tales objetos son un <Concept>a priori</Concept> para el animal es un error. Son abreviaturas simbólicas del comportamiento.
+                                        </p>
+                                        <p>
+                                            La analogía de <Author>Maturana</Author> del <Concept>vuelo instrumental</Concept> es clave: el piloto solo manipula relaciones internas de instrumentos para obtener lecturas. Para el observador externo es un “vuelo” y un “aterrizaje”, para el sistema interno es solo mantenimiento de correlaciones.
+                                        </p>
+                                    </div>
+                                </section>
+
+                                {/* 15.4 */}
+                                <section id="sec-15-4" className="space-y-16">
+                                    <div className="space-y-4 border-l-2 border-cyan-500/40 pl-10">
+                                        <span className="font-mono text-cyan-500 text-xs tracking-[0.4em] uppercase font-black">Sección 15.4</span>
+                                        <h3 className="font-serif text-5xl md:text-6xl text-slate-50 tracking-tighter italic">El Caso de la Constancia de Tamaño</h3>
+                                    </div>
+                                    <div className="space-y-12 text-xl md:text-2xl leading-[1.9] text-justify-custom text-slate-300 font-light">
+                                        <SectionMarker>15.4.1</SectionMarker>
+                                        <p>
+                                            La <Concept>“constancia de tamaño”</Concept> se entiende como una desconexión causal entre la percepción del tamaño de un objeto y el tamaño de su imagen retiniana. Tradicionalmente, este análisis se basa en la suposición de que nociones como distancia y tamaño reflejan una captación directa de características del entorno.
+                                        </p>
+                                        <p>
+                                            <Author>Gregory</Author> afirma que las ilusiones como la de <Concept>Ponzo</Concept> son producidas por un <Concept>“escalado de constancia”</Concept> mal aplicado debido a pistas de profundidad. Sin embargo, si transformamos el contexto de perspectiva, la ilusión se mantiene aunque el efecto de profundidad desaparezca.
+                                        </p>
+
+                                        <Figure label="Figura 15-1" description="Ilusión de Ponzo clásica. Las líneas convergentes sugieren profundidad, lo que activa erróneamente la compensación de tamaño según la teoría de Gregory." />
+                                        <Figure label="Figura 15-2 y 15-3" description="Variaciones de la ilusión donde el efecto de profundidad desaparece pero la distorsión de tamaño persiste, demostrando la independencia entre la perspectiva simbólica y la constancia operativa." />
+
+                                        <p>
+                                            ¿Qué es la constancia de tamaño como proceso nervioso? La evidencia sugiere que está relacionada con la <Concept>acomodación</Concept>. Si uno hace un esfuerzo por mirar la punta de su nariz con los ojos cerrados, el <Concept>efecto Emmert</Concept> aparece y la post-imagen se encoge. Se concluye que la constancia de tamaño depende de la actividad de la clase de neuronas centrales que controlan la contracción del músculo ciliar. <Concept>Los componentes neurales de un evento motor especifican una percepción</Concept>.
+                                        </p>
+
+                                        <SectionMarker>15.4.2</SectionMarker>
+                                        <p>
+                                            <Concept>No vemos la distancia</Concept>. Un organismo no extrae la distancia percibida como una característica del entorno, sino que la genera como un modo de comportamiento compatible a través de un proceso de compensación invariante de perturbaciones. Ver el sistema nervioso como un sistema autónomo que especifica una realidad es equivalente a decir que el sistema funciona <Concept>inductivamente</Concept>: “Lo que sucederá una vez, sucederá de nuevo”.
+                                        </p>
+
+                                        <SectionMarker>15.4.3</SectionMarker>
+                                        <p>
+                                            <Author>William Powers</Author> usa terminología cibernética: el comportamiento es el <Concept>control de la percepción</Concept>. Los organismos controlan sus datos sensoriales mediante el ajuste de señales de referencia para sistemas de primer orden.<NoteRef id={3} onHover={handleNoteHover} onLeave={handleNoteLeave} />
+                                        </p>
+                                    </div>
+                                </section>
+
+                                {/* 15.5 */}
+                                <section id="sec-15-5" className="space-y-16">
+                                    <div className="space-y-4 border-l-2 border-cyan-500/40 pl-10">
+                                        <span className="font-mono text-cyan-500 text-xs tracking-[0.4em] uppercase font-black">Sección 15.5</span>
+                                        <h3 className="font-serif text-5xl md:text-6xl text-slate-50 tracking-tighter italic">Piaget y el Conocimiento</h3>
+                                    </div>
+                                    <div className="space-y-12 text-xl md:text-2xl leading-[1.9] text-justify-custom text-slate-300 font-light">
+                                        <p>
+                                            El marco piagetiano puede reformularse como la emergencia de invariancias (objetos) como <Concept>“fichas para el eigenbehavior [comportamiento propio] cognitivo”</Concept>. La perspectiva de la <Concept>asimilación biológica</Concept> de <Author>Piaget</Author> se basa en tres conceptos: estructura, asimilación y acomodación.
+                                        </p>
+                                        <QuoteBlock 
+                                            text="La organización es inseparable de la adaptación: son dos procesos complementarios de un único mecanismo, siendo el primero el aspecto interno del ciclo del cual la adaptación constituye el aspecto externo" 
+                                            author="Jean Piaget"
+                                            source="1963"
+                                        />
+                                        <p>
+                                            Los mecanismos para especificar operacionalmente un entorno parecen conducir sin discontinuidad al reino humano.
+                                        </p>
+                                    </div>
+                                </section>
+
+                                {/* 15.6 */}
+                                <section id="sec-15-6" className="space-y-16 pb-40">
+                                    <div className="space-y-4 border-l-2 border-cyan-500/40 pl-10">
+                                        <span className="font-mono text-cyan-500 text-xs tracking-[0.4em] uppercase font-black">Sección 15.6</span>
+                                        <h3 className="font-serif text-5xl md:text-6xl text-slate-50 tracking-tighter italic">Interdependencia en Redes Neurales</h3>
+                                    </div>
+                                    <div className="space-y-12 text-xl md:text-2xl leading-[1.9] text-justify-custom text-slate-300 font-light">
+                                        <SectionMarker>15.6.1</SectionMarker>
+                                        <p>
+                                            Pasar del estudio de la captación de información al estudio del comportamiento como algo que emerge de invariancias permite plantear nuevas preguntas sobre los macro-estados cerebrales. <Author>Kilmer, McCulloch y Blum</Author> (1969) propusieron ver la formación reticular como un mecanismo para cambiar <Concept>estados referenciales</Concept> (sueño, vigilia) mediante módulos en interacción.
+                                        </p>
+                                        <p>
+                                            Debemos reconsiderar el concepto de <Concept>representación neural</Concept>. Los estados neurales pueden interpretarse mejor como <Concept>eigenbehaviors</Concept> que surgen del acoplamiento estructural. El sistema nervioso talla invariancias y percepciones fuera de su estructura. Desde este punto de vista, las representaciones podrían llamarse mejor <Concept>presentaciones</Concept>.
+                                        </p>
+
+                                        <SectionMarker>15.6.2</SectionMarker>
+                                        <p>
+                                            <Concept>Analogía final</Concept>: si un coche choca contra un árbol y su guardabarros se dobla, no decimos que el coche “recuerda” el accidente ni que “aprendió” vía una representación de árboles. <Concept>La memoria no requiere registro ni almacenamiento, pues representa una historia de acoplamiento estructural; el aprendizaje no requiere representación, pues representa plasticidad estructural</Concept>.
+                                        </p>
+                                        <p>
+                                            Me parece asombroso que la idea de correspondencia entre actividad cerebral y características ambientales haya sido tomada en serio alguna vez. Ver a una neurona como responsable de un percepto es <Concept>vitalismo o animismo directo</Concept>. Lo que nos pertenece es cómo vemos el desempeño de un sistema nervioso; buscar un mapeo entre estos dos dominios es buscar un modelo de una realidad que es un <Concept>espejismo que siempre retrocede</Concept>.
+                                        </p>
+
+                                        <div className="mt-40 pt-24 border-t border-slate-900 grid md:grid-cols-2 gap-16 text-slate-500">
+                                            <div className="space-y-6">
+                                                <h4 className="font-mono text-xs uppercase tracking-widest text-slate-400 font-bold">Bibliografía Seleccionada</h4>
+                                                <ul className="space-y-4 text-sm italic leading-relaxed">
+                                                    <li><Author>Maturana, H.</Author> (1969), The neurophysiology of cognition.</li>
+                                                    <li><Author>Maturana, H. & Varela, F.</Author> (1975), Autopoietic Systems: A Characterization of the Living Organization.</li>
+                                                    <li><Author>Maturana, H., Varela, F. & Frenk, S.</Author> (1972), Size constancy and the problem of perceptual spaces.</li>
+                                                </ul>
+                                            </div>
+                                            <div className="space-y-6 md:pt-10">
+                                                <ul className="space-y-4 text-sm italic leading-relaxed">
+                                                    <li><Author>Varela, F.</Author> (1977), The nervous system as a closed network.</li>
+                                                    <li><Author>Powers, W.</Author> (1973), Behavior: The Control of Perception.</li>
+                                                    <li><Author>Piaget, J.</Author> (1969), Biology and Knowledge.</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
