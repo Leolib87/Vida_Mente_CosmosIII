@@ -1,0 +1,414 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
+import { 
+  BookOpen, 
+  ChevronRight, 
+  Layers, 
+  Brain, 
+  Network, 
+  Users, 
+  Info, 
+  Menu, 
+  X,
+  Target,
+  Cpu,
+  Eye
+} from 'lucide-react';
+
+// --- Componentes de Apoyo Estético ---
+
+const Highlight = ({ children, type = 'concept' }) => {
+  const styles = {
+    concept: "text-amber-500 font-medium italic",
+    author: "text-cyan-400 font-semibold tracking-wide uppercase text-sm",
+    quote: "text-amber-200 font-serif italic"
+  };
+  return <span className={styles[type]}>{children}</span>;
+};
+
+const Footnote = ({ id, content, setActiveNote }) => {
+  return (
+    <sup 
+      onMouseEnter={() => setActiveNote({ id, content })}
+      onMouseLeave={() => setActiveNote(null)}
+      className="cursor-help text-cyan-400 font-bold px-0.5 hover:bg-cyan-400/20 transition-colors"
+    >
+      [{id}]
+    </sup>
+  );
+};
+
+const SectionHeading = ({ children, number }) => (
+  <div className="group mb-12 mt-24">
+    <span className="text-cyan-500 font-mono text-sm tracking-widest block mb-2 opacity-60 group-hover:opacity-100 transition-opacity">SECTION {number}</span>
+    <h2 className="text-4xl md:text-5xl font-serif text-slate-100 border-l-4 border-cyan-500 pl-6 py-2">
+      {children}
+    </h2>
+  </div>
+);
+
+const Figure = ({ caption, id }) => (
+  <figure className="my-16 w-full">
+    <div className="w-full aspect-[21/9] bg-slate-900/50 border-2 border-dashed border-slate-800 rounded-2xl flex flex-col items-center justify-center group hover:border-cyan-500/50 transition-all">
+      <div className="p-4 rounded-full bg-slate-950 border border-slate-800 mb-4 group-hover:scale-110 transition-transform">
+        <Target className="text-slate-600 group-hover:text-cyan-400" size={32} />
+      </div>
+      <p className="text-slate-500 font-mono text-xs tracking-tighter uppercase">
+        Insertar Enlace: [Representación de {id}]
+      </p>
+    </div>
+    <figcaption className="mt-4 text-center text-slate-500 font-serif italic text-sm max-w-2xl mx-auto">
+      {caption}
+    </figcaption>
+  </figure>
+);
+
+// --- App Principal ---
+
+export default function App() {
+  const [activeNote, setActiveNote] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
+
+  const sections = [
+    { id: '16.1', title: 'Variedades de Procesos Cognitivos' },
+    { id: '16.2', title: 'In-formación' },
+    { id: '16.3', title: 'Dominios Lingüísticos y Conversaciones' },
+    { id: '16.4', title: 'Unidades de la Mente' },
+    { id: '16.5', title: 'Conocimiento Humano y Organismos Cognoscentes' }
+  ];
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-300 font-sans selection:bg-cyan-500/30">
+      {/* Estilos Globales para Tipografía Científica */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono&display=swap');
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        p { text-align: justify; hyphens: auto; line-height: 1.8; margin-bottom: 2rem; font-size: 1.125rem; }
+      `}} />
+
+      {/* Progress Bar */}
+      <motion.div 
+        className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 z-[100] origin-left"
+        style={{ scaleX }}
+      />
+
+      {/* Header */}
+      <header className="fixed top-0 w-full bg-slate-950/80 backdrop-blur-md border-b border-slate-900 z-50 px-6 py-4 flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <BookOpen className="text-cyan-400" size={24} />
+          <div className="hidden md:block">
+            <h1 className="text-xs font-mono tracking-widest text-slate-500 uppercase">Capítulo 16</h1>
+            <p className="text-sm font-serif text-slate-200 m-0">Epistemología Naturalizada</p>
+          </div>
+        </div>
+        
+        <button 
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="p-2 hover:bg-slate-900 rounded-full transition-colors text-cyan-400"
+        >
+          {isMenuOpen ? <X /> : <Menu />}
+        </button>
+      </header>
+
+      {/* Nav Dropdown */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-16 right-6 w-72 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden"
+          >
+            <div className="p-4 bg-slate-950/50 border-b border-slate-800">
+              <span className="text-xs font-mono text-cyan-500">CONTENIDO</span>
+            </div>
+            {sections.map((s) => (
+              <a 
+                key={s.id} 
+                href={`#${s.id}`}
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center gap-3 p-4 hover:bg-slate-800 transition-colors border-b border-slate-800/50 last:border-0"
+              >
+                <span className="text-xs font-mono text-slate-500">{s.id}</span>
+                <span className="text-sm font-serif">{s.title}</span>
+              </a>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Hero Section */}
+      <section className="relative h-[90vh] flex items-center justify-center overflow-hidden border-b border-slate-900">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-950" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-900/10 rounded-full blur-[120px]" />
+        </div>
+        
+        <div className="relative z-10 text-center px-6">
+          <motion.span 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-cyan-500 font-mono tracking-[0.3em] uppercase text-sm mb-6 block"
+          >
+            Francisco J. Varela
+          </motion.span>
+          <motion.h1 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-6xl md:text-8xl font-serif text-slate-100 mb-8"
+          >
+            Epistemología <br /><span className="text-cyan-400 italic font-light">Naturalizada</span>
+          </motion.h1>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="max-w-xl mx-auto text-slate-400 font-light text-lg leading-relaxed"
+          >
+            Una exploración sobre la autonomía biológica, la clausura organizacional y la construcción del dominio cognitivo.
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <main className="max-w-4xl mx-auto px-6 py-24 relative">
+        
+        {/* SECTION 16.1 */}
+        <section id="16.1">
+          <SectionHeading number="16.1">Variedades de Procesos Cognitivos</SectionHeading>
+          
+          <div className="mb-16">
+            <span className="text-cyan-500 font-mono text-xs mb-4 block">16.1.1</span>
+            <p>
+              Los sistemas inmunitario y nervioso son ejemplos estupendos de la forma en que los mecanismos que generan la identidad de un sistema, su <Highlight>clausura</Highlight>, son conmensurables con los mecanismos que generan su dominio cognitivo, su <Highlight>plasticidad estructural</Highlight>. En ambos casos, la invarianza se mantiene a través de un cambio estructural ininterrumpido, de tal manera que las perturbaciones del entorno pueden ser vistas, por un observador, como si estuvieran siendo moldeadas en un dominio cognitivo por la operación del sistema. Pero la fenomenología de estos dos sistemas, aunque extremadamente rica, no es única. De hecho, podemos generalizar a partir de estos casos para ver que la especificación de un dominio cognitivo es la propensión de todo sistema autónomo dotado de plasticidad estructural.
+            </p>
+            <p>
+              La intención principal de este capítulo es trazar algunas de las implicaciones de esta idea de manera más general, y combinarlas con muchos temas sobre el conocimiento humano que han formado el andamiaje de la discusión precedente.
+            </p>
+          </div>
+
+          <div className="mb-16">
+            <span className="text-cyan-500 font-mono text-xs mb-4 block">16.1.2</span>
+            <p>
+              El argumento es, a estas alturas, sencillo. Permítanme resumirlo brevemente. Una unidad se especifica a través de operaciones de distinción realizadas por un observador en una tradición —lo que hemos venido llamando una <Highlight>comunidad de observadores</Highlight>—. Las distinciones que especifican una unidad se expresan en términos de las relaciones necesarias que se mantienen entre los componentes de un sistema, su <Highlight>organización</Highlight>. Mientras estas relaciones permanezcan invariantes, la unidad mantiene su membresía en una clase particular de sistemas. Los sistemas autónomos se especifican a través de su organización específica (<Highlight>clausura organizacional</Highlight>). Las invarianzas que se correlacionan con nuestras distinciones e identificaciones se basan en dicha clausura.
+            </p>
+            
+            <Figure 
+              id="Dualidad Organización/Estructura" 
+              caption="Figura 16.1: Complementariedad descriptiva entre la invarianza organizacional y la transformación estructural en sistemas autónomos." 
+            />
+
+            <p>
+              Este ha sido un lado de un tema de dos partes. El otro lado es la <Highlight>estructura</Highlight>: los componentes específicos (y sus propiedades) que entran en la constitución de un sistema natural. La importancia fundamental de la estructura de un sistema es que ella, y solo ella, especifica la textura del espacio en el que el sistema opera como una unidad, porque las propiedades de los componentes determinarán cuáles son las posibles interacciones que el sistema puede entablar. Esto no caracteriza al sistema como unidad, pero sí especifica qué perturbaciones del entorno entran en su dominio de interacciones. Estas interacciones solo pueden incluir aquellas que no lleven al sistema más allá de su invarianza organizacional. Si lo hacen, el sistema se desintegra o se convierte en uno diferente.
+            </p>
+            <p>
+              Tenemos aquí otra complementariedad descriptiva. La invarianza que caracteriza a un sistema solo puede ser estudiada bajo perturbaciones que la revelen, y por tanto, contra un fondo de cambio. Inversamente, el cambio en un sistema solo es referible a aquello que en él permanece inalterado: su identidad como sistema. Invarianza/cambio en este contexto se expresa mejor en la dualidad <Highlight>organización/estructura</Highlight>. Lo que deseo hacer ahora es explorar en más detalle la complementariedad invarianza/cambio, construida así como <Highlight italic>identidad/cognición</Highlight>. Cómo un sistema establece su identidad (su autonomía) se correlaciona con cómo genera información; los mecanismos de identidad están entretejidos con los mecanismos del conocimiento.
+            </p>
+          </div>
+
+          <div className="mb-16">
+            <span className="text-cyan-500 font-mono text-xs mb-4 block">16.1.3</span>
+            <p>
+              Hemos decidido considerar el cambio como transformación estructural bajo invarianza organizacional. Se deduce que, aunque las perturbaciones del entorno operan a través de la estructura, las consecuencias de tales interacciones solo pueden estudiarse a través de la forma en que la estructura encarna una organización inalterada. En particular, los sistemas autónomos mantendrán su identidad mientras se mantenga su clausura. Sin embargo, exhibirán una historia de cambio como unidad (<Highlight>ontogenia</Highlight>) o como clase (<Highlight>evolución</Highlight>) solo si su estructura puede cambiar de una manera que no interrumpa la clausura. Como vimos para los sistemas inmunitario y nervioso, el entorno del sistema es una fuente constante de perturbaciones que actúan como gatillos para el cambio estructural.
+            </p>
+            <p className="bg-slate-900/40 p-8 rounded-xl border border-slate-800 italic">
+              "El efecto de considerar el entorno de un sistema como una fuente de perturbaciones y compensaciones, en lugar de entradas (inputs) y salidas (outputs), es lejos de ser trivial."
+            </p>
+            <p>
+              En la formulación basada en el control, las interacciones del entorno son instructivas, constituyen parte de la definición de la organización del sistema y determinan el curso de la transformación. En la interpretación de la autonomía, el entorno es visto como una fuente de perturbaciones independiente de la definición de la organización del sistema y, por lo tanto, intrínsecamente <Highlight>no instructiva</Highlight>; pueden gatillar, pero no determinar, el curso de la transformación.
+            </p>
+            <p>
+              El concepto apropiado aquí es el de <Highlight>acoplamiento estructural</Highlight>. Es decir, si un sistema tiene una estructura plástica y su entorno también exhibe una estructura plástica o cambiante, entonces tanto el entorno como el sistema experimentarán un proceso de acoplamiento estructural, que la comunidad de observadores puede describir en términos de trayectorias del sistema bajo observación y relacionar con regularidades de la estructura del entorno.
+            </p>
+          </div>
+
+          <div className="mb-16">
+            <span className="text-cyan-500 font-mono text-xs mb-4 block">16.1.4</span>
+            <p>
+              El dominio de interacción en el que un sistema autónomo puede entrar a través de la plasticidad estructural sin pérdida de clausura constituye su <Highlight>dominio cognitivo</Highlight>. Todo dominio cognitivo es adecuado para un sistema autónomo; de lo contrario, se desintegraría. De hecho, la adaptación es, desde este punto de vista, una perogrullada. Su utilidad como noción no es operativa sino simbólica: señala los tipos de regularidades exhibidas por el acoplamiento estructural.
+            </p>
+            <p>
+              Como ha observado acertadamente <Highlight type="author">Jacob (1977)</Highlight>, la adaptación en la ontogenia y la evolución se asemeja, no a un proceso de diseño, sino a uno de <Highlight>bricolaje</Highlight> (tinkering). En los productos finales del bricolaje, no se ve nada excepto el estilo del bricolaje. Si esto ha de ser más que una metáfora, debe decir que debemos relacionar las acciones cognitivas únicamente con los mecanismos de identidad de una unidad.
+            </p>
+          </div>
+
+          <div className="mb-16">
+            <span className="text-cyan-500 font-mono text-xs mb-4 block">16.1.5</span>
+            <p>
+              Una deficiencia muy grave del actual marco algebraico-algorítmico es que no ofrece forma de conciliar la invarianza y el cambio estructural. En contraste, la noción de <Highlight>orden a partir de fluctuaciones</Highlight> se captura de manera precisa y efectiva en el formato diferenciable. Sin embargo, a menudo se olvida que el patrón observado y las regularidades distinguidas, el "orden", son relativos a nuestras observaciones y no intrínsecos a las unidades interactuantes o a su espacio. El ruido y la información no son estructurales, sino relativos a la forma en que la unidad y el entorno se separan.
+            </p>
+            <div className="my-12 py-8 border-y border-slate-800 text-center">
+              <span className="text-xs font-mono text-slate-500 block mb-4 uppercase tracking-[0.2em]">Formalismo de Atlan</span>
+              <p className="text-2xl font-mono text-cyan-400 m-0">
+                T(x,y) = H(y) - H(x/y)
+              </p>
+              <p className="text-xs text-slate-500 mt-4 m-0 italic">Donde la fuente real de incertidumbre es el propio observador.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 16.2 */}
+        <section id="16.2">
+          <SectionHeading number="16.2">In-formación</SectionHeading>
+          <p>
+            Podemos definir <Highlight italic>in-formación</Highlight> como las descripciones simbólicas admisibles de los dominios cognitivos de un sistema autónomo. Siempre lo escribiremos con el guion para transmitir las diferencias de esta visión respecto a la de la información en la <Highlight italic>Gestalt</Highlight> de la computación.
+          </p>
+          
+          <div className="grid md:grid-cols-2 gap-8 my-16">
+            <div className="p-6 bg-slate-900/30 border border-slate-800 rounded-xl">
+              <h4 className="text-cyan-400 font-mono text-xs uppercase tracking-widest mb-4">Sentido Co-dependiente</h4>
+              <ul className="text-sm space-y-3 text-slate-400 list-disc pl-4">
+                <li>Coherencia, regularidad, viabilidad.</li>
+                <li>Extrínseco, relativo al observador.</li>
+                <li>La unidad se define autónomamente.</li>
+                <li>El mundo se define por invarianzas relativas al sistema.</li>
+                <li>Siempre es interpretación.</li>
+              </ul>
+            </div>
+            <div className="p-6 bg-slate-950 border border-slate-800 rounded-xl opacity-60">
+              <h4 className="text-slate-500 font-mono text-xs uppercase tracking-widest mb-4">Sentido Referencial</h4>
+              <ul className="text-sm space-y-3 text-slate-500 list-disc pl-4">
+                <li>Mapeo o correspondencia.</li>
+                <li>Intrínseco, operativo.</li>
+                <li>Relación a través de inputs alonómicos.</li>
+                <li>Requiere un mundo fijo y dado.</li>
+                <li>La información es instructiva.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 16.3 */}
+        <section id="16.3">
+          <SectionHeading number="16.3">Dominios Lingüísticos y Conversaciones</SectionHeading>
+          <p>
+            Utilizamos el término <Highlight>dominio lingüístico</Highlight> para designar el conjunto de descripciones simbólicas que surgen del acoplamiento estructural entre dos o más sistemas autónomos. La <Highlight>comunicación</Highlight> es el comportamiento en un dominio lingüístico.
+          </p>
+          <p>
+            La comunicación no puede entenderse como instrucción o "transferencia" de información de un organismo a otro. Poner la información comunicativa en una categoría comparable a la energía o la materia es un <Highlight>concrecionismo fuera de lugar</Highlight> y confunde niveles de descripción. Una conversación es la experiencia humana por excelencia; vivimos y respiramos en el diálogo y el lenguaje. Y a partir de esta experiencia directa sabemos que no se puede encontrar un punto de referencia firme para el contenido de un diálogo.
+          </p>
+          <p>
+            Como señala <Highlight type="author">Gadamer (1960)</Highlight>, no hay escape metodológico de lidiar con la elusividad del entendimiento, y esto hace evidente que cualquier cosa informativa en una conversación es intrínsecamente co-dependiente e interpretativa.
+          </p>
+        </section>
+
+        {/* SECTION 16.4 */}
+        <section id="16.4">
+          <SectionHeading number="16.4">Unidades de la Mente</SectionHeading>
+          <p>
+            Es muy cierto que existe un sentido en el que debemos considerar a los organismos individuales y sus procesos cognitivos internos. Sin embargo, es igualmente cierto (aunque algo incómodo dentro de la tradición en la que hemos sido criados) darse cuenta de que los procesos cognitivos también pueden ser vistos operando en el siguiente nivel superior: los procesos cognitivos de la unidad autónoma de la cual somos participantes y componentes.
+          </p>
+          <p>
+            Esta idea fue enunciada por primera vez con claridad en el ensayo de <Highlight type="author">Bateson</Highlight> "Sustancia, Forma y Diferencia". Su intuición básica es que la unidad de la mente en la evolución no es solo, y ciertamente no fundamentalmente, el cráneo, sino lo que él llama el <Highlight italic>"mensaje-en-el-circuito"</Highlight>.
+          </p>
+          <p className="border-l-2 border-amber-500/50 pl-8 text-amber-200/80 italic font-serif text-xl my-12">
+            "Hay mente en toda unidad comprometida en interacciones de tipo conversacional."
+          </p>
+        </section>
+
+        {/* SECTION 16.5 */}
+        <section id="16.5">
+          <SectionHeading number="16.5">Conocimiento Humano y Organismos Cognoscentes</SectionHeading>
+          <p>
+            Deseo volver ahora a una consideración sobre el conocimiento humano. Este es un último paso para cerrar un círculo. Hemos asumido explícitamente una serie de posiciones epistemológicas; ahora completaré el argumento de cómo estas posiciones están en consonancia con los procesos y principios derivados del estudio de la autonomía natural.
+          </p>
+          
+          <div className="mb-16">
+            <span className="text-cyan-500 font-mono text-xs mb-4 block">16.5.2</span>
+            <p>
+              Intentemos por un momento ser ingenuos y hagamos la pregunta: ¿Cómo llegamos a tener elementos como, por ejemplo, ranas o personas, de quienes podemos decir que perciben otras cosas? Solemos asumir que la rana existe independientemente de la forma en que la distinguimos. Le atribuimos <Highlight italic>"realidad ontológica"</Highlight>. Esa es precisamente la trampa que queremos evitar.
+            </p>
+            <p>
+              No hay razón para suponer que nuestra experiencia comienza con objetos, animales y personas ya fabricados. Le toma a un niño la mayor parte de dos años ensamblar tales ítems coordinando elementos mucho más pequeños de experiencia perceptual y conceptual (<Highlight type="author">Piaget, 1937</Highlight>). La dicotomía entre figura y fondo, entre rana y entorno, surge de un mismo conjunto de operaciones.
+            </p>
+          </div>
+
+          <div className="mb-16">
+            <span className="text-cyan-500 font-mono text-xs mb-4 block">16.5.3</span>
+            <p>
+              La racionalidad occidental ha aceptado un escenario <Highlight italic>objetivista</Highlight> casi incuestionablemente. Asumen que la actividad de "conocer" comienza con un corte entre el sujeto cognoscente y el objeto a conocer. Conocer se convierte así en un acto de duplicar o replicar lo que se supone que ya está allí.
+            </p>
+            <p>
+              Nuestro conocimiento debe comenzar con la experiencia, y con cortes dentro de nuestra experiencia. Este mundo nuestro, no importa cuán bien logremos mantenerlo estable con objetos permanentes, es por definición un mundo <Highlight italic>co-dependiente</Highlight> con nuestra experiencia, y no la realidad ontológica con la que filósofos y científicos han soñado. El sucesor del objetivismo no es el subjetivismo, sino la plena apreciación de la <Highlight>participación</Highlight>.
+            </p>
+          </div>
+
+          <div className="mb-16">
+            <span className="text-cyan-500 font-mono text-xs mb-4 block">16.5.5</span>
+            <p>
+              Según las visiones biológicas y sistémicas presentadas en estas páginas, nuestros modelos de sistemas cognoscentes han alcanzado la madurez. Es una relación de interdependencia total en la que la estabilidad relativa se logra y mantiene a través de la circularidad de las interacciones.
+            </p>
+            <p>
+              Muestra que, tanto en la naturaleza como en la cultura, <Highlight>todo ser que pueda llamarse conocedor construye el mundo que conoce</Highlight> y, al hacerlo, determina su forma de conocer. En contraste, existe un predominio de las ideas de control e información-como-representación, que ha mantenido persistentemente al hombre fuera de sus propios actos, fomentando la creencia de que, en última instancia, él no era responsable del mundo que llegaba a conocer y manipular.
+            </p>
+          </div>
+        </section>
+
+        {/* Footer / Source */}
+        <footer className="mt-32 pt-12 border-t border-slate-900 text-slate-500">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-8">
+            <div className="max-w-xs">
+              <h5 className="text-xs font-mono text-cyan-500 uppercase tracking-widest mb-4">Fuente Original</h5>
+              <p className="text-sm italic">
+                von Glasersfeld, E. y Varela, F. (1977), Problems of knowledge and cognizing organisms, manuscrito inédito.
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <div className="p-3 bg-slate-900 rounded-lg hover:text-cyan-400 cursor-pointer transition-colors">
+                <Cpu size={20} />
+              </div>
+              <div className="p-3 bg-slate-900 rounded-lg hover:text-cyan-400 cursor-pointer transition-colors">
+                <Network size={20} />
+              </div>
+              <div className="p-3 bg-slate-900 rounded-lg hover:text-cyan-400 cursor-pointer transition-colors">
+                <Brain size={20} />
+              </div>
+            </div>
+          </div>
+          <div className="mt-12 text-center text-[10px] font-mono tracking-widest opacity-30 uppercase">
+            Sistemas Autónomos & Epistemología Experimental — MMXXIV
+          </div>
+        </footer>
+      </main>
+
+      {/* Footnote Modal */}
+      <AnimatePresence>
+        {activeNote && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-2xl"
+          >
+            <div className="bg-slate-900/95 backdrop-blur-xl border border-cyan-500/30 p-6 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+              <div className="flex items-start gap-4">
+                <div className="bg-cyan-500/20 p-2 rounded-lg">
+                  <Info className="text-cyan-400" size={20} />
+                </div>
+                <div>
+                  <span className="text-xs font-mono text-cyan-500 block mb-2">NOTA AL PIE [{activeNote.id}]</span>
+                  <p className="text-sm text-slate-300 leading-relaxed m-0 text-justify">
+                    {activeNote.content}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Background Decor */}
+      <div className="fixed inset-0 pointer-events-none z-[-1] opacity-20">
+        <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10" />
+      </div>
+    </div>
+  );
+}
