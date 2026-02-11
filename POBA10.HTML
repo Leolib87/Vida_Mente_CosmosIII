@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capítulo 10 - Francisco J. Varela</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (para JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- MathJax para Ecuaciones -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' },
+            options: {
+                processHtmlClass: 'tex2jax_process'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: { 950: '#020617' }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 1.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(15px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        html { scroll-behavior: smooth; }
+        ::selection { background-color: rgba(34, 211, 238, 0.2); color: #fff; }
+        
+        .footnote-ref {
+            font-size: 0.7em;
+            vertical-align: super;
+            margin-left: 2px;
+            font-weight: bold;
+            color: #22d3ee;
+            cursor: pointer;
+        }
+
+        /* MathJax Styling override to ensure Amber color */
+        .mjx-chtml { 
+            color: #f59e0b !important; /* Amber-500 */
+            font-size: 110% !important; 
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-300 antialiased overflow-x-hidden selection:bg-cyan-500/30">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS (SVG) ---
+        const MenuIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        );
+        const XIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="M6 6 18 18"/></svg>
+        );
+
+        // --- DATA & CONTENT ---
+
+        const AUTHORS = [
+            "Francisco J. Varela", "Goguen", "Bateson", "Goffman", "von Foerster", "Thom", "Rosen", "Iberall", "Lange", "May", "Eigen", "Schuster", "Rössler", "Bernard-Weil", "Katchalsky", "Rowland", "Blumenthal", "Pattee", "Whyte", "Mesarovic", "Beer", "Kohout", "Gaines", "Baumgartner", "Atlan", "Spencer-Brown", "Ashby", "Wiener", "Eilenberg", "MacLane", "Kan", "Arbib", "Manes", "Lawvere", "Smuts", "Lazslo", "Kosik", "Radnitsky", "Kolmogorov"
+        ];
+
+        const CONCEPTS = [
+            "Autonomía", "Control", "Información", "autopoiético", "alonomía", "autonomía",
+            "clausura", "circularidades", "representación", "instrucción", "organización",
+            "complementariedad", "dualidad", "recursión", "conducta", "red", "árbol", "adjunción",
+            "functor", "holismo", "reduccionismo", "autoorganización", "distinción", "indicación",
+            "observador", "dominio cognitivo", "jerarquía", "morfismo", "categoría", "dialéctica",
+            "estrella", "emergente", "coherencia", "estabilidad", "aleatoriedad", "teselación",
+            "grafo", "grafo apuntado", "despliegue", "isomorfismo", "homomorfismo"
+        ];
+
+        const FOOTNOTES = {
+            1: "Llamar a S 'el sistema' en lugar de 'el entorno' ya indica una preferencia por marcar S; es decir, el lenguaje incorpora la preferencia. Pero podemos hablar de 'marcar el entorno' para sugerir que de hecho existen dos posibilidades distintas.",
+            2: "No hemos discutido en absoluto la noción de complementariedad en física, y si el presente marco es aplicable. Hacerlo está completamente más allá de mi competencia."
+        };
+
+        const TABLE_OF_CONTENTS = [
+            { 
+                part: "Parte II: Descripciones, Distinciones y Circularidades",
+                items: [
+                    { title: "Capítulo 10: Marco de Complementariedades", link: "#chapter10" }
+                ]
+            }
+        ];
+
+        // --- COMPONENTS ---
+
+        const HighlightedText = ({ text, onFootnoteHover, onFootnoteLeave }) => {
+            if (!text || typeof text !== 'string') return text || null;
+            
+            const parts = text.split(/(\[.*?\]|[\s\n]+|"[^"]*")/g);
+
+            return (
+                <span>
+                    {parts.map((part, i) => {
+                        if (!part) return null;
+
+                        if (part.startsWith('"') && part.endsWith('"')) {
+                            return <span key={i} className="text-amber-500 italic font-serif">{part}</span>;
+                        }
+
+                        const footnoteMatch = part.match(/^\[(\d+)\]$/);
+                        if (footnoteMatch) {
+                            const id = footnoteMatch[1];
+                            return (
+                                <span 
+                                    key={i}
+                                    className="footnote-ref px-1 bg-cyan-950/20 rounded border border-cyan-900/50 hover:text-cyan-200 transition-colors"
+                                    onMouseEnter={() => onFootnoteHover(id)}
+                                    onMouseLeave={onFootnoteLeave}
+                                >
+                                    [{id}]
+                                </span>
+                            );
+                        }
+
+                        const cleanWord = part.replace(/[.,;:"()]/g, '');
+                        const lowerPart = part.toLowerCase();
+                        let styleClass = "";
+                        
+                        if (AUTHORS.some(a => lowerPart.includes(a.split(' ').pop().toLowerCase()) && cleanWord.length > 2)) {
+                            styleClass = "text-cyan-400 font-medium";
+                        }
+                        if (CONCEPTS.some(c => lowerPart.includes(c.toLowerCase()) && cleanWord.length > 3)) {
+                            styleClass = "text-amber-500 italic";
+                        }
+
+                        return <span key={i} className={styleClass}>{part}</span>;
+                    })}
+                </span>
+            );
+        };
+
+        const Paragraph = ({ children, onFootnoteHover, onFootnoteLeave }) => (
+            <div className="mb-12 text-lg md:text-xl lg:text-2xl leading-relaxed text-slate-300 font-light text-justify w-full">
+                {typeof children === 'string' ? (
+                    <HighlightedText text={children} onFootnoteHover={onFootnoteHover} onFootnoteLeave={onFootnoteLeave} />
+                ) : (
+                    children
+                )}
+            </div>
+        );
+
+        const SectionHeader = ({ children }) => (
+             <h4 className="text-3xl md:text-5xl lg:text-6xl font-serif text-slate-100 mt-32 mb-16 border-l-4 border-cyan-500/50 pl-10 w-full uppercase tracking-tight leading-none">
+                {children}
+            </h4>
+        );
+
+        const SubSectionHeader = ({ children }) => (
+             <h5 className="text-xl md:text-3xl font-sans font-bold text-slate-400 mt-20 mb-10 uppercase tracking-[0.5em] border-b border-slate-800 pb-6 w-full">
+                {children}
+            </h5>
+        );
+
+        const EquationBlock = ({ tex, label }) => (
+            <div className="flex flex-col md:flex-row items-center justify-between my-16 w-full px-4 md:px-12 bg-slate-900/30 py-8 rounded-[2rem] border border-slate-800/50 shadow-inner">
+                <div className="flex-1 text-center py-4 text-2xl lg:text-4xl font-serif overflow-x-auto w-full tex2jax_process text-amber-500">
+                    {`\\[ ${tex} \\]`}
+                </div>
+                {label && <div className="text-slate-500 text-sm md:text-base font-sans mt-4 md:mt-0 md:ml-4 min-w-[50px] font-mono">({label})</div>}
+            </div>
+        );
+
+        const InlineEquation = ({ tex }) => (
+            <span className="text-amber-500 font-serif px-1 tex2jax_process">{`\\( ${tex} \\)`}</span>
+        );
+
+        const FigureBox = ({ id, caption, linkPlaceholder }) => (
+            <div className="my-24 w-full group">
+                <div className="w-full bg-slate-900/50 border border-slate-800 rounded-[3rem] overflow-hidden transition-all duration-500 group-hover:border-cyan-900/50 group-hover:bg-slate-900">
+                    <div className="aspect-[16/9] flex items-center justify-center relative">
+                        <img 
+                            src="" 
+                            alt={caption}
+                            className="max-w-full max-h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity"
+                            onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'block';
+                            }}
+                        />
+                        <div className="hidden text-center p-20 w-full">
+                            <div className="w-24 h-24 border-2 border-dashed border-slate-700 rounded-full mx-auto mb-6 flex items-center justify-center">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-slate-700"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            </div>
+                            <p className="text-slate-500 font-serif italic text-2xl mb-4">[Espacio para Figura {id}]</p>
+                            <code className="text-cyan-600/50 text-sm break-all font-mono bg-black/30 px-4 py-2 rounded">src="{linkPlaceholder}"</code>
+                        </div>
+                    </div>
+                </div>
+                <div className="mt-10 px-4 md:px-12 text-center">
+                    <p className="text-slate-500 text-sm md:text-lg leading-relaxed italic text-justify">
+                        <span className="text-cyan-500 font-bold uppercase tracking-[0.2em] not-italic mr-4">Figura {id}.</span>
+                        {caption}
+                    </p>
+                </div>
+            </div>
+        );
+
+        // --- APP ---
+
+        function App() {
+            const [activeFootnote, setActiveFootnote] = useState(null);
+            const [progress, setProgress] = useState(0);
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    const winScroll = document.documentElement.scrollTop;
+                    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                    setProgress(winScroll / height);
+                };
+                window.addEventListener('scroll', handleScroll);
+                // Trigger MathJax re-render
+                if (window.MathJax && window.MathJax.typeset) {
+                    window.MathJax.typeset();
+                }
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+            
+            // Re-run MathJax when content might change or component mounts
+            useEffect(() => {
+                if (window.MathJax && window.MathJax.typeset) {
+                     window.MathJax.typeset();
+                }
+            });
+
+            const handleLinkClick = (e, link) => {
+                if (link && link.startsWith('#')) {
+                    e.preventDefault();
+                    const element = document.getElementById(link.substring(1));
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth' });
+                        setIsMenuOpen(false);
+                    }
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-300 font-sans pb-80">
+                    <div className="fixed top-0 left-0 h-1.5 bg-cyan-400 z-50 transition-all duration-75 shadow-[0_0_20px_rgba(34,211,238,0.7)]" style={{ width: `${progress * 100}%` }}></div>
+
+                    <nav className="fixed top-0 w-full z-40 bg-slate-950/80 backdrop-blur-xl border-b border-white/5 h-24 transition-all duration-300">
+                        <div className="w-full h-full px-6 md:px-12 flex items-center justify-between">
+                            <div className="flex items-center gap-6 cursor-pointer group" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
+                                <div className="w-12 h-12 bg-amber-600 rounded-sm flex items-center justify-center text-slate-950 font-serif font-bold text-2xl shadow-xl group-hover:scale-105 transition-transform">V</div>
+                                <div className="hidden md:block">
+                                    <h1 className="text-slate-100 font-serif text-lg tracking-widest uppercase font-bold group-hover:text-amber-500 transition-colors">Francisco J. Varela</h1>
+                                    <span className="text-xs text-slate-500 uppercase tracking-widest block mt-1 opacity-60">Principios de Autonomía Biológica</span>
+                                </div>
+                            </div>
+                            
+                            <div className="relative">
+                                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center gap-4 text-xs uppercase tracking-[0.3em] text-cyan-400 py-3 px-8 border border-cyan-900/50 rounded-full hover:bg-cyan-950/40 transition-all font-bold">
+                                    Índice {isMenuOpen ? <XIcon size={18}/> : <MenuIcon size={18}/>}
+                                </button>
+                                {isMenuOpen && (
+                                    <div className="absolute right-0 mt-8 w-80 sm:w-[500px] bg-slate-900/95 border border-slate-800 shadow-2xl rounded-[2rem] py-10 max-h-[80vh] overflow-y-auto z-50 animate-fade-in ring-1 ring-white/10">
+                                        {TABLE_OF_CONTENTS.map((section, idx) => (
+                                            <div key={idx} className="mb-12 last:mb-0">
+                                                <h4 className="px-12 py-2 text-[11px] font-black text-amber-500 uppercase tracking-[0.4em] bg-slate-950/60 mb-6">
+                                                    {section.part}
+                                                </h4>
+                                                {section.items.map((item, i) => (
+                                                    <a key={i} href={item.link} onClick={(e) => handleLinkClick(e, item.link)} className="block px-12 py-4 text-sm md:text-base text-slate-400 hover:bg-slate-800 hover:text-cyan-400 transition-all no-underline border-l-4 border-transparent hover:border-cyan-500">
+                                                        {item.title}
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </nav>
+
+                    <main className="pt-48 px-6 md:px-12 lg:px-24 w-full animate-fade-in">
+                        
+                        <section id="chapter10" className="mb-80 scroll-mt-40">
+                            <div className="mb-48 text-center w-full">
+                                <span className="text-cyan-400 text-xs font-black tracking-[0.6em] uppercase mb-12 block">Capítulo 10</span>
+                                <h2 className="text-6xl md:text-8xl lg:text-[10rem] font-serif text-slate-100 mb-12 uppercase leading-none tracking-tighter">
+                                    El Marco de
+                                </h2>
+                                <h3 className="text-slate-500 text-4xl md:text-6xl lg:text-7xl font-serif italic font-light tracking-tight">Complementariedades</h3>
+                            </div>
+
+                            <SectionHeader>10.1 Introducción</SectionHeader>
+                            
+                            <SubSectionHeader>10.1.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                El mundo no se nos presenta pulcramente dividido en sistemas, subsistemas, entornos, y así sucesivamente. Estas son divisiones que hacemos nosotros mismos con diversos propósitos. Es evidente que diferentes comunidades de observadores encuentran conveniente dividir el mundo de diferentes maneras, y estarán interesadas en diferentes sistemas en diferentes momentos —por ejemplo, ahora una célula, con el resto del mundo como su entorno, y luego el sistema postal, o el sistema económico, o el sistema atmosférico. Las disciplinas científicas establecidas han desarrollado, por supuesto, diferentes formas preferidas de dividir el mundo en entorno y sistema, en línea con sus diferentes propósitos, y también han desarrollado diferentes metodologías y terminologías coherentes con sus motivaciones.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Además, a lo largo de este libro nos hemos encontrado una y otra vez con el hecho de que una comunidad de observadores puede adoptar visiones alternativas de un sistema que, a primera vista, parecen excluyentes, pero que sin embargo son interdependientes y mutuamente definitorias. Tal fue el caso de la autopoiesis y la alopoiesis, y de las explicaciones causales y simbólicas, dos instancias que se han discutido extensamente. Fue evidente a través de estas discusiones que mantener la interdependencia de estas visiones constantemente en mente era una clave para una comprensión más equilibrada de los sistemas naturales —particularmente en el caso de la autonomía. Es hora de reformular este asunto de la interdependencia y complementariedad de visiones de una forma más explícita.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En este capítulo, presentamos un marco conceptual y formal dentro del cual se pueden unificar una serie de diversas visiones preferidas sobre los sistemas. De particular interés para nosotros aquí son las diferencias derivadas del estudio de los sistemas naturales (particularmente sistemas biológicos y sociales) y los sistemas hechos por el hombre (como los sistemas de ingeniería y computación). La teoría de sistemas contemporánea se ha desarrollado extensamente a través de la experiencia en estos últimos campos, pero las perspectivas derivadas de los sistemas naturales han permanecido en gran medida mucho menos desarrolladas formalmente. En este libro, sostengo que las nociones de interacción cooperativa, autoorganización y autonomía —en resumen, nociones holísticas— son básicas para el estudio de los sistemas naturales. En el presente marco estas nociones no solo se hacen más explícitas y aplicables, sino que también se presentan como complementos a las nociones más tradicionales de la teoría de sistemas, como el control y la descripción conductual de entrada-salida.
+                            </Paragraph>
+
+                            <SubSectionHeader>10.1.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La siguiente sección discute en términos generales el papel que juega la distinción en la creación y el reconocimiento de sistemas. Las tres secciones siguientes discuten ciertas perspectivas duales sobre los sistemas con cierto detalle, incluyendo las dualidades autonomía/control, variable de estado/entrada-salida, holismo/reduccionismo y red/árbol. La quinta sección desarrolla la sugerencia de que tales alternativas son complementarias en lugar de antagónicas, hacia una sugerencia de que su interrelación a menudo puede expresarse con precisión como una relación de funtor adjunto, en el sentido del álgebra categórica. La sección final discute la relación holismo/reduccionismo con cierto detalle, en relación con la filosofía de la ciencia.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Los capítulos futuros se construirán sobre esta base, para discutir la noción de autonomía en términos de una teoría (matemática) de la autorreferencia o recursión indefinida y sus aplicaciones.
+                            </Paragraph>
+
+                            <SectionHeader>10.2 Distinción e Indicación</SectionHeader>
+                            <SubSectionHeader>10.2.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Una distinción divide el mundo en dos partes, "eso" y "esto", o "entorno" y "sistema", o "nosotros" y "ellos", etc. Una de las actividades más fundamentales de todas las actividades humanas es hacer distinciones. Ciertamente, es el acto más fundamental de la teoría de sistemas, el acto mismo de definir el sistema actualmente de interés, de distinguirlo de su entorno.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Las distinciones coexisten con los propósitos. Un caso particularmente básico es la autonomía: un sistema que define sus propios límites e intenta mantenerlos; esto parece corresponder a lo que pensamos como individualidad. Se puede ver en individuos (mantenimiento del ego o identidad) y en unidades sociales (clubes, subculturas, naciones). En tales casos, no hay solo una distinción, sino una indicación, es decir, un marcado de uno de los dos estados distinguidos como primario ("esto", "yo", "nosotros", etc.); de hecho, es el propósito mismo de la distinción crear esta indicación (Spencer-Brown, 1969; Varela, 1975a).
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Un tipo de distinción menos básico es el que realiza un "distintor" para algún propósito propio. Esto es lo que generalmente vemos explícitamente en la ciencia, por ejemplo, cuando una disciplina "define su campo de intereses", o un científico define un sistema que estudiará.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En cualquier caso, el establecimiento de los límites del sistema está ineludiblemente asociado con lo que llamaré un punto de vista cognitivo, es decir, un conjunto particular de presuposiciones y actitudes, una perspectiva, o un marco en el sentido de Bateson (1959) o Goffman (1974); en particular, está asociado con alguna noción de valor, o interés. También está vinculado con las capacidades cognitivas (capacidades sensoriales, antecedentes de conocimiento) del distintor. A la inversa, las distinciones hechas revelan las capacidades cognitivas del distintor. Es de esta manera que las estructuras biológicas y sociales exhiben su coherencia.
+                            </Paragraph>
+
+                            <SubSectionHeader>10.2.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La importancia para la teoría de sistemas de la coherencia cognitiva (o el punto de vista cognitivo, o capacidad cognitiva) es un tema que recorre todo este libro. Debido al enfoque en la teoría de sistemas, nos sentiremos libres de invocar la idea de un observador, o, comunidad de observadores: una o más personas que encarnan el punto de vista cognitivo que creó el sistema en cuestión, y desde cuya perspectiva se describe posteriormente.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Una propiedad simple pero fundamental de la situación que involucra a un sistema y un observador es que este puede elegir centrar su atención ya sea en la constitución interna del sistema, o bien en su entorno, tomando las propiedades del sistema como dadas. Es decir, un observador puede convertir una distinción en una indicación a través de la imposición de su valor. Si el observador elige prestar atención al entorno, trata al sistema como una entidad simple con propiedades dadas y busca las regularidades de su interacción con el entorno, es decir, las restricciones sobre la conducta del sistema impuestas por su entorno [1]. Esto conduce naturalmente al problema de controlar la conducta del sistema, como se considera en la teoría de control (ingeniería). Por otro lado, el observador puede elegir centrarse en la estructura interna del sistema, viendo el entorno como fondo —por ejemplo, como una fuente de perturbaciones sobre la conducta autónoma del sistema. Desde este punto de vista, las propiedades del sistema emergen de las interacciones de sus componentes.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La biología ha iterado este proceso de indicación, creando una jerarquía de niveles de estudio biológico. El biólogo celular enfatiza la autonomía de la célula, y ve al organismo del que forma parte como poco más que una fuente de perturbaciones que la célula compensa. Pero el fisiólogo ve a la célula como un elemento en una red de interdependencias que constituyen el organismo individual: Esto corresponde a una visión más amplia del entorno, a saber, la ecología en la que participa el individuo. Un biólogo de poblaciones hace sus distinciones a un nivel aún más alto, e ignora en gran medida a la célula. Una jerarquía de niveles similar se puede encontrar en las ciencias sociales. Parece ser un reflejo general de la riqueza de los sistemas naturales que la indicación puede iterarse para producir una jerarquía de niveles.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En un nivel dado de la jerarquía, un sistema particular puede verse como un exterior para los sistemas debajo de él, y como un interior para los sistemas por encima de él; así, el estatus (es decir, la marca de distinción) de un sistema dado cambia a medida que uno pasa a través de su nivel en dirección ascendente o descendente. La elección de considerar el nivel superior o inferior corresponde a una elección de tratar el sistema dado como autónomo o controlado (restringido). La Figura 10-1 ilustra una variedad de configuraciones de sistemas, subsistemas y marcas, y la Figura 10-2 ilustra la jerarquía de niveles.
+                            </Paragraph>
+
+                            <FigureBox 
+                                id="10-1"
+                                linkPlaceholder="URL_IMAGEN_CAPITULO10_FIG1"
+                                caption="Varias configuraciones de sistemas, subsistemas y marcas: Cada configuración representa un punto de vista cognitivo, y la marca indica su centro. Las flechas indican las interacciones. (De Goguen y Varela, 1978a)."
+                            />
+
+                            <FigureBox 
+                                id="10-2"
+                                linkPlaceholder="URL_IMAGEN_CAPITULO10_FIG2"
+                                caption="Evocación diagramática de una jerarquía de niveles de sistema. Véase el texto para más discusión. (De Goguen y Varela, 1978a)."
+                            />
+
+                            <SectionHeader>10.3 Recursión y Conducta</SectionHeader>
+                            <SubSectionHeader>10.3.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En la teoría de sistemas, la distinción autonomía/control aparece más específicamente como una distinción recursión/conducta. La visión conductual reduce un sistema a su rendimiento o conducta de entrada-salida, y reduce el entorno a entradas para el sistema. El efecto de las salidas sobre el entorno no se tiene en cuenta en este modelo del sistema. La visión recursiva de un sistema, tal como se expresa en la tesis de clausura, enfatiza la interconexión mutua de sus componentes (von Foerster, 1974; Varela, 1975a; Varela y Goguen, 1978). Es decir, la visión conductual surge cuando se pone énfasis en el entorno, y la visión recursiva surge cuando se pone énfasis en la estructura interna del sistema.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Si enfatizamos la autonomía de un sistema <InlineEquation tex="S_i" /> (ver Figura 10-1), entonces las influencias ambientales se convierten en perturbaciones (en lugar de entradas) que se compensan a través de la interdependencia recursiva subyacente de los componentes del sistema (los <InlineEquation tex="S_{i-1}" /> en las figuras). Cada componente, sin embargo, se trata conductualmente, en términos de alguna descripción de entrada-salida.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                El punto de vista recursivo es más sofisticado que el conductual, ya que implica la consideración simultánea de tres niveles diferentes, mientras que el conductual estrictamente hablando involucra solo dos. Esto se debe a que el modelo conductual, al tomar la visión del entorno sobre el sistema, no implica hacer nuevas distinciones. Pero expresar interés en cómo el sistema logra su comportamiento a través de la acción interdependiente de sus partes añade una nueva distinción, entre el sistema y sus partes.
+                            </Paragraph>
+
+                            <SubSectionHeader>10.3.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Lo siguiente puede ayudar a que esto parezca menos abstracto. La forma más tradicional de expresar la interdependencia de variables en un sistema es mediante ecuaciones diferenciales (cf. Sección 7.2.4). Un sistema autónomo puede representarse formalmente mediante ecuaciones de la forma:
+                            </Paragraph>
+
+                            <EquationBlock tex="\\dot{x}_i = F_i(x, t) \\quad \\text{para } 1 \\le i \\le n," label="10.1" />
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                donde <InlineEquation tex="x = (x_1, \\dots, x_n)" /> es el vector de estado del sistema. El comportamiento autónomo del sistema se describe mediante un vector solución <InlineEquation tex="x(t)" /> que satisface (10.1). Esto implica tratar todo como si ocurriera en el mismo nivel, y todas las variables como observables; en efecto, el entorno se trata como parte del sistema (o se ignora).
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Sin embargo, el efecto del entorno sobre el sistema puede representarse mediante un vector <InlineEquation tex="e = (e_1, \\dots, e_k)" /> de parámetros, dando:
+                            </Paragraph>
+
+                            <EquationBlock tex="\\dot{x}_i = F_i(x, e, t) \\quad \\text{para } 1 \\le i \\le n," label="10.2" />
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                lo que toma en cuenta explícitamente dos niveles. Las soluciones al sistema (10.2) ahora también están parametrizadas por <InlineEquation tex="e" />, es decir, son de la forma <InlineEquation tex="x(e, t)" />. La situación de (10.2) puede elaborarse en dos direcciones. En la teoría de control, es habitual asumir que las variables internas <InlineEquation tex="x" /> del sistema son inobservables o no tienen interés directo, y que tenemos en su lugar acceso directo a (o interés en) un vector de salida <InlineEquation tex="y" /> de variables que son funcionalmente dependientes de <InlineEquation tex="x" />. Las variables <InlineEquation tex="e" /> se suelen tomar como bajo el control del observador, y se plantea la pregunta de cómo usar esas variables para obtener ciertos valores deseados de <InlineEquation tex="y" />. Las ecuaciones son así de la forma:
+                            </Paragraph>
+
+                            <EquationBlock tex="\\dot{x}_i = F_i(x, e, t), \\quad y = H(x)." label="10.3" />
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Estrictamente hablando, las ecuaciones abarcan tres niveles, y pueden usarse, por ejemplo, para inferir información sobre el estado interno del sistema, pero el énfasis ("marca") está en el entorno, que se identifica con el observador. El comportamiento aparece como una función de entrada-salida <InlineEquation tex="y(e, t)" />, los resultados observables de aplicar las entradas (también llamadas "controles") <InlineEquation tex="e" /> al sistema.
+                            </Paragraph>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Una elaboración alternativa de la situación de (10.2) ve el vector <InlineEquation tex="e" /> como no necesariamente o particularmente bajo el control de un observador, sino más bien como una fuente de perturbaciones sobre (10.2). Por ejemplo, los componentes <InlineEquation tex="e_j" /> de <InlineEquation tex="e" /> pueden ser algunos coeficientes, que se consideran constantes en la ecuación original (10.1). Una pregunta natural para plantear es la estabilidad del sistema bajo tales perturbaciones, es decir, la relación de (10.1) con un sistema perturbado:
+                            </Paragraph>
+
+                            <EquationBlock tex="\\dot{x}_i = F_i(x, e, t) + \\delta F_i(x, e, t)" label="10.4" />
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                en el cual <InlineEquation tex="\\delta" /> (en una notación bastante intuitiva) representa un "pequeño cambio". Se sabe, por ejemplo, que cambios en constantes estructurales pueden causar que el sistema experimente un cambio catastrófico [en el sentido de Thom (1972)] hacia una nueva configuración.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                El sistema (10.2) no tiene nada en sí que prefiera intrínsecamente el enfoque de (10.3) o (10.4). Esta elección depende del interés del analista. Nótese que la recursión juega un papel en todas estas formulaciones, pero es más oscura en la interpretación de la teoría de control. Por otro lado, la información conductual, aunque todavía disponible, es más oscura en la interpretación de estabilidad (10.4). No estamos, por supuesto, afirmando que ninguno de estos enfoques sea inherentemente mejor.
+                            </Paragraph>
+
+                            <SubSectionHeader>10.3.3</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Históricamente hablando, algunos de los muchos enfoques posibles de los sistemas han sido mucho más desarrollados que otros. Las partes más altamente desarrolladas, de hecho, se centran en las nociones de control, comportamiento de entrada-salida y transición de estado. Esto es presumiblemente debido al interés en aplicar estos enfoques en ingeniería.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La noción de autonomía, sin embargo, es particularmente importante para los sistemas naturales (sistemas biológicos y sociales), y la falta de una teoría bien desarrollada de sistemas autónomos es una seria dificultad. Un ingeniero que diseña un artefacto elegirá las entradas de interés para él para esta aplicación con cierta seguridad de que la elección será adecuada. Pero un biólogo que estudia una célula se ve obligado a reconocer la autonomía de la célula; si las preferencias del biólogo por las variables de entrada y salida no coinciden con la organización interna de la célula, su teoría del dominio cognitivo será inútil. Además, la jerarquía de niveles parece afirmar particularmente su importancia para los sistemas naturales, por lo que generalmente es necesario tener en cuenta al menos tres niveles. Incluso cuando el nivel más bajo se entiende muy bien, el papel que juega en el siguiente nivel superior, donde está interconectado con otros sistemas, puede ser bastante oscuro. Un bioquímico de enzimas puede ser capaz de describir un bucle metabólico particular muy efectivamente mediante una función de transferencia, pero ser bastante incapaz de especificar cómo encaja en el proceso metabólico general de la célula como un todo autopoíético coherente.
+                            </Paragraph>
+
+                            <SubSectionHeader>10.3.4</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Existen algunos fragmentos de una teoría que enfatiza la autonomía de los sistemas, pero están mucho menos desarrollados que el enfoque conductista de la gestalt del computador. De hecho, el predominio de las visiones de control en la teoría de sistemas contemporánea la hace más cercana a una teoría de componentes de sistema que a una de sistemas como unidades (totalidades). Mencionemos brevemente algunos enfoques existentes para representar, en términos formales, algunas de las características de la autonomía.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Primero y principal, la idea de estabilidad derivada de la mecánica clásica ha sido extensamente estudiada y utilizada. Como dijimos antes (Sección 7.2.4), un conjunto de ecuaciones diferenciales interdependientes puede usarse para representar las propiedades autónomas de un sistema completo. Rosen (1972), Iberall (1973) y Lange (1965) han aplicado esta perspectiva a los sistemas naturales con diversos grados de énfasis en el comportamiento autónomo. Ejemplos más específicos pueden encontrarse en biología de poblaciones (May, 1971), en biología molecular (Eigen y Schuster, 1978; Goodwin, 1976; Rössler, 1978; Bernard-Weil, 1976), y más recientemente en neurobiología (Katchalsky, Rowland, y Blumenthal, 1974; Freeman, 1975). Se ha pensado algo sobre las interacciones cooperativas en esta área de sistemas multinivel jerárquicos. La idea de jerarquía se presenta a menudo desde el punto de vista de la interdependencia de diferentes niveles de descripciones de sistemas (Pattee, 1972; Whyte et al., 1968; Mesarovic et al., 1972). Instancias particulares de estructura jerárquica, incluyendo la cooperación multinivel, pueden encontrarse en Beer (1972), Kohout y Gaines (1976), y Baumgartner et al. (1976). Goguen (1971, 1972) presenta una teoría general de sistemas jerárquicos de procesos interdependientes. Sus ideas básicas son interconexión, comportamiento y nivel, y su marco teórico es el álgebra categórica. Una última área en la que la idea de un sistema completo es algo explícita es la de los sistemas autoorganizados. El trabajo en esta área, basado en un enfoque teórico de la información, incluye a von Foerster (1966) y Atlan (1972, 1978).
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                No pretendemos unir todos estos diversos hilos de investigación en un solo marco. Más bien, enfatizamos las formas en que pares de puntos de vista aparentemente diferentes, como autonomía/control, son complementarios, en el sentido de contribuir a una mejor comprensión de los sistemas naturales. Pero la idea de complementariedad, fundamental como parece, sigue siendo vaga. A continuación se desarrolla una definición explícita.
+                            </Paragraph>
+
+                            <SectionHeader>10.4 Redes y Árboles</SectionHeader>
+                            <SubSectionHeader>10.4.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Si retenemos el interés solo en la conectividad de un sistema, es posible representar la dualidad recursión/conducta mediante una dualidad red/árbol. Intuitivamente, los nodos en estas redes o árboles representan los elementos o componentes de un sistema, mientras que sus enlaces representan interacciones o interconexiones. La conectividad recíproca de una red sugiere la coordinación de los elementos de un sistema; una estructura de árbol sugiere la subordinación secuencial de las partes de un sistema, teniendo cada parte su propia descripción de comportamiento de entrada-salida bien definida. Sin duda, al retener solo la conectividad básica de la organización de un sistema, se descarta mucho en la representación red/árbol. Pretendemos usar esta conveniente representación general para estudiar la complementariedad.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Ahora a la definición de redes y árboles. Sea <InlineEquation tex="\\{v_1, \\dots, v_n\\}" /> un conjunto de nodos (componentes o partes), que han de interconectarse mediante un conjunto <InlineEquation tex="E = \\{e_1, \\dots, e_p\\}" /> de aristas (relaciones o procesos).
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                **Definición 10.1** <br/>
+                                Una red es un grafo dirigido <InlineEquation tex="G" />, es decir, una cuádrupla <InlineEquation tex="G = \\langle |G|, E, \\partial_0, \\partial_1 \\rangle" />, donde <InlineEquation tex="|G| = \\{v_1, \\dots, v_n\\}" />, y <InlineEquation tex="\\partial_i : E \\to |G|" /> son las funciones de fuente (<InlineEquation tex="i=0" />) y objetivo (<InlineEquation tex="i=1" />), desde las aristas a los nodos de <InlineEquation tex="G" />. Si <InlineEquation tex="e \\in E" />, <InlineEquation tex="\\partial_0 e = v" />, y <InlineEquation tex="\\partial_1 e = v'" />, entonces escribimos <InlineEquation tex="e : v \\to v'" />.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                **Definición 10.2** <br/>
+                                Un camino de <InlineEquation tex="v" /> a <InlineEquation tex="v'" /> en un grafo <InlineEquation tex="G" /> es una secuencia finita <InlineEquation tex="p = e_0 \\dots e_n" /> de aristas que son adyacentes, es decir, satisfacen <InlineEquation tex="\\partial_1 e_i = \\partial_0 e_{i+1}" /> para <InlineEquation tex="1 \\le i \\le n" />, con <InlineEquation tex="\\partial_0 e_0 = v" /> y <InlineEquation tex="\\partial_1 e_n = v'" />. Si <InlineEquation tex="\\partial_0 p = v" /> y <InlineEquation tex="\\partial_1 p = v'" />, entonces escribimos <InlineEquation tex="p : v \\to v'" />.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                **Ejemplo 10.3** <br/>
+                                Considérese el grafo <InlineEquation tex="G" />:
+                                Los nodos 1, 2, 3, 4 podrían representar cuatro ubicaciones físicas, cada una con una radio. Debido a diferencias en la fuerza del transmisor y receptor, frecuencias disponibles y terreno, la comunicación es posible solo a lo largo de los canales indicados por flechas en (10.5). Por ejemplo, hay una montaña entre 1 y 4. Asumamos que el nodo 1 es de particular interés —digamos que es nuestra base. Entonces estamos interesados en los patrones de transmisión que son posibles comenzando desde nuestra base. Por ejemplo, para llegar al nodo 3, si el canal <InlineEquation tex="g" /> está fuera, podemos enviar un mensaje vía <InlineEquation tex="fij" />; para verificar su corrección, podría enviarse de vuelta al nodo 1, vía el camino <InlineEquation tex="fijk" />; el nodo 3 también podría generar una respuesta, lo que requeriría enviar un mensaje al nodo 2, dando un camino <InlineEquation tex="ijkf" />; y así sucesivamente. Así, estamos interesados en el conjunto de todos los caminos en <InlineEquation tex="G" /> con fuente 1. Esta colección misma tiene una estructura ramificada, porque comenzando con un camino dado, a veces puede desarrollarse más eligiendo aristas alternativas para obtener caminos alternativos. La colección de todas las elecciones puede representarse por el árbol (10.6).
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En cierto sentido, el árbol (10.6) "desenmaraña" o "despliega" el grafo (10.5) desde el nodo 1. Para hacer esto más preciso necesitamos definir árbol, grafos apuntados, y la idea de mapeos que preservan la estructura de grafos llamados homomorfismos de grafos.
+                            </Paragraph>
+
+                            <SubSectionHeader>10.4.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                **Teorema 10.8** <br/>
+                                Sea <InlineEquation tex="G" /> un grafo apuntado, sea <InlineEquation tex="T" /> un árbol, y sea <InlineEquation tex="F: T \\to G" /> un morfismo de grafos apuntados. Entonces existe un único morfismo de grafos apuntados <InlineEquation tex="\\hat{F}: T \\to U_a(G)" /> tal que el diagrama conmuta.
+                            </Paragraph>
+
+                            <SectionHeader>10.5 Complementariedad y Adjunción</SectionHeader>
+                            <SubSectionHeader>10.5.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La complementariedad red/árbol es una instancia particularmente clara de la interdependencia de dualidades aparentes. Esta sección desarrolla esta idea en el escenario general de la teoría de categorías, que se está volviendo cada vez más útil en la teoría de sistemas (Goguen, 1973; Arbib y Manes, 1974).
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La discusión al final de la sección anterior muestra que la complementariedad red/árbol es una instancia del concepto de adjunción. Lo que ahora proponemos es explorar la visión de que el concepto preciso de adjunción es una aplicación del concepto general (y vago) de complementariedad.
+                            </Paragraph>
+                            <SubSectionHeader>10.5.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Otro ejemplo de esto es la adjunción de Goguen (1973) entre la realización mínima y el comportamiento. Sea <InlineEquation tex="\\mathbb{A}" /> la categoría de autómatas (en algún sentido fijo que no explicaremos en detalle), y sea <InlineEquation tex="\\mathbb{B}" /> la categoría de comportamientos de entrada-salida de tales autómatas (con morfismos apropiados). Entonces existe un funtor de <InlineEquation tex="\\mathbb{B}" /> a <InlineEquation tex="\\mathbb{A}" /> que construye el autómata mínimo <InlineEquation tex="M(B)" /> que tiene el comportamiento <InlineEquation tex="B" />; y existe un funtor <InlineEquation tex="Be" /> de <InlineEquation tex="\\mathbb{A}" /> a <InlineEquation tex="\\mathbb{B}" /> que construye el comportamiento <InlineEquation tex="Be(A)" /> de un autómata <InlineEquation tex="A" />. Además, existe una biyección natural <InlineEquation tex="\\varphi: \\mathbb{B}(Be(A), B) \\rightarrow \\mathbb{A}(A, M(B))" /> que expresa la complementariedad de las nociones de transición de estado interno (encarnada en autómatas) y comportamiento de entrada-salida. Goguen (1972) ha demostrado que muchas otras clases de sistemas exhiben tal complementariedad con sus comportamientos de entrada-salida.
+                            </Paragraph>
+                             <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                He aquí otro ejemplo más. Si <InlineEquation tex="G" /> es un grafo, la colección de todos los caminos (desde todas las fuentes) en <InlineEquation tex="G" /> forma una categoría cuyos objetos son los nodos de <InlineEquation tex="G" />, y cuyos morfismos son los caminos de <InlineEquation tex="G" />; esta categoría se denota <InlineEquation tex="\\mathfrak{P}a(G)" />, y se llama la categoría de caminos de <InlineEquation tex="G" />. <InlineEquation tex="\\mathfrak{P}a" /> es un funtor de la categoría <InlineEquation tex="\\mathfrak{G}r" /> de grafos a la categoría <InlineEquation tex="\\mathfrak{C}at" /> de categorías (pequeñas). También existe un funtor <InlineEquation tex="F" /> de <InlineEquation tex="\\mathfrak{C}at" /> a <InlineEquation tex="\\mathfrak{G}r" />, que simplemente olvida la estructura adicional que las categorías tienen sobre los grafos (a saber, la posibilidad de componer morfismos), considerando los objetos como nodos y los morfismos como aristas. Nuevamente, existe una biyección natural <InlineEquation tex="\\varphi: \\mathfrak{C}at(\\mathfrak{P}a(G), \\mathfrak{C}) \\rightarrow \\mathfrak{G}r(G, F\\mathfrak{C})" /> que expresa la complementariedad de grafos y categorías. Alternativamente, <InlineEquation tex="\\mathfrak{P}a(G)" /> es la categoría libre generada por el grafo <InlineEquation tex="G" />, y la adjunción (o la "propiedad universal" correspondiente) expresa esta relación (Goguen, 1974).
+                            </Paragraph>
+
+                            <SectionHeader>10.6 Excursus en la Dialéctica</SectionHeader>
+                            <SubSectionHeader>10.6.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En general, cuando diferentes modos de descripción aparecen como opuestos, es más satisfactorio considerarlos como complementarios. Este es el caso, con bastante rigor, con las dualidades aparentes red/árbol y recursión/conducta, como hemos visto anteriormente. En un nivel más intuitivo, existe una relación similar para los pares autonomía/control y operacional/simbólico discutidos en secciones anteriores. De hecho, podemos ir un paso más allá hacia la dualidad y la dialéctica como una idea filosófica amplia. En consecuencia, me gustaría entrar en un breve excursus para discutir trinidades.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Por trinidad me refiero a la consideración de las formas en que los pares (polos, extremos, modos, lados) están relacionados pero permanecen distintos —la forma en que no son uno, no dos (Varela, 1976). La idea clave aquí es que necesitamos reemplazar la idea metafórica de "trinidad" con alguna inyunción incorporada (heurística, receta, guía) que pueda decirnos cómo ir de la dualidad a la trinidad:
+                            </Paragraph>
+                            <div className="my-10 text-center text-amber-500 font-serif text-2xl">
+                                * = el ello / el proceso que conduce a ello.
+                            </div>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La barra en esta declaración de estrella (*) debe leerse como: "considere ambos lados de la /", es decir, "considere tanto el ello como el proceso que conduce a ello".
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Podemos ahora transcribir la relación familiar entre redes/árboles en una forma de estrella:
+                                <br/><br/>
+                                * = red / árboles que constituyen la red,
+                                <br/><br/>
+                                porque la dualidad está conectada con procesos en ambas direcciones de manera bastante explícita. La totalidad (la red) se ve emergiendo o resultando de la aproximación parte por parte de los árboles (el proceso que conduce a ella). De manera similar podemos considerar una estrella más generalmente atractiva:
+                                <br/><br/>
+                                * = todo / partes que constituyen el todo
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Formulemos una serie de otras dualidades interesantes en este marco de complementariedad, llamado informalmente estrella. Para este fin, tome cualquier situación (dominio, proceso, entidad, noción) que sea autónoma (total, completa, estable, autocontenida), y póngala en el lado izquierdo de la /. Ponga en el otro lado el proceso correspondiente (constituyentes, dinámica). Por ejemplo:
+                            </Paragraph>
+                            <div className="grid grid-cols-2 gap-4 my-10 pl-10 text-amber-500 italic font-serif">
+                                <div>ser/devenir</div>
+                                <div>espacio/tiempo</div>
+                                <div>realidad/receta</div>
+                                <div>simultáneo/secuencial</div>
+                                <div>aritmética/álgebra</div>
+                                <div>analógico/digital</div>
+                                <div>entorno/sistema</div>
+                                <div>contexto/texto</div>
+                                <div>semántica/sintaxis</div>
+                                <div>autonomía/control</div>
+                                <div>simbólico/operacional</div>
+                            </div>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En cada uno de estos casos los elementos duales pueden verse como complementarios: se especifican mutuamente. No hay, en este sentido, más dualidad, ya que están relacionados.
+                            </Paragraph>
+
+                            <SectionHeader>10.7 Holismo y Reduccionismo</SectionHeader>
+                            <SubSectionHeader>10.7.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Si pensamos en la filosofía de la ciencia, la dualidad holismo/reduccionismo viene a la mente como análoga al material discutido previamente en este capítulo.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La mayoría de las discusiones sitúan el holismo/reduccionismo en oposición polar (Smuts, 1925; Lazslo, 1972). Esto parece derivar de la división histórica entre las ciencias empíricas, vistas como principalmente reduccionistas o analíticas, y las escuelas (europeas) de filosofía y ciencia social que tantean hacia una dinámica de totalidades (ej., Kosik, 1969; Radnitsky, 1973). A la luz de la discusión anterior, ambas actitudes son posibles para un nivel descriptivo dado, y de hecho son complementarias. Por un lado, uno puede bajar un nivel y estudiar las propiedades de los componentes, sin tener en cuenta su interconexión mutua como sistema. Por otro lado, uno puede no tener en cuenta la estructura detallada de los componentes, tratando su comportamiento solo como contribuyente al de una unidad mayor. Parece que ambas direcciones de análisis siempre coexisten, ya sea implícita o explícitamente, porque estos niveles descriptivos son mutuamente interdependientes para el observador. No podemos concebir componentes si no hay un sistema del cual se abstraen; y no puede haber un todo a menos que haya elementos constitutivos.
+                            </Paragraph>
+
+                            <SubSectionHeader>10.7.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Es interesante considerar si uno puede tener una medida para el grado de integridad o autonomía de un sistema. Uno puede, por supuesto, siempre trazar una distinción, hacer una marca, y obtener un "sistema", pero el resultado no siempre parece ser igualmente un "sistema completo", una "entidad natural", o un "objeto coherente" o "concepto". ¿Qué es lo que hace que algunos sistemas sean más coherentes, más autónomos, más completos, que otros?
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Una primera cosa a notar es que, en la jerarquía de niveles, propiedades "emergentes" o inmanentes aparecen en algunos niveles. Por ejemplo, consideremos la música como un sistema u organización de notas. Entonces la armonía solo surge cuando consideramos el sonido simultáneo o paralelo de las notas, y la melodía solo surge cuando consideramos el sonido secuencial de las notas. Es decir, armonía y melodía son propiedades emergentes de un nivel de organización por encima del de las notas mismas. Del mismo modo, la forma solo puede surgir en un nivel de organización aún más alto, relacionando diferentes unidades melódicas entre sí. Estas propiedades —forma, melodía y armonía— son propiedades de sistemas, que surgen de organizaciones jerárquicas de notas en piezas de música; no son propiedades de las notas (Goguen, 1977). También parece que la "vida" es una propiedad emergente de la jerarquía biológica de niveles: no se encuentra en ninguna parte en el nivel de átomos y moléculas, pero se vuelve clara en el nivel de células a través de la organización autopoiética de las moléculas. El lenguaje puede verse como una propiedad emergente en un nivel aún más alto de esta jerarquía (Maturana, 1977). En general, la clausura organizacional puede verse como proporcionando el mecanismo a través del cual surgen propiedades emergentes de nuevas unidades, y así como las "bisagras" para la jerarquía de niveles en los sistemas naturales.
+                            </Paragraph>
+
+                            <SubSectionHeader>10.7.3</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Estos niveles descriptivos no se han realizado generalmente como complementarios, en gran parte porque hay una diferencia entre la metodología anunciada públicamente y la práctica real en la mayoría de los campos de investigación en la ciencia moderna. Se promueve fuertemente una actitud reduccionista, sin embargo, el análisis de un sistema no puede comenzar sin reconocer un grado de coherencia en el sistema a investigar; el analista tiene que tener una intuición de que realmente está tratando con un fenómeno coherente. Aunque la ciencia ha adoptado públicamente una actitud reduccionista, en la práctica ambos enfoques han estado siempre activos. No es que uno tenga que tener una visión holística opuesta a una visión reduccionista, o viceversa, sino más bien que las dos visiones de sistemas son complementarias.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Conclusiones similares se aplican a la comprensión de la autopoiesis en relación con la alopoiesis, o a las descripciones simbólicas opuestas a las causales. Ni elegir un polo contra el otro ni tratarlos al mismo nivel parece adecuado; más bien deben reconocerse como perspectivas cognitivas distintas, pero interdependientes, de la comunidad de observadores.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Hay una fuerte corriente en la cultura contemporánea que aboga por la autonomía, la información (descripciones simbólicas) y el holismo como una especie de panacea y como una dimensión radicalmente "nueva". Esto se ve a menudo en discusiones sobre fenómenos ambientales, salud humana y gestión. En este libro tomamos una visión bastante diferente. Simplemente vemos la autonomía y el control, las explicaciones causales y simbólicas, el reduccionismo y el holismo como complementarios o "cognitivamente adjuntos" para la comprensión de aquellos sistemas en los que estamos interesados. Están entrelazados en cualquier descripción satisfactoria: cada uno conlleva alguna pérdida relativa a nuestras preferencias cognitivas, así como alguna ganancia.
+                            </Paragraph>
+
+                            <SubSectionHeader>Fuentes</SubSectionHeader>
+                            <div className="pl-6 border-l border-slate-700 text-sm md:text-base lg:text-xl text-slate-500 italic w-full">
+                                <p className="mb-4">Goguen, J., y F. Varela (1978), Systems and distinctions; duality and complementarity, Int. J. Gen. Systems 5(4): 31-43.</p>
+                                <p>Varela, F. (1976), Not one, not two, CoEvolution Quarterly, Otoño 1976.</p>
+                            </div>
+                        </section>
+                    </main>
+
+                    <footer className="w-full text-center py-24 border-t border-slate-900 text-slate-700 text-xs">
+                        <p className="mb-2 uppercase tracking-[0.6em] font-serif">Principios de Autonomía Biológica</p>
+                        <p>© Francisco J. Varela</p>
+                    </footer>
+
+                    {/* Ventana flotante de notas (Centered) */}
+                    {activeFootnote && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 pointer-events-none">
+                            <div className="w-full max-w-5xl bg-black/95 border border-cyan-900/40 text-slate-300 p-10 md:p-16 rounded-[4rem] shadow-[0_0_100px_rgba(0,0,0,1)] backdrop-blur-3xl animate-fade-in ring-1 ring-cyan-500/30 pointer-events-auto relative">
+                                <div className="flex flex-col md:flex-row items-start gap-8 lg:gap-12">
+                                    <span className="text-cyan-400 font-serif text-5xl lg:text-8xl font-bold leading-none select-none shrink-0">
+                                        [{activeFootnote}]
+                                    </span>
+                                    <p className="text-base md:text-lg lg:text-2xl leading-relaxed text-justify font-light tracking-wide italic">
+                                        {FOOTNOTES[activeFootnote]}
+                                    </p>
+                                </div>
+                                <div className="absolute top-8 right-12 text-slate-600 text-xs uppercase tracking-widest font-bold">Nota al pie</div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
