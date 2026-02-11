@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marx: El Misterio del Capital - Carlos Peña</title>
+    
+    <!-- Fuentes: Playfair Display (Serif) e Inter (Sans) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        slate: {
+                            950: '#020617', // Deep dark background
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- Babel para compilar JSX en el navegador -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* Ajustes globales para evitar scroll horizontal y asegurar renderizado suave */
+        body {
+            background-color: #020617; /* bg-slate-950 */
+            color: #cbd5e1; /* text-slate-300 */
+            overflow-x: hidden;
+            width: 100vw;
+        }
+        ::selection {
+            background-color: #164e63; /* cyan-900 */
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { motion, useScroll, useSpring, AnimatePresence } = window.Motion;
+
+        // --- ICONOS (SVG Inline para evitar dependencias externas complejas) ---
+        
+        const MenuIcon = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        );
+        const XIcon = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18 6 6 18"/><path d="m6 6 18 18"/></svg>
+        );
+        const ChevronRightIcon = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m9 18 6-6-6-6"/></svg>
+        );
+        const BookOpenIcon = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        );
+        const ArrowUpIcon = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+        );
+
+        // --- CONFIGURACIÓN Y UTILIDADES ---
+
+        const ANIMATION_VARIANTS = {
+            hidden: { opacity: 0, y: 20 },
+            visible: { 
+                opacity: 1, 
+                y: 0, 
+                transition: { duration: 0.8, ease: "easeOut" } 
+            }
+        };
+
+        // Componente para Conceptos y Citas Textuales (Ambar)
+        const Term = ({ children }) => (
+            <span className="text-amber-500 font-semibold tracking-wide hover:text-amber-400 transition-colors cursor-help border-b border-dashed border-amber-500/30 mx-1">
+                {children}
+            </span>
+        );
+
+        // Componente para Entidades/Autores (Cyan)
+        const Entity = ({ children }) => (
+            <span className="text-cyan-400 font-medium hover:text-cyan-300 transition-colors cursor-pointer mx-1">
+                {children}
+            </span>
+        );
+
+        // --- COMPONENTES ESTRUCTURALES ---
+
+        const Section = ({ id, title, children }) => (
+            <section id={id} className="py-24 md:py-36 px-4 md:px-8 relative border-l border-slate-900/50 ml-0 md:ml-0 w-full max-w-[100vw] overflow-hidden">
+                {title && (
+                    <div className="sticky top-16 z-10 mb-20 px-2 md:px-0">
+                        <h2 className="text-3xl md:text-5xl font-serif text-slate-100 border-b border-cyan-900/50 pb-6 inline-block bg-slate-950/50 backdrop-blur-sm pr-6 rounded-r-lg">
+                            {title}
+                        </h2>
+                    </div>
+                )}
+                <div className="max-w-4xl mx-auto space-y-12">
+                    {children}
+                </div>
+            </section>
+        );
+
+        const Paragraph = ({ children }) => (
+            <motion.p 
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-50px" }}
+                variants={ANIMATION_VARIANTS}
+                className="text-lg md:text-xl text-slate-300 font-sans leading-loose text-justify hyphens-auto tracking-wide"
+            >
+                {children}
+            </motion.p>
+        );
+
+        // --- APLICACIÓN PRINCIPAL ---
+
+        function App() {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+
+            const scrollToSection = (id) => {
+                setIsMenuOpen(false);
+                const element = document.getElementById(id);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                }
+            };
+
+            const menuItems = [
+                { id: 'bienvenida', label: 'Bienvenida e Introducción' },
+                { id: 'intro-pena', label: 'Panorama Intelectual del S. XIX' },
+                { id: 'paradoja', label: 'La Vida y Paradoja de Marx' },
+                { id: 'ideas-centrales', label: 'El Capital y el Manifiesto' },
+                { id: 'secreto-capital', label: 'El Misterio y la Ley del Valor' },
+                { id: 'critica-1', label: 'Crítica: Necesidades y Valor' },
+                { id: 'critica-2', label: 'Crítica: La Temporalidad' },
+                { id: 'critica-3', label: 'Crítica: El Sujeto Histórico' },
+                { id: 'critica-4', label: 'Crítica: La Libertad' },
+                { id: 'preguntas', label: 'Ronda de Preguntas' },
+            ];
+
+            return (
+                <div className="bg-slate-950 min-h-screen w-screen overflow-x-hidden selection:bg-cyan-900 selection:text-white">
+                    
+                    {/* Reading Progress */}
+                    <motion.div
+                        className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50 shadow-[0_0_10px_rgba(6,182,212,0.5)]"
+                        style={{ scaleX }}
+                    />
+
+                    {/* Header */}
+                    <header className="fixed top-0 left-0 w-full h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-6 z-40 transition-all duration-300">
+                        <div className="flex items-center gap-3">
+                            <BookOpenIcon className="w-5 h-5 text-amber-500" />
+                            <h1 className="text-sm md:text-base font-serif text-slate-200 tracking-wider uppercase hidden md:block">
+                                Seminario CEP
+                            </h1>
+                            <span className="text-slate-600 hidden md:block">|</span>
+                            <span className="text-xs md:text-sm text-cyan-400 font-mono">Carlos Peña sobre Marx</span>
+                        </div>
+                        
+                        <button 
+                            onClick={() => setIsMenuOpen(true)}
+                            className="flex items-center gap-2 text-slate-300 hover:text-cyan-400 transition-colors group"
+                        >
+                            <span className="text-sm font-medium uppercase tracking-widest">Índice</span>
+                            <MenuIcon className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+                        </button>
+                    </header>
+
+                    {/* Menú Lateral */}
+                    <AnimatePresence>
+                        {isMenuOpen && (
+                            <>
+                                <motion.div 
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    onClick={() => setIsMenuOpen(false)}
+                                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                                />
+                                <motion.div 
+                                    initial={{ x: '100%' }}
+                                    animate={{ x: 0 }}
+                                    exit={{ x: '100%' }}
+                                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                                    className="fixed right-0 top-0 h-screen w-full md:w-96 bg-slate-900 border-l border-slate-800 z-50 p-8 shadow-2xl overflow-y-auto"
+                                >
+                                    <div className="flex justify-between items-center mb-12 border-b border-slate-800 pb-4">
+                                        <span className="text-amber-500 font-serif italic text-xl">Contenidos</span>
+                                        <button onClick={() => setIsMenuOpen(false)}>
+                                            <XIcon className="w-6 h-6 text-slate-400 hover:text-white" />
+                                        </button>
+                                    </div>
+                                    <nav className="space-y-6">
+                                        {menuItems.map((item, index) => (
+                                            <button
+                                                key={item.id}
+                                                onClick={() => scrollToSection(item.id)}
+                                                className="flex items-center w-full text-left group"
+                                            >
+                                                <span className="text-slate-600 font-mono mr-4 text-sm">0{index + 1}</span>
+                                                <span className="text-slate-300 text-lg font-serif group-hover:text-cyan-400 transition-colors">
+                                                    {item.label}
+                                                </span>
+                                                <ChevronRightIcon className="ml-auto w-4 h-4 text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </button>
+                                        ))}
+                                    </nav>
+                                </motion.div>
+                            </>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Hero */}
+                    <section className="h-screen w-full flex flex-col justify-center items-center relative overflow-hidden px-6">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black z-0" />
+                        <div className="relative z-10 max-w-5xl text-center space-y-8">
+                            <motion.div 
+                                initial={{ opacity: 0, y: 30 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 1, delay: 0.2 }}
+                            >
+                                <span className="text-amber-500 tracking-[0.3em] uppercase text-sm md:text-base font-medium mb-4 block">
+                                    Transcripción Completa
+                                </span>
+                                <h1 className="text-5xl md:text-7xl lg:text-9xl font-serif text-slate-100 leading-tight">
+                                    Marx y la <br/>
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">
+                                        Modernidad
+                                    </span>
+                                </h1>
+                            </motion.div>
+                            
+                            <motion.p 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 1, delay: 1 }}
+                                className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto font-light"
+                            >
+                                Una disección del pensamiento de <Entity>Marx</Entity> por <Entity>Carlos Peña</Entity>.
+                            </motion.p>
+                        </div>
+                        
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1, y: [0, 10, 0] }}
+                            transition={{ duration: 2, repeat: Infinity, delay: 2 }}
+                            className="absolute bottom-10"
+                        >
+                            <ArrowUpIcon className="w-6 h-6 text-slate-500 rotate-180" />
+                        </motion.div>
+                    </section>
+
+                    {/* CONTENIDO PRINCIPAL */}
+                    <main className="relative z-10 bg-slate-950">
+                        
+                        {/* SECCIÓN 1: BIENVENIDA */}
+                        <Section id="bienvenida">
+                            <Paragraph>
+                                Bienvenido, bienvenido, <Entity>Carlos</Entity>. El interés que hemos visto por el pensamiento de y la mirada que tiene sobre el <Entity>Carlos Peña</Entity> se muestra en la numerosa concurrencia que ha venido escuchando.
+                            </Paragraph>
+                            <Paragraph>
+                                Ya de <Entity>Carlos Peña</Entity> podemos decir que tiene la figura muy escasa entre nosotros de un <Term>intelectual público</Term>. Un intelectual público es un pensador, pero un pensador que habla verazmente. Esto requiere, pienso <Entity>Foucault</Entity>, una actitud, una actitud vital, constante, independiente y en el sentido último de la palabra filosófica. Creo que Carlos tiene esas condiciones y estamos contentos de que hoy vuelva a estar con nosotros. Bienvenido, Carlos.
+                            </Paragraph>
+                            <Paragraph>
+                                Una pequeña cosa eh antes de que comience <Entity>Carlos</Entity>, eh para tener más el mayor orden posible, después de la presentación de él vamos a abrir preguntas, pero como hay mucha gente y son muchas y modo bastante arbitrario, vamos a tener solo cuatro preguntas, dos de esta mitad de la sala y dos de la otra mitad de la sala. Esa al azar y Carlos va a tener la va a tener que contestarla todas juntas. Si terminamos antes de la hora indicada que serían según los las 25 para las 9 estamos partiendo, daríamos dos más. Ya. Eh, Carlos, por favor.
+                            </Paragraph>
+                        </Section>
+
+                        {/* SECCIÓN 2: INTRODUCCIÓN Y CONTEXTO INTELECTUAL */}
+                        <Section id="intro-pena" title="Panorama Intelectual">
+                            <Paragraph>
+                                Bueno, ante todo agradezco mucho la invitación del <Entity>Centro de Estudios Públicos</Entity> para eh intervenir ante ustedes, identificándolas qué juzgos son las <Term>ideas centrales del pensamiento de Marx</Term> y luego hacer el esfuerzo de dilucidar qué aspectos de esas ideas eh habrían envejecido, se habrían enmoecido como consecuencia del paso del tiempo y de la historia. Para alcanzar ese objetivo, que consiste, como digo, en identificar los aspectos centrales del pensamiento de <Entity>Marx</Entity>, por una parte, y luego intentar ubicar eh aquellas ideas que pudieran haber envejecido. Voy a dividir lo que enseguida diré en dos grandes partes. En la primera voy a intentar eh dar un vistazo general al contenido conceptual, al argumento central que en mi opinión desenvuelve <Entity>Marx</Entity>. Y luego de eso, luego de ubicar a <Entity>Marx</Entity> en el panorama intelectual de la época en que vivió e intentar dibujar las ideas que pensó, voy en la segunda parte a identificar cuatro aspectos que, en mi opinión eh a la luz de la literatura y del inexorable paso del tiempo han envejecido en la obra de <Entity>Marx</Entity>. Confío que esta última parte de lugar a algún tipo de polémica con ustedes.
+                            </Paragraph>
+                            <Paragraph>
+                                Cuando uno mira el panorama intelectual, eh la historia intelectual del siglo XIX, la figura de <Entity>Karl Marx</Entity> refulge, se empina por sobre todas las demás. Es verdad que el siglo XIX fue el siglo de <Entity>Hegel</Entity>, quien publicó nada menos que la <Term>Fenomenología</Term> en 1807 y más tarde en 1821 la <Term>Filosofía del Derecho</Term>. Y es cierto que también el siglo XIX es el siglo de <Entity>Nietzsche</Entity>, por nombrar otro gran filósofo y en algún sentido también en parte el siglo de <Entity>Husserl</Entity> y también el de <Entity>Comte</Entity>, el gran creador de la sociología contemporánea. Y si echamos un vistazo a la literatura es también el siglo XIX el de <Entity>Víctor Hugo</Entity>, cuya obra literaria se entrelaza con la cultura política nada menos que la Francia de todo el siglo XIX y también el siglo de <Entity>Dostoyevski</Entity> de quien dijo <Entity>Freud</Entity> que había inteligido como ninguno los recovecos del corazón humano.
+                            </Paragraph>
+                            <Paragraph>
+                                Todo eso es cierto, pero incluso si uno compara a <Entity>Marx</Entity> con esos grandes nombres, su estatura se destaca eh notoria e indesmentiblemente, ¿no? Porque en medio de ese gigantesco panorama de grandes intelectuales, Marx es el único que logra elaborar una <Term>teoría de la modernidad</Term>, de la <Term>modernidad capitalista</Term> nada menos. que hace el esfuerzo de situar esa modernidad capitalista en el tiempo histórico que nos ofrece un método para lograr inteligir ese tiempo histórico y al mismo tiempo es el único de todos quienes escriben durante el 19 y durante el 20 podríamos agregar y sin ninguna duda del 21 el único digo que apunta de ideas fue capaz de modelar la vida de millones y millones de seres humanos y prácticamente dibujar casi a mano la historia política del siglo XX. No, no hay eh habría que comenzar diciendo otra figura como la de <Entity>Marx</Entity>, ¿no?
+                            </Paragraph>
+                        </Section>
+
+                        {/* SECCIÓN 3: LA PARADOJA */}
+                        <Section id="paradoja" title="La Paradoja de Marx">
+                            <Paragraph>
+                                La vida de Marx estuvo salpicada de inconsistencias, habría que decir para trazar acá nada más algún dato biográfico mínimo, ¿no? Menciono dos de ellas que en mi opinión son dignas de ser subrayadas. La primera es que, como él dijo a <Entity>Engels</Entity> en una carta famosa, <Term>nunca nadie había escrito tanto con tanto fervor y con tanto entusiasmo acerca del capital y del dinero sin tener siquiera un céntimo en los bolsillos</Term>, ¿no? La vida de Marx estuvo salpicada, trufada, atravesada por la miseria y por desgracias personales gigantescas a las cuales debemos seguramente buena parte de su pensamiento, porque Marx, al igual que los grandes hombres, solió escribir, creo yo, para escapar de las desgracias personales y olvidarlas siquiera por un momento.
+                            </Paragraph>
+                            <Paragraph>
+                                Y junto con ello, junto con esa contradicción hasta cierto punto irónica, hay otra más gigantesca todavía a la hora de Marx. Y es que Marx hacia 1859 eh sostuvo que las ideas eran una variable dependiente de la historia, una suerte de <Term>epifenómeno accidental</Term> y que solía depender más bien de cuánto variaban las condiciones materiales de la existencia humana, pero las ideas, dijo él, no eran capaz de modelar la historia puesto que simplemente la expresaban. Pues bien, <Term>El Capital</Term>, la gran obra de Marx, refuta justamente la tesis que él se esmeró en el elaborar, ¿no? Porque el capital eh que aparece en la segunda mitad del siglo XIX, en apenas cuatro décadas, no desata la más gigantesca revolución política y social a que ha asistido la historia contemporánea y cambió la fisonomía del mundo, ¿no? De manera que Marx está preso de una inevitable paradoja y es que el intelectual que se esmeró por mostrar que las ideas no eran muy relevantes a la hora de configurar la historia, no al tiempo de formular esas ideas performativamente, negó, como digo, su propia tesis.
+                            </Paragraph>
+                            <Paragraph>
+                                No fue, habría que agregar y antes de ir a sus ideas centrales, un escritor formidable, no solo por la cantidad de páginas que redactó y escribió, sino por la estructura dramática que era capaz de darle a cada una de las cosas que escribía, eh el brillo literario fulgurante eh que era capaz de acuñar eh para expresar sus ideas. El afán polémico con que escribía <Entity>Marx</Entity> era uno de esos escritores que no decía necesitar lectores sino rivales para poder escribir. Prácticamente toda su obra es un esfuerzo polémico contra alguien, contra la economía política clásica del capital, la <Term>Miseria de la Filosofía</Term> contra la filosofía de su época y sume y sigue, ¿no? Eh, Marx es realmente un pensador polémico en el mejor sentido de la expresión y un escritor, creo yo, de gran brillo.
+                            </Paragraph>
+                            <Paragraph>
+                                Eh, si ustedes revisan <Term>El Capital</Term> y seguramente lo han visto, es sorprendente eh el rigor, la paciencia, la minuciosidad con que <Entity>Marx</Entity> recoge cada una de las fuentes a las que se refiere, la cantidad de citas con que adorna el capital, una práctica que, si ustedes revisan bien la historia intelectual del 19, hasta ese momento no se hacía. De manera que Marx podría haber sido un profesor universitario hoy día, le habría ido muy bien, seguramente escribiendo paper científicos con el rigor con que escribió el Capital. Sobre eso no cabe, creo yo, ninguna duda.
+                            </Paragraph>
+                            <Paragraph>
+                                Finalmente fue un sujeto eh precoz eh y precozmente consciente de su genio. Hm. escribió una famosa carta al padre que hoy día los biógrafos recogen, el año 1837, tenía recién cumplidos 19 años. Y a diferencia de la carta al padre de <Entity>Kafka</Entity>, no hay en ella ninguna angustia existencial, ningún sopor metafísico. Se trata de la carta de un hijo que adora a su padre. Su padre es un abogado judío, converso. Y un joven que revisa su propia trayectoria intelectual a los 19 años, ¿no? Anunciándole a su padre. Padre, con todo detalle que ha llegado a la conclusión que el idealismo de <Entity>Kant</Entity> y de <Entity>Fichte</Entity> no vale demasiado la pena y que hay que empezar a estudiar a <Entity>Hegel</Entity>. Todo esto a los 19 años. Y lo más notorio de esa carta, esa famosa carta al padre que como digo, uno podría comparar con la de Kafka, aunque en un registro distinto, eh compara su propio desarrollo intelectual, el que hasta ese momento había tenido y el que esperaba tener nada menos que con la historia universal, lo que muestra de qué manera el joven Marx tenía una idea de sí mismo y una expectativa gigantesca que la historia lo probó. Su vida no defraudó en absoluto, sino que más bien logró realizar con total plenitud.
+                            </Paragraph>
+                        </Section>
+
+                        {/* SECCIÓN 4: IDEAS CENTRALES */}
+                        <Section id="ideas-centrales" title="Ideas Centrales: El Capital">
+                            <Paragraph>
+                                Pues bien, ¿qué ideas fueron las que pensó <Entity>Marx</Entity>? ¿Cuáles fueron las ideas centrales que permitirían explicar el hechizo intelectual, político e histórico que Marx logró ejecutar? Esta es la pregunta que debiéramos intentar responder. De toda la obra de Marx, no cabe ninguna duda si atendemos a su propio juicio que lo principal de su de su creación intelectual está contenida en <Term>El Capital</Term>. No es verdad que hoy día suelen citarse multitud de textos, los <Term>Manuscritos del año 44</Term>, aquellos que escribió mientras estaba de luna de miel leyendo a <Entity>Rousseau</Entity>. Eh, los <Term>Grundrisse</Term> que fueron sus estudios de economía política del 57 y el 58. Pero si atendemos al juicio que Marx tenía respecto de su propia obra, no cabe ninguna duda que lo fundamental que él pensó o que él creía fundamental en lo que él había trabajado, estar en el capital. Una obra le dice a uno de sus corresponsales, <Entity>Meyer</Entity>, <Term>por la que he sacrificado mi vida, mi felicidad y mi familia</Term>, ¿no? Este era el estatuto que Marx conferida al capital. Hm.
+                            </Paragraph>
+                            <Paragraph>
+                                El capital, como ustedes saben, se publica recién en la segunda mitad del 19. Termina Marx de escribir el el tomo primero del capital, el único que debemos a su pluma. Eh, lo termina de escribir, digo, el 13 de agosto de 1867, ¿no? Exactamente a las 2 de la madrugada, cosa que sabemos porque le escribe una carta a <Entity>Engels</Entity> contándole. A esta hora acabo de poner punto final al primer tomo del capital, ¿no? Y si bien el capital se concluye en esa fecha y a esa hora precisa, a las 2 de la madrugada, ¿no?, del 13 de agosto de 1867, no cabe ninguna duda que el argumento narrativo, la visión de la historia que Marx tenía y cuya estructura conceptual intenta develarse en el capital, esa narrativa que conocemos como marxismo, estaba ya presente en él desde por lo menos el año 1848, que es el año en que publica el <Term>Manifiesto Comunista</Term>, ¿no? Un año exactamente antes que migra a Londres. En el manifiesto comunista ya se dibuja como si fuera el bosquejo de una novela, prácticamente toda la teoría de la historia que Marx eh va a intentar develar en el Capital ahora más científicamente, ¿no?
+                            </Paragraph>
+                            <Paragraph>
+                                Eh, y ustedes conocen el Manifiesto Comunista. El Manifiesto Comunista es un panfleto brillante que escribe con Engels, donde describe la sociedad moderna, es decir, el capitalismo que estalla ante sus ojos. Y cuando ustedes leen el manifiesto comunista aparece en realidad el escrito de un publicista, de alguien encargado de aleccionar a las personas para que adhieran a la sociedad moderna que está brotando eh ante él, porque efectivamente él presenta el capitalismo como una formación social formidable, una fuerza misteriosa vital, eh, que ha ha alcanzado logros superiores en la historia humana a cualquier cosa que hubiéramos podido imaginar, ¿no? Los acueductos romanos, las pirámides egipcias palidecen, dice Marx, al lado de la fuerza creativa que tiene el capitalismo, ¿no? Que es una formación social que ha dado lugar, dice él, a las mayores y mejores transformaciones que los hombres hubiéramos podido siquiera imaginar, ¿no? Pero al mismo tiempo que Marx constata este espléndido dinamismo del capitalismo en el manifiesto comunista. Eh, al mismo tiempo toma nota eh que junto a esa formidable creatividad y a ese acopio de riqueza que el capitalismo es capaz de producir, con la misma y pareja intensidad produce miseria.
+                            </Paragraph>
+                            <Paragraph>
+                                Y en consecuencia, <Entity>Marx</Entity> constata en el manifiesto comunista que el capitalismo o la sociedad moderna, que para estos efectos es exactamente lo mismo, está atravesado por una gigantesca contradicción. Desarrolla la <Term>fuerzas productivas</Term>. De tal manera piensa Marx que no es descaminado pensar que pudieran ellas acabar con la escasez, ¿no? Haciendo posible la libertad humana, pero al mismo tiempo y por motivos que habría que dilucidar, eh produce una miseria como nunca antes la habíamos visto. Esta mezcla de una poderosa fuerza creadora y al mismo tiempo de una profunda y muy severa injusticia que se manifiesta en la producción de pobreza y de miseria. Eh, es lo que llama la atención a Marx.
+                            </Paragraph>
+                            <Paragraph>
+                                Eh, el manifiesto comunista es el intento de explicar conceptualmente este fenómeno eh sosteniendo <Entity>Marx</Entity> que en realidad en la sociedad moderna eh anida una contradicción profunda y hasta ese momento irresoluble entre, por una parte eh unas fuerzas productivas que objetivamente permitirían la realización de la libertad por la vida de suprimir la escasez, pero por un conjunto de instituciones al mismo tiempo surgidas de esas mismas fuerzas entre las cuales está el Estado que sujetan, por decirlo así, ¿no?, que sujetan estas fuerzas liberadoras que el capitalismo anida. No hay una contradicción en suma, entre la formación social eh superestructural, diríamos, siguiendo la terminología del año 59, por una parte, y la capacidad creadora del capitalismo. Esta contradicción, que se expresa como una contradicción de clases, dice Marx, en algún momento eh habrá de acabar, ¿no? Y que habrá acabar cuando la clase explotada, aquella con cuyo sudor se expande esta gigantesca productividad, se revele, expropie a los expropiadores, ¿no? Y el manifiesto termina con ese espléndida eh esa espléndida cita <Term>proletarios del mundo unidos</Term>, ¿no?
+                            </Paragraph>
+                        </Section>
+
+                        {/* SECCIÓN 5: EL SECRETO DEL CAPITAL */}
+                        <Section id="secreto-capital" title="El Secreto del Capital">
+                            <Paragraph>
+                                Este relato que es un relato casi novelesco, ¿no? Manifiesto comunista eh es la idea idea que Marx tiene finalmente de la historia. El problema es que no cuenta, el año 48, cuando se escribe el manifiesto, no cuenta todavía con ninguna teoría que permita explicar cuál es el mecanismo íntimo que permite que este fenómeno se produzca, ¿no? Eh, entre el año 1848, que es el año del manifiesto, ¿no? Y la fecha eh el 13 de agosto del 67, como yo decía adelante antes, eh Marx hace un gigantesco esfuerzo por intentar dilucidar el mecanismo íntimo que hace que la modernidad con todas sus contradicciones se produzca, ¿no? Toda su estadía en en Londres el gigantesco esfuerzo por eh esclarecer lo que va a llamar en alguna de sus cartas el <Term>secreto o el misterio del capital</Term>, ¿no? Que en términos sociológicos contemporáneos diríamos el secreto de la sociedad moderna, ¿no?
+                            </Paragraph>
+                            <Paragraph>
+                                Eh, alcanza resultados eh notables eh cuando principia estudiar economía política. Sabemos eso porque los <Term>Grundrisse</Term>, que son los materiales que estudió en la biblioteca del Museo Británico a la hora de componer el capital han llegado hasta nosotros, como ustedes saben, ¿no? Yo no puedo asistir ahí porque Marx era un estudioso eh minucioso, casi con paciencia casi benedictina, que tomaba notas, fichas, eh hacía anotaciones de los libros que leía, recogía observaciones críticas, sabemos exactamente cómo se fue conformando eh el argumento del capital, ¿no? Ya el año 1859 eh cree ya tener el argumento final, cree tener el secreto del capital y el argumento final eh que permite conceptualmente exponer ante el público ese secreto, ¿no?
+                            </Paragraph>
+                            <Paragraph>
+                                El argumento final lo expone en el prólogo a la <Term>Contribución a la Crítica de la Economía Política</Term> de 1859, ¿no? Que es el texto que sigue a los Grundrisse. dice famoso. Los que nos dice son los apuntes con que estudia economía política y escribe luego la contribución a la crítica de la economía política e que lleva un prólogo, el famoso prólogo de 1859. De hecho una introducción que era del año 57 eh luego de haber leído la <Term>Ciencia de la Lógica</Term> de <Entity>Hegel</Entity>, pero eso es un detalle técnico que podemos poner en paréntesis por ahora. Escribe el famoso prólogo de 1859 e resumiendo sus tesis fundamentales, que son aquellas que van a donar digámoslo así, narrativamente, las tesis del capital. ¿Y qué dice el prólogo del año 59? Todos ustedes lo conocen y lo ofendo prácticamente si lo reitero, pero Marx dice más o menos lo que sigue. Dice, "Hasta ahora me había dedicado a la jurisprudencia." Marx es un tipo que había estudiado derecho, ¿no? Se había doctorado en derecho, por supuesto. Eh, y dice, "El resultado general a que llegué año 1859 y que una vez obtenido me sirvió de guía para mis estudios." Puede resumirse como sigue. Estoy citando textual en la condición, digamos, en la producción social de su existencia, ¿no? Los hombres contraen, dice él, eh determinadas relaciones de producción que son dependientes del desarrollo de las fuerzas productivas y sobre esas relaciones de producción agrega, se erige una gigantesca superestructura jurídica, política y cultural, ¿no? Que es una expresión fundamentalmente agrega de las condiciones materiales de existencia.
+                            </Paragraph>
+                            <Paragraph>
+                                No, la clave en consecuencia del desarrollo histórico, sospecha Marx el año 59 es el cambio en las condiciones materiales de la existencia humana. De ahí la frase que está en el prólogo del 59 <Term>no es la conciencia, verdad, del hombre lo que determina el ser, sino que el ser social es lo que determina su conciencia</Term>. La clave, en consecuencia, es el cambio en las condiciones materiales de la existencia humana. Llega un punto, dice Marx, donde el cambio de las condiciones materiales de la existencia entran en desarrollo, digamos, en contradicción con la gigantesca superestructura que hasta ese momento se había sobre ellución social, ¿no? Con una particularidad, agrega Marx en el prólogo del 59, la contradicción que se produce entre el desarrollo de las fuerzas productivas, diríamos, y las relaciones de producción que han surgido a su sombra en el capitalismo es la contradicción final. ¿no? Y augura entonces en el prólogo del 59 que una vez que esa contradicción se resuelva se podrá dar el salto desde el <Term>reino de la necesidad</Term> en la expresión que utiliza al <Term>reino de la libertad</Term>. No habrá entonces concluye, eh terminado la prehistoria humana y habrá comenzado la verdadera historia humana. Ya veremos qué quiere esto decir desde el punto de vista político.
+                            </Paragraph>
+                            <Paragraph>
+                                El texto que acabo de reseñar recién que como ustedes ven, tiene un grado mayor de sofisticación conceptual, ¿verdad?, que la narrativa espléndida, pero panfletaria finalmente del manifiesto comunista. Eh, debiera ser completado todavía con un texto eh también muy temprano del año 45, que es la <Term>Ideología Alemana</Term>, un texto que escribe con Engels, que no publica. Marx, en una de sus cartas dice que una vez que aclaró sus ideas lo dejaron entregado a la <Term>crítica roedora de los ratones</Term>. Esa es la expresión que lo utiliza en la ideología alemana donde él imagina esto que llama reino de la libertad. ¿no? Y lo que afirma en ese párrafo famoso que paso ahora a citar y que va a reiterar luego en el tomo tercero del Capital, ¿no? Es que llegará un momento cuando esta contradicción se resuelva y el salto al reino de la libertad se produzca. Ya veremos qué quiere decir todo esto. Llegará un momento, dice, en que la <Term>división coactiva del trabajo</Term> habrá desaparecido y usted podrá ser, podrá dedicarse en la mañana, dice, a leer, en la tarde a pasear, en la noche a crítico sin que por eso sea ni pescador, ni lector, ni crítico, porque no hay división coactiva del trabajo, ¿no?
+                            </Paragraph>
+                            <Paragraph>
+                                Esta es la imagen, eh, casi una ensoñación novelesca, ¿no?, que el Marx del año 45, me dicen ustedes, tien en la cabeza. Estamos hablando del año 45, un año después de los famosos manuscritos de París del año 44, ¿no? Pero esta es una imagen que, como digo, a pesar de ser una imagen de eso que se llama el joven Marx, persiste en su obra como lo prueba el tomo tercero del capítulo donde una imagen muy semejante aparece cuando Marx imagina el reino de la libertad como una asociación voluntaria de productores que suprime la división cooctiva del trabajo. Ya vamos a ver qué dice la literatura posterior sobre este paso fundamental del argumento de Marx. Pero como decía, el esquema narrativo y conceptual de en qué consiste y cuál es la condición de la modernidad, diríamos, de la modernidad capitalista está ya formulado en estas obras que acabo de trazar eh a grandes líneas, ¿no?
+                            </Paragraph>
+                            <Paragraph>
+                                Eh, la otra que habría que mencionar es la <Term>Crítica al Programa de Gotha</Term> para que vean ustedes como eh hay una cierta coherencia narrativa en esta en esta especie de ensoñación novelesca y magnífica, sin ninguna duda que tiene Marx en la crítica al programa de Gota, que es la crítica al programa socialdemócrata alemán, ¿no? Eh, Marx, estamos hablando esta vez del año 1875, ya publicó El Capital, eh, Es grime, ¿no? Eh, El lema que la sociedad comunista, dice él, que es el reino de la libertad, podrá algún día escribir en su bandera de <Term>cada cual según su capacidad a cada cual según su necesidad</Term>. Entonces, como ustedes ven, tanto las imágenes notables del Manifiesto Comunista, la armazón conceptual más rigurosa del prólogo del 59, lo que he llamado la ensoñación magnífica que aparece en la ideología alemana y en el tomo tercero del capital. y este lema que aparece en la crítica al programa de Gota completan este cuadro magnífico que Marx tiene en la cabeza, ¿no? Respecto de ¿qué? De la situación íntima de la modernidad capitalista por una parte, pero al mismo tiempo del lugar que ella posee en el continuo de la historia, ¿verdad? O más bien habría que decir, echando mano al prólogo, de la prehistoria, porque solo cuando termine pasaremos a la historia en opinión de Marx y ya veremos qué puede significar esto conceptualmente.
+                            </Paragraph>
+                            <Paragraph>
+                                Pero como decía La cuestión que, sin embargo, eh Marx aún no había logrado resolver era cuál era el misterio del capital. Y el capital, esta obra que terminó el año 67, en su primer volumen al menos, eh puede ser leído como una novela, diría yo, eh cuyo personaje central es la <Term>ley del valor</Term>, ¿no? Y la ley del valor, el personaje del capital, cuyos avatares vamos a revisar, pero a grandes trazos, porque esto es algo que ustedes seguramente conocen la ley del valor, digo, es la que permite dilucidar el misterio del capital, es decir, permite explicar científicamente, como diría <Entity>Althusser</Entity>, ¿no?, aquello que conceptual y casi literariamente Marx había descrito desde el manifiesto comunista hasta el prólogo del 59. ¿En qué consiste este problema?
+                            </Paragraph>
+                            <Paragraph>
+                                Marx, en el tomo primero del Capital y en el libro primero, desde luego, eh comienza, como ocurre con todas las grandes obras, Eh, formulando prácticamente eh una una tesis notable que que resume prácticamente el contenido del volumen. Dice, <Term>"A primera vista, la sociedad capitalista se nos presenta como un inmenso arsenal de mercancía."</Term> Esta es la frase. Eh, esto tiene una explicación a partir de la ciencia de la lógica de Hegel, pero digo, dejemos eso por ahora en paréntesis. La cuestión es, ¿qué explica el valor de la mercancía? Siguiendo una vieja tesis que está en <Entity>Aristóteles</Entity>, en la en la política y en la ética nicomacca nada menos, eh, Marx dilucida eh dos dimensiones en el valor de una mercancía, como ustedes saben, el <Term>valor de uso</Term> por una parte y el <Term>valor de cambio</Term> por otra parte, ¿no? El valor de uso parece estar conectado con las necesidades humanas, esto es muy problemático por lo que voy a decir más adelante y el valor de cambio a su turno no alude a esta dimensión o a esta a esta posibilidad de equivalencia que la mercancía tiene con cualquier otra mercancía.
+                            </Paragraph>
+                            <Paragraph>
+                                El ejemplo que pone Marx es una casa vale una determinada cantidad de cajas de fósforo cuando uno la mira desde el punto vista del valor de cambio, ¿no? O sea, es la equivalencia total. Esto lo había dicho <Entity>Hegel</Entity> por lo demás en la en su escritos de Jena. ¿cuál es el origen del valor de cambio? La economía política, por ejemplo, <Entity>John Stuart Mill</Entity>, <Entity>David Ricardo</Entity> habían afirmado algo en lo que Marx cree firmemente, ¿no? Y es que el origen del valor del valor de cambio es el trabajo humano. No, esto es la tesis de la economía política clásica, ¿no? Eh, sin embargo, si el valor eh de la mercancía derivaba del trabajo humano en la formulación que la economía política clásica efectuaba, no era posible dilucidar cuál era el valor del trabajo sin incurrir en una tautología obviamente estúpida, ¿verdad? Si usted dice que el valor de la mercancía es el trabajo y luego pregunta por el valor del trabajo corresponde con al valor del trabajo del trabajo. Está diciendo una perfecta tontería, ¿no?
+                            </Paragraph>
+                            <Paragraph>
+                                <Entity>David Ricardo</Entity> no resolvió el problema, como sabemos tampoco y no. Marx, sin embargo, cree haberlo resuelto, ¿no? Con aquella famosa fórmula según la cual eh el valor o la ley del valor o el valor de la mercancía equivale al <Term>tiempo de trabajo socialmente necesario</Term> para producirla. Esta fórmula aparentemente Eh, una variación meramente lingüística de aquella que había formulado la economía política clásica permite resolver, sin embargo, una infinidad de problemas. El principal de todos permite calcular el valor del trabajo. Si el trabajo es una mercancía, podemos también saber cuál es su valor. El valor del trabajo es el tiempo socialmente necesario para reproducir las fuerzas del obrero, digamos, o sea, para reproducir el trabajo, ¿no? Este sencillo giro nos parece sencillo hoy día, una vez que ya lo conocemos, desde luego, pero la genialidad de Marx consiste en haberlo dado antes que nadie, por supuesto. y ya veremos el alcance que tiene.
+                            </Paragraph>
+                            <Paragraph>
+                                Permite develar lo que él va a llamar el secreto del capital, ¿no? ¿Cuál es el secreto del capital? Consiste básicamente en que en la circulación capitalista una persona tiene dinero, estoy ejemplificando tal cual lo hace Marx en el libro primero del Capital, una persona tiene dinero, compra eh una mercancía, ¿no? Luego la vende, la vende por su exacto valor y al cabo de esta circulación tiene más dinero. Este es el misterio del capital, ¿no? Se trata de un misterio porque aquí no hay una cuestión moral. No es que el capitalista en la circulación capitalista, ¿verdad?, tenga dinero, compre una mercancía y luego lo engañe a usted cobrándole más de lo que la mercancía vale y que por eso acumula. No, no. La gracia del capitalismo, dice Marx, es que las cosas se cambian por su exacto valoro. Nadie engaña a nadie. Hay una perfecta equivalencia, hay una perfecta justicia conmutativa en el intercambio. El mercado es perfectamente justo, ¿no? Pero así todo se produce acumulación. Este es el misterio del capital.
+                            </Paragraph>
+                            <Paragraph>
+                                ¿Y cómo puede ocurrir esto? Bueno, lo que ocurre, dice Marx, y este es la famosa <Term>plusvalía</Term>, ¿verdad? Es que hay una mercancía, el trabajo humano, ¿no? Que produce más valor que aquel que es necesario para reproducirse, ¿no? Y en consecuencia la apropiación de ese plus valor es lo que permite la acumulación. Esta es la tesis central de Marx, digamos, ¿no? De la cual se derivan cuestiones como la distinción entre capital constante y variable, la ley de rendimientos decrecientes, etcétera, que discutir después, pero este es el aspecto fundamental de su argumento. H el aspecto fundamental es que hay una mercancía que produce al consumirse, al emplearse o usarse más valor que aquel que es necesario para reproducirse a sí misma. Este es el plus valor que permite la apropiación y permite en consecuencia la acumulación, ¿no? Esta es la tesis central sobre la cual Marx va a intentar explicar a partir de allí, durante todo el tomo primero del capital la íntima estructura del capitalismo. ¿no? Desde por qué hay crisis en el capitalismo, por qué la tasa de ganancia decrece, por qué inevitablemente el capitalismo, en su opinión, aunque esto en esto al parecer se equivocaba, produce inevitablemente pobreza. H todo esto que ustedes no crean a partir de este descubrimiento magnífico que es la formulación que él hace la ley del valor, corrigiendo, como digo, la economía política.
+                            </Paragraph>
+                            <Paragraph>
+                                Ahora bien, la pregunta eh que cabe formular, ¿no? Es de qué forma o más bien cómo se sitúa esta idea de Marx en la historia de las ideas. Desde luego, como expliqué en antes, eh la idea de que el origen del valor está en el trabajo es una vieja idea. Eh viene de <Entity>Locke</Entity>, desde luego, Locke la formula en el en el segundo tratado sobre el gobierno civil, ¿no? Eh, es una idea muy persistente en en la historia de las ideas, aunque fíjense ustedes lock y menciono esto porque luego voy a ir sobre un aspecto del envejecimiento de estas ideas que creo yo eh se entiende bien a partir de aquí, pero dejo mencionado el punto lo también se plantea la pregunta de por qué hay acumulación, ¿no? Porque lo piensa que el origen de la propiedad, como ustedes saben, es el trabajo. y que el trabajo es la fuente de todo va al otro. Esto es lo que erige a la propiedad privada y permite establecer la primacía de la economía sobre la política, que es una vieja tesis también liberal, no solo de Marx, desde luego, ¿no?
+                            </Paragraph>
+                            <Paragraph>
+                                Eh, pero la pregunta que hace <Entity>Locke</Entity> es, ¿por qué hay acumulación si las necesidades humanas están sometidas a un cierto decrecimiento marginal? <Entity>John Locke</Entity> fue un marginalista intuitivo antes de Marx. No, es decir, si cada unidad adicional que usted consume disminuye su tasa de bienestar, por una parte y por otra parte si los bienes son perecibles, bueno, porque hay acumulación. La acumulación es irracional y ocurre que la sociedad moderna es pura acumulación. ¿Cuál es? ¿Por qué se produce la acumulación? La respuesta de L es una respuesta eh brillante. Ah, LoC dice que la acumulación es perfectamente racional gracias a la aparición de una mercancía extraña que es puro valor de cambio que se llama el dinero, ¿no? Porque el dinero no es perecible y en consecuencia el dinero, en opinión de lo permite amagar eh la utilidad de creciente porque si usted tiene dinero tiene la posibilidad de adquirir con él o cambiar con él una infinita cantidad de cosas y en consecuencia satisfacer una infinita cantidad de deseos. Esto también lo dice Hegel bastante más tarde. En suma, para lo partiendo de la idea de que la fuente del valor es el trabajo, la acumulación es perfecta. directamente racional, ¿no? Para Marx, sin embargo, y este es el punto que quiero hacer y voy a volver sobre él luego en la parte más crítica de esta exposición, la acumulación es irracional. Hay un punto en que la acumulación es totalmente irracional, ¿no? No por razones morales, sino porque la acumulación es una especie de performatividad del sistema capitalista que lo sostiene una especie de autopoyesis, digámoslo así, ¿no? Que lo sostiene vivo como con una suerte de respiración artificial permanente, ¿no? Y el Problema entonces es dilucidar cómo romper esta especie de performatividad de de mercancía y de consumo que es propia del capitalismo, ¿no? Y que favorece, por decirlo así, la acumulación. Pero dejemos pendiente por ahora este punto, si les parece.
+                            </Paragraph>
+                        </Section>
+
+                        {/* SECCIÓN 6: CRÍTICA 1 - LEY DEL VALOR */}
+                        <Section id="critica-1" title="Crítica 1: Ley del Valor">
+                            <Paragraph>
+                                H cabría ahora preguntarse una vez que hemos dibujado a muy grandes trazos, no se me escapa, eh la posición intelectual de Marx y los los argumentos fundamentales que ha hecho desde el manifiesto comunista hasta el capital, deteniéndonos, sin embargo, en la idea fundamental de que el capital es, ¿no?, el argumento central de Marx, ¿no? Eh, aquel al cual dio, repitámoslo, ¿no? Su salud, sacrificó su felicidad y su familia, ¿no? Según le dice a Meyer, su corresponsal favorito, ¿no? Eh, dicho eso, la pregunta que debiéramos hacernos ahora en la parte ya final de esto, no quiero extenderme demasiado para que podamos discutir, es una vez que uno mira esta magnífica esta magnífica suma de idea, una vez que uno lee este argumento brillante escrito con tono profético que fustiga casi como un látigo, ¿no? Cada cierto tiempo cuando uno lo lee y se pregunta hoy día, bueno, ¿qué queda de eso? ¿Qué de eso resulta hoy día problemático? a la luz de lo que ha acontecido y a la luz de la literatura. ¿Qué podríamos decir de esto? Esta es la segunda parte.
+                            </Paragraph>
+                            <Paragraph>
+                                Como les decía mi exposición, me parece a mí que si uno se pone ante el esfuerzo de pensar a Marx y responder la pregunta de en qué aspectos de su quehacer teórico pudo haber envejecido, yo mencionaría lo siguiente y los voy a examinar en el orden en que los voy a anunciar. No, en primer lugar, me parece a mí la eh <Term>ley del valor</Term> presenta eh problemas conceptuales h que han dado origen a una cantidad casi oceánica de literatura que yo voy a intentar resumir rápidamente. La ley del valor, es un problema serio. En segundo lugar, voy a mencionar la cuestión de la temporalidad en Marx, o sea, la idea de tiempo que hay en Marx. No, porque Marx es un moderno. Marx es un pensador de la modernidad finalmente. Y la modernidad es una forma de concebir la temporalidad. Quiero detenerme también en eso. Esa es una segunda cuestión. En tercer lugar voy a mencionar el problema del sujeto histórico. Marx, como vamos a ver, cree que la historia tiene un sujeto privilegiado, que es el proletariado, ¿no? Una clase que reúne en sí a la humanidad entera, ¿no? Una clase redentora. diríamos así lo dice el propio Marx por lo demás. Y finalmente voy a referirme, voy a intentar comparar la ideas acerca de la libertad que tiene Marx, ¿no? Con las ideas liberales sobre la libertad y con eso voy a concluir.
+                            </Paragraph>
+                            <Paragraph>
+                                Bien, vayamos al tema de la ley del valor. El problema que tiene la ley del valor, digámoslo así, ¿no? O que parece tener la ley del valor. es que si ustedes se preguntan cuál es el valor del trabajo, que es el aspecto clave de este argumento, la respuesta de Marx es que el valor del trabajo es el tiempo socialmente necesario para el tiempo de trabajo socialmente necesario para reproducirlo, para reproducir las fuerzas del obrero, etcétera. Y la pregunta es, ¿qué se necesita? Y esta es una pregunta que el propio Marx hace en el capital, no la estoy inventando. Retor ¿Qué necesita el obrero para reproducir su fuerza? ¿Siempre lo mismo o eso varía? La respuesta de Marx es que las necesidades del obrero cuya satisfacción es imprescindible para reproducir sus fuerzas, ¿me siguen? Y que está a la base de la ley del valor, esas necesidades, diel varían dependiendo del tiempo histórico.
+                            </Paragraph>
+                            <Paragraph>
+                                Obsérvese el problema en que estamos, ¿no? Obsérvese el problema. La ley del valor es el íntimo mecanismo de la relojería de la historia, ¿no? Pero al mismo tiempo descubrimos que al parecer el mismo es histórico, ¿no? Por supuesto, Marx advierte este problema, desde luego, no es un problema inédito, debo decirles, en las ciencias sociales. Ah, si ustedes leen a <Entity>Durkheim</Entity>, por ejemplo, gran sociólogo francés, en la regla del método sociológico, dice, "Bueno, la clave de la sociología es explicarlo. social por lo social, ¿no? Y si ustedes leen a <Entity>Heidegger</Entity> se enterarán del círculo hermenéutico, ¿no? Heidegger dice, "Bueno, toda interpretación parte de otra interpretación. Esto es inevitable, digamos. Lo mismo <Entity>Husserl</Entity>, de manera que no tiene no es tan escandaloso, pero hay que explicar este círculo vicioso en que Marx incurre en la ley del balocho. ¿Por qué? Entre otras cosas, porque la idea de Marx tiene un horizonte, llamémoslo escatológico, ¿verdad? Consistente en que Llegará un momento en que pasaremos del reino de la necesidad al reino de la libertad, ¿no? Y este momento, aparentemente diríamos, por ejemplo, <Entity>Marcuse</Entity> tiene un texto en un famoso debate con con <Entity>Bloch</Entity>, ¿no? Este momento, el salto del reino de la necesidad, el reino de la libertad se produce una vez que objetivamente la escasez se elimina, ¿no? Pero para que la escasez se elimine es imprescindible que el elenco de necesidades de humanas sea finito. Es decir, que las necesidades no sean cuestiones que dependan de su preferencia, de lo que usted quiere, desea o anhela, sino que estarían ancladas antropológicamente en una cierta naturaleza, ¿verdad? Que por algún motivo de pronto brotaría en nosotros desechando todas esas necesidades inservibles e innecesarias por la que ustedes se esfuerzan en trabajar todos los días, ¿no?
+                            </Paragraph>
+                            <Paragraph>
+                                Este es un problema sin ninguna duda. ¿Cómo? ¿En qué momento pasamos del reino de la necesidad de la libertad? El caso más evidente es decir, bueno, pasamos del reino de la necesidad al reino de la libertad eh una vez que la escasez esté objetivamente suprimida como consecuencia del fantástico desarrollo de las fuerzas productivas cuya alabanza se contiene en el manifiesto comunista. No, uno podría decir esto. Marcuse, como digo, en una disputa muy temprana así lo sostiene, ¿no? Y y hay textos del propio Marx que parecen insinuarlo, pero sostener eso Es una tesis, diríamos, que no sería extraña en la historia de la idea, sería una tesis estrictamente rusoniana. <Entity>Rousseau</Entity> era un sujeto que pensaba que había necesidades verdaderas y necesidades falsas y que la modernidad era, por decirlo así, el desorden de las necesidades falsas. Necesidades, decía Rousseau, que cubrían con gualdas de flores las cadenas de nuestra servidumbre. No hemos oído hoy día también eso. Hoy día se escuchan este tipo de frases. No, necesidades falsas que cubren con gualdas de flores las cadernas, cadenas, digo, de nuestra servidumbre.
+                            </Paragraph>
+                            <Paragraph>
+                                H y uno podría pensar entonces que Marx está haciendo una suerte de romántico rusoniano cuando sueña en que acabe el reino de la necesidad sobre la base de una tesis como la de Rousseau, que hay necesidades verdaderas y necesidades falsas, ¿no? Necesidades que son propias del <Term>amor de sí</Term>, que es un amor sano, ¿no? Y otras que son propias del <Term>amor propio</Term>, que es un amor insano, un amor egoísta, ensimismado, eh, que riñe con los otros individuos, ¿no? Este es una tesis posible, no sería rara. Sabemos que Marx durante su luna de miel leyó con gran fruición y tomó notas de las obras de ruso, ¿no? Pero esto ocurrió muy tempranamente, los 40, ¿no? De manera que podemos dar el beneficio de que esto pudo haber cambiado, pero esta es una posibilidad, quiero decir.
+                            </Paragraph>
+                            <Paragraph>
+                                La otra esta posibilidad conforme a la cual hay necesidades naturales, necesidades ancladas en nuestra en nuestra biología, por decirlo así, ¿no? Por supuesto, es una tesis que resulta totalmente opuesta, totalmente opuesta, ¿no?, a la economía neoclásica y al marginalismo, ¿no? Piensen ustedes que 10 años después, más menos, de la publicación del primer tomo del capital, hay otra gran obra en la historia de la economía, los principios, ¿no?, de de economía política de <Entity>Alfred Marshall</Entity>, ¿no? el gran marginalista, el padre de la economía neoclásica, que tiene un párrafo extraordinario, abre los principios Marshall, estoy saliendo de Marx, estoy hablando una década después del Capital diciendo Marchall lo siguiente. <Entity>David Ricardo</Entity>, recuerdan ustedes, el héroe de Marx que elabora la ley del valor, comete un gran error porque cifra el secreto de la economía en la producción, dice Marshall. Cuando la verdad es que si uno mira con imparcialidad las cosas, el secreto de la economía está en el consumo. Esto dice Marshall, eh, estamos hablando de 1880, 1885 en el consumo. ¿Por qué dice Marshall citando a <Entity>Senior</Entity>, otro gran clásico, porque no hay pulsión más fuerte en los seres humanos? A mí esto siempre me pareció muy notable, digamos, por lo temprano. No hay pulsión más fuerte en los seres humanos que el deseo de distinguirse. Motivo por el cual, dice Marshall, los seres humanos Nunca van a necesitar lo mismo. No quieren comer. Quieren comer cosas distintas y mejores. Quieren sofisticarse, quieren cambiarse. El anhelo humano es un anhelo insaciable. Esto es lo que dice Marchel, una tesis exactamente opuesta, como ustedes ven a la tesis rusoniana, ¿verdad?
+                            </Paragraph>
+                            <Paragraph>
+                                No hay naturaleza en la cual se estén ancladas nuestras necesidades y que sirvan como un baremo, un criterio al que podamos recurrir para saber qué necesidades merecen ser satisfechas y cuáles en cambio no. No, no somos una fuente insaciable de anhelos de distinción. Esto es lo que dice Marshall. Y por eso para alguien como Marshall, a pesar de que es un marginalista, es decir, alguien que piensa que la el consumo de una unidad adicional de un bien produce una satisfacción cada vez menor. En suma, que si usted come un chocolate lo disfruta, si come dos, disfruta también seguramente el tercero ya le empieza a esquiar. Si bien eso es así, ¿no? Como somos una fuente infinita de deseos, la acumulación, a pesar del marginalismo es igualmente posible y racional, o sea, la tesis que venía de locro. Esta es una tesis totalmente opuesta, desde luego, a esta primera lectura rusoniana que podríamos hacer de la tesis de Marx, digamos, del paso del reino de la necesidad al reino de la libertad.
+                            </Paragraph>
+                            <Paragraph>
+                                <Entity>Marcuse, Herbert Marcuse</Entity>, por supuesto, ¿no? Ustedes saben, marxista, entre cuyos datos biográficos uno podría mencionar que fue además discípulo de Heidegger, ¿no? Con quien partió a estudiar apenas se enteró que se había publicado ser y tiempo. Bueno, Marcuse escribe eh el <Term>Hombre Unidimensional</Term> el año 68 y antes escribe <Term>Eros y Civilización</Term>. Son textos clásicos de lo que se llama freudomarxismo, digamos, ¿no? Marcuse se ocupa de este tema, ¿no? Y Marcuse en el hombre unidimensional, en el hombre unidimensional afirma que la manera de salir de este atolladero conceptual que acabo de describir y que no se me ocurrió a mí, sino que está en las obras que acabo de citar, eh, consiste en entender, y esta es una tesis que Marcus se va a mantener siempre muy firme, en entender, dice él, que las necesidades no son necesidades, esto es lo que dice Mercus, son sistemas de necesidades. Es decir, que lo que usted desea o anhela es, por decirlo así, un sistema autorreferido de deseos que son producto, dice Marcuse, del propio sistema capitalista.
+                            </Paragraph>
+                            <Paragraph>
+                                Esto parece extraño, eh, pero tiene sentido la idea de que en realidad el sistema capitalista produce un sistema de necesidades, ¿no? Que se alimentan unas con otras en una especie de boráine autorreferida de la cual los seres humanos es muy difícil puedan escapar. Este sistema de necesidades es, dice Marcuse, el que con la abolición del sistema capitalista se va a suprimir y una vez abolido el sistema capitalista va a surgir ir un nuevo sistema de necesidades. Esto es lo que afirma Marcuse en el hombre unidimensional y en heroisvivilización. En erisivilización sostiene él, ¿no?, que este sistema de necesidad está lividinalmente introyectado, siguiendo una tesis freudiana clásica. En el hombre unidimensional hace más bien una tesis de consumo similar a la queía hoy día haría Jamboch, digamos, ¿no? Pero hay un sistema de necesidades que no pertenece, entiéndase bien, a la naturaleza humana, sino que pertenece a la estructura. en la cual desenvolvemos nuestro queacer.
+                            </Paragraph>
+                            <Paragraph>
+                                Esta tesis que parece sorprendente y sobre la cual podremos volver luego al discutir es la misma tesis que una estupenda autora <Entity>Agnes Heller</Entity>, que ustedes seguramente han leído, discípula de <Entity>Georg Lukács</Entity>, el autor de historia y conciencia de clase, formula en la teoría de las necesidades en Marx, ¿no? Es exactamente la misma tesis y es la misma tesis que aparece en el ahora al <Entity>Althusser</Entity>, ¿no? Alter, como ustedes saben, eh escribe una famosa obra con <Entity>Étienne Balibar</Entity> para leer el capital, ¿no? Eh, Althusser es un discípulo de <Entity>Lacan</Entity>. Este la nota al pie biográfica, digamos. Aluser es un discípulo de Lacan. Lacan eh es quien elabora el lema del <Term>retorno a Freud</Term>, ¿no? La dice, "Bueno, Freud ha sido malentendido. Hay que ir nuevamente a los a Freud y ver qué exactamente fue lo que quiso decir." Bueno, Altuser dice el <Term>retorno a Marx</Term>, ¿no? Altuser se revela contra la idea que el marxismo deriva de una antropología, de una antropología humanista como la que muchos marxistas en ese entonces, en los 60, a partir de los manuscritos del 44 habrían querido elaborar. H y el dice, "No, en realidad el marxismo es no es un humanismo, digamos." En esto hay parentesco con Heidegger, por supuesto, por vía de la CAN, sin ninguna duda. El marxismo no es un humanismo, ¿no? No es un sistema de comprensión del tiempo y de la historia anclado en una antropología. No, el gran descubrimiento de Marx es que aquí se trata de una estructura y esta estructura produce un sistema de necesidades. Si modificamos la estructura, otro sistema de necesidades surgirá.
+                            </Paragraph>
+                            <Paragraph>
+                                Marcuse escribe un panfleto brillante cuya lectura sugiere que se llama <Term>Ensayo sobre la liberación</Term>. Lo escribe el año 68 en medio del ferv de los movimientos estudiantiles del 68. H se plantea este mismo problema, el problema de qué es esto del reino de la libertad, cuáles son nuestras necesidades qué es esto y Marcuse dice, "Solo puedo responder lo que una estudiante negra le dijo a un periodista que le preguntó lo mismo. La estudiante negra dijo, <Term>"Mire, una vez que el capitalismo termine, seremos por primera vez libres para saber realmente lo que queremos ser</Term>, ¿no? Porque solo allí brotará efectivamente, en opinión de Marcuse la libertad, ¿no? Este es un problema que lo dejo planteado, un problema hasta ahora irresoluble, el paso del reino de la necesidad, de la libertad, a partir, como digo, de la concepción de la ley del valor y el tema de las necesidades. Hm. Como ustedes ven, este no es un asunto extraño a la literatura eh epigonal, digamos, de Marx, ¿no? Aparece prácticamente en toda la literatura. Aparece en Agnes Heller, como digo, en Marcuse, en Altuser, en toda la literatura secundaria, digamos. Este es un problema que es un quebradero de cabeza, por decirlo así, para eh los teóricos del marxismo. Esta es la cuestión de la ley del valor.
+                            </Paragraph>
+                        </Section>
+
+                        {/* SECCIÓN 7: CRÍTICA 2 - TEMPORALIDAD */}
+                        <Section id="critica-2" title="Crítica 2: Temporalidad">
+                            <Paragraph>
+                                Voy rápidamente al tema de la temporalidad, ¿no? Eh, muy breve y muy rápidamente porque el tiempo sí que ya escasea. Miren, quizá para explicar el carácter o la particular idea de la temporalidad que tiene Marx, quizá bastaría citar este espléndido libro de un crítico literario inglés, <Entity>Edmund Wilson</Entity>, ¿no? <Term>To the Finland Station</Term>. ¿verdad? Hacia la estación de Finlandia. La estación de Finlandia es la estación de trenes de San Petersburgo, donde el 3 de abril de 1917 desembarcó Lenin para iniciar la revolución rusa. Y la tesis de Edmund Wilson es que ese momento notable cuando Lenin desembarca en la estación Finlandia empezó en 1725 con una obra espléndida, la obra de <Entity>Giambattista Vico</Entity>, que se llama, ¿no?, la <Term>Ciencia Nueva</Term>. Ya explico esto rápidamente. La ciencia nueva de 1725, porque esto permite entender la temporalidad en Marx, la ciencia nueva de 1725, como digo, es una es una reacción contra el <Term>Discurso del Método</Term> de <Entity>Descartes</Entity>. El discurso del método es de 1635, ¿no? 1637, o sea, prácticamente un siglo antes. En el discurso del método de Cart había abogado, ¿no? Porque eh por la idea de que la racionalidad y la ciencia requería ideas claras y distintas. ¿Ustedes recuerdan esto? Ya había llegado a la conclusión que entre otras cosas, las estructuras formales matemáticas eran las que permitían proveerse a ideas claras y distintas, ¿no? Por la duda radical este retroceso permanente.
+                            </Paragraph>
+                            <Paragraph>
+                                Frente a esto reacciona Jean Batista Vico. Si ustedes leen la ciencia nueva, advertirán que Jean Batista Vico eh sostiene, digámoslo así, ¿no?, que que Decart evidently se equivoca, ¿no? Eh, él elabora un fundamento del conocimiento Vico y lo que dice Vico continúa en <Entity>Dilthey</Entity>, <Entity>Heidegger</Entity>, <Entity>Husserl</Entity>, o sea, práctic de repente en todas las en lo que llamaríamos las ciencias del espíritu. Eh, lo que dice Vico es no en realidad en realidad el conocimiento más fidedigno que podemos tener es el conocimiento de lo que nosotros mismos hacemos, ¿no? De manera, dice él, que cuando Decart sostiene que la historia no es una ciencia, y no sería una ciencia porque reposa sobre sensaciones e impresiones fugaces las que tenemos nosotros cuando vivimos en natural, ¿no? Eh, de manera tal dice que Decart sugiere que incluso el cocinero en Roma sabe más que cualquier historiador, ¿no? Así de fugaz el conocimiento histórico, o sea, no es una ciencia.
+                            </Paragraph>
+                            <Paragraph>
+                                Eh, yo afirmo, esta es la tesis de Vico, un la existencia de una ciencia nueva, la historia, lo que llamaríamos la ciencia de la cultura o de la historia, porque no hay posibilidad de conocimiento fidedigno mayor que conozcamos aquello que nosotros mismos producimos y lo que nosotros mismos producimos es la cultura y la historia. En consecuencia, Vico funda la idea de que la providencia trazó una línea de la historia en cuyo interior desenvolvemos nuestra vida, ¿no? Y nosotros hacemos la historia amparados, desde luego, por los designos de la providencia, pero la hacemos nosotros la historia. Y porque hacemos la historia nosotros, es posible una ciencia de la historia.
+                            </Paragraph>
+                            <Paragraph>
+                                Pues bien, <Entity>Edmund Wilson</Entity>, a quien cité, ¿verdad?, en esta hora de 1940, sostiene que hay una línea continua entre esta idea de la historia, Vico con <Entity>Condorcet</Entity> en el caso de la Revolución Francesa y de ahí en adelante hasta Marx, o sea, la idea de que Marx forma parte de una concepción del tiempo como consumación, esta idea de que la historia no es finalmente el desenvolvimiento de un guion que no podemos inteligir del todo, pero que ejecutamos con nuestros actos y que porque lo ejecutamos con nuestros actos somos capaces de concebirlo y de conocerlo, ¿no? Esto en el caso de Mon Wilson. La tesis de Wilson que quiero resumir para que podamos discutir está confirmada, desde luego, por otra gran obra que menciono eh, y ustedes podrán ver, digamos, que es la obra de <Entity>Reinhart Koselleck</Entity>, el gran historiador de los conceptos. Koselleck sostiene que lo propio de la modernidad, de la cual Marx desde luego participaría no es un cambio radical en el concepto de la historia porque mientras para un antiguo la historia es la repetición incesante de un mismo acontecer, motivo por el cual la historia es maestra de vida. Si usted quiere saber vivir, tiene que saber historia porque la historia finalmente, como decía Polivio, es una rueda donde todo vuelve y retorna incesantemente. Eh, mientras eso ocurre para un antiguo, un moderno, dice Coselec, es el sujeto que distancia, fíjense bien, la experiencia del presente de sus expectativas de futuro. O sea, lo propio de la modernidad sería un quiebre entre la experiencia del hoy y este horizonte de expectativa que nos orienta y en consecuencia eh Marx sería o tendría una concepción de la temporalidad totalmente moderna. Digamos la idea que eh la vida humana es una vida que se vive en el presente, ¿no? Pero experimentando siempre una fractura con estas expectativas de futuro que nos aliente y que la política es la que hace posible.
+                            </Paragraph>
+                            <Paragraph>
+                                Finalmente, y siempre en esta línea, eh creo que habría que citar a <Entity>Karl Löwith</Entity>, discípulo de Heidegger, por supuesto, ¿no? Quien en <Term>The Meaning of History</Term>, o sea, el significado el sentido de la historia, afirma, ¿no?, que finalmente Marx es heredero. Esto parece una exageración y hasta cierto punto lo es, pero es significativa como exageración, heredero del profetismo judío. Porque Marx, al igual que el profeta judía, un creyente, concibe la historia, fíjense bien, como una <Term>profecía al revés</Term>. No, o sea, la idea de que la historia se lee desde el futuro. Yo comprendo lo que nos ocurre, los tropiezos que experimentamos, la explotación que sufrimos a la luz del futuro que se acerca y que nosotros mediante nuestra acción podemos realizar, ¿no? Esta idea de la temporalidad en Marx es muy fuerte, sin ninguna duda, y Löwith la subraya notablemente, ¿no?
+                            </Paragraph>
+                            <Paragraph>
+                                Lo mismo hace <Entity>Hermann Cohen</Entity>. German Cohen, el gran neokantiano, ¿no? Eh, tiene una frase estupenda en su libro sobre el judaísmo, ¿no? Dice, "Los padres de la historia modernamente entendida son los profetas judíos, ¿no? Y lo dice porque los profetas leen lo que ocurre a la luz del futuro que se acerca." Por eso la historia modernamente entendida es una profecía al revés y de esto participaría Marx. Y la pregunta que yo haría, pero lo dejo planteado nada más para ir luego a los otros dos temas, la pregunta que haría es la siguiente. Esta concepción del tiempo nos resulta hoy día seductora porque hoy día pareciera más bien que vivimos en un presente eterno. No, verdad, pareciera que esta idea de vivir la historia y la vida personal orientada por una especie de escatología, pensando la propia vida y la de los demás como un camino una suerte de consumación, no pareciera ser hoy día muy eficaz culturalmente. No, no es tanto que hoy día las utopías estén decaídas, que lo están también Pero seguramente todos tenemos nuestra utopía, como la tenía Marx en esa carta al padre del año 37. Ah, lo decisivo es que no concebimos el tiempo de esa manera. No, no concebimos el tiempo de esa manera.
+                            </Paragraph>
+                            <Paragraph>
+                                El <Entity>Dante</Entity> en la <Term>Divina Comedia</Term> relata que uno de los círculos del infierno tiene escrito el lema que aquí se cierran las puertas del futuro. Ah, y <Entity>Octavio Paz</Entity> dice, "Bueno, esto es una pesadilla para cualquier moderno, digamos, cerrar las puertas del futuro, ¿no? Pero algo de eso es lo que ha ocurrido, creo yo, en la cultura contemporánea y es probable que aquí haya, digamos, un severo problema, ¿no?, cultural, digámoslo así, para este planteamiento.
+                            </Paragraph>
+                        </Section>
+
+                        {/* SECCIÓN 8: CRÍTICA 3 - SUJETO HISTÓRICO */}
+                        <Section id="critica-3" title="Crítica 3: Sujeto Histórico">
+                            <Paragraph>
+                                Voy rápidamente a los otros dos temas y disculpen lo que me he extendido. El tema del sujeto histórico que habría que agregar a la cuestión del valor y las necesidades y la cuestión, como digo, el tiempo de la temporalidad, el tema del sujeto histórico para Marx, el sujeto de la historia no es un Usted no soy yo, no es un líder carismático, no, no es una clase, es la <Term>clase proletaria</Term> que reúne en sí por ser maltratada, expoliada, por vivir en medio de la enajenación, fuera de sí, con su humanidad enajenada en este gigantesco arsenal de mercancías que es el consumo contemporáneo. Esta es la idea del fetichismo en Marx. El la clase proletaria reúne en sí a la humanidad entera, ¿no? Y cuando la clase proletaria se libera, libera en consecuencia a toda la humanidad, ¿no? Esta es la afirmación central de la idea de sujeto histórico en Marx.
+                            </Paragraph>
+                            <Paragraph>
+                                ¿Qué ha pasado con esto? A mí me parece que en la propia literatura marxista o de inspiración marxista, pienso en <Entity>Laclau</Entity>, por ejemplo, Ernesto la Clo en Chantalm, en <Entity>Žižek</Entity>, por nombrar tres autores que seguramente ustedes conocen. Esta es una idea que se ha abandonado, lo que hoy día uno puede encontrar en ese tipo de literatura es más bien la idea que el sujeto histórico no preexiste a la lucha política, sino que se constituye en la lucha política. En otras palabras, el sujeto histórico es el producto de la lucha política y no un agente previo destinado a ejecutarla. Esta, por supuesto, es la vieja idea de <Term>hegemonía gramsciana</Term>, ¿no? O sea, la idea que lo que usted hace es crear un vacío, digámoslo así, una fractura, una herida. No, en este mundo autorreferido del capitalismo. Y una vez que usted logra crear esta fractura y logra cohesionar en torno a ella las expectativas, genera una cierta hegemonía que produce al sujeto político, ¿no?
+                            </Paragraph>
+                            <Paragraph>
+                                Esto, esta es la razón de por qué hoy día la izquierda, la izquierda que ha leído estas cosas, por supuesto, ¿no? Eh, alienta todos los temas, el feminismo, el ecologismo, etcétera, porque ¿Por qué? Bueno, porque la agenda de temas agudiza, por decirlo así, el conflicto cultural y el conflicto crea al sujeto, me sigue. No es que el sujeto preexista ontológicamente al conflicto. Este quizás sea el quiebre más radical que uno puede observar hoy día en este tipo de literatura y el quiebre, sin ninguna duda más brillante que uno puede observar en este tipo de literatura. <Entity>Žižek</Entity>, en un espléndido libro dice, "En realidad la escena que mejor leja la índole de la política de la política de izquierda hoy día dice Sisec o Jijek, ¿no? Es una foto de los rebeldes rumanos cuando cae <Entity>Ceaușescu</Entity>, ¿no? Quien arbola una bandera donde la estrella del medio está recortada y hay un simple vacío. Porque la política dice es el esfuerzo por generar ese vacío y llenarlo produciendo al sujeto que justamente lo va a llenar, que lo va a suturar. Esta es una idea que podríamos discutir más largamente. Es una idea psicoanalítica, desde luego, como casi todas las de Sisec, ¿no? Pero es la idea de que el mundo de la historia tiene un vacío, un vacío, una herida que no se puede suturar, eh, salvo mediante la fantasía que es la lucha política o la ideología. Hm. Esto no es muy distinto que el psiquismo individual, por supuesto. Ah, desde luego, ¿no? La gente va al analista queriendo llenar ese vacío que no se puede colmar. No, ¿verdad? Y la llenan con la fantasía de que el psicoanalista sabe cómo hacerlo, digamos. En eso consiste el análisis, ¿no? Pero la política, esta es la idea, la política, ¿verdad?, sería el esfuerzo por producir el sujeto histórico en vez de una tarea asignada al sujeto histórico preexistente. Yo creo que esta es la parte clave de este asunto.
+                            </Paragraph>
+                        </Section>
+
+                        {/* SECCIÓN 9: CRÍTICA 4 - LIBERTAD */}
+                        <Section id="critica-4" title="Crítica 4: Libertad">
+                            <Paragraph>
+                                Finalmente, el último punto que yo haría, tenía algunos otros, pero quedemos en esto, no más el tema de la libertad. Porque de alguna manera, ¿no?, lo que uno puede ver en la obra magnífica de Marx es un concepto de libertad más ambicioso, más sofisticado, pero también algo más oscuro, si bien seductor, de lo que libertad significa, ¿no? Para un liberal la libertad es simplemente la ausencia de coacción, ¿no? Si usted es pobre o es incapaz de ejecutar acciones, Usted podrá decir que es pobre o es incapaz, pero no tiene por qué decir que le falta libertad, porque la libertad tiene que ver, ¿verdad?, con estrecharch, el círculo de acciones potenciales posibles mediante la ingerencia externa, ¿no? Una cosa es la pobreza, dice <Entity>Isaiah Berlin</Entity>, otra cosa es la falta de libertad. Decir que usted no tiene libertad porque es pobre es confundir las cosas. Esta es la oficinación de Isay Berlín. Esta no es la opinión de Marx, desde luego.
+                            </Paragraph>
+                            <Paragraph>
+                                Marx en la <Term>Cuestión Judía</Term>, un texto de 1844, ¿no? Un texto escrito contra Bruno Bauer, que había sido su profescho, no era un discípulo muy fiel Marx, eh, porque se revela cuando su profesor lo maltrata en en la cuestión judía. Distingue, tiene un gran alegato donde Mark distingue entre los derechos del hombre y los derechos del ciudadano, ¿ya? Y Marx dice que en la sociedad burguesa, la sociedad capitalista, los derechos del hombre finalmente son la consagración, dice, a nivel del Estado, del derecho y de las instituciones del máximo egoísmo. Es la expresión jurídica finalmente del mercado. La idea que el individuo tiene derecho es simplemente la final del egoísmo, ¿no? De la enajenación y en consecuencia la verdadera libertad no tiene que ver con el individuo, tiene que ver con la humanidad, ¿no? Con una humanidad, y con esto voy a terminar que se apropia de sí misma. Si uno tuviera que describir qué a qué llama libertad a Marx, Marx llama libertad a aquella condición donde los seres humanos son capaces de dominar las fuerzas sociales que ellos mismos producen. Recuerden a Vico, ¿no? Y la naturaleza. No, esta es la verdadera libertad, ¿no? Es decir, la verdadera libertad coincide, y aquí retomamos un tema que aparece en los manuscritos del 44, ¿no? Coincide con eh lo que <Entity>Hegel</Entity> y el propio Marx del 44 llamaría <Term>alienación</Term>. Ah, la historia humana finalmente es un extravo, como esta fantástica eh imaginación de Hegel es la fenomenología del espíritu, ¿no? Verdad. Una conciencia extraviada que finalmente logra reconciliarse consigo misma, ¿no? Para Marx, efectivamente, la historia humana es un extravo, ¿no? La verdadera libertad se alcanza cuando la alienación termina o acaba y los seres humanos podemos entonces, asociados unos con otros controlar las fuerzas sociales que producimos y la naturaleza merced a la cual vivimos. Eso es. Muchas gracias.
+                            </Paragraph>
+                        </Section>
+
+                        {/* SECCIÓN 10: PREGUNTAS Y RESPUESTAS */}
+                        <Section id="preguntas" title="Ronda de Preguntas">
+                            <Paragraph>
+                                Ahora Carlos va a tener que contestar cuatro preguntas, todas juntas. Dos preguntas en este sector de la sala. Dos preguntas en este sector de Aquí hay una otro sector otra pregunta en este sector de la sala. Dos. Ya están en primera fila para preguntar ustedes. No harán la misma pregunta. Ya estamos. Dos preguntas. Esto bien arbitrario, ¿no es cierto? Nos queda otra. Dos preguntas en este otro sector de la sala. Allá ese hombre que levantó la mano. Ya. Tres. Otra pregunta. ¿Cuál? ¿Quién más? Otra pregunta más. Nos falta una pregunta. Ahí está. Cuatro preguntas. Bueno, bueno, vamos a Pero tienen que hacerlas y Carlos las contesta todas juntas. Ya. Disculpe. están jugando con las pelotas en las Ya
+                            </Paragraph>
+                            
+                            <div className="bg-slate-900/40 p-6 rounded-lg border-l-2 border-cyan-800 my-8">
+                                <Paragraph>
+                                    quería preguntarle sobre la doctrina de la unidad entre de la praxis y la teoría en Marx y si pudiera ser tan aventurado en usted. Es decir, e Marx es un teórico, muy teórico, digamos, y además es un político y hay un problema que usted conoce de Martiasen llamado tr eh trascendentalismo, digamos e institucionalismo trascendental, que en el fondo es como de las sociedades perfectas, buscar soluciones a sociedades perfectas y está el dicho, el dicho italiano del perfecto el enemigo del BN, ¿no? El perfecto es el enemigo del bien. Y por otro lado, la práctica política cotidiana que trata de buscar sociedades un poquito mejores no más y que en general son problemas cotidianos concretos. Usted hace lo mismo en el sentido, si puedo ser tan avaturado, cuando eh es un teórico de gran nivel y a la vez escribe e en honor a Andrés Elwin o cosas por el estilo. ¿Cómo consideraría estas dos cosas? Gracias,
+                                </Paragraph>
+                            </div>
+
+                            <div className="bg-slate-900/40 p-6 rounded-lg border-l-2 border-cyan-800 my-8">
+                                <Paragraph>
+                                    profesor. E mi pregunta es respecto a qué cuáles son las razones que aparentemente podrían explicar este desprecio por el individuo que parece que Marx tuviera y esta idealización por la clase proletaria que usted bien mencionó. Esa es mi pregunta acá y después lo Sí.
+                                </Paragraph>
+                            </div>
+
+                            <div className="bg-slate-900/40 p-6 rounded-lg border-l-2 border-cyan-800 my-8">
+                                <Paragraph>
+                                    Hola, buenas tardes. E buenas tardes. Bueno, hay algunas imprecisiones, a mi juicio que usted cometió al exponer algunas ideas de Marx, pero no me interesa detenerme en ello. Me interesa sí preguntarle sobre lo siguiente. usted al momento de esbozar la primera crítica relacionada con la ley del valor y me parece que todas las críticas que usted no de alguna manera se se imbringan en el pensamiento de Max. Por lo tanto, una crítica contiene todas las demás y me parece que la crítica principal es la ley del valor y por eso está en primer lugar. Eh, usted dijo, refiriéndose al problema de la del salto del reino de la necesidad del reino de la libertad, hizo una afirmación que me corresp que me parece que es contradictoria con el reconocimiento explícito que hizo respecto al concepto de libertad en Marx. Y lo y lo bonito de esto y lo que me llama la atención es que usted aplique un concepto de libertad en el caso de la primera crítica y aplique otro concepto de libertad en el caso de la última crítica. Porque cuando Marx piensa, a mi juicio, el salto de reino de la necesidad, de la libertad, no está pensando en términos de el acabamiento o acotamiento de las necesidades. No es un problema de producción. Está pensando el problema político de cómo se decide qué producir y cómo producirlo. Ya. Y por lo tanto, la libertad no tiene que ver con que todas las neces sean cubiertas, cosa por lo demás yo creo imposible materialmente, sino con que la sociedad puede decidir qué necesidades prioriza y cuáles satisface y en qué momento lo hace y de qué manera las resuelve. Y me parece que ese es el concepto de libertad en Marx, que es además un concepto que reconoce una afiliación, digamos, con todo lo que es el la filosofía de la libertad es del idealismo alemán. Entonces, me no ve usted una contradicción entre su primer concepto de libertad que aplica la crítica de la teoría del valor respecto del salto de la necesidad, al salto a la sociedad a la libertad y es su último concepto de la libertad en Marx.
+                                </Paragraph>
+                            </div>
+
+                            <div className="bg-slate-900/40 p-6 rounded-lg border-l-2 border-cyan-800 my-8">
+                                <Paragraph>
+                                    Hola, profesor. Eh, disculpe, quizás esta pregunta es más pedestre, pero eh quería le quería preguntar, me gustó esa idea sobre como que que actualmente quizás estamos en un cambio en la concepción del tiempo respecto a la concepción como escatológica de la modernidad y me gustaría saber su opinión. ¿Cuál sería como si que acaso eso significa que estamos en una postmodernidad y si es que cuál sería esa nueva concepción del tiempo? Porque yo siento que igual hay una cosa como hacia el futuro, pero un futuro un poco oscuro quizás con la crisis ecológica o o también un futuro de repente muchas veces eh también como fantástico moderno, como con la inteligencia artificial que se viene, que se un mundo que también se pueden acabar las necesidades por que las máquinas hagan todo. Entonces ahí cuál sería como el la opción que ve usted me interesa eso.
+                                </Paragraph>
+                            </div>
+
+                            <Paragraph>
+                                Bueno, muchísimas gracias por eh por todas las preguntas y las observaciones. Por supuesto, lamento que no tengamos más tiempo para poder discutir, pero bueno, ya habrá otra otra oportunidad. Eh, a ver, voy en el mismo en el mismo orden. Ah. Eh, a propósito del eh trascendentalismo, eh bueno, ese es un gesto muy moderno también, ¿no? Eh, que consiste, ¿qué es lo que Kant llamaba el <Term>principio de imposibilidad</Term>? O sea, pensar lo que tenemos el mundo de la experiencia cotidiana, por decirlo así. Eh, ordenándola en torno a un punto ideal que está en el futuro, pero que no se da la experiencia. Y efectivamente, buena parte, no tod Marx, algunas versiones de Marx seguramente es probable que eso ocurra, eh, por decirlo así, confunden este principio de imposibilidad como una posibilidad fáctica, ¿me entiendes? Eh, de alguna manera los seres humanos necesitamos eh un principio trascendental para ordenar nuestras percepciones. Sobre esto no cabe ninguna duda y nuestros anhelos. Nadie puede vivir en un permanente presente apagando el futuro, eh, verdad, amasgando todos los deseos. Una vida humana, si no es una vida humana en sentido estricto, los seres humanos vivimos eh somos trascendentales en el sentido que estamos volcados, involucrados con las cosas, en nuestro queacer y volcados hacia el futuro. Sobre eso no hay duda, ¿no? El problema es que a veces se confunde lo que es un principio de imposibilidad que permite ordenar nuestras concepciones con una promesa fáctica, ¿no? Eh, y en ese salto, por supuesto, Esto incurre en algunas versiones del marxismo, sin ninguna duda, ¿no?
+                            </Paragraph>
+                            <Paragraph>
+                                Ahora, respecto de que Marx tenga un desprecio por el individuo, no, yo no lo creo así. Ah, eh, más bien porque si uno lee, digamos, los manuscritos del año 44, estamos hablando de manuscritos, los manuscritos de París. Ah, Marx todavía no va a Londres, eh, se descubre en los años 30 los manuscritos de París. Son la obra de lo que la literatura posterior llama el joven Marx. El Marx. eh que sería más hegueliano, el sentido más clásico de la expresión. Eh, pero en ni en esa obra ni en la posterior, salvo la opinión de <Entity>Althusser</Entity>, pero que es una opinión más bien conceptual, me parece a mí uno puede observar un desprecio por el individuo. Más bien lo que hay es una concepción del individuo distinta a aquello que McFerson, creo llamaba individualismo posesivo, digamos, que sería como la concepción, ¿verdad?, que subyace en el capitalismo, ¿no? Hay un debate más bien respecto de en qué consiste ser un ser humano. Marx, ¿no? Marx piensa los seres humanos más bien eh, como, bueno, como sujetos en el sentido moderno, eh, cuya actividad fundamental es el trabajo. El trabajo no es una pulsión, un instinto. En el caso de Marx, al igual que para Hegel, el el trabajo es una forma de racionalidad de los seres humanos en la cual se explica lo mejor que tenemos, ¿no?
+                            </Paragraph>
+                            <Paragraph>
+                                Eh, desde ese punto de vista, Marx tiene un fondo profundamente humanista, ¿no? No no no es que desprecia al individuo, ¿no? Más bien tiene una concepción del individuo que evidentemente no es la liberal, ¿no? No, los liberales suelen más bien concebir concebir a los individuos como sujeto eh, por decirlo así, enimismados en poseer, elaborando planes de vida que les son propios, eh sujetos que anteceden a la colectividad en la que forman parte y a la tradición en la que se insertan. Bueno, ese tipo de cosas Mark, por supuesto, no las acepta. Él tiene un pensamiento profundamente histórico y piensa el individuo de una manera bastante más compleja y alternativa, digámoslo así, a la del liberalismo, ¿no? Esto es lo que yo diría respecto de ese tema.
+                            </Paragraph>
+                            <Paragraph>
+                                Ahora, Respecto de la cuestión de la libertad. A ver, yo más bien lo que pienso es lo siguiente. Yo creo que efectivamente en Marx hay una concepción de libertad, pero me parece que en esto vamos a estar evidentemente de acuerdo que es radicalmente distinta a la liberal, ¿no es verdad? Cierto. Uno diría, si uno tuviera que hacer un registro de las concepciones de libertad y se sirviera de aquella famosa conferencia, bueno, usted la recuerda, <Entity>Isaiah Berlin</Entity>, ¿no? Los dos conceptos de libertad. Eh, y uno diría, bueno, ¿por cuál se inclina Marx? La respuesta es por ninguno de los dos, digamos. O sea, Marx no piensa que la libertad consiste en ausencia simplemente de coacción, tampoco piensa que la libertad consiste en participar de las decisiones que me afectan. Él más bien piensa que esas dos formas de libertad, por supuesto, hay que realizarlas, pero hay que realizarlas en un estadio superior, ¿no? Que es finalmente, por decirlo así, la apropiación del mundo social y de la naturaleza por los seres humanos asociados, ¿no? Así, así lo así lo dice por lo demás en el tomo en el tomo tercero del capital.
+                            </Paragraph>
+                            <Paragraph>
+                                Eh eh ahora este argumento que es un argumento notable realmente deriva del hecho que Marx piensa que que uno de los rasgos del capitalismo, una de las dimensiones del fetichismo de las mercancías, diríamos, ¿no? Es que los seres humanos vivimos en una relación social invertida, ¿no? Es decir, nos vivimos como sujetos privados en el conjunto de nuestros apetitos, de nuestras necesidades, porque aquello social que nos constituye se expresa, sin embargo, en la circulación de las mercancías. ¿verdad? O sea, vivimos una realidad social totalmente invertida. Esto lo decía, ¿ustedes lo recuerdan? Hegel en la filosofía real, que son los textos del del de 1805, 1807. Ah, eh Hegel ahí dice, digamos, con la división moderna del trabajo, los productores, el trabajador ahora no produce para sí, produce para una necesidad abstracta. Bueno, esta es la semilla efectivamente de la imaginación. Lo que yo creo es que lo que Mar llama libertad es la superación de esta relación. social invertida y efectivamente la apropiación verdad del mundo social por productores asociados. Esta es la expresión que usa verdad en el tomo tercero del del capital, ¿no? Y respecto a la pregunta pedestre, ¿no? ¿Cuál era exactamente? Perdón.
+                            </Paragraph>
+                            <Paragraph>
+                                Ah, no, muy bien. Sí, el tema de la temporalidad. Mire, lo que yo creo es que lo propio de la de la sociedad contemporánea es que está expuesta a la producción de distintas formas de temporalidad. Esto es lo que yo diría. O sea, que en vez de ser una cultura hegemonizada por una sola concepción del tiempo, como si todos nos viéramos como se vio la cultura occidental hasta muy entrado el siglo XX, una especie de caravana muda, ¿no?, eh, que caminaba hacia un destino, supieran o no supieran los miembros cuál era ese destino, ¿no? Eh, hoy día no nos vemos así, ¿verdad? Nos vemos como asociados más bien libremente, adictivamente a un caso a otro concepciones más bien distintas. Yo recuerdo que en oscuridad mediodía esa novela de <Entity>Arthur Koestler</Entity> que ustedes seguramente recuerdan, ¿no?, que es sobre los procesos de Moscú, ¿no? Eh, uno de los fiscales a la hora de condenar a muerte a uno de los prisioneros, que era un ex comunista, digamos, ¿no? Eh, hace un alegato estupendo eh a favor de la pena de muerte, diciendo Bueno, pero ¿qué es la muerte de un individuo al lado del gigantesco destino humano? O sea, al lado de esta caravana que camina, digamos, por el curso correcto de la historia. ¿Qué puede significar la vida de un individuo que no es capaz de comprender, digamos, este esta este trazado, ¿no? Bueno, esta idea, la idea de que somos parte, por decirlo así, del género humano, como dice la Declaración Universal de Derechos Humano, Pero que por como somos parte del género humano, somos una caravana eh que camina por el valle de la historia placado de lágrimas y de tropiezo, digamos. Esta idea yo creo que nadie la cree hoy día realmente y más bien lo que tenemos es un mundo, yo diría, protestantizado. Ah, en el sentido que la gente no ha abandonado ese tipo de ideas, pero sí las entiende hoy día más bien electivas, no las entiende como una condición adscrita, sino que como una idea que uno elige o escoge al modo en que escoge camisa, universidad o conferencia a la cual quiera ir. Ah, eso es eh yo voy a hacerte una una pregunta, pero es muy largo, es muy largo.
+                            </Paragraph>
+                            <Paragraph>
+                                Eh, la concepción del tiempo de Marx, ¿no crees tú que hay un rajo mesiánico? Estoy pensando en el sentido del tiempo, en el comienzo del del cristianismo, particularmente en <Entity>San Pablo</Entity>, cierto, como una culminación de la historia y que nosotros los hombres tenemos que irle dando sentido a las cosas que se nos están pasando por una plenitud que tendrá lugar con la llegada del Mesías. Uno puede pensar eso, que el Mesías va a llegar, pero una puede pensar como piensa a veces a <Entity>Agamben</Entity> que el Mesías está llegando siempre. Eh, ¿qué hay que eres tú en eso? En donde en Marx hay una crítica a la religión, pero al mismo tiempo habría un elemento mesiánico que haría que explicaría un poco las relaciones que ha habido entre los cristianos y el marxismo.
+                            </Paragraph>
+                            <Paragraph>
+                                A ver, yo no diría exactamente que hay una cuestión mesiánica. Ah, porque más bien lo que hay, creo yo, en ese sentido, en Marx es menos una cuestión cercana al cristianismo, ¿no?, que ese sí es mesiánico. Ah, y más cercana, creo yo, al profetismo judío. Ahí sí. Ah, por es esto que dice German Cohen, digamos, o sea, la noción moderna de historia se la debemos a los profetas. Ah, pero esto tiene que ver con la temporalidad. Yo no creo que Marx, como algunos dicen, sea simplemente una versión, digámoslo así, eh inmanente de las creencias religiosas, una especie de creyente carente de Dios, digamos, que ha logrado, por decirlo así, eh inmiscuir, ¿verdad?, las creencias trascendentes en el tiempo histórico. Ese tipo de cosas me parecen a mí que son eh versiones demasiado simplistas del fenómeno, ¿no? No, más bien Marx lo que hace es participar de una concepción del tiempo, que es la concepción moderna del tiempo, qué es la concepción de los historiadores, o sea, que es la concepción del tiempo y de la historicidad que entrecruza prácticamente toda la cultura, incluso hoy día, digamos, no es que Marx piense en eh en la llegada de un Mesías o que piense como creía <Entity>Joaquín de Fiore</Entity>, tú recuerdas, ¿no? Los milenaristas, digamos, ¿no? Eh, que de pronto eh la historia transitaba por la edad del Padre, del Hijo y del Espíritu Santo y que estábamos cerca de esta última y en consecuencia eh El fin del mundo llegaba y la parucía se producía así por arte de magia. Ese tipo de cosas Marx nunca las creyó, desde luego. Ah, no, no. Lo que él tiene es una visión de la historia como una especie de consumación, eso sí. Ah, pero no tiene tampoco, exactamente hablando una concepción de la historia, digámoslo así, como quien pensara que la historia es un guion escrito con escritura invisible, digámoslo así. Ah, que solo algunos pueden leer. Esta es la manera en que Koestler, por ejemplo, que abjuró el marxismo, presenta, ¿no?, la idea del historia de Marx, pero eso también es una exageración. Uno lee a Marx y Marx no es eso. Marx, en realidad lo que hay en Marx es más bien la idea de que la historia está en está abierta, eh, pero que hay un destino posible, que ese destino es indisoluble de la acción de los seres humanos. Eh, y eso es lo que explica que Marx no solo haya sido un filósofo a propósito de lo que usted me preguntaba en antes, sino que también un político, ¿no? Si Marx hubiera creído como algunas caricaturas presentan que la historia tenía un guion mudo e invisible que inevitablemente se iba a producir. Eh, bueno, seguramente se habría sentado a esperar, ¿no? Y no habría sido el sujeto activo, fervoroso, que sacrificó, repitámoslo una vez más, su salud, su felicidad y su familia, ¿no? Por las ideas en las que creía, ¿no?
+                            </Paragraph>
+                            <div className="border-t border-slate-800 pt-8 mt-12 text-slate-500 text-sm">
+                                <p>Eso, eso es muy cierto. Hay un elemento, hay un hay una acción humana, ¿sí? Que no es no es la redención de que habla. No, no, no, no. No, no, no. Ciertamente no. Ciertamente no. Bueno, yo creo que lo que nos corresponde agradecer a Carlos Mira, mira, mira.</p>
+                            </div>
+                        </Section>
+                    </main>
+
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
