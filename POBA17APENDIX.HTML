@@ -1,0 +1,738 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
+import { 
+  BookOpen, 
+  Menu, 
+  X, 
+  Info, 
+  Atom, 
+  Target, 
+  ExternalLink,
+  Github,
+  Maximize2,
+  Terminal,
+  Activity,
+  Zap,
+  ArrowRight
+} from 'lucide-react';
+
+// --- COMPONENTES ATÓMICOS DE DISEÑO EDITORIAL ---
+
+const Concept = ({ children }) => (
+  <span className="text-amber-500 font-medium hover:text-amber-400 transition-colors cursor-help border-b border-amber-500/20">
+    {children}
+  </span>
+);
+
+const Author = ({ children }) => (
+  <span className="text-cyan-400 font-medium hover:text-cyan-300 transition-colors cursor-default">
+    {children}
+  </span>
+);
+
+const MathBlock = ({ formula, display = false }) => {
+  return (
+    <span className={`font-serif italic text-slate-200 ${display ? 'block my-6 text-center text-xl bg-slate-900/50 p-6 rounded-lg border border-slate-800 shadow-inner overflow-x-auto' : 'mx-1'}`}>
+      {formula}
+    </span>
+  );
+};
+
+const Figure = ({ id, description, children }) => (
+  <figure className="my-16 w-full flex flex-col items-center">
+    <div className="w-full aspect-video bg-slate-900/50 border-2 border-dashed border-slate-800 rounded-3xl flex flex-col items-center justify-center group hover:border-cyan-500/50 transition-all duration-500 overflow-hidden relative shadow-2xl">
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      {children || (
+        <>
+          <Maximize2 className="w-12 h-12 text-slate-700 mb-4 group-hover:text-cyan-500 transition-colors" />
+          <p className="text-slate-500 font-mono text-sm">Insert Link: [{description}]</p>
+        </>
+      )}
+    </div>
+    <figcaption className="mt-6 text-center text-slate-500 text-sm max-w-3xl px-4 italic leading-relaxed">
+      <span className="font-bold text-slate-400 uppercase tracking-widest mr-2">{id}:</span>
+      {description}
+    </figcaption>
+  </figure>
+);
+
+const AlgoStep = ({ number, title, children }) => (
+  <div className="group bg-slate-900/20 p-8 rounded-[2rem] border border-slate-800/50 hover:border-cyan-500/30 transition-all mb-8">
+    <div className="flex items-center space-x-4 mb-6">
+      <span className="text-cyan-500 font-mono text-lg font-bold">{number}</span>
+      <h5 className="text-lg font-bold text-white uppercase tracking-wider">{title}</h5>
+    </div>
+    <div className="text-slate-400 text-lg leading-relaxed space-y-4 pl-4 border-l border-slate-800 group-hover:border-cyan-500/20 transition-colors">
+      {children}
+    </div>
+  </div>
+);
+
+export default function App() {
+  const [activeSection, setActiveSection] = useState('apendice-a');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeNote, setActiveNote] = useState(null);
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
+
+  const sections = [
+    { id: 'intro', title: 'Introducción' },
+    { id: 'apendice-a', title: 'Apéndice A: Algoritmo de Teselación' },
+    { id: 'apendice-b', title: 'Apéndice B: Dominios Reflexivos' },
+    { id: 'referencias', title: 'Fuentes' }
+  ];
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-300 font-sans selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden">
+      {/* BARRA DE PROGRESO */}
+      <motion.div 
+        className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 z-50 origin-left shadow-[0_0_10px_rgba(6,182,212,0.5)]" 
+        style={{ scaleX }}
+      />
+
+      {/* HEADER STICKY */}
+      <header className="fixed top-0 w-full bg-slate-950/80 backdrop-blur-md border-b border-slate-900 z-40 transition-all duration-300">
+        <div className="max-w-screen-2xl mx-auto px-8 h-20 flex items-center justify-between">
+          <div className="flex items-center space-x-6">
+            <span className="text-cyan-500 font-black tracking-tighter text-2xl">OCVM</span>
+            <div className="h-6 w-px bg-slate-800" />
+            <span className="text-slate-500 font-medium text-sm hidden lg:block tracking-wide">
+              <Author>Francisco Varela</Author> — {sections.find(s => s.id === activeSection)?.title || 'Apéndices Técnicos'}
+            </span>
+          </div>
+          
+          <button 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="flex items-center space-x-2 px-4 py-2 hover:bg-slate-900 rounded-full transition-all group border border-transparent hover:border-slate-800"
+          >
+            <span className="text-xs uppercase font-bold tracking-widest text-slate-400 group-hover:text-cyan-400 transition-colors">Índice</span>
+            <Menu className="w-5 h-5 group-hover:text-cyan-400 transition-colors" />
+          </button>
+        </div>
+      </header>
+
+      {/* MENÚ LATERAL */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setIsMenuOpen(false)}
+              className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-40"
+            />
+            <motion.div 
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              className="fixed right-0 top-0 h-full w-full max-w-md bg-slate-900 border-l border-slate-800 z-50 p-16 flex flex-col justify-center overflow-y-auto"
+            >
+              <button 
+                onClick={() => setIsMenuOpen(false)}
+                className="absolute top-8 right-8 p-3 hover:bg-slate-800 rounded-full transition-colors"
+              >
+                <X className="w-6 h-6 text-slate-400 hover:text-cyan-400" />
+              </button>
+              <h3 className="text-slate-500 uppercase tracking-[0.3em] text-[10px] font-black mb-12">Mapa del Documento</h3>
+              <nav className="space-y-10">
+                {sections.map((s, idx) => (
+                  <a 
+                    key={s.id}
+                    href={`#${s.id}`}
+                    onClick={() => { setIsMenuOpen(false); setActiveSection(s.id); }}
+                    className={`group block transition-all ${activeSection === s.id ? 'translate-x-4' : ''}`}
+                  >
+                    <span className={`block text-xs font-mono mb-2 ${activeSection === s.id ? 'text-cyan-500' : 'text-slate-600'}`}>0{idx+1}</span>
+                    <span className={`text-2xl font-serif leading-tight group-hover:text-cyan-400 transition-colors ${activeSection === s.id ? 'text-white' : 'text-slate-500'}`}>
+                      {s.title}
+                    </span>
+                  </a>
+                ))}
+              </nav>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* HERO SECTION */}
+      <section id="intro" className="relative h-screen w-screen flex items-center justify-center overflow-hidden pt-20">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/20 via-slate-950 to-slate-950" />
+        <div className="absolute inset-0 opacity-10 pointer-events-none" 
+             style={{ backgroundImage: 'radial-gradient(#1e293b 1.5px, transparent 1.5px)', backgroundSize: '60px 60px' }} />
+        
+        <div className="relative z-10 text-center px-8">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            className="mb-12 inline-block p-4 rounded-full bg-slate-900/50 border border-slate-800 backdrop-blur-sm"
+          >
+            <Atom className="w-8 h-8 text-cyan-500 animate-pulse" />
+          </motion.div>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            className="text-cyan-500 font-mono tracking-[0.4em] uppercase text-[10px] mb-8"
+          >
+            Sistemas, Autonomía y Epistemología
+          </motion.p>
+          <motion.h1 
+            initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-7xl md:text-9xl font-serif text-white mb-10 leading-none max-w-6xl mx-auto"
+          >
+            Apéndices <br /> <span className="italic text-slate-500 font-normal">Técnicos</span>
+          </motion.h1>
+          <motion.div 
+            initial={{ width: 0 }} animate={{ width: '200px' }}
+            transition={{ delay: 0.5, duration: 1 }}
+            className="h-[2px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent mx-auto mb-12"
+          />
+        </div>
+      </section>
+
+      {/* CONTENIDO PRINCIPAL */}
+      <main className="max-w-7xl mx-auto px-8 py-32 space-y-48">
+        
+        {/* APÉNDICE A */}
+        <article id="apendice-a" className="relative">
+          <header className="mb-24">
+            <h2 className="text-5xl md:text-6xl font-serif text-white mb-10 border-l-8 border-cyan-500 pl-12 leading-tight">
+              Apéndice A. Algoritmo para un ejemplo de teselación de la Autopoiesis
+            </h2>
+            <div className="bg-slate-900/40 p-12 rounded-[2.5rem] border border-slate-800/60 text-slate-400 italic text-justify leading-relaxed hyphens-auto text-lg shadow-inner">
+              <p>
+                Este modelo de teselación, que ejemplifica la <Concept>autopoiesis</Concept> en un caso simple, fue descrito en el Capítulo 3. Entregamos aquí el algoritmo específico que genera las unidades bidimensionales ilustradas en las Figuras 3-1 y 3-2. Se agradece profundamente la ayuda de varios miembros del <Author>Biological Computer Laboratory</Author> de la Universidad de Illinois, especialmente de <Author>Heinz von Foerster</Author>, <Author>Paul Weston</Author> y <Author>Kenneth Wilson</Author>.
+              </p>
+            </div>
+          </header>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-20">
+            <div className="lg:col-span-8 space-y-12 text-justify leading-relaxed hyphens-auto text-xl font-light">
+              <section className="space-y-6">
+                <h3 className="text-3xl font-serif text-white flex items-center">
+                  <span className="text-cyan-500 mr-4 font-mono text-sm">A.1</span> Convenciones
+                </h3>
+                <p>
+                  Utilizaremos los siguientes símbolos alfanuméricos para designar los elementos referidos anteriormente:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-10">
+                  {[
+                    { label: "Sustrato", formula: "O \\to S", icon: "S", color: "text-cyan-400" },
+                    { label: "Catalizador", formula: "* \\to K", icon: "K", color: "text-amber-500" },
+                    { label: "Eslabón", formula: "\\emptyset \\to L", icon: "L", color: "text-green-400" },
+                    { label: "Eslabón Ligado", formula: "\\to BL", icon: "BL", color: "text-red-400" }
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-center space-x-6 bg-slate-900/20 p-6 rounded-2xl border border-slate-800/40 hover:bg-slate-900/40 transition-all">
+                      <span className={`w-14 h-14 rounded-xl bg-slate-800 flex items-center justify-center font-serif font-bold text-xl ${item.color} shadow-lg`}>
+                        {item.icon}
+                      </span>
+                      <div>
+                        <p className="text-xs uppercase tracking-widest text-slate-500 mb-1 font-bold">{item.label}</p>
+                        <MathBlock formula={item.formula} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <p>
+                  El algoritmo tiene dos fases principales relacionadas, respectivamente, con el movimiento de los componentes sobre la matriz bidimensional de posiciones, y con la producción y desintegración de los componentes-L a partir de y hacia el sustrato S. Las reglas por las cuales los componentes-L se unen para formar una frontera completan el algoritmo.
+                </p>
+
+                <p>
+                  El "espacio" es una matriz rectangular de puntos, direccionables individualmente por sus posiciones de fila y columna dentro de la matriz. En su estado inicial, este espacio contiene una o más moléculas de catalizador K, con todas las posiciones restantes conteniendo sustratos S.
+                </p>
+
+                <p>
+                  En ambas fases, movimiento y producción, es necesario realizar selecciones aleatorias entre ciertos conjuntos de posiciones vecinas al punto particular del espacio en el que se aplica el algoritmo. Se aplica entonces el esquema de numeración de la Figura A-1, identificando la ubicación 0 con el punto de aplicación (por supuesto, cerca de los límites de la matriz, no todas las ubicaciones vecinas identificadas en la figura serán encontradas realmente).
+                </p>
+
+                <Figure id="Figura A-1" description="Designación de las coordenadas de los espacios vecinos con referencia a un espacio central con designación 0.">
+                   <div className="grid grid-cols-3 gap-3 font-mono text-2xl p-12 bg-slate-950/80 rounded-3xl border border-slate-800 shadow-2xl">
+                      {[2, 6, 2, 7, 0, 3, 3, 5, 4].map((num, i) => (
+                        <div key={i} className={`p-8 border rounded-xl flex items-center justify-center transition-all ${num === 0 ? 'bg-cyan-500 border-cyan-400 text-white font-black scale-110 shadow-[0_0_20px_rgba(6,182,212,0.4)]' : 'border-slate-800 text-slate-500 hover:text-slate-300'}`}>
+                          {num}
+                        </div>
+                      ))}
+                   </div>
+                </Figure>
+
+                <p>
+                  Con respecto al movimiento, los componentes se clasifican por "masa" creciente como S, L, K. Los S no pueden desplazar a ninguna otra especie y solo pueden moverse hacia "huecos" o espacios vacíos en la rejilla, aunque pueden pasar a través de un espesor simple de eslabones ligados (BL). Por otro lado, L y K desplazan fácilmente a los S, empujándolos a huecos adyacentes, si existen, o intercambiando posiciones con ellos, pasando así libremente a través de los sustratos S. El más masivo, K, puede similarmente desplazar eslabones libres (L). Sin embargo, ninguno de estos puede atravesar un segmento de eslabón ligado, y quedan así efectivamente contenidos por una membrana cerrada. Los L concatenados, formando segmentos de eslabones ligados, no están sujetos a movimientos en absoluto.
+                </p>
+
+                <p>
+                  Con respecto a la producción, el estado inicial no contiene eslabones ligados; estos aparecen solo como resultado de la formación a partir de sustratos (S) en presencia del catalizador. Esto ocurre siempre que dos posiciones vecinas adyacentes de un catalizador están ocupadas por S (ej. 2 y 7, o 5 y 4, en la Figura A-1). Solo se forma uno por paso de tiempo, por catalizador, resolviéndose las múltiples posibilidades por elección aleatoria. Dado que dos S se combinan para formar un L, cada producción deja un nuevo hueco en el espacio, hacia el cual los S pueden difundirse.
+                </p>
+                <p>
+                  La desintegración de los L se aplica como una probabilidad uniforme de desintegración por paso de tiempo para cada L, sea este ligado o libre, lo cual resulta en una proporcionalidad entre la tasa de fallo y el tamaño de una estructura de cadena. La tasa de "reparación" fuertemente limitada, que depende del movimiento aleatorio de S a través de la membrana, la producción aleatoria de nuevos L, y el movimiento aleatorio hacia el sitio de reparación, hace que la desintegración sea un controlador muy poderoso del tamaño máximo para una estructura fronteriza viable. Una probabilidad de desintegración de menos de aproximadamente 0.01 por paso de tiempo es requerida para lograr cualquier estructura viable en absoluto (estas deben contener aproximadamente 10 unidades-L al menos, para formar una estructura cerrada con algún espacio dentro).
+                </p>
+              </section>
+
+              <section className="space-y-10 pt-20">
+                <h3 className="text-3xl font-serif text-white flex items-center">
+                  <span className="text-cyan-500 mr-4 font-mono text-sm">A.2</span> Algoritmo
+                </h3>
+                
+                <div className="space-y-4">
+                  
+                  {/* PASO 1 */}
+                  <AlgoStep number="1." title="Movimiento, primer paso">
+                      <p><span className="text-cyan-500 font-mono">1.1.</span> Formar una lista de las coordenadas de todos los huecos <MathBlock formula="h_{i}" />.</p>
+                      <p><span className="text-cyan-500 font-mono">1.2.</span> Para cada <MathBlock formula="h_{i}" />, realizar una selección aleatoria, <MathBlock formula="n_{i}" />, en el rango de 1 a 4, especificando una ubicación vecina.</p>
+                      <p><span className="text-cyan-500 font-mono">1.3.</span> Para cada <MathBlock formula="h_{i}" /> en turno, donde sea posible, mover al ocupante de la ubicación vecina seleccionada en <MathBlock formula="h_{i}" />.</p>
+                      <div className="pl-8 space-y-2 text-base text-slate-500 italic">
+                          <p><span className="text-slate-400 font-normal">1.3.1.</span> Si el vecino es un hueco o yace fuera del espacio, no tomar acción.</p>
+                          <p><span className="text-slate-400 font-normal">1.3.2.</span> Si el vecino <MathBlock formula="n_{i}" /> contiene un L ligado, examinar la ubicación <MathBlock formula="n_{i}'" />. Si <MathBlock formula="n_{i}'" /> contiene un S, mover este S a <MathBlock formula="h_{i}" />.</p>
+                      </div>
+                      <p><span className="text-cyan-500 font-mono">1.4.</span> Unir (Bond) cualquier L movido, si es posible (regla 6).</p>
+                  </AlgoStep>
+
+                  {/* PASO 2 */}
+                  <AlgoStep number="2." title="Movimiento, segundo paso">
+                      <p><span className="text-cyan-500 font-mono">2.1.</span> Formar una lista de las coordenadas de los L libres, <MathBlock formula="m_{i}" />.</p>
+                      <p><span className="text-cyan-500 font-mono">2.2.</span> Para cada <MathBlock formula="m_{i}" />, realizar una selección aleatoria, <MathBlock formula="n_{i}" />, en el rango de 1 a 4, especificando una ubicación vecina.</p>
+                      <p><span className="text-cyan-500 font-mono">2.3.</span> Donde sea posible, mover el L ocupando la ubicación <MathBlock formula="m_{i}" /> a la ubicación vecina especificada.</p>
+                      <div className="pl-8 space-y-2 text-base text-slate-500 italic">
+                          <p><span className="text-slate-400 font-normal">2.3.1.</span> Si la ubicación especificada por <MathBlock formula="n_{i}" /> contiene otro L, o un K, entonces no tomar acción.</p>
+                          <p><span className="text-slate-400 font-normal">2.3.2.</span> Si la ubicación especificada por <MathBlock formula="n_{i}" /> contiene un S, el S será desplazado.</p>
+                          <div className="pl-8 space-y-2 border-l border-slate-800/50">
+                              <p>2.3.2.1. Si hay un hueco adyacente al S, se moverá a él. Si hay más de un hueco tal, seleccionar aleatoriamente.</p>
+                              <p>2.3.2.2. Si el S puede ser movido a un hueco pasando a través de eslabones ligados, como en el paso 1, entonces lo hará.</p>
+                              <p>2.3.2.3. Si el S no puede ser movido a un hueco, intercambiará ubicaciones con el L en movimiento.</p>
+                          </div>
+                          <p><span className="text-slate-400 font-normal">2.3.3.</span> Si la ubicación especificada por <MathBlock formula="n_{i}" /> es un hueco, entonces L simplemente se mueve a él.</p>
+                      </div>
+                      <p><span className="text-cyan-500 font-mono">2.4.</span> Unir cada L movido, si es posible.</p>
+                  </AlgoStep>
+
+                   {/* PASO 3 */}
+                   <AlgoStep number="3." title="Movimiento, tercer paso">
+                      <p><span className="text-cyan-500 font-mono">3.1.</span> Formar una lista de las coordenadas de todos los K, <MathBlock formula="c_{i}" />.</p>
+                      <p><span className="text-cyan-500 font-mono">3.2.</span> Para cada <MathBlock formula="c_{i}" />, realizar una selección aleatoria <MathBlock formula="n_{i}" />, en el rango de 1 a 4, especificando una ubicación vecina.</p>
+                      <p><span className="text-cyan-500 font-mono">3.3.</span> Donde sea posible, mover el K a la ubicación vecina seleccionada.</p>
+                      <div className="pl-8 space-y-2 text-base text-slate-500 italic">
+                          <p><span className="text-slate-400 font-normal">3.3.1.</span> Si la ubicación especificada por <MathBlock formula="n_{i}" /> contiene un BL u otro K, no tomar acción.</p>
+                          <p><span className="text-slate-400 font-normal">3.3.2.</span> Si la ubicación especificada por <MathBlock formula="n_{i}" /> contiene un L libre que puede ser desplazado de acuerdo a las reglas de 2.3, entonces el L será movido, y el K movido a su lugar. (Unir el L movido, si es posible.)</p>
+                          <p><span className="text-slate-400 font-normal">3.3.3.</span> Si la ubicación especificada por <MathBlock formula="n_{i}" /> contiene un S, entonces mover el S por las reglas de 2.3.2.</p>
+                          <p><span className="text-slate-400 font-normal">3.3.4.</span> Si la ubicación especificada por <MathBlock formula="n_{i}" /> contiene un L libre no movible por las reglas de 2.3, entonces intercambiar las posiciones del K y el L (Unir L, si es posible.)</p>
+                          <p><span className="text-slate-400 font-normal">3.3.5.</span> Si la ubicación especificada por <MathBlock formula="n_{i}" /> es un hueco, el K se mueve a él.</p>
+                      </div>
+                  </AlgoStep>
+
+                  {/* PASO 4: PRODUCCIÓN */}
+                  <AlgoStep number="4." title="Producción">
+                    <p><span className="text-cyan-500 font-mono">4.1.</span> Para cada catalizador <MathBlock formula="c_{i}" />, formar una lista de las posiciones vecinas <MathBlock formula="n_{ij}" /> que están ocupadas por S.</p>
+                    <div className="pl-8 space-y-2 text-base text-slate-500 italic mb-4">
+                       <p><span className="text-slate-400 font-normal">4.1.1.</span> Eliminar de la lista de <MathBlock formula="n_{ij}" /> todas las posiciones para las cuales ninguna posición vecina adyacente aparece en la lista (i.e., un 1 debe ser eliminado de la lista de <MathBlock formula="n_{ij}" />s si ni 5 ni 6 aparecen, y un 6 debe ser eliminado si ni 1 ni 2 aparecen).</p>
+                    </div>
+                    <p><span className="text-cyan-500 font-mono">4.2.</span> Para cada <MathBlock formula="c_{i}" /> con una lista no nula de <MathBlock formula="n_{ij}" />, elegir aleatoriamente uno de los <MathBlock formula="n_{ij}" />, sea su valor <MathBlock formula="p_{i}" />, y en la ubicación correspondiente reemplazar el S por un L libre.</p>
+                    <div className="pl-8 space-y-2 text-base text-slate-500 italic mb-4">
+                       <p><span className="text-slate-400 font-normal">4.2.1.</span> Si la lista de <MathBlock formula="n_{ij}" /> contiene solo uno que es adyacente a <MathBlock formula="p_{i}" />, entonces remover el S correspondiente.</p>
+                       <p><span className="text-slate-400 font-normal">4.2.2.</span> Si la lista de <MathBlock formula="n_{ij}" /> incluye ambas ubicaciones adyacentes a <MathBlock formula="p_{i}" />, seleccionar aleatoriamente el S a ser removido.</p>
+                    </div>
+                    <p><span className="text-cyan-500 font-mono">4.3.</span> Unir cada L producido, si es posible.</p>
+                  </AlgoStep>
+
+                  {/* PASO 5: DESINTEGRACIÓN */}
+                  <AlgoStep number="5." title="Desintegración">
+                    <p><span className="text-cyan-500 font-mono">5.1.</span> Para cada L, ligado o no ligado, seleccionar un número real aleatorio d en el rango (0, 1).</p>
+                     <div className="pl-8 space-y-2 text-base text-slate-500 italic">
+                       <p><span className="text-slate-400 font-normal">5.1.1.</span> Si <MathBlock formula="d \le P_d" /> (<MathBlock formula="P_d" /> un parámetro ajustable del algoritmo), entonces remover el L correspondiente, e intentar re-unir (regla 7).</p>
+                       <p><span className="text-slate-400 font-normal">5.1.2.</span> De otra manera proceder al siguiente L.</p>
+                    </div>
+                  </AlgoStep>
+
+                  {/* PASO 6: UNIÓN (BONDING) */}
+                  <AlgoStep number="6." title="Formación de Enlaces (Bonding)">
+                    <p className="italic text-slate-500 mb-4">Este paso debe recibir las coordenadas de un L libre.</p>
+                    <p><span className="text-cyan-500 font-mono">6.1.</span> Formar una lista de las posiciones vecinas <MathBlock formula="n_{i}" /> que contienen L's libres, y las posiciones vecinas <MathBlock formula="m_{i}" /> que contienen L's simplemente ligados.</p>
+                    <p><span className="text-cyan-500 font-mono">6.2.</span> Eliminar de los <MathBlock formula="m_{i}" /> cualquiera que resultaría en un ángulo de enlace menor a 90°. (El ángulo de enlace se determina como en la Figura A-2.)</p>
+                    <p><span className="text-cyan-500 font-mono">6.3.</span> Si hay dos o más de los <MathBlock formula="m_{i}" />, seleccionar dos, formar los enlaces correspondientes, y salir.</p>
+                    <p><span className="text-cyan-500 font-mono">6.4.</span> Si hay exactamente un <MathBlock formula="m_{i}" />, formar el enlace correspondiente.</p>
+                    <div className="pl-8 space-y-2 text-base text-slate-500 italic mb-4">
+                       <p><span className="text-slate-400 font-normal">6.4.1.</span> Eliminar de los <MathBlock formula="n_{i}" /> cualquiera que resultaría ahora en un ángulo de enlace menor a 90°.</p>
+                       <p><span className="text-slate-400 font-normal">6.4.2.</span> Si no hay <MathBlock formula="n_{i}" />, salir.</p>
+                       <p><span className="text-slate-400 font-normal">6.4.3.</span> Seleccionar uno de los <MathBlock formula="n_{i}" />, formar el enlace, y salir.</p>
+                    </div>
+                    <p><span className="text-cyan-500 font-mono">6.5.</span> Si no hay <MathBlock formula="n_{i}" />, salir.</p>
+                    <p><span className="text-cyan-500 font-mono">6.6.</span> Seleccionar uno de los <MathBlock formula="n_{i}" />, formar el enlace correspondiente, y eliminarlo de la lista.</p>
+                    <div className="pl-8 space-y-2 text-base text-slate-500 italic">
+                       <p><span className="text-slate-400 font-normal">6.6.1.</span> Si la lista <MathBlock formula="n_{i}" /> es no-nula, ejecutar pasos 6.4.1 a 6.4.3.</p>
+                       <p><span className="text-slate-400 font-normal">6.6.2.</span> Salir.</p>
+                    </div>
+                  </AlgoStep>
+
+                  {/* PASO 7: RE-ENLACE (REBOND) */}
+                  <AlgoStep number="7." title="Re-Enlace">
+                    <p><span className="text-cyan-500 font-mono">7.1.</span> Formar una lista de todas las posiciones vecinas <MathBlock formula="m_{i}" /> ocupadas por L's simplemente ligados.</p>
+                    <p><span className="text-cyan-500 font-mono">7.2.</span> Formar una segunda lista, <MathBlock formula="p_{ij}" />, de pares de los <MathBlock formula="m_{i}" /> que pueden ser enlazados.</p>
+                    <p><span className="text-cyan-500 font-mono">7.3.</span> Si hay algunos <MathBlock formula="p_{ij}" />, elegir un subconjunto maximal y formar los enlaces. Remover los L's involucrados de la lista <MathBlock formula="m_{i}" />.</p>
+                    <p><span className="text-cyan-500 font-mono">7.4.</span> Añadir a la lista <MathBlock formula="m_{i}" /> cualquier ubicación vecina ocupada por L's libres.</p>
+                    <p><span className="text-cyan-500 font-mono">7.5.</span> Ejecutar pasos 7.1 a 7.3; luego salir.</p>
+                  </AlgoStep>
+
+                </div>
+              </section>
+            </div>
+
+            <aside className="lg:col-span-4 space-y-12">
+               <div className="sticky top-32 p-10 bg-slate-900 rounded-[3rem] border border-slate-800 shadow-2xl overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full -mr-16 -mt-16 blur-3xl" />
+                <h4 className="text-cyan-500 uppercase tracking-[0.2em] text-xs font-black mb-10 flex items-center">
+                  <Terminal className="w-4 h-4 mr-3" /> Monitor de Algoritmo
+                </h4>
+                <div className="space-y-8 font-mono text-xs text-slate-400">
+                    <p>El algoritmo implementa una estocasticidad controlada. La selección de <MathBlock formula="n_i" /> (vecinos) en los pasos de movimiento y la selección de <MathBlock formula="p_i" /> en la producción introducen la variabilidad necesaria para la emergencia de orden.</p>
+                    <div className="h-px bg-slate-800 w-full" />
+                    <p>La Regla 6 (Bonding) es crítica: impone restricciones geométricas (ángulo &gt; 90°) que previenen el colapso de la membrana sobre sí misma.</p>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </article>
+
+        {/* APÉNDICE B */}
+        <article id="apendice-b" className="relative">
+          <header className="mb-24">
+            <h2 className="text-5xl md:text-6xl font-serif text-white mb-10 border-l-8 border-amber-500 pl-12 leading-tight">
+              Apéndice B. Algunas observaciones sobre dominios reflexivos y lógica
+            </h2>
+            <p className="text-2xl text-slate-400 leading-relaxed text-justify hyphens-auto font-light italic">
+              En este libro he utilizado extensamente la noción de <Concept>auto-referencia</Concept> como clave para caracterizar la autonomía natural. Es bien sabido que las representaciones auto-referenciales han sido fuente de mucho debate y pensamiento en la lógica y los fundamentos de la matemática. Parece apropiado decir unas pocas palabras sobre la conexión entre estos dos dominios, y hasta qué punto los dolores de cabeza de uno se encuentran en el otro. De entrada quiero enfatizar que estas preguntas sobre circularidades en lógica están conectadas, pero no son idénticas con la sustancia de las visiones presentadas previamente. Esto es así porque hemos estado preocupados con procesos recursivos, auto-referenciales en sistemas naturales, en lugar de con expresiones lingüísticas o lógicas. Esto seguramente constituye una diferencia significativa, como los cibernetistas han sabido por mucho tiempo.
+            </p>
+            <p className="mt-8 text-xl text-slate-400 leading-relaxed text-justify hyphens-auto font-light">
+              En este Apéndice, primero revisaré brevemente la suposición estándar de que la reflexividad es imposible en sistemas lógicos y formales. Segundo, discutiré en algún detalle la relación entre los cálculos de indicaciones y su interpretación lógica.
+            </p>
+          </header>
+
+          <div className="space-y-20 text-justify leading-relaxed hyphens-auto text-xl font-light max-w-5xl mx-auto">
+            <section className="space-y-8">
+              <h3 className="text-3xl font-serif text-white italic">
+                <span className="text-amber-500 mr-4 font-mono text-sm">B.1</span> Cálculos lógicos libres de tipos
+              </h3>
+              <p>
+                Parece muy natural esperar clausura de las descripciones formalizadas, es decir, tener las capacidades auto-referenciales de las descripciones lingüísticas naturales también completamente disponibles en su encarnación formal. En particular, parece casi trivial extender el cálculo proposicional clásico de modo que se vuelva semánticamente cerrado. Sin embargo, como <Author>Russell</Author> y <Author>Tarski</Author> dejaron solo demasiado claro, tal extensión no es fácilmente alcanzable. De hecho, mucha investigación en lógica y matemáticas ha sido dedicada a la posibilidad de evitar los estorbos de los tipos, preservando aún la consistencia amenazada por paradojas. Estos esfuerzos han tenido poco o ningún impacto. El matemático trabajador ha adoptado la posición segura ofrecida por las teorías de conjuntos axiomáticas tipo-tipo, que es suficiente para la mayoría de sus necesidades. El lógico y filósofo no es tan afortunado: El mentiroso y problemas relacionados no parecen sucumbir a la doctrina Tarskiana de niveles, y el asunto está lejos de estar resuelto.
+              </p>
+              
+              <p>
+                Al leer la literatura de los años pasados sobre este problema, se pueden distinguir tres categorías principales de aproximación. Primero, están aquellos que siguen una solución Tarskiana en una forma u otra y han dejado los problemas auto-referenciales como algo de qué preocuparse para el lingüista natural (e.g., <Author>Bar-Hillel</Author>, 1966). Segundo, están aquellos que ven alguna auto-referencia como siendo esencial si uno no va a dejar fuera partes clave de la matemática y la filosofía, y en general requieren una distinción entre auto-referencia viciosa y no viciosa (e.g., <Author>Fitch</Author>, 1946; <Author>Popper</Author>, 1954). Tercero, están aquellos que han mantenido aún como su interés central la auto-referencia como tal, y desean investigar qué es necesario para que una lógica formal sea cerrada (e.g., <Author>Löfgren</Author>, 1968; <Author>Martin</Author>, 1970; <Author>Asenjo</Author>, 1966). Al momento, y como puede adivinarse por el grado en el cual la auto-referencia es usualmente tratada como ilegítima, los resultados de la primera aproximación son abundantes, maduros y en pleno uso; aquellos de la segunda aproximación más escasos, aún tentativos, y gozando de menos popularidad. Los resultados de la tercera aproximación están restringidos a un grupo de especialistas y recién comenzando.
+              </p>
+
+              <p>
+                Cuando no hay tiempo—o secuencia en algún sentido—disponible, las circularidades pueden volverse viciosas. Aparecen como funciones que están contenidas en su propio rango, como ciclos-<MathBlock formula="\in" /> de conjuntos como en la paradoja de Russell, o finalmente, como antinomias del tipo mentiroso en lógica formal. Cuando contemplamos la misma circularidad presente a través de estos niveles, vemos que asignar un valor específico a lo que se ha llamado vicioso no es nada menos que introducir una dimensión temporal en la lógica y la teoría de conjuntos, no en ninguna forma de duración, sino en la forma de expresiones que definen un nuevo dominio no reducible a la no-circularidad. Lo que al nivel de la lógica parece vicioso, en otros niveles puede verse como muy creativo.
+              </p>
+
+              <p>
+                Es este sentido básico de tomar la auto-referencia explícitamente en cuenta lo que está detrás de una cantidad significativa de trabajo reciente, incluyendo el uso de <Concept>lógica trivalente</Concept> para tratar con paradojas (<Author>Chang</Author>, 1963; <Author>Prior</Author>, 1955; <Author>Shaw-Kwei</Author>, 1954; <Author>Skolem</Author>, 1960), interpretaciones de auto-referencia en lenguajes naturales y lógica (<Author>Herzberger</Author>, 1970; <Author>Martin</Author>, 1967; <Author>Parsons</Author>, 1974; <Author>Post</Author>, 1973; <Author>Skyrms</Author>, 1970; <Author>van Fraasen</Author>, 1970), y otras visiones alternativas sobre tertium non datur (<Author>Fitch</Author>, 1952; <Author>Heyting</Author>, 1930; <Author>Smullyan</Author>, 1957). No discutiré a todos estos autores aquí, sino que en cambio quiero concentrarme en el trabajo relevante de uno, <Author>Dana Scott</Author>, que sirvió para iniciar la discusión del <Concept>comportamiento propio (eigenbehavior)</Concept>.
+              </p>
+
+              <div className="bg-slate-900 p-12 rounded-[3rem] border border-slate-800 my-16 shadow-2xl">
+                <p className="mb-8 text-slate-300">En pocas palabras su posición es bastante simple: No hay nada intrínsecamente imposible en una lógica libre de tipos. Esta libertad de tipos puede expresarse en la forma de un <Concept>dominio reflexivo</Concept> D tal que:</p>
+                <MathBlock display formula="D \cong [D \to D]" />
+                <p className="mt-8 text-sm text-slate-500 italic">donde <MathBlock formula="[D \to D]" /> es un espacio funcional adecuado de D hacia sí mismo (cf. Sección 13.8). [<Author>Wadsworth</Author> (1976) llamó a estas ecuaciones de dominio isomórficas.] Scott está específicamente preocupado con la versión combinatoria de la lógica, y con el cálculo-<MathBlock formula="\lambda" />, que sirve como una base de la investigación, en lógica, de una teoría de funciones (o procedimientos) en general (<Author>Scott</Author>, 1971, 1972, 1973). En lugar de tratar de especificar lo que una expresión-<MathBlock formula="\lambda" /> puede significar, el énfasis, desde Church, ha estado mayormente en las reglas de cálculo para reducir una expresión a otra. Pero hay más en una expresión que lo que está encarnado en las reglas. <Author>Curry y Feys</Author> (1967: 178), por ejemplo, definen un combinador paradójico Y que puede ser pensado como una aplicación del famoso argumento de Gödel (o de la paradoja de Russell). Aún en su tratamiento estos autores se las arreglan para excluir estas formas no bienvenidas porque no pueden ser reducidas a una forma normal. Fue la intuición básica de Scott ver que a cada expresión se le puede dar un significado perfectamente bueno, a ser descubierto no solo a través de las reglas de reducción, sino a través de otros medios también: aquellos de aproximación y límite. Estos métodos fueron discutidos de una manera esquemática en la Sección 12.10.2, y más rigurosamente para álgebras continuas de operadores en el Capítulo 13. Hay un arreglo muy amplio de asuntos y posibilidades para la lógica y sistemas formales a ser explorados con estas nociones de teoría del orden. Su exploración está recién comenzando (e.g., <Author>Kripke</Author>, 1975).</p>
+              </div>
+
+              <p>
+                Esto completará mis comentarios sobre auto-referencia y lógica libre de tipos. Simplemente quiero señalar que hay más que decir sobre circularidades en el lenguaje que descartarlas como problemáticas, y que, de hecho, si las tomamos por su valor nominal hay más riqueza de la que se ve a simple vista, como el volumen de trabajo citado aquí indica. Volvamos ahora a un tema más específico: la relación entre los cálculos indicacionales y lógicos por un lado, y reentrada y auto-referencia por el otro.
+              </p>
+            </section>
+
+            <section className="space-y-10">
+              <h3 className="text-3xl font-serif text-white italic">
+                <span className="text-amber-500 mr-4 font-mono text-sm">B.2</span> Cálculos indicacionales interpretados para la lógica
+              </h3>
+              <p>
+                La forma básica de interpretar una forma indicacional como una proposición lógica fue delineada por <Author>Spencer-Brown</Author> mismo en un apéndice a su libro (1969:112). Equivale a tomar expresiones proposicionales como un modelo para el <Concept>Cálculo de Indicaciones (CI)</Concept>, estableciendo la correspondencia esperada entre las expresiones de uno (CI) con el otro (el cálculo de proposiciones) atribuyendo por lo tanto propiedades específicas a formas indicacionales, que pueden de otra manera ser interpretadas de un número de otras formas. Deseo reconsiderar aquí las formas indicacionales de proposiciones.
+              </p>
+              <p>
+                Consideremos el cálculo de indicaciones como un lenguaje formal CI. Consideremos cualquier versión del cálculo proposicional clásico como un lenguaje formal PC. Dejen que PC y CI compartan el mismo vocabulario de variables literales A, B,... Definamos un procedimiento <MathBlock formula="\Pi" /> como sigue, donde A es cualquier expresión en PC:
+              </p>
+
+              <div className="bg-slate-900/40 p-10 rounded-3xl border border-slate-800">
+                <h5 className="text-white font-bold mb-6 flex items-center tracking-widest uppercase text-xs">
+                  <span className="w-2 h-2 bg-cyan-500 rounded-full mr-3" /> Definición B.1: Procedimiento <MathBlock formula="\Pi" />
+                </h5>
+                <ul className="space-y-4 font-mono text-sm text-slate-400">
+                  <li className="flex items-start"><span className="text-cyan-500 mr-4">→</span> Si A es <MathBlock formula="\sim B" />, escriba <MathBlock formula="\overline{B}" /> para A en CI;</li>
+                  <li className="flex items-start"><span className="text-cyan-500 mr-4">→</span> Si A es <MathBlock formula="B \vee C" />, escriba <MathBlock formula="BC" /> para A en CI;</li>
+                  <li className="flex items-start"><span className="text-cyan-500 mr-4">→</span> Si <MathBlock formula="|- A" /> en PC, escriba <MathBlock formula="\Pi(A)= \urcorner" /> en CI;</li>
+                  <li className="flex items-start"><span className="text-cyan-500 mr-4">→</span> Si <MathBlock formula="|- \sim A" /> en PC, escriba <MathBlock formula="\Pi( \overline{A}| ) = \urcorner" /> en CI.</li>
+                </ul>
+              </div>
+
+              <div className="space-y-6 border-l-2 border-slate-800 pl-6">
+                <p><span className="text-white font-bold">Lema B.2.</span> A cada expresión en PC le corresponde una forma indicacional.</p>
+                <p className="text-slate-500 text-sm italic">PRUEBA: Sea A cualquier expresión en PC. Entonces puede ser puesta en su forma normal disyuntiva A'. Ahora podemos aplicar <MathBlock formula="\Pi" /> a A' comenzando desde sus negaciones atómicas y disyunciones. El resultado es una expresión A'' en CI que corresponde a A.</p>
+              
+                <p><span className="text-white font-bold">Lema B.3.</span> Cada expresión demostrable en PC es equivalente a la cruz, <MathBlock formula="\urcorner" />, en CI.</p>
+                <p className="text-slate-500 text-sm italic">PRUEBA: Dado que cada expresión demostrable en PC es equivalente a una tautología, el lema sigue inmediatamente de la definición del procedimiento y el lema previo.</p>
+              </div>
+
+              <p>
+                En otras palabras, no solo podemos transcribir cada expresión de PC en CI, sino que sus teoremas son vistos como aquellas expresiones idénticas a la cruz, <MathBlock formula="\urcorner" />. En CI, por supuesto, no solo podemos calcular esta clase de expresiones, sino también aquellas equivalentes al estado no marcado, <MathBlock formula=" " />, y en general, a cualquier clase de equivalencia que deseemos considerar. Desde el punto de vista semántico, el procedimiento <MathBlock formula="\Pi" /> equivale a adoptar la siguiente interpretación para CI:
+              </p>
+              <ul className="list-disc pl-10 space-y-2">
+                 <li>"<MathBlock formula="\urcorner" />" como "verdadero";</li>
+                 <li>"<MathBlock formula=" " />" como "falso";</li>
+                 <li>"<MathBlock formula="\overline{A}" />" como "no-A";</li>
+                 <li>"<MathBlock formula="AB" />" como "A o B";</li>
+                 <li>"<MathBlock formula="\overline{A}B" />" como "A implica B";</li>
+                 <li>y así sucesivamente.</li>
+              </ul>
+
+              <p>
+                Nótese que cuando consideramos las formas indicacionales de proposiciones lógicas, varias nociones se condensan en una. Tal es el caso de la cruz, tanto un valor (el estado marcado) y un operador (el distintor, la orden de dibujar una distinción). Cuando se interpreta para lógica la naturaleza de doble porte de la cruz (operador y valor) se vuelve dividida en un valor de verdad (como verdadero) y el operador de negación (o implicación). Que estas dos nociones en lógica son distintas es obvio, pero al nivel indicacional, y debido a la notación más adecuada de Spencer-Brown, podemos verlas condensarse en solo un movimiento, la cruz. Similarmente, en lógica debemos distinguir entre las operaciones "o" y "no", sin embargo en CI ambas se condensan en la misma propiedad de las cruces: contención. De nuevo tenemos una noción que se vuelve dividida en dos cuando se interpreta para la lógica. Es de este grado de condensación en CI que se obtienen ventajas computacionales al considerar la forma indicacional subyacente de proposiciones. Por ejemplo, las dos ideas claramente distintas de
+              </p>
+              <div className="flex justify-center space-x-12 my-6">
+                 <MathBlock display formula="A \vee \sim A" />
+                 <span className="self-center">y</span>
+                 <MathBlock display formula="A \supset A" />
+              </div>
+              <p>se ven tener la misma forma, a saber,</p>
+              <MathBlock display formula="E: \overline{A}|A" />
+
+              <p>
+                Similarmente, los cálculos generales son simplificados, como por ejemplo en la expresión
+              </p>
+              <MathBlock display formula="A \supset C ( ( B \supset C ) \supset ( A \vee B ) \supset C )" />
+              <p>conocida ser verdadera en PC. Por el procedimiento <MathBlock formula="\Pi" /></p>
+              <MathBlock display formula="\Pi(E) = \overline{A} | \overline{C} | \overline{ \overline{B}|C } | \overline{AB} | C" />
+              <p>podemos fácilmente calcular</p>
+              <div className="pl-10 border-l-2 border-cyan-500/30">
+                  <MathBlock display formula="\Pi(E) = \overline{A} | \overline{ \overline{ \overline{B}|C } | \overline{AB} | \overline{C} | C }" />
+                  <MathBlock display formula="= \overline{A} | \overline{B} | C | \overline{AB} | \urcorner" />
+                  <MathBlock display formula="= \urcorner" />
+              </div>
+              <p>así que sabemos que es verdadera. En general, como el lector puede convencerse a sí mismo, el cálculo en PC se vuelve casi trivial al considerar sus formas indicacionales subyacentes.</p>
+
+              <p>
+                En PC las expresiones son usualmente separadas (detached) en el punto de implicación; en CI son separadas en el punto de equivalencia de valor o identidad. Esto es de poca importancia: Aunque una consecuencia no necesita ser equivalente a su antecedente, este es el caso para la clase de expresiones verdaderas, que son las derivables en PC. Más precisamente, podemos fácilmente convertir la interpretación de PC desde CI en una forma implicacional por el procedimiento <MathBlock formula="\Pi" />, dado que tenemos que <MathBlock formula="A = \urcorner" /> cuando <MathBlock formula="|- A" />, y por otro lado <MathBlock formula="A = B" /> cuando y solo cuando <MathBlock formula="|- A \equiv B" />, donde "=" es el bicondicional. Así modus ponens sigue del procedimiento también, porque
+              </p>
+              <div className="pl-10">
+                 <p>A,</p>
+                 <p><MathBlock formula="A \supset B" />,</p>
+                 <p><MathBlock formula="|- B" /></p>
+              </div>
+              <p>se convierte en</p>
+              <div className="pl-10">
+                 <p><MathBlock formula="A = \urcorner" />,</p>
+                 <p><MathBlock formula="\overline{A}B = \urcorner" />,</p>
+              </div>
+              <p>así que</p>
+              <MathBlock display formula="\overline{\urcorner} B = B = \urcorner" />
+              <p>por sustitución. En otras palabras, al interpretar el CI para PC se vuelve solo una cuestión sintáctica si escribimos el cálculo en su forma equivalencial o implicacional.</p>
+
+              <p>Consideremos ahora implicaciones conceptuales más generales de interpretar CI para la lógica. Como sabemos de <Author>Spencer-Brown</Author> (1969:107), los postulados de Sheffer pueden fácilmente ser derivados de las dos simples iniciales indicacionales de CI. Más generalmente podemos declarar</p>
+
+              <div className="space-y-6 border-l-2 border-slate-800 pl-6 my-8">
+                <p><span className="text-white font-bold">Teorema B.3.</span> Sea PC definido por cualquier lista de postulados. Entonces PC puede ser derivado de los dos axiomas de CI.</p>
+                <p className="text-slate-500 text-sm italic">PRUEBA: Debemos mostrar que cualquier conjunto elegido de postulados puede ser derivado de los axiomas de CI. Sea una lista de postulados <MathBlock formula="S_1, S_2, ..., S_n" /> transcrita de acuerdo al procedimiento <MathBlock formula="\Pi" />. Dado que todos son axiomas, debemos tener <MathBlock formula="\Pi(S_i) = \urcorner" /> para todo i. Pero sabemos que toda expresión válida de la forma <MathBlock formula="A=B" /> puede ser derivada de los dos axiomas de CI. En particular <MathBlock formula="\Pi(S_i)=\urcorner" /> para todo i es derivable. Así la lista de postulados puede ser derivada de los dos axiomas en CI.</p>
+              </div>
+
+              <p>
+                Esto es interesante: no solo CI provee un marco de gran capacidad computacional para PC, sino que también muestra que las variedades de iniciales algebraicas pronto descansan en un terreno común de total simplicidad. En otras palabras, al interpretar CI para PC tenemos un cálculo para el cual no son necesarias iniciales. Cada forma algebraica que podamos desear tomar como iniciales puede ser derivada de su terreno aritmético, y por lo tanto, al adoptar una lista de postulados u otra por conveniencia sintáctica, podemos ver el terreno común sobre el que estamos parados, en lugar de la diversidad de conveniencias.
+              </p>
+              
+              <p>
+                Similarmente, es interesante notar qué pasa en esta luz con los resultados metalógicos sobre PC. Claramente, dado que CI es consistente, también lo es PC como una interpretación de él. En cuanto a completitud, sin embargo, de nuevo varias ideas se condensan en una al nivel de indicaciones. De hecho, en la completitud del álgebra CI se prueba que todas las expresiones aritméticas válidas son demostrables, incluyendo no solo las verdaderas [mostrando así la completitud semántica de PC como probó primero <Author>Post</Author>], sino también cualquier otra clase de equivalencia, tal como las falsas [mostrando así la completitud funcional de los dos pares de conectivos (~, <MathBlock formula="\vee" />) y (~, <MathBlock formula="\supset" />)]. Finalmente, la decidibilidad de PC como derivada de CI es simplemente establecida por computación aritmética, e incluso más allá, dado que la prueba de completitud es una constructiva, tenemos un procedimiento de prueba efectivo para PC.
+              </p>
+
+              <p>
+                Que tal dominio bien cartografiado como la lógica proposicional pueda ser enriquecido al considerarlo como una interpretación de CI es, sostengo, un testimonio del verdadero significado del descubrimiento de Spencer-Brown.
+              </p>
+
+              <p>
+                Volvamos ahora a considerar expresiones auto-referenciales y sus formas indicacionales subyacentes. En lógica proposicional podemos ver la auto-referencia como surgiendo de ciertas proposiciones afirmando propiedades o características de sí mismas. Si denotamos por <MathBlock formula="\Phi" /> cualquier función proposicional, podemos hacer esta noción más precisa como la condición
+              </p>
+              <p className="text-center italic">A es probable si y solo si <MathBlock formula="\Phi(A)" /> es probable,</p>
+              <p>así que A puede ser tomado como afirmando de sí mismo (<Author>Fitch</Author>, 1952). Si ahora transcribimos esta condición a CI, obtenemos</p>
+              <p className="text-center"><MathBlock formula="A = \urcorner" /> si y solo si <MathBlock formula="\Pi(\Phi(A)) = \urcorner" />,</p>
+              <p>o, tomando <MathBlock formula="\varphi(A)" /> como <MathBlock formula="\Pi(\Phi(A))" />,</p>
+              <MathBlock display formula="A = \varphi(A)" />
+              <p>donde ahora <MathBlock formula="\varphi" /> es cualquier función indicativa, es decir, cualquier expresión algebraica en CI. Tal expresión reentra su propio espacio indicativo, y así es la motivación para definir una forma general de formas indicacionales auto-referenciales por una expresión del tipo</p>
+              <MathBlock display formula="A_t = \varphi(A_1, ..., A_i, ..., A_n)" />
+              <p className="text-right text-xs text-slate-500">(B.1)</p>
+              <p>i.e., expresiones que especifican un punto fijo. Inversamente, cualquier expresión en CI de la forma (B.1) puede ser interpretada como una proposición auto-referencial.</p>
+
+              <p>
+                Que podamos producir auto-referencia a través de expresiones como (B.1) es muy interesante, pues es una pista de cómo CI provee un dispositivo general para designación para expresiones en él, si elegimos interpretarlo de esa manera. Por supuesto, ninguna clausura puede ser construida sin un mecanismo de designación global (<Author>Smullyan</Author>, 1957). De hecho, Brown usa el símbolo de identidad "=" para indicar equivalencia de valor entre expresiones. Al hacerlo, solo está siguiendo la tradición que define identidad como intercambiabilidad salva veritate. En CI, expresiones que son de valor equivalente son obviamente intercambiables sin alterar el contexto, de donde es natural usar "A=B" y sustitutividad como una regla para derivación. Cuando CI es interpretado para lógica, como se esperaba, la identidad es intercambiable con el bicondicional "<MathBlock formula="\equiv" />", dado que <MathBlock formula="A=B" /> si y solo si <MathBlock formula="|- A \equiv B" />. Ahora podemos interpretar identidad también en un contexto extensional, como intercambiable con designación. Si "p" designa p, seguramente son intencionalmente diferentes, pero es también el caso que esperamos que satisfagan sustitución salva veritate. En lenguajes tales como CI y PC, la designación de una expresión, dado que es equivalente a la expresión que designa, puede ser hecha a través de identificación. Así podemos interpretar algunas ecuaciones de CI en términos de designación lógica, como hicimos para expresiones auto-referenciales, y como podemos hacer para otras expresiones. En este sentido "=" no es ya un dispositivo metalingüístico, dado que podemos también designar identidades de órdenes superiores a través del bicondicional, como, por ejemplo en "<MathBlock formula="A = B \equiv C" />" interpretado como "A designa <MathBlock formula="B=C" />".
+              </p>
+
+              <p>
+                Tenemos entonces un mecanismo de designación en CI (y PC). Pero, como es fácil sospechar, no es global, en tanto que no todas las expresiones en CI pueden ser designadas. Un cálculo de proposiciones donde todas las funciones proposicionales tales pueden ser expresadas con un dominio irrestricto de argumentos (proposicionales) puede ser llamado un cálculo proposicional cerrado. La apropiación de tal nombre parece adecuada en la medida en que la capacidad expresiva del cálculo puede ser usada máximamente en sí misma. Es el caso, por supuesto, que el PC clásico no es cerrado (<Author>Tarski</Author>, 1956). Pues requeriría auto-referencia irrestricta para todas las funciones proposicionales. En particular, la propiedad "Verdadero" es expresable en PC, pero no admite auto-referencia sin contradicciones. "Verdadero" no puede ser una función proposicional irrestricta, sino solo una cuidadosamente restringida. En CI podemos escribir "Verdadero" simplemente recordando que hemos tomado <MathBlock formula="\urcorner" /> para ser el valor de verdad verdadero, y así <MathBlock formula="Tr(A)" /> puede ser tomado como
+              </p>
+              <p className="text-center"><MathBlock formula="A = \urcorner" /></p>
+              <p className="text-center">o</p>
+              <p className="text-center"><MathBlock formula="\varphi(A) = \urcorner" /></p>
+
+              <div className="p-12 bg-amber-500/5 border border-amber-500/20 rounded-[3rem] my-16 space-y-6">
+                <h4 className="text-amber-500 font-serif text-2xl italic">El Problema del Mentiroso reconsiderado</h4>
+                <p className="text-slate-300">
+                  La sentencia del mentiroso tiene ahora la forma:
+                </p>
+                <MathBlock display formula="A = Tr(\overline{A})" />
+                <MathBlock display formula="= \overline{\overline{ \overline{A} } | \overline{\urcorner} | A } | \overline{ \overline{ \overline{A} } | \urcorner }" />
+                <MathBlock display formula="= \overline{A}" />
+                <p className="text-slate-400">
+                  la cual es una expresión reentrante sin solución en CI, ya que produce un resultado antinómico para cualquier valor que asumamos para A. Es, no inesperadamente, una expresión auto-referencial insoluble. Consecuentemente, en CI, como en PC, no podemos permitir reentrada irrestricta, dado que no todas las expresiones tienen un punto fijo. En particular, <MathBlock formula="A = \overline{A}" /> no tiene ninguno. El mecanismo de designación en CI (y así en PC) es uno limitado; no puede ser extendido sin contradicciones producidas por la auto-referencia.
+                </p>
+                <p className="text-slate-400">
+                  Las situaciones paradójicas planteadas por la auto-referencia en CI y PC parecen, hasta este punto, enteramente análogas. Sin embargo, debido a las ganancias intuitivas y notacionales en CI, podemos encontrar una solución constructiva a este impasse, en lugar de tratar de evitarlo (Capítulo 12). La solución es admitir cada situación auto-referencial tomando el comportamiento antinómico como una caracterización de una auto-indicación. En un primer paso esto significa admitir valores autónomos en la aritmética del cálculo mismo, para dar a la variable A en
+                </p>
+                <MathBlock display formula="A = \overline{A}" />
+                <p className="text-slate-400">el valor autónomo</p>
+                <MathBlock display formula="A = \Box" />
+              </div>
+
+              <p>
+                En el cálculo extendido de indicaciones (Sección 12.3.1) tomé todas las instancias de fenómenos auto-referenciales como teniendo un "parecido de familia", sea en auto-descripción de lenguajes de cualquier tipo, o en auto-computación al nivel de organización de sistema.
+              </p>
+
+              <p>
+                Podemos, por supuesto, interpretar directamente el cálculo extendido de indicaciones (EC) a la lógica, como hicimos con el CI Browniano (<Author>Varela</Author>, 1979). Equivaldría a aplicar el mismo procedimiento <MathBlock formula="\Pi" />, con la interpretación adicional del valor autónomo ahora como un tercer valor de verdad. Semánticamente este tercer valor representa precisamente la naturaleza de una declaración circular que se niega a sí misma, también descriptible, en el tiempo, como una oscilación (verdadero-falso-verdadero...). Obtenemos así una lógica trivalente L(EC), la cual es sintácticamente una generalización de una lógica primero usada por <Author>Kleene</Author> (1938; ver también, <Author>Schwartz</Author>, 1978).
+              </p>
+
+              <p>
+                Las tablas de verdad de L(EC) son idénticas a aquellas primero descritas por Kleene y redefinidas como el sistema variante-estándar <MathBlock formula="S_3" /> en el estudio de <Author>Dienes</Author> (1949). Además, cualquier expresión de L(EC) puede ser inmediatamente transcrita en una expresión en el sistema de Kleene (K), simplemente reescribiendo los conectivos como definidos por <MathBlock formula="\Pi" />. La diferencia real entre estos sistemas clásicos y L(EC) yace en el uso de este último de la equivalencia "=". En esta conexión debería notarse que una expresión que es derivable de los axiomas de K debe tener ya sea el valor "verdadero" o "indefinido", dado que estas son las tautologías de K. Transcribamos "<MathBlock formula="|- p" />" en K por "<MathBlock formula="p = \Box p" />" en L(EC). Dado que L(EC) es completo, todas las identidades de la forma "<MathBlock formula="p = p" />" son derivables; por lo tanto todas las expresiones derivables p en K son recuperadas en L(EC) como exactamente aquellas expresiones satisfaciendo <MathBlock formula="p = \Box p" />. Inversamente, si una expresión en L(EC) es tal que <MathBlock formula="p = \Box p" />, entonces debemos tener <MathBlock formula="|-_{K} p" />, dado que tiene un valor designado, y así debe ser derivable en K. Esto justifica elegir una forma de equivalencia para L(EC): al hacerlo, no solo recuperamos todas las expresiones derivables con implicación, sino que también tenemos acceso a muchas otras clases de expresiones. Al tomar una regla de implicación para la separación (detachment), nos forzamos a confundir expresiones que son "<MathBlock formula="\urcorner" />" o "<MathBlock formula="\Box" />" en K. En este sentido, L(EC) es más rico que los sistemas clásicos, con los cuales coincide en sus tablas de verdad. Además, esta interpretación provee un sistema de axiomas para K, hasta ahora desconocido.
+              </p>
+
+              <p>
+                Cuando se interpreta para lógica clásica, la auto-referencia engendra las paradojas de sentencias que se niegan a sí mismas. A este problema varios autores se han dirigido, en un intento de resolverlo por medio de una lógica trivalente. <Author>Moh Shaw-Kwei</Author> (1954) usó el sistema trivalente de Lukasiewicz, interpretando el tercer valor como "paradójico". Mostró que en este caso, como en toda la familia de sistemas Lukasiewiczianos, las paradojas recurrirán; sin embargo, sus resultados no aplican a sistemas del tipo K, donde "p implica p" es no-verdadero. Después, <Author>Asenjo</Author> (1966) propuso un cálculo de antinomias, donde el tercer valor es tomado como "antinómico", con tablas de verdad del tipo K: sus axiomas, sin embargo, son incompletos. La presente interpretación (<Author>Varela</Author>, 1979) extiende los intentos de estos autores al proveer un sistema consistente, completo, que puede aceptar declaraciones que se niegan a sí mismas como no-paradójicas.
+              </p>
+
+              <p>
+                Aún, como podría esperarse, esta aproximación simple realmente no funciona. La lógica obtenida es claramente no satisfactoriamente cerrada, pues en ella perdemos determinación de varias expresiones de uso normal (tal como <MathBlock formula="A \vee \sim A" /> y <MathBlock formula="A \supset A" />), y aunque podemos ahora tener auto-referencia irrestricta en las expresiones, el rango de expresiones es grandemente reducido. La omnipresencia de tres valores de verdad distorsiona la forma de las proposiciones lógicas al punto de paralizarlas (cf. Sección 12.6).
+              </p>
+
+              <p>
+                Es necesario distinguir entre auto-referencia infinita y finita [i.e., auto-referencia viciosa y no viciosa, o en términos de Fitch (1946), auto-referencia del primer y segundo tipo]. En la última, una situación auto-referencial lleva a un ciclo finito de computaciones (sean reales o conceptuales), eventualmente terminando con un resultado definido. Un caso típico tal en lógica es la declaración "esta declaración es verdadera", o en CI la expresión <MathBlock formula="A = \overline{ \overline{ A } | }" />. En auto-referencia infinita, una situación auto-referente lleva a un bucle sin fin, donde no hay un solo resultado estable sino una oscilación. Típico, de nuevo, en lógica es la declaración del mentiroso, o en CI la expresión <MathBlock formula="A = \overline{A}" />. Aquí vemos por qué el nombre auto-referencia infinita es apropiado, porque A puede ser tomado como la expresión infinita
+              </p>
+              <MathBlock display formula="A = \overline{ \overline{ \overline{...} } }" />
+
+              <p>
+                Es esta auto-referencia infinita, por supuesto, la que es actualmente evitada a toda costa en sistemas formales y discurso científico. Es este comportamiento el que propuse confrontar constructivamente al caracterizarlo en términos de expresiones infinitas interpretables en el tiempo como oscilaciones de varias frecuencias y periodos (Capítulo 12). Interpretado para lógica, un álgebra Browniana sería un álgebra Booleana multivaluada, infinitaria. Estos dos aspectos corresponden uno al otro. Déjenme explicar esto. Del trabajo de Scott discutido arriba, vimos que una lógica libre de tipos no surge de un mero malabarismo de las reglas de reducción. Esto implicó que para obtener reentrada irrestricta teníamos que extender el álgebra de formas a formas continuas (cf. Sección 12.10.1). Cuando se interpreta para valores (cf. patrones espaciales) esto produce un número indefinido de ellos, en lugar de solo tres, como en el caso de ECI recién discutido. Ahora, no sabemos lo que los detalles de esta interpretación lógica de álgebras de forma de onda podrían producir para la lógica y la multivalencia. De acuerdo a un breve reporte reciente de Schwartz, podría proveer una relación entre auto-referencia y una lógica de vaguedad (Schwartz, 1978; ver también <Author>Gaines</Author>, 1978). No lo sé; pero los terrenos para exploración para esta y otras preguntas están bastante abiertos.
+              </p>
+
+              <Figure id="Figura A-2" description="Definición del ángulo de enlace θ.">
+                 <div className="flex items-center justify-center p-16">
+                    <svg viewBox="0 0 200 120" className="w-80 h-48 stroke-cyan-500 fill-none stroke-[1.5]">
+                      <path d="M40,100 L100,20 L160,100" />
+                      <circle cx="100" cy="20" r="5" className="fill-cyan-500" />
+                      <path d="M85,45 Q100,65 115,45" className="stroke-amber-500 stroke-2" />
+                      <text x="95" y="85" className="fill-amber-500 font-serif italic text-lg">θ</text>
+                      <path d="M35,100 H165" className="stroke-slate-800 stroke-1 border-dashed" />
+                    </svg>
+                 </div>
+              </Figure>
+
+              <p>
+                Quiero concluir enfatizando una vez más, que los cálculos de indicación no son una forma sutil de lógica. Realmente intentan algo bastante diferente como descripciones, y han jugado, en este libro, una función muy diferente. Cuando se interpretan para lógica, sin embargo, estos cálculos llevan con ellos una clara partida de los terrenos usuales en los cuales los cálculos lógicos cerrados son considerados, particularmente en el contenido y significado asignado a la auto-referencia. Los valores introducidos en el álgebra de indicaciones representan un dominio con contenido empírico, visible en el rango de aplicabilidad de procesos naturales, y solo secundariamente en la significatividad de paradojas lingüísticas. No estamos considerando expresiones circulares como variantes anormales de alguna forma estándar de expresiones, sino como un dominio válido en sí mismo, el cual tiene su propio comportamiento tipificado en lógica por la circularidad atómica "p no es p".
+              </p>
+            </section>
+
+            {/* CONCLUSIÓN EPISTEMOLÓGICA */}
+            <section id="conclusion" className="pt-24 border-t border-slate-900 space-y-10">
+              <h2 className="text-4xl font-serif text-white mb-12">Conclusión</h2>
+              <p>
+                Esta actitud epistemológica considera la <Concept>circularidad</Concept> como una noción central en lugar de una molestia. La auto-referencia se convierte en una herramienta necesaria para la descripción científica y no en una idiosincrasia del habla formal que pueda ser amputada para lenguajes formales.
+              </p>
+              <p>
+                De hecho, desde este punto de vista, si vamos a tener una ciencia de los sistemas vivos, sociales y cognitivos, y una epistemología contemporánea de fundamentos racionales sólidos, la circularidad tiene que ser tomada por su valor nominal, reconocida como una noción funcional y mapeada formalmente.
+              </p>
+            </section>
+          </div>
+        </article>
+
+        {/* REFERENCIAS */}
+        <section id="referencias" className="pt-32 border-t border-slate-900">
+          <h2 className="text-[10px] uppercase tracking-[0.5em] text-slate-500 font-black mb-16 flex items-center">
+            <BookOpen className="w-5 h-5 mr-4 text-cyan-500" /> Fuentes y Bibliografía
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 font-mono text-xs text-slate-500">
+            {[
+              { author: "Scott, D. (1973)", text: "Lattice-theoretic models for various type-free calculi, in Proceedings of the Fourth International Congress on Logic, Bucharest, North-Holland, Amsterdam." },
+              { author: "Varela, F. (1975)", text: "The Grounds for a Closed Logic, Biological Computer Lab. Rep. 3.5, Univ. of Illinois, Urbana." },
+              { author: "Varela, F. (1979)", text: "The extended calculus of indications interpreted as a three-valued logic, Notre Dame J. Formal Logic 20:141-146." },
+            ].map((ref, idx) => (
+              <div key={idx} className="p-8 bg-slate-900/20 rounded-2xl border border-slate-800/40 group hover:border-cyan-500/30 transition-all hover:-translate-y-1">
+                <Author>{ref.author}</Author>
+                <p className="mt-4 leading-relaxed group-hover:text-slate-300 transition-colors">{ref.text}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+
+      {/* FOOTER */}
+      <footer className="w-screen py-32 bg-slate-900/30 border-t border-slate-900 text-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-cyan-500/5" />
+        <p className="text-slate-500 font-serif italic text-2xl mb-8 relative z-10 max-w-4xl mx-auto px-8 leading-relaxed">
+          "La circularidad es el fundamento de la autonomía biológica."
+        </p>
+        <div className="flex justify-center space-x-10 text-slate-600 relative z-10">
+          <Github className="w-6 h-6 hover:text-cyan-500 cursor-pointer transition-colors" />
+          <ExternalLink className="w-6 h-6 hover:text-cyan-500 cursor-pointer transition-colors" />
+        </div>
+        <p className="mt-16 text-[10px] uppercase tracking-widest text-slate-700 font-bold">© Edición Crítica — Archivo Varela</p>
+      </footer>
+
+      {/* MODAL DE NOTAS AL PIE */}
+      <AnimatePresence>
+        {activeNote && (
+          <motion.div 
+            initial={{ opacity: 0, y: 40, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 40, x: '-50%' }}
+            className="fixed bottom-12 left-1/2 z-50 w-full max-w-3xl px-8"
+          >
+            <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-800 p-10 rounded-[2.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] border-t-cyan-500/50">
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="bg-cyan-500/20 p-2.5 rounded-xl">
+                  <Info className="w-5 h-5 text-cyan-400" />
+                </div>
+                <span className="text-cyan-400 font-black uppercase tracking-[0.3em] text-[10px]">Referencia Técnica #{activeNote.id}</span>
+              </div>
+              <p className="text-slate-200 text-justify leading-relaxed italic text-lg">
+                {activeNote.content}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ESTILOS GLOBALES INYECTADOS */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&display=swap');
+        
+        html {
+          scroll-behavior: smooth;
+        }
+
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .font-sans { font-family: 'Inter', sans-serif; }
+
+        ::-webkit-scrollbar {
+          width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+          background: #020617;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #1e293b;
+          border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #06b6d4;
+        }
+
+        article {
+          animation: fadeIn 1.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}} />
+    </div>
+  );
+}
