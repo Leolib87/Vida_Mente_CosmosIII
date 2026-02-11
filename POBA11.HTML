@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capítulo 11 - Francisco J. Varela</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (para JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- MathJax para Ecuaciones -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                macros: {
+                    // Macro para la "marca" de Spencer-Brown (techo y pared derecha)
+                    mark: ["\\overline{#1}\\,\\vline", 1],
+                    // Macro para la marca vacía (cruz)
+                    cross: "\\overline{\\phantom{t}}\\,\\vline",
+                    // Espacio para el vacío
+                    void: "\\;\\;"
+                }
+            },
+            svg: { fontCache: 'global' },
+            options: {
+                processHtmlClass: 'tex2jax_process'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: { 950: '#020617' }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 1.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(15px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        html { scroll-behavior: smooth; }
+        ::selection { background-color: rgba(34, 211, 238, 0.2); color: #fff; }
+        
+        .footnote-ref {
+            font-size: 0.7em;
+            vertical-align: super;
+            margin-left: 2px;
+            font-weight: bold;
+            color: #22d3ee;
+            cursor: pointer;
+        }
+
+        /* Estilos MathJax para color Ámbar */
+        .mjx-chtml { 
+            color: #f59e0b !important; /* Amber-500 */
+            font-size: 110% !important;
+        }
+        .mjx-char {
+             color: #f59e0b !important;
+        }
+        .mjx-box {
+             border-color: #f59e0b !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-300 antialiased overflow-x-hidden selection:bg-cyan-500/30">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS (SVG) ---
+        const MenuIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        );
+        const XIcon = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="M6 6 18 18"/></svg>
+        );
+
+        // --- DATA & CONTENT ---
+
+        const AUTHORS = [
+            "Francisco J. Varela", "Spencer-Brown", "Russell", "Frege", "Boole", "Chomsky", "Gadamer", "Kauffman"
+        ];
+
+        const CONCEPTS = [
+            "Autonomía", "Control", "Información", "autopoiético", "alonomía", "autonomía",
+            "clausura", "distinción", "indicación", "aritmética primaria", "álgebra de formas",
+            "cruz", "estado marcado", "estado no marcado", "condensación", "cancelación",
+            "recursión", "autorreferencia", "reentrada", "eigencomportamiento", "observador",
+            "espacio indicacional", "leyes de la forma", "continencia", "expresión", "valor"
+        ];
+
+        const FOOTNOTES = {
+            1: "Para abreviar a Chomsky: 'La búsqueda de una formulación rigurosa tiene una motivación más seria que la mera preocupación por las sutilezas lógicas o el deseo de purificar métodos bien establecidos de... análisis. Los modelos construidos con precisión... pueden desempeñar un papel importante, tanto negativo como positivo, en el proceso de descubrimiento mismo. Al llevar una formulación precisa pero inadecuada a una conclusión inaceptable, a menudo exponemos la fuente exacta de esta insuficiencia y, en consecuencia, obtenemos una comprensión más profunda...' (Chomsky, 1957:5).",
+            2: "El libro fue publicado por primera vez en Inglaterra en 1969, por George Allen & Unwin, Londres. Fue publicado nuevamente en los Estados Unidos por Julian Press, Nueva York, 1972, y en una edición de bolsillo en 1974 por Bantam Books. Han aparecido reseñas en J. Symbol. Logic 42:317 (1977) y Nature 215:312 (1971)."
+        };
+
+        const TABLE_OF_CONTENTS = [
+            { 
+                part: "Parte II: Descripciones, Distinciones y Circularidades",
+                items: [
+                    { title: "Capítulo 8: Explicaciones Operacionales", link: "#" },
+                    { title: "Capítulo 9: Explicaciones Simbólicas", link: "#" },
+                    { title: "Capítulo 10: Marco de Complementariedades", link: "#" },
+                    { title: "Capítulo 11: Calculando Distinciones", link: "#chapter11" },
+                    { title: "Capítulo 12: Clausura y Dinámica de Formas", link: "#" },
+                    { title: "Capítulo 13: Eigencomportamiento", link: "#" }
+                ]
+            }
+        ];
+
+        // --- COMPONENTS ---
+
+        const HighlightedText = ({ text, onFootnoteHover, onFootnoteLeave }) => {
+            if (!text || typeof text !== 'string') return text || null;
+            const parts = text.split(/(\[.*?\]|[\s\n]+|"[^"]*")/g);
+
+            return (
+                <span>
+                    {parts.map((part, i) => {
+                        if (!part) return null;
+
+                        if (part.startsWith('"') && part.endsWith('"')) {
+                            return <span key={i} className="text-amber-500 italic font-serif">{part}</span>;
+                        }
+
+                        const footnoteMatch = part.match(/^\[(\d+)\]$/);
+                        if (footnoteMatch) {
+                            const id = footnoteMatch[1];
+                            return (
+                                <span 
+                                    key={i}
+                                    className="footnote-ref px-1 bg-cyan-950/20 rounded border border-cyan-900/50 hover:text-cyan-200 transition-colors"
+                                    onMouseEnter={() => onFootnoteHover(id)}
+                                    onMouseLeave={onFootnoteLeave}
+                                >
+                                    [{id}]
+                                </span>
+                            );
+                        }
+
+                        const cleanWord = part.replace(/[.,;:"()]/g, '');
+                        const lowerPart = part.toLowerCase();
+                        let styleClass = "";
+                        
+                        if (AUTHORS.some(a => lowerPart.includes(a.split(' ').pop().toLowerCase()) && cleanWord.length > 2)) {
+                            styleClass = "text-cyan-400 font-medium";
+                        }
+                        if (CONCEPTS.some(c => lowerPart.includes(c.toLowerCase()) && cleanWord.length > 3)) {
+                            styleClass = "text-amber-500 italic";
+                        }
+
+                        return <span key={i} className={styleClass}>{part}</span>;
+                    })}
+                </span>
+            );
+        };
+
+        const Paragraph = ({ children, onFootnoteHover, onFootnoteLeave }) => (
+            <div className="mb-12 text-lg md:text-xl lg:text-2xl leading-relaxed text-slate-300 font-light text-justify w-full">
+                {typeof children === 'string' ? (
+                    <HighlightedText text={children} onFootnoteHover={onFootnoteHover} onFootnoteLeave={onFootnoteLeave} />
+                ) : (
+                    children
+                )}
+            </div>
+        );
+
+        const SectionHeader = ({ children }) => (
+             <h4 className="text-3xl md:text-5xl lg:text-6xl font-serif text-slate-100 mt-32 mb-16 border-l-4 border-cyan-500/50 pl-10 w-full uppercase tracking-tight leading-none">
+                {children}
+            </h4>
+        );
+
+        const SubSectionHeader = ({ children }) => (
+             <h5 className="text-xl md:text-3xl font-sans font-bold text-slate-400 mt-20 mb-10 uppercase tracking-[0.5em] border-b border-slate-800 pb-6 w-full">
+                {children}
+            </h5>
+        );
+
+        const EquationBlock = ({ tex, label }) => (
+            <div className="flex flex-col md:flex-row items-center justify-between my-16 w-full px-4 md:px-12 bg-slate-900/30 py-8 rounded-[2rem] border border-slate-800/50 shadow-inner">
+                <div className="flex-1 text-center py-4 text-2xl lg:text-4xl font-serif overflow-x-auto w-full tex2jax_process text-amber-500">
+                    {`\\[ ${tex} \\]`}
+                </div>
+                {label && <div className="text-slate-500 text-sm md:text-base font-sans mt-4 md:mt-0 md:ml-4 min-w-[50px] font-mono">({label})</div>}
+            </div>
+        );
+
+        // Componente InlineEquation para resolver referencias
+        const InlineEquation = ({ tex }) => (
+            <span className="text-amber-500 font-serif px-1 tex2jax_process">{`\\( ${tex} \\)`}</span>
+        );
+
+        const QuoteBlock = ({ children, author }) => (
+            <div className="my-20 pl-8 md:pl-16 border-l-4 border-amber-500/30 text-slate-400 w-full bg-amber-950/10 py-12">
+                <p className="font-serif text-2xl md:text-3xl lg:text-4xl text-amber-500/90 mb-8 leading-snug italic text-justify">"{children}"</p>
+                {author && <p className="text-sm md:text-base lg:text-lg text-cyan-400 uppercase tracking-[0.3em] font-bold opacity-70">— {author}</p>}
+            </div>
+        );
+
+        const DefinitionBox = ({ title, children }) => (
+            <div className="my-16 p-8 md:p-12 border border-slate-800 rounded-[2rem] bg-slate-900/40 w-full">
+                <p className="text-cyan-400 font-bold uppercase tracking-widest text-sm mb-6 border-b border-cyan-900/30 pb-2 inline-block">{title}</p>
+                <div className="text-lg md:text-xl lg:text-2xl font-light text-slate-300 text-justify">
+                    <HighlightedText text={children} />
+                </div>
+            </div>
+        );
+
+        // --- APP ---
+
+        function App() {
+            const [activeFootnote, setActiveFootnote] = useState(null);
+            const [progress, setProgress] = useState(0);
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    const winScroll = document.documentElement.scrollTop;
+                    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                    setProgress(winScroll / height);
+                };
+                window.addEventListener('scroll', handleScroll);
+                if (window.MathJax && window.MathJax.typeset) {
+                    window.MathJax.typeset();
+                }
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+            
+            useEffect(() => {
+                if (window.MathJax && window.MathJax.typeset) {
+                     window.MathJax.typeset();
+                }
+            });
+
+            const handleLinkClick = (e, link) => {
+                if (link && link.startsWith('#')) {
+                    e.preventDefault();
+                    const element = document.getElementById(link.substring(1));
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth' });
+                        setIsMenuOpen(false);
+                    }
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-300 font-sans pb-80">
+                    <div className="fixed top-0 left-0 h-1.5 bg-cyan-400 z-50 transition-all duration-75 shadow-[0_0_20px_rgba(34,211,238,0.7)]" style={{ width: `${progress * 100}%` }}></div>
+
+                    <nav className="fixed top-0 w-full z-40 bg-slate-950/80 backdrop-blur-xl border-b border-white/5 h-24 transition-all duration-300">
+                        <div className="w-full h-full px-6 md:px-12 flex items-center justify-between">
+                            <div className="flex items-center gap-6 cursor-pointer group" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
+                                <div className="w-12 h-12 bg-amber-600 rounded-sm flex items-center justify-center text-slate-950 font-serif font-bold text-2xl shadow-xl group-hover:scale-105 transition-transform">V</div>
+                                <div className="hidden md:block">
+                                    <h1 className="text-slate-100 font-serif text-lg tracking-widest uppercase font-bold group-hover:text-amber-500 transition-colors">Francisco J. Varela</h1>
+                                    <span className="text-xs text-slate-500 uppercase tracking-widest block mt-1 opacity-60">Principios de Autonomía Biológica</span>
+                                </div>
+                            </div>
+                            
+                            <div className="relative">
+                                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center gap-4 text-xs uppercase tracking-[0.3em] text-cyan-400 py-3 px-8 border border-cyan-900/50 rounded-full hover:bg-cyan-950/40 transition-all font-bold">
+                                    Índice {isMenuOpen ? <XIcon size={18}/> : <MenuIcon size={18}/>}
+                                </button>
+                                {isMenuOpen && (
+                                    <div className="absolute right-0 mt-8 w-80 sm:w-[500px] bg-slate-900/95 border border-slate-800 shadow-2xl rounded-[2rem] py-10 max-h-[80vh] overflow-y-auto z-50 animate-fade-in ring-1 ring-white/10">
+                                        {TABLE_OF_CONTENTS.map((section, idx) => (
+                                            <div key={idx} className="mb-12 last:mb-0">
+                                                <h4 className="px-12 py-2 text-[11px] font-black text-amber-500 uppercase tracking-[0.4em] bg-slate-950/60 mb-6">
+                                                    {section.part}
+                                                </h4>
+                                                {section.items.map((item, i) => (
+                                                    <a key={i} href={item.link} onClick={(e) => handleLinkClick(e, item.link)} className="block px-12 py-4 text-sm md:text-base text-slate-400 hover:bg-slate-800 hover:text-cyan-400 transition-all no-underline border-l-4 border-transparent hover:border-cyan-500">
+                                                        {item.title}
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </nav>
+
+                    <main className="pt-48 px-6 md:px-12 lg:px-24 w-full animate-fade-in">
+                        
+                        <section id="chapter11" className="mb-80 scroll-mt-40">
+                            <div className="mb-48 text-center w-full">
+                                <span className="text-cyan-400 text-xs font-black tracking-[0.6em] uppercase mb-12 block">Capítulo 11</span>
+                                <h2 className="text-6xl md:text-8xl lg:text-[10rem] font-serif text-slate-100 mb-12 uppercase leading-none tracking-tighter">
+                                    Calculando
+                                </h2>
+                                <h3 className="text-slate-500 text-4xl md:text-6xl lg:text-7xl font-serif italic font-light tracking-tight">Distinciones</h3>
+                            </div>
+
+                            <SectionHeader>11.1 Sobre la Formalización</SectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Este capítulo, y también los dos siguientes, tratan sobre otras formas de formalizar los rasgos y procesos sistémicos que nos preocupan en este libro. Es decir, buscamos un formato matemático dentro del cual podamos capturar algunas de las intuiciones señaladas hasta ahora.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La decisión de perseguir tales representaciones formales se basa en la visión de que la precisión matemática, cuando es posible, hace que un marco conceptual sea más útil y señala sus limitaciones. Estoy de acuerdo con esta opinión [1]. A lo largo de estos capítulos, los formalismos desarrollados continuarán dando más información sobre la autonomía sistémica y sus mecanismos, así como sobre dónde es más inmaduro este enfoque. Esta fue también la intención del último capítulo, al considerar la noción de complementariedad descriptiva.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Hay dos temas esenciales que discutir. Primero, en este capítulo y el siguiente, discutiré un formalismo para representar el acto de distinción, una noción fundamental que recorre la mayor parte del presente libro.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En segundo lugar, me ocuparé de la cuestión de la circularidad o autorreferencia, que es el nervio del tipo de dinámica que hemos estado considerando en los sistemas vivos y la autopoiesis en la clausura organizacional en general, y que está incrustada en la epistemología participativa que subyace a este enfoque. Formalizamos la idea de procesos autorreferenciales en dos etapas. Primero, la cuestión se mira en el contexto del cálculo de indicación como autoindicación o reentrada de formas indicacionales. En el Capítulo 13, las ideas desarrolladas en el terreno desnudo de la indicación se enriquecen con capacidades computacionales, y desarrollamos el concepto más operacional de eigencomportamiento, es decir, los estados autodeterminados de un proceso recurrente. Esto equivale a una caracterización de la autonomía a través de las invariancias que emergen bajo la clausura organizacional.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                A lo largo de esta presentación, el lector debe tener en cuenta que al tratar estos temas, a menudo estamos pisando terreno nuevo y lidiando con problemas que son tanto filosóficos como técnicamente difíciles. Así, todo lo que tengo que decir aquí debe tratarse como señales en un terreno que necesita mucho más estudio e investigación. Encontraremos un desarrollo desigual de estas ideas e importantes lagunas en su aplicabilidad.
+                            </Paragraph>
+
+                            <SectionHeader>11.2 Distinciones e Indicaciones</SectionHeader>
+                            
+                            <SubSectionHeader>11.2.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                He presentado los argumentos que hacen evidente que el acto de distinción se encuentra en los fundamentos de cualquier descripción. La operación más fundamental es la de distinguir el "ello" que se va a estudiar de su fondo. Una distinción emerge de una comunidad de observadores que decide el sentido en el que se realiza una distinción. Así tenemos límites físicos, agrupaciones funcionales, categorización conceptual, y así sucesivamente, en un museo infinitamente variado de distinciones posibles.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                El acto de distinción revela un doble aspecto de la comunidad de observadores. Por un lado, revela la forma en que se logra tal distinción: los criterios de distinción. Por otro lado, revela la intención al seleccionar tales criterios de distinción: el valor relativo de la distinción. Estos dos aspectos del acto de distinción tienen consecuencias independientes.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Los criterios de distinción utilizados por una comunidad de observadores establecen los tipos de entidades a estudiar y, por tanto, las fenomenologías que se consideran relevantes. Una vez que se especifica una clase de entidades a través de un criterio de distinción, nace concomitantemente una fenomenología, y esto es todo lo que es necesario para la existencia de un dominio fenomenológico. Este aspecto epistemológico de la distinción lo consideramos con cierta extensión en la discusión de la autopoiesis (Capítulos 6 y 10).
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Una distinción no puede existir sin su valor concomitante. La distinción se convierte así en una indicación, es decir, una indicación es una distinción que es de valor. El aspecto indicativo de cualquier distinción es de importancia central porque es lo que permite que la distinción cambie a lo largo de la historia de una comunidad de observadores. Esto es así en la medida en que los valores surgen de la continua autointerpretación de las comunidades que investigan, que reinterpretan las indicaciones tradicionales o dadas de una manera parcialmente redundante, pero también parcialmente innovadora. Las indicaciones evolucionan dentro del proceso ininterrumpido del círculo hermenéutico (Gadamer, 1960).
+                            </Paragraph>
+
+                            <SubSectionHeader>11.2.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Otra forma de entender el papel central de las distinciones en las operaciones cognitivas es en el lenguaje del capítulo anterior. Una distinción establece un tipo de dualidad muy fundamental: fuera/dentro. Construye una relatividad fundamental a través de una distinción en cualquier espacio o dominio indicativo que deseemos considerar. La interacción de esta dualidad básica, moviéndose dentro y fuera a través de la frontera establecida por la distinción, crea la tensión y las formas básicas de interdependencia, en las que se mapean todas las dualidades discutidas anteriormente (Varela, 1976). Típicamente, la polaridad todo/partes es una forma de distinción a través de niveles, donde estamos dentro de un sistema, o considerando el sistema en su entorno. Una visión complementaria consiste en relacionar explícitamente estas dos visiones, en forma de estrella, a través de una distinción. Del mismo modo, la visión complementaria de la dualidad fuera/dentro consiste en encontrar las formas de relacionar estos dos polos, de hacer explícita su originación codependiente. Así, al explorar las leyes que gobiernan la imbricación y el cruce de fronteras indicacionales, estamos examinando también una propiedad común a todas las descripciones generadas por una comunidad de observadores.
+                            </Paragraph>
+
+                            <SectionHeader>11.3 Recordando la Aritmética Primaria</SectionHeader>
+
+                            <SubSectionHeader>11.3.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                El primero en reconocer la importancia del acto de distinción fue George Spencer-Brown. En su lúcido libro, Leyes de la Forma, propuso un formalismo para lo que llamó, por primera vez, un cálculo de indicaciones (Spencer-Brown, 1969) [2]. En lo que sigue recapitularé estas ideas. Se anima al lector a leer el libro original; mi presentación está inevitablemente muy influida por mis propios intereses.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Spencer-Brown encontró la inspiración para su trabajo en la lógica. Se formó en lógica y matemáticas en Cambridge y Oxford; fue estudiante de Russell. A principios de los años sesenta comenzó a sospechar que lo que hasta entonces se había dado por sentado y terreno sólido en lógica, podía verse bajo una luz muy diferente. De hecho, desde los Principia de Frege y Russell se ha tomado como un dogma que no se podía encontrar un terreno más simple para la lógica que la noción de verdadero y falso aplicada a la forma de enunciados simples. En 1919 Russell planteó esta pregunta en relación con las proposiciones lógicas:
+                            </Paragraph>
+
+                            <QuoteBlock author="Russell (1919)">
+                                El problema es: "¿Cuáles son los constituyentes de una proposición lógica?" No sé la respuesta, pero me propongo explicar cómo surge el problema... Podemos aceptar como una primera aproximación, la visión de que las formas son lo que entra en las proposiciones lógicas como sus constituyentes. Y podemos explicar (aunque no definir formalmente) lo que queremos decir con la forma de una proposición de la siguiente manera: La forma de una proposición es aquello, en ella, que permanece inalterado cuando cada constituyente de la proposición es reemplazado por otro.
+                            </QuoteBlock>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Lo que Russell está diciendo, y lo que desde entonces ha sido la ruta real de la lógica matemática, es que los bloques de construcción básicos de nuestro discurso formal son estos patrones invariantes ("formas"), que deben tomarse como iniciales para una representación. Tales patrones simples son bien conocidos, por supuesto, como postulados lógicos, las iniciales de un álgebra booleana o cualquier álgebra de la lógica.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Es dentro de la epistemología subyacente a este enfoque que Spencer-Brown reformuló esta cuestión fundamental bajo una luz muy diferente:
+                            </Paragraph>
+                            
+                            <QuoteBlock author="Spencer-Brown (1969)">
+                                Una intención principal de este ensayo es separar lo que se conoce como álgebras de la lógica del tema de la lógica, y realinearlas con las matemáticas. Tales álgebras, comúnmente llamadas Booleanas, parecen misteriosas porque los relatos de sus propiedades en la actualidad no revelan nada de interés matemático sobre sus aritméticas. Toda álgebra tiene una aritmética, pero Boole diseñó su álgebra para encajar con la lógica, que es una interpretación posible de ella, y ciertamente no su aritmética. Los autores posteriores, a este respecto, han copiado a Boole, con el resultado de que nadie hasta ahora parece haber hecho ningún intento sostenido de dilucidar y estudiar la aritmética primaria, no numérica, del álgebra de uso cotidiano que ahora lleva el nombre de Boole. Cuando comencé, hace unos siete años, a ver que tal estudio era necesario, me encontré así sobre lo que era, matemáticamente hablando, terreno virgen. Tuve que explorarlo hacia adentro para descubrir los principios faltantes. Son de gran profundidad y belleza, como veremos pronto.
+                            </QuoteBlock>
+                            
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                ¿Cuál es este terreno virgen que Brown estaba visualizando? De nuevo en sus propias palabras:
+                            </Paragraph>
+
+                            <QuoteBlock author="Spencer-Brown (1969)">
+                                El tema de este libro es que un universo nace cuando un espacio es cercenado o separado. La piel de un organismo vivo corta un exterior de un interior. También lo hace la circunferencia de un círculo en un plano. El acto en sí ya es recordado, aunque sea inconscientemente, como nuestro primer intento de distinguir cosas diferentes en un mundo donde, en primer lugar, los límites pueden dibujarse en cualquier lugar que nos plazca. En esta etapa el universo no puede distinguirse de cómo actuamos sobre él, y el mundo puede parecer arena movediza bajo nuestros pies.
+                                Aunque todas las formas, y por tanto todos los universos, son posibles, y cualquier forma particular es mutable, se hace evidente que las leyes que relacionan tales formas son las mismas en cualquier universo. Es esta mismidad, la idea de que podemos encontrar una realidad que es independiente de cómo aparece realmente el universo, la que presta tal fascinación al estudio de las matemáticas. Que las matemáticas, en común con otras formas de arte, pueden llevarnos más allá de la existencia ordinaria, y pueden mostrarnos algo de la estructura en la que toda la creación se mantiene unida, no es una idea nueva. Pero los textos matemáticos generalmente comienzan la historia en algún lugar en el medio, dejando al lector retomar el hilo lo mejor que pueda. Aquí la historia se rastrea desde el principio.
+                            </QuoteBlock>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La visión de Spencer-Brown, entonces, equivale a una subversión de la comprensión tradicional sobre la base de las descripciones. Ve las descripciones como basadas en un acto primitivo (en lugar de un valor lógico o forma), y ve este acto como el más simple pero inevitable que se puede realizar. Así, es un intento no dualista de establecer fundamentos para las matemáticas y las descripciones en general, en el sentido de que sujeto y objeto están entrelazados. A partir de esta intuición básica, construye una representación explícita y un cálculo para las distinciones.
+                            </Paragraph>
+
+                            <SubSectionHeader>11.3.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                La idea clave en la representación de las indicaciones de Spencer-Brown es que todas las distinciones en su sentido fundamental son iguales, y todos los dominios en los que se realizan las distinciones son también iguales. Esto da lugar a la noción de distinción primaria y espacio indicacional. Borramos cada diferencia cualitativa de los criterios de distinciones, y simplemente los reducimos a su cualidad esencial: generar un límite en cualquier dominio. De manera similar, el valor de la distinción se identifica simplemente con el nombre del contenido de la distinción, y así cada valor se trata igual. De esta manera, todas las distinciones son similares (primarias), y todas las indicaciones son iguales (un nombre). Esto prepara el escenario para representar las indicaciones de una manera simple, y considerar cálculos entre ellas.
+                            </Paragraph>
+
+                            <DefinitionBox title="Definición 11.1">
+                                Dibuje una distinción. Llame a las partes del espacio formadas por la distinción los estados de la distinción. Llame al espacio y los estados la forma de la distinción.
+                            </DefinitionBox>
+
+                            <DefinitionBox title="Definición 11.2">
+                                Sea un estado distinguido por la distinción marcado con una marca <InlineEquation tex="\\cross" /> de distinción. Llame al estado el estado marcado. Llame a <InlineEquation tex="\\cross" /> una cruz. Llame al lado cóncavo de la marca su interior, y deje que cualquier marca se entienda como una instrucción para cruzar el límite de la distinción primaria. Deje que el cruce sea al estado indicado por la marca.
+                            </DefinitionBox>
+
+                            <DefinitionBox title="Definición 11.3">
+                                Llame al estado no marcado con una marca el estado no marcado. Deje que un espacio sin marca indique el estado no marcado.
+                            </DefinitionBox>
+
+                            <DefinitionBox title="Definición 11.4">
+                                Llame a cualquier disposición de marcas consideradas con respecto a otras (es decir, consideradas en la misma forma) una expresión. Llame a un estado indicado por una expresión el valor de la expresión. Llame a las expresiones del mismo valor equivalentes.
+                            </DefinitionBox>
+
+                            <DefinitionBox title="Definición 11.5">
+                                Por la definición anterior las formas <InlineEquation tex="\\cross" /> y " " son expresiones. Llámelas las expresiones simples. Que no haya otras expresiones simples.
+                            </DefinitionBox>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Debe notarse cómo, al condensar todas las distinciones en una primaria, y todas las indicaciones al mismo nombre o ficha, el único símbolo explícito de este cálculo, <InlineEquation tex="\\cross" />, adquiere un doble sentido. Por un lado representa el acto de distinción, de cruzar el límite en un espacio indicacional. Por otro lado es un valor, el contenido de una distinción: marca la parte exterior de esta distinción. Del mismo modo con el (no)símbolo " ". Por un lado expresa la relación entre cruces en una expresión que están contenidas en la misma forma; es una operación implícita de continencia. Por otro lado es un valor de una expresión.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Este significado condensado de los símbolos en el cálculo es esencial si uno quiere ver las dos acciones básicas que las marcas en una expresión pueden tener: Pueden cruzar o ser contenidas. Si dos cruces están contenidas en el mismo espacio, su valor es el de distinguir dos veces; así, su valor es el estado marcado. Si una cruz cruza a otra, deshacemos una distinción; por tanto, su valor es el estado no marcado. Por tanto, podemos enunciar los dos axiomas básicos que encarnan estas relaciones fundamentales entre cruces (Spencer-Brown, 1969):
+                            </Paragraph>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 my-12">
+                                <div className="text-center">
+                                    <h6 className="text-cyan-400 uppercase tracking-widest text-xs mb-4 font-bold">Axioma 11.6 Forma de Condensación</h6>
+                                    <EquationBlock tex="\\cross \\cross = \\cross" />
+                                </div>
+                                <div className="text-center">
+                                    <h6 className="text-cyan-400 uppercase tracking-widest text-xs mb-4 font-bold">Axioma 11.7 Forma de Cancelación</h6>
+                                    <EquationBlock tex="\\mark{\\cross} = \\void" />
+                                </div>
+                            </div>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Llame al cálculo determinado al tomar estas dos formas primitivas de ecuaciones como iniciales el cálculo de indicaciones. Los dos axiomas encarnan las dos propiedades fundamentales que están presentes siempre que dibujamos una distinción en algún espacio indicacional, la dualidad dentro/fuera. Primero, vemos que la distinción misma marca el exterior, de modo que una marca en el exterior (la marca del lado derecho en A11.6) se condensa en el estado marcado mismo. En segundo lugar, si cruzamos a un estado marcado (la marca interior en A11.7), entramos en el estado no marcado; la cruz opera sobre sí misma y se cancela a sí misma. Si prestamos atención solo a las relaciones entre exteriores, tenemos esencialmente que tratar con el marcado de cualquiera de los lados, y con el cruce de la frontera. En este sentido los axiomas son enunciados extremadamente simples (una vez que hacemos la pregunta correcta).
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En el cálculo de indicaciones se consideran arreglos como:
+                            </Paragraph>
+                            
+                            <EquationBlock tex="e = \\mark{\\mark{\\cross\\cross}\\cross}\\cross" />
+                            
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Una expresión como <InlineEquation tex="e" /> se considera una distinción válida (pero compleja) si no hay incertidumbre sobre las relaciones dentro/fuera. En la notación de Spencer-Brown esto se hace bastante elegante simplemente examinando la extensión del voladizo de una cruz. Si las cruces fueran reemplazadas por rectángulos, una expresión sería una colección de rectángulos encerrando otros rectángulos.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Dos expresiones <InlineEquation tex="e, e'" /> se identifican (<InlineEquation tex="e=e'" />) si mediante la aplicación repetida de los axiomas, la condensación y la cancelación pueden llevar de una a la otra. Así,
+                            </Paragraph>
+
+                            <div className="my-12 px-4 md:px-24 bg-slate-900/30 py-8 rounded-[2rem] border border-slate-800 text-amber-500 font-serif">
+                                <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
+                                    <div className="text-right flex items-center justify-end w-full overflow-x-auto"><span className="tex2jax_process">{"$$e = \\mark{\\mark{\\cross\\cross}\\cross}\\cross$$"}</span></div>
+                                    <div className="text-left text-sm font-sans text-slate-500"></div>
+                                    
+                                    <div className="text-right flex items-center justify-end w-full overflow-x-auto"><span className="tex2jax_process">{"$$= \\mark{\\mark{\\cross}\\cross}\\cross$$"}</span></div>
+                                    <div className="text-left text-sm font-sans text-slate-500">(A11.6)</div>
+                                    
+                                    <div className="text-right flex items-center justify-end w-full overflow-x-auto"><span className="tex2jax_process">{"$$= \\mark{\\void}\\cross$$"}</span></div>
+                                    <div className="text-left text-sm font-sans text-slate-500">(A11.7)</div>
+                                    
+                                    <div className="text-right flex items-center justify-end w-full overflow-x-auto"><span className="tex2jax_process">{"$$= \\cross$$"}</span></div>
+                                    <div className="text-left text-sm font-sans text-slate-500">(A11.7)</div>
+                                </div>
+                            </div>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Expresiones como <InlineEquation tex="\\mark{\\cross} = " /> deben entenderse como otras expresiones familiares como "-3 + 5 = 2", o "verdadero o falso = verdadero", en teoría de números y lógica respectivamente. Representan relaciones entre constantes, y Spencer-Brown llama al cálculo que trata con estas expresiones aritméticas la aritmética primaria.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Vale la pena señalar dos métodos de evaluación. El primer método es en forma de cálculo como se indicó anteriormente: Se mira en los espacios más profundos de la expresión donde hay marcas que no contienen otras marcas. En tales lugares se puede aplicar la condensación o cancelación para simplificar la expresión dada. En el segundo método, se considera que los espacios más profundos envían señales de valor hacia arriba a través de la expresión para combinarse en una valoración global. Para hacer esto, sea <InlineEquation tex="m" /> el estado marcado y <InlineEquation tex="n" /> el estado no marcado. Así <InlineEquation tex="mm=m" />, <InlineEquation tex="mn=nm=m" />, <InlineEquation tex="nn=n" />, y <InlineEquation tex="\\mark{m}=n" />, <InlineEquation tex="\\mark{n}=m" />. Ahora use estas etiquetas como señales. Este procedimiento comienza desde los espacios más profundos y etiqueta aquellos valores que son inequívocos hasta que emerge un valor para toda la expresión.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Debe notarse que estos métodos son bastante compatibles. Reflejan la naturaleza dual de una expresión como (auto)operador u operando. Vista como un operador, la expresión filtra sus propias señales internas, creando un patrón o forma de onda que culmina en su evaluación. Incluso en este nivel, se puede ver la relación entre una forma (o figura) y su despliegue dinámico (o vibración). Esto refleja la complementariedad invariancia/cambio, o espacio/tiempo, que se encuentra en muchos puntos de la ciencia. Para nuestra consideración de la circularidad (autorreferencia), tener en cuenta esta complementariedad es la clave para resolver lo que generalmente han parecido ser "paradojas vejatorias". Volveremos a este tema en los próximos capítulos; por el resto de este capítulo, sin embargo, nos concentramos en los cálculos estáticos y finitos sobre formas.
+                            </Paragraph>
+
+                            <SubSectionHeader>11.3.3</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Podemos pasar ahora a considerar ciertos teoremas generales que caracterizan el cálculo de indicaciones.
+                            </Paragraph>
+
+                            <div className="space-y-8 mb-16">
+                                <div className="border-l-4 border-amber-500 pl-6 py-2 bg-slate-900/20 rounded-r-xl">
+                                    <h6 className="text-cyan-400 font-bold mb-2 uppercase tracking-wide">Teorema 11.8</h6>
+                                    <p className="text-slate-300 font-light italic">Una forma que consiste en un número finito de cruces puede simplificarse a una expresión simple.</p>
+                                </div>
+                                <div className="border-l-4 border-amber-500 pl-6 py-2 bg-slate-900/20 rounded-r-xl">
+                                    <h6 className="text-cyan-400 font-bold mb-2 uppercase tracking-wide">Teorema 11.9</h6>
+                                    <p className="text-slate-300 font-light italic">Si cualquier espacio contiene una cruz vacía, el valor indicado en el espacio es el estado marcado.</p>
+                                </div>
+                                <div className="border-l-4 border-amber-500 pl-6 py-2 bg-slate-900/20 rounded-r-xl">
+                                    <h6 className="text-cyan-400 font-bold mb-2 uppercase tracking-wide">Teorema 11.10</h6>
+                                    <p className="text-slate-300 font-light italic">La simplificación de una expresión es única.</p>
+                                </div>
+                                <div className="border-l-4 border-amber-500 pl-6 py-2 bg-slate-900/20 rounded-r-xl">
+                                    <h6 className="text-cyan-400 font-bold mb-2 uppercase tracking-wide">Corolario 11.11</h6>
+                                    <p className="text-slate-300 font-light italic">El valor de una expresión construida tomando pasos de una expresión simple dada es distinto del valor de una expresión construida de una expresión simple diferente.</p>
+                                </div>
+                            </div>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Los teoremas anteriores han demostrado que esta forma de representar las indicaciones es consistente; los valores del cálculo no se confunden en ninguna parte. Como resultado, podemos tomar como válidas las propiedades obvias de equivalencia entre expresiones, y proceder a considerar algunos patrones generales de formas que son a la vez interesantes y reducibles entre sí (Spencer-Brown, 1969).
+                            </Paragraph>
+
+                            <div className="space-y-8 mt-12 mb-16">
+                                <div className="bg-slate-900/40 p-8 rounded-[2rem] border border-slate-800">
+                                    <h6 className="text-cyan-400 font-bold mb-4 uppercase tracking-widest text-sm">Teorema 11.12</h6>
+                                    <p className="text-slate-300 mb-4">Sea <InlineEquation tex="p" /> cualquier expresión. Entonces en cualquier caso,</p>
+                                    <EquationBlock tex="\\mark{\\mark{p}p} = \\void" />
+                                </div>
+
+                                <div className="bg-slate-900/40 p-8 rounded-[2rem] border border-slate-800">
+                                    <h6 className="text-cyan-400 font-bold mb-4 uppercase tracking-widest text-sm">Teorema 11.13</h6>
+                                    <p className="text-slate-300 mb-4">Sean <InlineEquation tex="p, q, r" /> cualquier expresión. Entonces en cualquier caso,</p>
+                                    <EquationBlock tex="\\mark{pr}\\mark{qr} = \\mark{\\mark{p}\\mark{q}}r" />
+                                </div>
+                            </div>
+
+                            <SectionHeader>11.4 Un Álgebra de Formas Indicacionales</SectionHeader>
+                            <SubSectionHeader>11.4.1</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Hemos presentado los fundamentos para las formas indicacionales, y hemos examinado cómo se comporta este cálculo. Ahora estamos en posición de tomar los patrones particulares establecidos en el último teorema como iniciales para construir un nuevo cálculo, o álgebra indicacional en la que tratamos solo con los patrones válidos que pueden establecerse entre variables, independientemente de su valor (Spencer-Brown, 1969):
+                            </Paragraph>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 my-12">
+                                <div className="text-center">
+                                    <h6 className="text-cyan-400 uppercase tracking-widest text-xs mb-4 font-bold">Inicial 11.14 (Posición)</h6>
+                                    <EquationBlock tex="\\mark{\\mark{p}p} = \\void" />
+                                </div>
+                                <div className="text-center">
+                                    <h6 className="text-cyan-400 uppercase tracking-widest text-xs mb-4 font-bold">Inicial 11.15 (Transposición)</h6>
+                                    <EquationBlock tex="\\mark{pr}\\mark{qr} = \\mark{\\mark{p}\\mark{q}}r" />
+                                </div>
+                            </div>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Al tomar estas dos iniciales como válidas, podemos calcular otras equivalencias válidas entre formas indicacionales.
+                            </Paragraph>
+
+                            <div className="space-y-12 text-center my-16">
+                                <div>
+                                    <EquationBlock tex="\\mark{\\mark{p}} = p" />
+                                    <div className="text-sm font-sans text-slate-500 uppercase tracking-wider">(Reflexión)</div>
+                                </div>
+                                
+                                <div>
+                                    <EquationBlock tex="\\mark{pq}q = \\mark{p}q" />
+                                    <div className="text-sm font-sans text-slate-500 uppercase tracking-wider">(Generación)</div>
+                                </div>
+                                
+                                <div>
+                                    <EquationBlock tex="\\mark{p}p = p" />
+                                    <div className="text-sm font-sans text-slate-500 uppercase tracking-wider">(Integración)</div>
+                                </div>
+                                
+                                <div>
+                                    <EquationBlock tex="\\mark{\\mark{p}\\mark{q}\\mark{p\\mark{q}}} = p" />
+                                    <div className="text-sm font-sans text-slate-500 uppercase tracking-wider">(Ocultación)</div>
+                                </div>
+                            </div>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Esta álgebra primaria, y algunos de sus resultados como hemos enumerado anteriormente, tiene ahora que compararse con respecto a la aritmética primaria de la cual se derivó. En otras palabras, tenemos que preguntar si el álgebra es completa con respecto a la aritmética, de modo que si consideramos que una equivalencia es el caso en la aritmética, entonces tal equivalencia debe ser derivable de las iniciales del álgebra. Más precisamente:
+                            </Paragraph>
+
+                            <div className="border-l-4 border-amber-500 pl-8 py-6 my-12 bg-slate-900/30 rounded-r-3xl">
+                                <h6 className="text-cyan-400 font-bold mb-4 uppercase tracking-widest">Teorema 11.25 (Completitud)</h6>
+                                <p className="text-slate-300 italic text-xl">
+                                    El álgebra primaria es completa. Es decir, <InlineEquation tex="p=q" /> puede probarse en la aritmética si y solo si <InlineEquation tex="p=q" /> puede derivarse de 11.14 y 11.15.
+                                </p>
+                            </div>
+
+                            <SubSectionHeader>11.4.2</SubSectionHeader>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Esto concluye nuestro resumen del cálculo de indicaciones de G. Spencer-Brown. Como hemos visto, es un formalismo de gran simplicidad y elegancia, que permite una representación del acto de indicación y sus leyes básicas. Hemos presentado la notación básica, las reglas y la coherencia del cálculo, y el álgebra de formas indicacionales. Hay más en la presentación original, y se anima nuevamente al lector a leerla.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Parece útil cerrar este capítulo con una recapitulación de los motivos para presentar este cálculo en el contexto de los sistemas autónomos y los procesos cognitivos. Hay dos razones principales para perseguir un cálculo indicacional.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En primer lugar, al discutir la autonomía de los sistemas vivos, nos dimos cuenta de cuán importante es el acto de distinción para caracterizar cualquier dominio fenomenal. De hecho, un criterio de distinción es todo lo que es necesario para establecer un dominio fenomenal en el que se ve operar a las unidades distinguidas. A este respecto, una representación rigurosa de las indicaciones sirve a un doble propósito. Por un lado, da un fundamento para las descripciones sistémicas; diría que puede considerarse como el fundamento de la teoría de sistemas, tanto como los matemáticos pueden considerar la teoría de conjuntos como un fundamento de su campo. Por otro lado, partir del fundamento de la indicación es fiel a la epistemología que impregna esta presentación, en la que la comunidad de observadores es siempre un participante. Una indicación revela, en este sentido, el entrelazamiento entre el descriptor y lo descrito. Spencer-Brown lo expresa muy bellamente:
+                            </Paragraph>
+
+                            <QuoteBlock author="Spencer-Brown (1969:76)">
+                                Ahora vemos que la primera distinción, la marca, y el observador no solo son intercambiables, sino, en la forma, idénticos.
+                            </QuoteBlock>
+
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                En este sentido, un cálculo indicacional también puede tomarse como un fundamento para las matemáticas mismas, lo cual fue, por supuesto, la intención de Spencer-Brown. Es relativamente fácil ver cómo las formas indicacionales subyacen a los resultados bien conocidos del cálculo proposicional; una breve discusión de esta relación de las indicaciones con la lógica se puede encontrar en el Apéndice B. Pero este es un tema que no discutiré en este punto, porque nos desviaría del camino.
+                            </Paragraph>
+                            <Paragraph onFootnoteHover={setActiveFootnote} onFootnoteLeave={() => setActiveFootnote(null)}>
+                                Una segunda razón para perseguir el cálculo indicacional es que en este nivel simple pero fundamental de descripción sistémica, las cuestiones de circularidad y autocomputación se vuelven más transparentes y pueden representarse más claramente. De hecho, en este nivel toda la cuestión de la autoformación puede resolverse plenamente de una manera que no es posible cuando nos acercamos a las operaciones reales en los sistemas naturales. Como es normalmente el caso, tales soluciones simplificadas son una guía para las descripciones más intrincadas y empíricamente ligadas. El próximo capítulo trata sobre las circularidades de las formas indicacionales.
+                            </Paragraph>
+
+                            <div className="pl-6 border-l border-slate-700 text-sm md:text-base lg:text-xl text-slate-500 italic w-full mt-24">
+                                <p className="mb-2 text-cyan-400 font-bold uppercase tracking-widest not-italic text-xs">Fuentes</p>
+                                <p className="mb-4">Spencer-Brown G. (1969), Laws of Form, George Allen & Unwin, London.</p>
+                                <p>Kauffman, L., and F. Varela (1978), Form dynamics (presentado para publicación).</p>
+                            </div>
+                        </section>
+                    </main>
+
+                    <footer className="w-full text-center py-24 border-t border-slate-900 text-slate-700 text-xs">
+                        <p className="mb-2 uppercase tracking-[0.6em] font-serif">Principios de Autonomía Biológica</p>
+                        <p>Francisco J. Varela</p>
+                    </footer>
+
+                    {/* Ventana flotante de notas (Centered) */}
+                    {activeFootnote && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 pointer-events-none">
+                            <div className="w-full max-w-5xl bg-black/95 border border-cyan-900/40 text-slate-300 p-10 md:p-16 rounded-[4rem] shadow-[0_0_100px_rgba(0,0,0,1)] backdrop-blur-3xl animate-fade-in ring-1 ring-cyan-500/30 pointer-events-auto relative">
+                                <div className="flex flex-col md:flex-row items-start gap-8 lg:gap-12">
+                                    <span className="text-cyan-400 font-serif text-5xl lg:text-8xl font-bold leading-none select-none shrink-0">
+                                        [{activeFootnote}]
+                                    </span>
+                                    <p className="text-base md:text-lg lg:text-2xl leading-relaxed text-justify font-light tracking-wide italic">
+                                        {FOOTNOTES[activeFootnote]}
+                                    </p>
+                                </div>
+                                <div className="absolute top-8 right-12 text-slate-600 text-xs uppercase tracking-widest font-bold">Nota al pie</div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
