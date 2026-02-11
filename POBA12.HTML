@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capítulo 12: Clausura y Dinámica de las Formas</title>
+
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+
+    <!-- MathJax -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                packages: ['base', 'ams', 'noerrors', 'noundefined']
+            },
+            svg: {
+                fontCache: 'global'
+            },
+            startup: {
+                typeset: false 
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        slate: {
+                            950: '#020617', // Deepest background
+                        }
+                    },
+                    maxWidth: {
+                        'reading': '65ch',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+        
+        /* MathJax adjustments */
+        mjx-container {
+            color: #f59e0b !important; /* Amber-500 */
+            font-size: 1.1em;
+        }
+
+        /* Hyphenation for book-like text */
+        .book-text {
+            text-align: justify;
+            hyphens: auto;
+            -webkit-hyphens: auto;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-300 font-sans w-screen overflow-x-hidden">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, useScroll, useSpring, AnimatePresence } = window.Motion;
+
+        // --- Icons (Inline SVG replacement for Lucide) ---
+        const icons = {
+            Menu: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+            ),
+            X: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            ),
+            BookOpen: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            ),
+            ChevronRight: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m9 18 6-6-6-6"/></svg>
+            ),
+            Info: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            ),
+            Image: (props) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+            )
+        };
+
+        const Icon = ({ name, ...props }) => {
+            const IconComp = icons[name];
+            return IconComp ? <IconComp {...props} /> : null;
+        };
+
+        // --- Components ---
+
+        // 1. Math Component (Wrapper for MathJax)
+        const MathBlock = ({ children, display = false }) => {
+            const ref = useRef(null);
+
+            useEffect(() => {
+                if (window.MathJax && ref.current) {
+                    ref.current.innerHTML = display ? `$$${children}$$` : `$${children}$`;
+                    window.MathJax.typesetPromise([ref.current]).catch((err) => console.log(err));
+                }
+            }, [children, display]);
+
+            return <span ref={ref} className={display ? "block my-6 text-center" : "inline-block mx-1"} />;
+        };
+
+        // 2. Figure Component
+        const Figure = ({ caption, id }) => {
+            return (
+                <figure className="w-full my-12" id={id}>
+                    <div className="w-full aspect-[16/9] bg-slate-900/50 border-2 border-dashed border-slate-700 rounded-lg flex items-center justify-center relative group transition-all hover:border-cyan-500/50 hover:bg-slate-900/80">
+                        <div className="text-center p-6">
+                            <div className="text-slate-500 mb-2 group-hover:text-cyan-400 transition-colors">
+                                <Icon name="Image" className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                <span className="font-mono text-sm">[Insertar Enlace: {caption}]</span>
+                            </div>
+                        </div>
+                    </div>
+                    <figcaption className="mt-4 text-center text-sm text-slate-500 font-serif italic">
+                        {id}: {caption}
+                    </figcaption>
+                </figure>
+            );
+        };
+
+        // 3. Footnote Interaction
+        const Footnote = ({ id, content, setHoveredNote }) => {
+            return (
+                <sup 
+                    className="text-cyan-400 cursor-pointer font-bold hover:text-cyan-300 transition-colors ml-0.5 select-none"
+                    onMouseEnter={() => setHoveredNote(content)}
+                    onMouseLeave={() => setHoveredNote(null)}
+                >
+                    [{id}]
+                </sup>
+            );
+        };
+
+        // 4. Semantic Highlighters
+        const Author = ({ children }) => <span className="text-cyan-400 font-medium">{children}</span>;
+        const Concept = ({ children }) => <span className="text-amber-500 font-medium italic">{children}</span>;
+        const Quote = ({ children }) => <span className="text-amber-500">"{children}"</span>;
+
+        // 5. Section Heading
+        const SectionHeading = ({ level, title, id }) => {
+            const Tag = level === 1 ? 'h1' : level === 2 ? 'h2' : 'h3';
+            const styles = {
+                1: "text-4xl md:text-5xl font-serif text-slate-100 mt-20 mb-8 border-b border-slate-800 pb-4",
+                2: "text-2xl md:text-3xl font-serif text-slate-200 mt-12 mb-6",
+                3: "text-xl font-bold text-slate-300 mt-8 mb-4 uppercase tracking-wide"
+            };
+            return <Tag id={id} className={styles[level]}>{title}</Tag>;
+        };
+
+        // --- Main App ---
+
+        const App = () => {
+            const [activeNote, setActiveNote] = useState(null);
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [activeSection, setActiveSection] = useState("Introducción");
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+
+            // Sections for Navigation
+            const sections = [
+                { id: "intro", title: "12.1 Reentrada" },
+                { id: "complementarity", title: "12.2 Complementariedad del Patrón" },
+                { id: "extended", title: "12.3 Cálculo Extendido" },
+                { id: "interpreting", title: "12.4 Interpretando el Cálculo" },
+                { id: "waveform", title: "12.5 Aritmética de Formas de Onda" },
+                { id: "brownian", title: "12.6 Álgebras Brownianas" },
+                { id: "completeness", title: "12.7 Completitud y Estructura" },
+                { id: "varieties", title: "12.8 Variedades de Formas" },
+                { id: "constructing", title: "12.9 Construyendo Formas" },
+                { id: "reentrant", title: "12.10 Formas Reentrantes" },
+                { id: "autonomous", title: "12.11 Sistemas Autónomos" },
+            ];
+
+            const scrollTo = (id) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                    setIsMenuOpen(false);
+                    const section = sections.find(s => s.id === id);
+                    if (section) {
+                        setActiveSection(section.title);
+                    }
+                }
+            };
+
+            return (
+                <div className="relative min-h-screen">
+                    
+                    {/* Progress Bar */}
+                    <motion.div
+                        className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50"
+                        style={{ scaleX }}
+                    />
+
+                    {/* Sticky Header */}
+                    <header className="fixed top-0 left-0 w-full z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 transition-all duration-300">
+                        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+                            <div className="flex flex-col">
+                                <span className="text-xs text-slate-500 uppercase tracking-widest">Kauffman & Varela</span>
+                                <span className="text-sm md:text-base font-serif text-slate-200 truncate max-w-[200px] md:max-w-md">
+                                    {activeSection}
+                                </span>
+                            </div>
+                            <button 
+                                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                className="p-2 text-slate-400 hover:text-cyan-400 transition-colors"
+                            >
+                                {isMenuOpen ? <Icon name="X" size={24} /> : <Icon name="BookOpen" size={24} />}
+                            </button>
+                        </div>
+                    </header>
+
+                    {/* Navigation Drawer */}
+                    <AnimatePresence>
+                        {isMenuOpen && (
+                            <motion.div 
+                                initial={{ x: "100%" }}
+                                animate={{ x: 0 }}
+                                exit={{ x: "100%" }}
+                                transition={{ type: "tween", duration: 0.3 }}
+                                className="fixed top-16 right-0 w-80 h-[calc(100vh-64px)] bg-slate-900 border-l border-slate-800 z-30 overflow-y-auto p-6 shadow-2xl"
+                            >
+                                <h3 className="text-amber-500 font-serif text-lg mb-6 border-b border-slate-800 pb-2">Índice</h3>
+                                <ul className="space-y-4">
+                                    {sections.map((section) => (
+                                        <li key={section.id}>
+                                            <button 
+                                                onClick={() => scrollTo(section.id)}
+                                                className="text-left text-slate-400 hover:text-cyan-400 text-sm transition-colors flex items-center w-full"
+                                            >
+                                                <Icon name="ChevronRight" size={14} className="mr-2" />
+                                                {section.title}
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Main Content Area */}
+                    <main className="pt-32 pb-40 px-6 md:px-12 w-full">
+                        <div className="max-w-4xl mx-auto">
+                            
+                            {/* Hero */}
+                            <div className="text-center mb-24">
+                                <span className="text-amber-500 font-mono text-sm tracking-[0.3em] uppercase block mb-4">Capítulo 12</span>
+                                <h1 className="text-5xl md:text-7xl font-serif text-slate-100 mb-6 leading-tight">
+                                    Clausura y Dinámica de las Formas
+                                </h1>
+                            </div>
+
+                            {/* --- CONTENT START --- */}
+                            
+                            <article className="book-text text-lg text-slate-300 space-y-8">
+                                
+                                <SectionHeading level={2} title="12.1 Reentrada" id="intro" />
+                                <SectionHeading level={3} title="12.1.1" />
+
+                                <p>
+                                    Hemos elegido el <Concept>cálculo de indicaciones</Concept> como nuestra base fundamental para las descripciones sistémicas. Deseamos considerar en este capítulo las formas indicacionales de aquellos sistemas que exhiben autonomía. Al describir un sistema, hemos visto que todas las indicaciones son relativas entre sí, ya que todas están en relación con algún espacio o dominio indicacional. Hasta ahora hemos considerado solo la más fundamental de estas relaciones: la <Concept>contención</Concept>. Es decir, solo nos hemos preocupado por la relación interior/exterior entre cruces. Esto da lugar a expresiones que, si fueran formas geométricas, serían como cajas chinas. Al considerar sistemas autónomos, y debido a la tesis de clausura, hemos visto que su organización contiene procesos de <Quote>bootstrapping</Quote> que exhiben una recursión indefinida de sus elementos componentes. Esto equivaldría a una forma que reentra en su espacio indicacional, que se informa a sí misma. En la analogía geométrica sería como una botella de Klein, donde el interior y el exterior se confunden irremediablemente.
+                                </p>
+
+                                <p>
+                                    Una forma muy simple de describir esta reentrada es decir que una forma, digamos <MathBlock>{"f"}</MathBlock>, es idéntica a partes de su contenido,
+                                </p>
+
+                                <MathBlock display>{"f = \\phi(f) \\quad (12.1)"}</MathBlock>
+
+                                <p>
+                                    donde <MathBlock>{"\\phi"}</MathBlock> es alguna expresión indicacional que contiene <MathBlock>{"f"}</MathBlock> como variable. En otro lenguaje, estamos tratando con expresiones autorreferenciales: <MathBlock>{"f"}</MathBlock> dice que ese es el caso para sí mismo. Por ejemplo, considere
+                                </p>
+
+                                <MathBlock display>{"f = \\overline{f|} \\quad P11.16"}</MathBlock>
+                                <MathBlock display>{"f = \\overline{\\overline{f}|g}|f \\quad P11.19"}</MathBlock>
+
+                                <p>
+                                    lo cual es una consecuencia en el álgebra primaria. Otro ejemplo demostrable en el álgebra primaria es P11.19. Es elegante adoptar la convención de indicar el punto en el que una forma reentra mediante una extensión de una cruz que contiene toda la expresión: por ejemplo,
+                                </p>
+
+                                <div className="flex flex-col items-center space-y-4">
+                                    <MathBlock display>{"f = \\overline{\\neg f}"}</MathBlock>
+                                    <MathBlock display>{"f = \\overline{g f}"}</MathBlock>
+                                </div>
+
+                                <p>
+                                    En esta convención, la apariencia gráfica de una forma corresponde bien con lo que intenta expresar. Cualquier sistema organizacionalmente cerrado, cuando se considera en su forma pura, despojado de todas las particularidades de sus procesos, exhibirá reentrada. En el nivel de las indicaciones, la circularidad de las interacciones—la naturaleza autorreferencial de los procesos involucrados en la autonomía—se expresa convenientemente como auto-indicación. Ahora deseamos estudiar estas formas reentrantes con mayor detalle.
+                                </p>
+
+                                <SectionHeading level={3} title="12.1.2" />
+
+                                <p>
+                                    El estudio de la reentrada de indicaciones está, de hecho, lleno de sorpresas que podrían no ser evidentes a primera vista. Esto puede sospecharse fácilmente por la naturaleza autorreferencial de ciertas expresiones que, en otros dominios descriptivos, han planteado dificultades considerables (ver, e.g., <Author>Hughes y Brecht</Author>, 1975). Considere la expresión reentrante simple
+                                </p>
+
+                                <MathBlock display>{"f = \\overline{f} \\quad (12.2)"}</MathBlock>
+
+                                <p>
+                                    en relación con el inicial
+                                </p>
+
+                                <MathBlock display>{"\\overline{\\overline{p}|p} = \\quad 111.14"}</MathBlock>
+
+                                <p>
+                                    Si intentamos aplicar este inicial a (12.2), tenemos
+                                </p>
+
+                                <MathBlock display>{"\\overline{\\overline{f}|f}"}</MathBlock>
+                                <MathBlock display>{"= \\overline{f f} \\quad \\text{por (12.2)}"}</MathBlock>
+                                <MathBlock display>{"= \\overline{f} \\quad P11.20"}</MathBlock>
+                                <MathBlock display>{"= f \\quad \\text{por (12.2)}"}</MathBlock>
+
+                                <p>
+                                    Pero esto lleva a una contradicción, porque sustituyendo en (12.2) tenemos
+                                </p>
+
+                                <MathBlock display>{"\\neg = \\overline{\\neg}"}</MathBlock>
+
+                                <p>
+                                    lo que haría inconsistente el cálculo de indicaciones, y por lo tanto inútil, al confundir cada forma. Naturalmente, (12.2) no es una proposición demostrable en el álgebra primaria, ya que no hay ningún valor aritmético que la satisfaga: si <MathBlock>{"f"}</MathBlock> está marcado, entonces está no marcado; si <MathBlock>{"f"}</MathBlock> está no marcado, entonces está marcado. Esta naturaleza paradójica u oscilatoria de algunas formas reentrantes no puede acomodarse en el cálculo sin una consideración mucho más cuidadosa de lo que está implicado.
+                                </p>
+
+                                <SectionHeading level={2} title="12.2 La Complementariedad del Patrón" id="complementarity" />
+                                <SectionHeading level={3} title="12.2.1" />
+
+                                <p>
+                                    Una evaluación adecuada de las formas reentrantes en toda su diversidad equivale a considerar una complementariedad descriptiva básica: <Concept>patrón/dinámica</Concept>, o <Concept>espacio/tiempo</Concept>. Una pista de esto se presentó en la Sección 11.3.2 al discutir las formas en que se evalúa una expresión, donde se revela la naturaleza dual de una marca. Vista como un operador, la expresión puede verse como filtrando sus propias señales internas para crear un patrón que es su evaluación. En las formas consideradas hasta ahora en el cálculo de indicaciones, este aspecto dinámico se oscurece porque el proceso de filtrado siempre resulta en un valor estable. En las formas reentrantes, sin embargo, tenemos una expresión más rica de esta cualidad dinámica de las formas.
+                                </p>
+                                <p>
+                                    En el ejemplo simple
+                                </p>
+
+                                <MathBlock display>{"f = \\overline{f} \\quad (12.2)"}</MathBlock>
+
+                                <p>
+                                    podemos mirar a <MathBlock>{"f"}</MathBlock> de dos maneras diferentes: como un <Concept>patrón</Concept> o forma, o como una <Concept>dinámica</Concept> en el tiempo. Por un lado, podemos simplemente usar nuestra convención notacional y escribir
+                                </p>
+
+                                <MathBlock display>{"f = \\Box \\quad (12.3)"}</MathBlock>
+
+                                <p>
+                                    como un valor o patrón, no reducible a marcado o no marcado. Por otro lado, temporalmente podemos ver (12.2) como una prescripción para una acción recursiva:
+                                </p>
+
+                                <MathBlock display>{"f \\rightarrow \\overline{f}"}</MathBlock>
+
+                                <p>
+                                    y esto regenera constantemente una oscilación que es idéntica a partes de sí misma:
+                                </p>
+
+                                <MathBlock display>{"f = \\overline{\\overline{\\overline{\\dots}}}"}</MathBlock>
+                                <MathBlock display>{"= \\overline{\\overline{\\overline{\\dots}}}"}</MathBlock>
+
+                                <p>
+                                    Así, la vibración produce una forma coherente (e.g., <MathBlock>{"\\Box"}</MathBlock>) mientras que la dinámica recursiva asociada despliega la vibración en una oscilación temporal (e.g., <MathBlock>{"\\dots \\neg \\quad \\neg \\dots"}</MathBlock>). Note sin embargo que, en este proceso, el espacio más profundo en <MathBlock>{"f"}</MathBlock> se ha vuelto indeterminado, y no es evidente cómo deben llevarse a cabo los cálculos.
+                                </p>
+
+                                <p>
+                                    Lo que está involucrado aquí, entonces, es una peculiaridad cognitiva de nosotros, como comunidades de observadores. O contemplamos un círculo que se cierra como una figura completa o viajamos a través del círculo incesantemente; estos dos procesos están mutuamente entrelazados, pero no pueden expresarse simultáneamente. Si permitimos la condensación para cada paso de esta acción recursiva, podemos interpretar (12.2) como una forma de onda
+                                </p>
+                                
+                                <MathBlock display>{"\\dots \\neg \\rightarrow \\neg \\neg \\neg \\neg \\neg \\dots"}</MathBlock>
+
+                                <p>
+                                    o representada más gráficamente como
+                                </p>
+
+                                <div className="my-8 flex justify-center">
+                                    <div className="flex items-end space-x-1 h-12">
+                                        {[1,0,1,0,1,0,1,0].map((v, i) => (
+                                            <div key={i} className={`w-8 border-t-2 border-r-2 border-l-2 border-amber-500 ${v ? 'h-full border-b-0' : 'h-2 border-t-0 border-l-0 border-r-0 border-b-2'}`}></div>
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                <p>
+                                    donde el ascenso indica la aparición de un estado marcado. Tenemos que prestar atención al hecho de que la doble naturaleza de la autorreferencia, su mezcla de operando y operador, no puede concebirse fuera del tiempo como un proceso en el cual dos estados se alternan. Si bien es cierto que una célula es tanto el productor como lo producido que encarna al productor, esta dualidad solo puede imaginarse cuando nos representamos también una secuencia cíclica de procesos en el tiempo. Ambos aspectos son evidentes en la idea de <Concept>autopoiesis</Concept>: la invariancia de una unidad y la recursión indefinida que subyace a la invariancia. Por lo tanto, encontramos una equivalencia peculiar entre autorreferencia y tiempo, en la medida en que la autorreferencia no puede concebirse fuera del tiempo, y el tiempo entra siempre que se permite la autorreferencia.
+                                </p>
+
+                                <p>
+                                    En un nivel aún más fundamental, uno puede considerar la reentrada como un tipo de periodicidad de descripciones en cualquier dominio. Este tema de la periodicidad como la complementariedad de invariancia/dinámica ha sido declarado elegantemente por <Author>Jenny</Author>:
+                                </p>
+
+                                <blockquote className="border-l-4 border-amber-500 pl-6 my-8 italic text-slate-400">
+                                    Dado que los diversos aspectos de estos fenómenos se deben a la vibración, nos enfrentamos a un espectro que revela formaciones figuradas y con patrones en un polo y procesos cinético-dinámicos en el otro, siendo todo generado y sostenido por su periodicidad esencial. Estos aspectos, sin embargo, no son entidades separadas sino que se derivan del fenómeno vibratorio en el cual aparecen en su unidad... Los tres campos—el periódico como el campo fundamental con los dos polos de figura y dinámica—aparecen invariablemente como uno. Son inconcebibles el uno sin el otro... nada puede abstraerse sin que el todo deje de existir. No podemos, por tanto, etiquetarlos como uno, dos, tres, sino que solo podemos decir que son triples en apariencia y sin embargo unitarios... Por lo tanto, no podemos decir que tenemos una morfología y una dinámica generadas por la vibración, o más ampliamente por la periodicidad, sino que todos estos existen juntos en verdadera unidad... Es por lo tanto justificable hablar de un fenómeno básico o primordial que exhibe este modo triple de apariencia. (1967:176)
+                                </blockquote>
+
+                                <p>
+                                    No vamos a perseguir este hermoso tema en todas sus ramificaciones aquí. Sin embargo, consideraremos cómo esta complementariedad cognitiva se encuentra en el dominio de las indicaciones, donde los patrones se convierten en formas indicacionales, y las dinámicas son acciones recursivas provocadas por la reentrada de la forma en sí misma (<Author>Kauffman y Varela</Author>, 1978).
+                                </p>
+
+                                <p>
+                                    Una vez más, para el caso simple <MathBlock>{"f = \\overline{f}"}</MathBlock>, podemos considerar las señales moviéndose hacia afuera como ondas en un estanque, de modo que una vibración temporal por <MathBlock>{"a"}</MathBlock> produce un patrón de la forma
+                                </p>
+
+                                <MathBlock display>{"a \\dots"}</MathBlock>
+
+                                <p>
+                                    Es decir, podemos suponer que cada vez que <MathBlock>{"a=m"}</MathBlock>, aparece una marca, de modo que si el tiempo se representa como <MathBlock>{"t=0,1,2,3,..."}</MathBlock>, entonces
+                                </p>
+
+                                <MathBlock display>{"a = \\begin{cases} m, & t \\text{ impar}, \\\\ n, & t \\text{ par}. \\end{cases}"}</MathBlock>
+
+                                <p>
+                                    y la expresión externa crece en el patrón
+                                </p>
+
+                                <MathBlock display>{"\\dots \\dots \\dots"}</MathBlock>
+
+                                <p>
+                                    En el espacio veríamos algo como
+                                </p>
+                                
+                                <MathBlock display>{"\\dots = f, \\quad \\dots, \\quad \\dots"}</MathBlock>
+
+                                <p>
+                                    donde el espacio más profundo es ahora indeterminado debido a su vibración. Aquí, la forma se mantiene por la vibración (o crecimiento) en su centro. Dado que el espacio más profundo es indeterminado, el cálculo ha fallado. Forma y dinámica se han vuelto uno con la vibración. Sin embargo, debe notarse que parte de la vibración ha sido recordada como el patrón espacial externo de la forma. Este patrón es mantenido por la vibración central contra la presión dinámica hacia la simplificación (vía cálculo). Visto completamente espacialmente, esta forma temporal se convierte en una expresión infinita que consiste en una secuencia descendente de marcas. Así su interior se repite a sí mismo. Esta descripción <MathBlock>{"f = \\overline{f}"}</MathBlock> puede verse como autorreferencia donde <MathBlock>{"f"}</MathBlock> se in-forma a sí mismo. Este es el contexto espacial.
+                                </p>
+
+                                <SectionHeading level={3} title="12.2.2" />
+
+                                <p>
+                                    La complementariedad entre dinámica y patrón de las formas reentrantes puede estudiarse ahora formalmente. El camino está claramente marcado en el álgebra primaria. Porque si aplicamos el álgebra primaria a <MathBlock>{"f = \\overline{f}"}</MathBlock>, hemos visto que <MathBlock>{"f = \\dots"}</MathBlock>. Así, en el cálculo primario, el estado marcado es fijo o puramente espacial, mientras que todo lo demás está incluido en el estado no marcado. <MathBlock>{"f = \\overline{f}"}</MathBlock>, siendo vibratorio, ha sido desviado hacia el estado no marcado, y ha sido desviado por el inicial de posición
+                                </p>
+
+                                <MathBlock display>{"\\overline{\\overline{p}|p} = \\quad 111.14"}</MathBlock>
+
+                                <p>
+                                    Esto dice que si deseamos articular formas reentrantes, debemos encontrar formas de limitar la cancelación permitida por las formas de posición. En lo que sigue, propondré dos formas diferentes de hacer esto: (1) extendiendo la aritmética inicial para incluir un estado oscilatorio o autónomo, y (2) adoptando un álgebra con diferentes iniciales donde los términos oscilatorios pueden construirse conteniendo muchos términos de la forma <MathBlock>{"\\overline{p}|p"}</MathBlock>. Estas dos extensiones del álgebra primaria se exploran en el resto de este capítulo.
+                                </p>
+
+                                <SectionHeading level={2} title="12.3 El Cálculo Extendido de Indicaciones" id="extended" />
+                                <SectionHeading level={3} title="12.3.1" />
+                                
+                                <p>
+                                    Sea válido el cálculo de indicaciones, y el contexto del cual se ve surgir, excepto por las modificaciones introducidas a continuación.
+                                </p>
+
+                                <div className="space-y-6 my-8 border-l-2 border-slate-700 pl-4">
+                                    <div>
+                                        <h4 className="font-bold text-amber-500">Definición 12.1</h4>
+                                        <p>Sea un tercer estado, distinguible en forma, distinto de los estados marcado y no marcado. Que este estado surja autónomamente, es decir, por auto-indicación. Llamemos a este tercer estado que aparece en una distinción el <Concept>estado autónomo</Concept>.</p>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-amber-500">Definición 12.2</h4>
+                                        <p>Que el estado autónomo sea marcado con la marca <MathBlock>{"\\Box"}</MathBlock>, y que esta marca sea tomada por la operación de un estado autónomo, y sea llamada a su vez la <Concept>auto-cruz</Concept> para indicar su operación.</p>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-amber-500">Definición 12.3</h4>
+                                        <p>Llámese a la forma de un número de tokens <MathBlock>{"\\neg, \\quad, \\Box"}</MathBlock>, considerados con respecto uno al otro, un <Concept>arreglo</Concept>. Llámese a cualquier arreglo destinado como indicador una <Concept>expresión</Concept>. Llámese a un estado indicado por una expresión el <Concept>valor</Concept> de la expresión.</p>
+                                        <p>Sea <MathBlock>{"v"}</MathBlock> cualquiera de las marcas de los estados distinguidos o auto-distinguidos: <MathBlock>{"\\neg, \\quad, \\Box"}</MathBlock>. Llámese a <MathBlock>{"v"}</MathBlock> un <Concept>marcador</Concept>.</p>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-amber-500">Definición 12.4</h4>
+                                        <p>Note que los arreglos <MathBlock>{"\\neg, \\quad, \\Box"}</MathBlock> son, por definición, expresiones. Llámese a un marcador una <Concept>expresión simple</Concept>. Que no haya otras expresiones simples.</p>
+                                    </div>
+                                </div>
+
+                                <p>
+                                    Sean válidos los siguientes iniciales, y úsense para determinar un cálculo a partir de ellos. Llámese a este cálculo el <Concept>cálculo extendido de indicaciones</Concept>.
+                                </p>
+
+                                <div className="bg-slate-900 p-6 rounded-lg my-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <h5 className="font-bold text-slate-400">Inicial 12.5 (Dominancia)</h5>
+                                            <MathBlock display>{"\\overline{\\neg v} = \\neg \\quad 112.5"}</MathBlock>
+                                        </div>
+                                        <div>
+                                            <h5 className="font-bold text-slate-400">Inicial 12.6 (Orden)</h5>
+                                            <MathBlock display>{"\\overline{\\Box} = \\Box \\quad 112.6"}</MathBlock>
+                                        </div>
+                                        <div>
+                                            <h5 className="font-bold text-slate-400">Inicial 12.7 (Constancia)</h5>
+                                            <MathBlock display>{"\\overline{\\Box} = \\Box \\quad 112.7"}</MathBlock>
+                                        </div>
+                                        <div>
+                                            <h5 className="font-bold text-slate-400">Inicial 12.8 (Número)</h5>
+                                            <MathBlock display>{"\\Box \\Box = \\Box \\quad 112.8"}</MathBlock>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h4 className="font-bold text-amber-500 mt-8">Teorema 12.9</h4>
+                                <p className="italic">
+                                    El valor indicado por una expresión que consiste en un número finito de cruces y auto-cruces puede tomarse como el valor de una expresión simple; es decir, cualquier expresión puede simplificarse a una expresión simple.
+                                </p>
+
+                                <p><span className="font-bold">PRUEBA:</span> Sea <MathBlock>{"a"}</MathBlock> cualquier expresión, y sea <MathBlock>{"s"}</MathBlock> su espacio indicativo. Siendo finita, <MathBlock>{"a"}</MathBlock> debe tener un espacio alcanzable que es el más profundo en ella. Llámese <MathBlock>{"s_d"}</MathBlock>. <MathBlock>{"s_d"}</MathBlock> está (1) contenido en una cruz, o (2) no contenido en una cruz.</p>
+
+                                <ul className="list-decimal pl-6 space-y-2">
+                                    <li>Si <MathBlock>{"s_d"}</MathBlock> está en una cruz <MathBlock>{"c_d"}</MathBlock>, entonces <MathBlock>{"c_d"}</MathBlock> está vacía o contiene un número finito de auto-cruces, pues de lo contrario <MathBlock>{"s_d"}</MathBlock> no sería el más profundo.</li>
+                                    <li>Si <MathBlock>{"s_d"}</MathBlock> no está contenido en una cruz, entonces <MathBlock>{"s_d"}</MathBlock> contiene un número finito de auto-cruces o no. En cualquier caso ya es simple, ya que las auto-cruces pueden condensarse por 112.8.</li>
+                                </ul>
+
+                                <p>Ahora, <MathBlock>{"c_d"}</MathBlock> o bien (3) está sola en <MathBlock>{"s"}</MathBlock>, o (4) no está sola en <MathBlock>{"s"}</MathBlock>.</p>
+
+                                <ul className="list-decimal pl-6 space-y-2">
+                                    <li>Si <MathBlock>{"c_d"}</MathBlock> está sola en <MathBlock>{"s"}</MathBlock>, entonces <MathBlock>{"x"}</MathBlock> ya es simple, ya que es una cruz o una auto-cruz, según 112.7, 112.8.</li>
+                                    <li>Si <MathBlock>{"c_d"}</MathBlock> no está sola en <MathBlock>{"s"}</MathBlock>, la <MathBlock>{"c_d"}</MathBlock> debe estar o bien (4a) en un espacio junto con un marcador (de lo contrario, <MathBlock>{"s_d"}</MathBlock> no sería el más profundo), o (4b) sola en el espacio bajo otra cruz.</li>
+                                </ul>
+
+                                <p>En cualquier caso los iniciales aplican y dos marcadores son eliminados de <MathBlock>{"a"}</MathBlock>, y la expresión reducida en profundidad en 1. Así habrá un momento en que <MathBlock>{"a"}</MathBlock> se haya simplificado a un marcador.</p>
+
+                                <h4 className="font-bold text-amber-500 mt-8">Teorema 12.10</h4>
+                                <p>Si cualquier espacio impregna una cruz vacía, el valor indicado por el espacio es el estado marcado.</p>
+                                <p><span className="font-bold">PRUEBA:</span> Evidente.</p>
+
+                                <h4 className="font-bold text-amber-500 mt-8">Teorema 12.11</h4>
+                                <p>La simplificación de una expresión es única.</p>
+
+                                <h4 className="font-bold text-amber-500 mt-8">Teorema 12.13</h4>
+                                <p>Sean <MathBlock>{"p, q"}</MathBlock> cualesquiera expresiones. Entonces en cualquier caso</p>
+                                <MathBlock display>{"\\overline{\\overline{p}|q}|p = p"}</MathBlock>
+
+                                <p>Que los resultados de los tres teoremas precedentes se tomen como iniciales para determinar un nuevo cálculo. Llámese a este cálculo el <Concept>álgebra extendida</Concept>.</p>
+
+                                <div className="bg-slate-900 p-6 rounded-lg my-6">
+                                    <h5 className="font-bold text-slate-400">Inicial 12.16 (Ocultación)</h5>
+                                    <MathBlock display>{"\\overline{\\overline{p}|q}|p = p \\quad 112.16"}</MathBlock>
+
+                                    <h5 className="font-bold text-slate-400 mt-4">Inicial 12.17 (Transposición)</h5>
+                                    <MathBlock display>{"\\overline{\\overline{pr}| \\overline{qr}|} = \\overline{\\overline{p} | \\overline{q} | r} \\quad 112.17"}</MathBlock>
+
+                                    <h5 className="font-bold text-slate-400 mt-4">Inicial 12.18 (Autonomía)</h5>
+                                    <MathBlock display>{"p \\overline{\\Box} p = p \\Box \\quad 112.18"}</MathBlock>
+                                </div>
+
+                                <p>A partir de estos iniciales las siguientes proposiciones son demostrables; las pruebas completas se pueden encontrar en otro lugar (<Author>Varela</Author>, 1975a), excepto por P12.24, que se deja aquí como un ejercicio.</p>
+
+                                <ul className="space-y-2 font-mono text-sm">
+                                    <li>Proposición 12.19: <MathBlock>{"p = \\overline{\\overline{p}|}"}</MathBlock></li>
+                                    <li>Proposición 12.20: <MathBlock>{"pp = p"}</MathBlock></li>
+                                    <li>Proposición 12.21: <MathBlock>{"p \\neg = \\neg"}</MathBlock></li>
+                                    <li>Proposición 12.22: <MathBlock>{"\\overline{\\neg}r = \\overline{p r} \\overline{r}"}</MathBlock></li>
+                                    <li>Proposición 12.23: <MathBlock>{"\\overline{p|\\overline{qr}|\\overline{sr|}} = \\overline{\\overline{p}|\\overline{q}|\\overline{s}|}|\\overline{p}|\\overline{r}|"}</MathBlock></li>
+                                </ul>
+                                
+                                <h4 className="font-bold text-amber-500 mt-8">Teorema 12.27</h4>
+                                <p>El álgebra extendida es completa.</p>
+
+                                <SectionHeading level={3} title="12.3.2" />
+
+                                <p>
+                                    Consideremos ahora la extensión a ecuaciones de grado superior. Permítase que cualquier expresión en el cálculo reentre en su propio espacio indicativo a una profundidad impar o par. Considere la expresión
+                                </p>
+
+                                <MathBlock display>{"f = \\overline{\\overline{f}|f} \\quad (12.13)"}</MathBlock>
+
+                                <p>
+                                    donde <MathBlock>{"f"}</MathBlock> reentra en su propio espacio a una profundidad impar y una par. En este caso el valor de <MathBlock>{"f"}</MathBlock> no puede obtenerse fijando los valores de las variables que aparecen en la expresión.
+                                </p>
+                                
+                                <p>Al permitir la reentrada hemos introducido un grado de indeterminación que debemos intentar clasificar.</p>
+
+                                <h4 className="font-bold text-amber-500 mt-6">Definición 12.28</h4>
+                                <p>
+                                    Que el número de veces que ocurre la reentrada en una expresión determine una forma de clasificar dicha expresión. Llámese a una expresión sin reentrada de <Concept>primer grado</Concept>, aquellas expresiones con una variable reentrante de <Concept>segundo grado</Concept>, y así sucesivamente.
+                                </p>
+
+                                <p>Así <MathBlock>{"f = \\overline{f p}"}</MathBlock> (12.14) es de segundo grado, mientras que <MathBlock>{"f = \\overline{f p} \\overline{f q}"}</MathBlock> (12.15) es de tercer grado.</p>
+
+                                <Figure caption="Tabla de valores para A y B en ecuaciones de grado superior" id="Tabla 12.1" />
+
+                                <SectionHeading level={2} title="12.4 Interpretando el Cálculo Extendido" id="interpreting" />
+                                <SectionHeading level={3} title="12.4.1" />
+
+                                <p>
+                                    He presentado una extensión del cálculo de indicaciones para abarcar ocurrencias de situaciones autorreferenciales, a través de la introducción de un tercer estado en la forma de indicación, visto surgir autónomamente por auto-indicación.
+                                </p>
+                                <p>
+                                    La idea principal detrás de este enfoque puede enunciarse así: Elegimos ver la forma de indicación y el mundo que surge de ella como conteniendo los dos dominios duales obvios de estados indicados y vacíos, y un tercer dominio (no tan obvio, pero distinto), de un estado autónomo autorreferencial, que otras leyes gobiernan y que no puede ser reducido por las leyes de los dominios duales. Si no incorporamos este tercer dominio explícitamente en nuestro campo de visión, nos forzamos a encontrar formas de evitarlo (como ha sido tradicional) y a confrontarlo, cuando aparece, en formas paradójicas.
+                                </p>
+
+                                <SectionHeading level={3} title="12.4.2" />
+                                <p>
+                                    Cuando <Author>Spencer-Brown</Author> introduce la reentrada y llega a una expresión equivalente a su contenido, <MathBlock>{"f = \\overline{f}"}</MathBlock> (lo que llamamos una auto-cruz), nota su desconexión con su aritmética y así elige interpretarla como un estado imaginario en la forma visto en el tiempo como alternancia de los dos estados de la forma. Esta interpretación es, en mi opinión, una de sus contribuciones más destacadas. Logra vincular tiempo y descripción de una manera muy natural.
+                                </p>
+
+                                <SectionHeading level={3} title="12.4.3" />
+                                <p>
+                                    El cálculo extendido puede interpretarse para la lógica de la misma manera que el cálculo primario (Apéndice B), y no necesitamos repetir el proceso aquí. De hecho, la diferencia clave entre los dos cálculos, en esta interpretación, es la misma que entre una lógica de dos y tres valores. La adopción de un tercer valor conduce necesariamente al abandono de la ley del tercero excluido (<Concept>tertium non datur</Concept>), que, en el cálculo primario, toma la forma
+                                </p>
+                                <MathBlock display>{"\\overline{\\overline{p}|p} = \\quad"}</MathBlock>
+
+                                <p>
+                                    <Author>Günther</Author> (1962) ha sido el único en señalar que otra posible interpretación de las lógicas de muchos valores es como base para una <Quote>ontología cibernética</Quote>, es decir, para sistemas capaces de autorreferencia, y precisamente un valor adicional, afirma, debe tomarse como el tiempo. Sigo aquí la sugerencia de Günther de que un tercer valor podría tomarse como el tiempo. Pero he mostrado que este tercer valor puede verse en un nivel más profundo que la lógica, en el cálculo de indicaciones, donde la forma de autorreferencia se toma como un tercer valor en sí mismo, y de hecho se confunde con el tiempo como un componente necesario para su contemplación.
+                                </p>
+
+                                <SectionHeading level={2} title="12.5 Una Aritmética de Formas de Onda" id="waveform" />
+
+                                <p>
+                                    Deseo volver ahora a la cuestión de los <Quote>valores Booleanos imaginarios</Quote>, como los llama Spencer-Brown. En el cálculo extendido de indicaciones hemos permitido que el tiempo entre en la medida en que está encarnado en el valor autónomo. La intención en la siguiente expansión adicional sobre el cálculo de indicaciones es desplegar todos los detalles contenidos en este estado autónomo. Lo haremos desarrollando una estructura algebraica en la que se pueda acomodar toda la extensión de la complementariedad patrón/dinámica (espacial/temporal) (<Author>Kauffman y Varela</Author>, 1978).
+                                </p>
+
+                                <MathBlock display>{"f = \\overline{f}"}</MathBlock>
+                                <p>
+                                    Tomando el reemplazo sucesivo de f en su forma equivalente tenemos una secuencia:
+                                    <MathBlock display>{"f, \\overline{f}, \\overline{\\overline{f}|}, \\overline{\\overline{\\overline{f}||}}"}</MathBlock>
+                                </p>
+
+                                <SectionHeading level={2} title="12.6 Álgebras Brownianas" id="brownian" />
+
+                                <p>Sean <MathBlock>{"a, b, \\dots p, q"}</MathBlock> una colección de variables, y sea la cruz definida como antes. Tómense los siguientes dos iniciales como válidos:</p>
+
+                                <div className="bg-slate-900 p-6 rounded-lg my-6">
+                                    <h5 className="font-bold text-slate-400">Inicial 12.34 (Ocultación)</h5>
+                                    <MathBlock display>{"\\overline{\\overline{p}|q}|p = p \\quad 112.34"}</MathBlock>
+
+                                    <h5 className="font-bold text-slate-400 mt-4">Inicial 12.35 (Transposición)</h5>
+                                    <MathBlock display>{"\\overline{\\overline{pr}| \\overline{qr}|} = \\overline{\\overline{p} | \\overline{q} | r} \\quad 112.35"}</MathBlock>
+                                </div>
+
+                                <p>Llámese a cualquier álgebra que satisfaga 112.34 y 112.35 un <Concept>álgebra Browniana</Concept>. Ahora podemos derivar algunas formas de ecuaciones válidas en estas álgebras.</p>
+                                
+                                <ul className="space-y-4 font-mono text-sm border-l-2 border-slate-700 pl-4 mt-6">
+                                    <li>Prop 12.36: <MathBlock>{"\\overline{a|} = a"}</MathBlock></li>
+                                    <li>Prop 12.37: <MathBlock>{"aa = a"}</MathBlock></li>
+                                    <li>Prop 12.38: <MathBlock>{"\\overline{\\neg}|a = \\neg"}</MathBlock></li>
+                                    <li>Prop 12.39: <MathBlock>{"\\overline{a|b|}c| = \\overline{ac|}\\overline{b|c}"}</MathBlock></li>
+                                    <li>Prop 12.43: <MathBlock>{"\\overline{a|\\overline{br}|\\overline{cr}|} = \\overline{a|\\overline{b}|\\overline{c}|\\overline{a|\\overline{r}|}}"}</MathBlock></li>
+                                </ul>
+
+                                <SectionHeading level={2} title="12.7 Completitud y Estructura" id="completeness" />
+                                <h4 className="font-bold text-amber-500 mt-6">Teorema 12.45</h4>
+                                <p>Sean <MathBlock>{"\\alpha"}</MathBlock> y <MathBlock>{"\\beta"}</MathBlock> dos expresiones algebraicas. Entonces <MathBlock>{"\\alpha = \\beta"}</MathBlock> es una consecuencia de 111.14 y 111.15 si y solo si <MathBlock>{"\\alpha = \\beta"}</MathBlock> es verdadera en la aritmética <MathBlock>{"V"}</MathBlock>.</p>
+                                
+                                <p>La prueba de este resultado requiere algún trabajo preliminar. El primer resultado que necesitamos es una reducción algebraica de formas.</p>
+
+                                <h4 className="font-bold text-amber-500 mt-6">Teorema 12.51</h4>
+                                <p>
+                                    Sea <MathBlock>{"B(S)"}</MathBlock> cualquier álgebra Browniana libre sobre el conjunto <MathBlock>{"S"}</MathBlock>. Sea <MathBlock>{"A = \\{h: B(S) \\rightarrow V\\}"}</MathBlock> el conjunto de homomorfismos de <MathBlock>{"B(S)"}</MathBlock> a la aritmética de formas de onda <MathBlock>{"V"}</MathBlock>. Entonces hay un homomorfismo inyectivo <MathBlock>{"\\Phi: B(S) \\rightarrow \\Pi_{h \\in A} V_h"}</MathBlock>.
+                                </p>
+                                
+                                <SectionHeading level={2} title="12.8 Variedades de Formas de Onda y Fenómenos de Interferencia" id="varieties" />
+
+                                <p>
+                                    En el álgebra <MathBlock>{"\\hat{B}"}</MathBlock> asociada con un álgebra Browniana <MathBlock>{"B"}</MathBlock>, encontramos los elementos periódicos de <MathBlock>{"B"}</MathBlock>. Así para <MathBlock>{"a, b \\in B"}</MathBlock>, tenemos la correspondencia <MathBlock>{"(a,b) \\leftrightarrow \\dots ababab"}</MathBlock>. Hasta ahora, sin embargo, hemos encontrado solo formas de onda de periodo 2, a saber, aquellas de la aritmética de formas de onda <MathBlock>{"V"}</MathBlock>. No hay razón para apegarse a patrones de periodo 2 (alta frecuencia) en el contexto que hemos desarrollado hasta ahora.
+                                </p>
+
+                                <SectionHeading level={2} title="12.9 Construyendo Formas de Onda" id="constructing" />
+                                <p>
+                                    Al tratar con formas de onda, hemos asumido hasta ahora que hay secuencias de elementos de un álgebra <MathBlock>{"B"}</MathBlock>. La relación entre las secuencias y el álgebra subyacente ha permanecido misteriosa. Ahora mostramos que las operaciones del álgebra <MathBlock>{"B"}</MathBlock> misma son capaces de generar oscilaciones, mediante el simple expediente de la reentrada o recursión.
+                                </p>
+                                <p>
+                                    Por ejemplo, sea <MathBlock>{"T(x) = \\overline{x}"}</MathBlock>. Entonces <MathBlock>{"T^2(x) = x"}</MathBlock> y <MathBlock>{"T^{n+2} = T^n"}</MathBlock> para todo <MathBlock>{"n"}</MathBlock>. <MathBlock>{"T"}</MathBlock> produce la secuencia <MathBlock>{"x, \\overline{x}, x, \\overline{x|}, x, \\overline{x|}, \\dots"}</MathBlock>. En este caso tenemos una versión algebraica de la secuencia.
+                                </p>
+
+                                <SectionHeading level={2} title="12.10 Formas Reentrantes y Expresiones Infinitas" id="reentrant" />
+                                <SectionHeading level={3} title="12.10.1" />
+
+                                <p>
+                                    Ya hemos comentado que ciertas expresiones reentrantes o autorreferenciales en el álgebra primaria solo pueden tener soluciones en el contexto más amplio de las álgebras Brownianas, donde se permiten valores complejos—es decir, donde las oscilaciones no se descartan. También señalamos que una forma temporal podría verse como una expresión infinita, que consiste en una cascada descendente de marcas y variables. Así <MathBlock>{"f = \\overline{f}"}</MathBlock> podría verse como algo así
+                                </p>
+
+                                <MathBlock display>{"f = \\overline{\\overline{\\overline{\\dots}}}"}</MathBlock>
+
+                                <p>
+                                    donde el espacio más profundo es indeterminado. Esta extensión del álgebra primaria hacia formas infinitas para expresar su vibración dinámica ha sido innecesaria hasta ahora, porque hemos adoptado el curso de expresar la oscilación en términos de secuencias, sus características algebraicas y su generación a partir de operadores algebraicos. Necesitamos ahora relacionar más explícitamente la cualidad dinámica de una vibración con su forma espacial autorreferencial.
+                                </p>
+
+                                <Figure caption="Representación de árbol de una forma indicacional" id="Fig 12.2" />
+
+                                <SectionHeading level={3} title="12.10.2" />
+                                
+                                <p>
+                                    Más específicamente, denotemos por <MathBlock>{"B"}</MathBlock> la colección de todas las formas que pueden construirse en el álgebra primaria de indicaciones. Sea <MathBlock>{"B_n"}</MathBlock> la colección de formas de profundidad <MathBlock>{"n"}</MathBlock> o menos. Naturalmente
+                                </p>
+
+                                <MathBlock display>{"B_n \\subseteq B_{n+1}"}</MathBlock>
+
+                                <p>
+                                    donde <MathBlock>{"\\subseteq"}</MathBlock> se usa en su sentido habitual de teoría de conjuntos de inclusión. Asumimos que las expresiones algebraicas contienen variables de la lista inicial <MathBlock>{"X"}</MathBlock>. También asumimos que se da una asignación arbitraria, pero fija, de valores para las variables. Ahora para la relación de orden anunciada en <MathBlock>{"B"}</MathBlock>:
+                                </p>
+
+                                <h4 className="font-bold text-amber-500 mt-6">Definición 12.63</h4>
+                                <p>
+                                    Sean <MathBlock>{"f, g"}</MathBlock> cualesquiera expresiones en <MathBlock>{"B"}</MathBlock>. Entonces decimos que <MathBlock>{"g"}</MathBlock> está al menos tan determinada como <MathBlock>{"f"}</MathBlock>, y escribimos <MathBlock>{"f \\sqsubseteq g"}</MathBlock>, si los contenidos de <MathBlock>{"f"}</MathBlock> coinciden exactamente con parte de (o son iguales a) los contenidos de <MathBlock>{"g"}</MathBlock> cuando se comparan comenzando en la profundidad más superficial de ambas expresiones.
+                                </p>
+                                
+                                <h4 className="font-bold text-amber-500 mt-6">Teorema 12.77</h4>
+                                <p>
+                                    Sea <MathBlock>{"\\Phi"}</MathBlock> un sistema de ecuaciones en <MathBlock>{"B_{\\infty}(X_n)"}</MathBlock>. Entonces hay un <MathBlock>{"a_{\\Phi} \\in B_{\\infty}^n"}</MathBlock>, que es un punto fijo mínimo para <MathBlock>{"\\Phi"}</MathBlock>, <MathBlock>{"\\Phi(a_{\\Phi}) = a_{\\Phi}"}</MathBlock>, <MathBlock>{"a_{\\Phi}"}</MathBlock> se llama la solución de <MathBlock>{"\\Phi"}</MathBlock> sobre <MathBlock>{"B_{\\infty}(X_n)"}</MathBlock>. De hecho <MathBlock>{"a_{\\Phi} = \\lim_{n \\to \\infty} \\Phi^n(\\perp, \\dots, \\perp)"}</MathBlock>.
+                                </p>
+
+                                <SectionHeading level={2} title="12.11 Sistemas Autónomos y Formas Reentrantes Reconsiderados" id="autonomous" />
+
+                                <p>
+                                    Parece importante, en este punto, recuperar alguna perspectiva sobre lo que hemos estado persiguiendo en estos dos últimos capítulos sobre formas indicacionales.
+                                </p>
+                                <p>
+                                    Nuestra intención fue presentar, en un formato matemático, dos de las ideas clave en las que parece basarse nuestra discusión sobre la autonomía y la fenomenología de los sistemas autónomos. Primero, está el papel central del <Concept>acto de distinción</Concept>, mediante el cual se diferencian las unidades y nacen los dominios fenoménicos. En segundo lugar, hemos enfatizado el papel constitutivo de los procesos recursivos y autorreferenciales de los sistemas naturales. Lo que hemos hecho es construir un formalismo donde estas cuestiones pueden investigarse en detalle, de modo que las dificultades e implicaciones salgan a la superficie.
+                                </p>
+                                <p>
+                                    Lo que está en juego es la necesidad de examinar de cerca la naturaleza de los sistemas autónomos completos, y la aparición necesaria correlacionada de interrelaciones circulares de procesos. No siento que se haya comprendido el impacto total de esta cuestión cognitiva. Cuando <Author>Wiener</Author> trajo la idea de retroalimentación al primer plano, no solo se reconoció inmediatamente como un concepto fundamental, sino que también planteó importantes cuestiones filosóficas sobre la validez de la doctrina causa-efecto. La imagen parecía más cercana a una causalidad circular, donde uno solo puede tratar con la totalidad resultante y su estabilidad manifestada.
+                                </p>
+
+                                <div className="mt-16 pt-8 border-t border-slate-800">
+                                    <h3 className="font-serif text-2xl text-slate-100 mb-6">Fuentes</h3>
+                                    <ul className="space-y-4 text-sm text-slate-400">
+                                        <li>L. Kauffman y F. Varela (1978), <span className="italic">Form dynamics</span> (enviado para publicación).</li>
+                                        <li>G. Spencer-Brown (1969), <span className="italic">Laws of Form</span>, George Allen & Unwin, Londres.</li>
+                                        <li>F. Varela (1975), <span className="italic">A calculus for self-reference</span>, Int. J. Gen. Systems 2:5.</li>
+                                        <li>F. Varela y J. Goguen (1978), <span className="italic">The arithmetic of closure</span>, en Progress in Cybernetics and Systems Research (R. Trappl et al., eds.), Vol. III, Hemisphere Publ. Co., Washington: también en J. Cybernetics 8(4), 1978.</li>
+                                    </ul>
+                                </div>
+
+                            </article>
+                            
+                        </div>
+                    </main>
+
+                    {/* Interactive Footnote Modal */}
+                    <AnimatePresence>
+                        {activeNote && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20, x: "-50%" }}
+                                animate={{ opacity: 1, y: 0, x: "-50%" }}
+                                exit={{ opacity: 0, y: 20, x: "-50%" }}
+                                className="fixed bottom-10 left-1/2 w-full max-w-2xl bg-slate-900/95 backdrop-blur-md border border-slate-800 p-6 rounded-xl shadow-2xl z-50 text-slate-300 text-sm md:text-base leading-relaxed text-justify"
+                            >
+                                <div className="flex items-start">
+                                    <Icon name="Info" className="text-cyan-400 mr-3 flex-shrink-0 mt-1" size={20} />
+                                    <div>
+                                        {activeNote}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
