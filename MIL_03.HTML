@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Mente en la Vida | Evan Thompson</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            950: '#020617', // Deep Dark Background
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #020617;
+            color: #cbd5e1;
+            overflow-x: hidden;
+        }
+        /* Hide Scrollbar but keep functionality */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .text-justify {
+            text-align: justify;
+        }
+        .hyphens-auto {
+            hyphens: auto;
+            -webkit-hyphens: auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, AnimatePresence, useScroll, useSpring } = window.Motion;
+        
+        const BOOK_DATA = {
+            title: "La Mente en la Vida",
+            subtitle: "Biología, Fenomenología y las Ciencias de la Mente",
+            author: "Evan Thompson",
+            toc: [
+                { title: "Prefacio", page: "ix", id: "preface", url: "#" },
+                { title: "Agradecimientos", page: "xi", id: "acknowledgments", url: "#" },
+                { separator: "PARTE UNO: El Enfoque Enactivo" },
+                { title: "1. Ciencia Cognitiva y Experiencia Humana", page: "3", url: "#" },
+                { title: "2. La Conexión Fenomenológica", page: "16", url: "#" },
+                { title: "3. Autonomía y Emergencia", page: "37", url: "#chapter-3" },
+                { title: "4. La Estructura del Comportamiento", page: "66", url: "#" },
+                { separator: "PARTE DOS: La Vida en la Mente" },
+                { title: "5. Autopoiesis: La Organización de lo Vivo", page: "91", url: "#" },
+                { title: "6. Vida y Mente: La Filosofía del Organismo", page: "128", url: "#" },
+                { title: "7. Haciendo Camino al Andar: Desarrollo y Evolución", page: "166", url: "#" },
+                { separator: "PARTE TRES: Conciencia en la Vida" },
+                { title: "8. La Vida más allá de la Brecha", page: "219", url: "#" },
+                { title: "9. Subjetividad Sensoriomotora", page: "243", url: "#" },
+                { title: "10. Mira de Nuevo: Conciencia e Imaginería Mental", page: "267", url: "#" },
+                { title: "11. Temporalidad y el Presente Vivo", page: "312", url: "#" },
+                { title: "12. Dinamismo Primordial: Emoción y Valencia", page: "360", url: "#" },
+                { title: "13. Empatía y Enculturación", page: "382", url: "#" },
+                { separator: "APÉNDICES" },
+                { title: "A: Husserl y la Ciencia Cognitiva", page: "413", url: "#" },
+                { title: "B: Emergencia y el Problema de la Causación Descendente", page: "417", url: "#" },
+                { title: "Notas", page: "443", url: "#" },
+                { title: "Referencias", page: "483", url: "#" },
+                { title: "Índice de Conceptos", page: "527", url: "#" }
+            ]
+        };
+
+        // --- Icons ---
+        const MenuIcon = () => <i data-lucide="menu" className="w-6 h-6"></i>;
+        const XIcon = () => <i data-lucide="x" className="w-6 h-6"></i>;
+        const ImageIcon = () => <i data-lucide="image" className="w-8 h-8 text-slate-500"></i>;
+
+        // --- Components ---
+
+        const ScrollProgress = () => {
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+
+            return (
+                <motion.div
+                    className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50"
+                    style={{ scaleX }}
+                />
+            );
+        };
+
+        const TooltipModal = ({ activeNote, onClose }) => {
+            if (!activeNote) return null;
+            return (
+                <AnimatePresence>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20, x: "-50%" }}
+                        animate={{ opacity: 1, y: 0, x: "-50%" }}
+                        exit={{ opacity: 0, y: 20, x: "-50%" }}
+                        className="fixed bottom-10 left-1/2 w-[90vw] max-w-2xl bg-slate-900/95 backdrop-blur-md border border-slate-800 p-6 rounded-lg shadow-2xl z-50 text-slate-300 text-sm leading-relaxed text-justify"
+                    >
+                        <div className="flex justify-between items-start mb-2">
+                            <span className="text-cyan-400 font-bold text-xs uppercase tracking-widest">Nota al Pie</span>
+                            <button onClick={onClose} className="hover:text-white"><XIcon /></button>
+                        </div>
+                        {activeNote}
+                    </motion.div>
+                </AnimatePresence>
+            );
+        };
+
+        const Navigation = ({ onToggleMenu }) => (
+            <motion.header 
+                initial={{ y: -100 }}
+                animate={{ y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="fixed top-0 w-full flex justify-between items-center px-6 py-4 z-40 bg-slate-950/80 backdrop-blur-sm border-b border-white/5"
+            >
+                <div className="flex flex-col">
+                    <span className="text-slate-100 font-serif font-bold text-lg tracking-wide">{BOOK_DATA.title}</span>
+                    <span className="text-cyan-400 text-xs uppercase tracking-widest">{BOOK_DATA.author}</span>
+                </div>
+                <button 
+                    onClick={onToggleMenu}
+                    className="flex items-center gap-2 text-slate-300 hover:text-cyan-400 transition-colors uppercase text-xs tracking-widest font-semibold group"
+                >
+                    <span>Índice</span>
+                    <span className="group-hover:translate-x-1 transition-transform"><MenuIcon /></span>
+                </button>
+            </motion.header>
+        );
+
+        const Sidebar = ({ isOpen, onClose }) => (
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={onClose}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        />
+                        <motion.div
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed right-0 top-0 h-full w-full max-w-md bg-slate-900 border-l border-slate-800 z-50 overflow-y-auto p-8 shadow-2xl"
+                        >
+                            <div className="flex justify-between items-center mb-10">
+                                <h2 className="text-2xl font-serif text-amber-500">Contenido</h2>
+                                <button onClick={onClose} className="text-slate-400 hover:text-white"><XIcon /></button>
+                            </div>
+                            
+                            <nav className="space-y-6">
+                                {BOOK_DATA.toc.map((item, idx) => {
+                                    if (item.separator) {
+                                        return (
+                                            <div key={idx} className="pt-6 border-t border-slate-800">
+                                                <h3 className="text-xs uppercase tracking-[0.2em] text-cyan-400 mb-4">{item.separator}</h3>
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <a 
+                                            key={idx} 
+                                            href={item.url} 
+                                            onClick={onClose}
+                                            className="group flex justify-between items-baseline py-2 hover:translate-x-2 transition-transform cursor-pointer"
+                                        >
+                                            <span className="text-slate-300 font-serif text-lg group-hover:text-white transition-colors">{item.title}</span>
+                                            <span className="text-slate-600 font-mono text-sm border-b border-dotted border-slate-700 flex-grow mx-4"></span>
+                                            <span className="text-amber-500 font-mono text-sm">{item.page}</span>
+                                        </a>
+                                    );
+                                })}
+                            </nav>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+        );
+
+        const SectionHeader = ({ title, chapterNumber }) => (
+            <div className="mb-16 border-l-2 border-amber-500 pl-6">
+                <span className="block text-cyan-400 text-sm font-bold uppercase tracking-widest mb-2">Capítulo {chapterNumber}</span>
+                <h2 className="text-4xl md:text-5xl font-serif text-slate-100">{title}</h2>
+            </div>
+        );
+
+        const SubSectionHeader = ({ title }) => (
+            <h3 className="text-2xl font-serif text-slate-200 mt-16 mb-8 border-b border-slate-800 pb-2 inline-block">
+                {title}
+            </h3>
+        );
+
+        const TextBlock = ({ children }) => (
+            <p className="text-slate-300 text-lg md:text-xl leading-8 md:leading-9 mb-8 text-justify hyphens-auto font-sans font-light">
+                {children}
+            </p>
+        );
+
+        const Concept = ({ children }) => <span className="text-amber-500 font-medium">{children}</span>;
+        const Entity = ({ children }) => <span className="text-cyan-400">{children}</span>;
+        const BookTitle = ({ children }) => <span className="text-white italic">{children}</span>;
+
+        const InteractiveFootnote = ({ id, content, setNote }) => (
+            <sup 
+                className="text-cyan-400 cursor-pointer hover:text-white transition-colors font-bold ml-1"
+                onClick={() => setNote(content || "Contenido de la nota no disponible en este extracto.")}
+            >
+                [{id}]
+            </sup>
+        );
+
+        const Figure = ({ description }) => (
+            <figure className="my-12 w-full">
+                <div className="w-full aspect-video bg-slate-900/50 border border-dashed border-slate-700 rounded-sm flex flex-col items-center justify-center p-8 transition-colors hover:border-cyan-500/50 hover:bg-slate-900/80 group">
+                    <ImageIcon />
+                    <span className="mt-4 text-slate-500 font-mono text-xs uppercase tracking-widest group-hover:text-cyan-400 transition-colors">Insert Link: {description}</span>
+                </div>
+                <figcaption className="mt-4 text-sm text-slate-500 leading-relaxed text-justify border-t border-slate-800 pt-2 flex gap-4">
+                    <span className="font-bold text-amber-500 whitespace-nowrap">FIG. REF</span>
+                    <span>{description}</span>
+                </figcaption>
+            </figure>
+        );
+
+        const App = () => {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [activeNote, setActiveNote] = useState(null);
+
+            useEffect(() => {
+                lucide.createIcons();
+            }, [isMenuOpen]);
+
+            return (
+                <div className="antialiased selection:bg-cyan-900 selection:text-white pb-32">
+                    <ScrollProgress />
+                    <Navigation onToggleMenu={() => setIsMenuOpen(true)} />
+                    <Sidebar isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+                    
+                    <main className="w-full px-6 md:px-12 pt-24">
+                        
+                        <section id="chapter-3">
+                            <SectionHeader chapterNumber="3" title="Autonomía y Emergencia" />
+                            
+                            <TextBlock>
+                                <span className="float-left text-6xl text-amber-500 font-serif mr-4 mt-[-10px] leading-[0.8]">S</span>
+                                EGÚN EL ENFOQUE ENACTIVO, la mente humana emerge de procesos de auto-organización que interconectan estrechamente el cerebro, el cuerpo y el entorno a múltiples niveles. Las ideas clave en las que se basa esta proposición son las de <Concept>sistemas autónomos</Concept> y <Concept>emergencia</Concept> o procesos emergentes. En este capítulo, explico estas ideas. En el próximo capítulo, exploraré algunas conexiones entre estas ideas e ideas fenomenológicas sobre la forma, en particular formas o estructuras de comportamiento. Estos dos capítulos sentarán las bases para la estrategia enactiva de abordar la brecha explicativa regresando a las raíces de la mente en la vida y luego trabajando hacia la subjetividad y la conciencia.
+                            </TextBlock>
+
+                            <TextBlock>
+                                En la primera sección de este capítulo, reviso algunas ideas básicas sobre sistemas dinámicos que forman un trasfondo para el enfoque enactivo. En la segunda sección, explico la noción de un sistema autónomo. Una característica distintiva del enfoque enactivo es el énfasis que da a la autonomía. En resumen, un sistema autónomo es un sistema <Concept>autodeterminado</Concept>, a diferencia de un sistema determinado desde el exterior, o un <Concept>sistema heterónomo</Concept>. Por un lado, una célula viva, un animal multicelular, una colonia de hormigas o un ser humano se comporta como una unidad coherente y autodeterminada en sus interacciones con su entorno. Un cajero automático, por otro lado, está determinado y controlado desde el exterior, en el ámbito del diseño humano. El paradigma para la interacción con un sistema heterónomo es entrada/procesamiento/salida, en el que las desviaciones de las salidas deseadas se ven como errores del sistema. El paradigma para la interacción con un sistema autónomo es una conversación, en la que los resultados insatisfactorios se ven como brechas de comprensión (<Entity>Varela</Entity> 1979, p. xii). Según el enfoque enactivo, los seres vivos y los agentes cognitivos necesitan ser entendidos como sistemas autónomos. Discuto las implicaciones de esta perspectiva de autonomía para cómo pensamos sobre la información en la tercera sección.
+                            </TextBlock>
+
+                            <TextBlock>
+                                En la cuarta sección, paso a la emergencia, una noción ahora familiar que describe el surgimiento de patrones colectivos de comportamiento a gran escala en sistemas complejos tan diversos como células, cerebros, ecosistemas, ciudades y economías. La emergencia está estrechamente relacionada con la auto-organización y la causalidad circular, las cuales implican la influencia recíproca de procesos "de abajo hacia arriba" y "de arriba hacia abajo". Por ejemplo, un tornado emerge a través de la auto-organización de partículas de aire y agua circulantes; recíprocamente succiona esas partículas hacia una configuración macroscópica particular, con efectos devastadores para cualquier cosa en su camino. En esta sección, esbozo una forma de pensar sobre la emergencia que llamo <Concept>co-emergencia dinámica</Concept>. La co-emergencia dinámica significa que un todo no solo surge de sus partes, sino que las partes también surgen del todo. Parte y todo co-emergen y se especifican mutuamente. Un todo no puede reducirse a sus partes, pues las partes no pueden caracterizarse independientemente del todo; inversamente, las partes no pueden reducirse al todo, pues el todo no puede caracterizarse independientemente de las partes. Discuto cuestiones filosóficas relacionadas con esta concepción de la emergencia en el Apéndice B.
+                            </TextBlock>
+
+                            <SubSectionHeader title="Sistemas Dinámicos" />
+
+                            <TextBlock>
+                                En años recientes, el creciente interés en la dinámica de la cognición y la emoción ha dado lugar a un enfoque dinámico distinto en la ciencia de la mente (<Entity>Kelso</Entity> 1995; <Entity>Lewis</Entity> y <Entity>Granic</Entity> 2000; <Entity>Port</Entity> y <Entity>van Gelder</Entity> 1995; <Entity>Thelen</Entity> y <Entity>Smith</Entity> 1994). La idea central del enfoque dinámico es que la cognición natural —la cognición en agentes vivos evolucionados— es un fenómeno dinámico y, en consecuencia, necesita ser entendida desde la perspectiva de la ciencia de los sistemas dinámicos. Esta perspectiva incluye la teoría de sistemas dinámicos (una rama de las matemáticas puras), el modelado de sistemas dinámicos (modelado matemático de sistemas empíricos) e investigaciones experimentales de fenómenos biológicos y psicológicos informados por estas herramientas.<InteractiveFootnote id="1" setNote={setActiveNote} />
+                            </TextBlock>
+
+                            <TextBlock>
+                                El concepto fundamental que debemos introducir en este contexto es el de <Concept>sistema dinámico</Concept>. En términos simples, un sistema dinámico es uno que cambia con el tiempo. El término sistema, sin embargo, es ambiguo, ya que puede referirse a un sistema real en el mundo, como el sistema solar, o a un modelo matemático de un sistema real. En el caso del mundo real, el término sistema no admite una definición precisa. En general, un sistema es una colección de entidades o procesos relacionados que destaca de un fondo como un todo único, tal como algún observador ve y conceptualiza las cosas. El ejemplo clásico de la historia de la ciencia es el sistema solar. Sus componentes son el sol, la luna y los planetas, y sus estados son sus configuraciones posibles. Lo que cambia con el tiempo es el estado del sistema. Un sistema dinámico en el sentido de un modelo, sin embargo, es una construcción matemática que tiene como objetivo describir y predecir la forma en que un sistema actual cambia con el tiempo (los caminos de los planetas, y eventos como eclipses, en el caso del sistema solar). Con este fin, algunos aspectos del sistema real son seleccionados como especialmente importantes y son representados matemáticamente por variables cuantitativas. Especificar los valores numéricos de todas las variables en un momento dado indica el estado del sistema en ese momento. Un sistema dinámico incluye un procedimiento para producir tal descripción del estado del sistema y una regla para transformar la descripción del estado actual en otra descripción de estado para algún tiempo futuro. Un sistema dinámico es así un modelo matemático para la forma en que un sistema cambia o se comporta a medida que pasa el tiempo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Si se considera que el paso del tiempo es continuo (como el segundero de barrido de un reloj analógico), entonces el sistema dinámico es diferenciable: las variables cambian de una manera suave y continua, y las reglas o "ecuaciones de evolución" que gobiernan el estado cambiante del sistema toman la forma de ecuaciones diferenciales. Si se considera que el tiempo pasa en saltos discretos espaciados uniformemente (como un reloj digital), entonces el sistema se describe mediante una ecuación de diferencia o un mapeo (una función aplicada repetidamente o iterada en pasos de tiempo discretos). Algunas ecuaciones diferenciales tienen una solución analítica, lo que significa que pueden resolverse exactamente mediante fórmulas matemáticas. Dados los valores iniciales de las variables (las condiciones iniciales), entonces todos los estados futuros del sistema pueden conocerse sin recalcular el estado del sistema para cada incremento de tiempo. La mayoría de las ecuaciones diferenciales, sin embargo, no pueden resolverse de esta manera. Cuando las ecuaciones contienen términos no lineales —funciones en las que el valor de la salida no es directamente proporcional a la suma de las entradas— entonces tal solución es imposible. Por lo tanto, se debe tomar un enfoque matemático diferente al de encontrar una fórmula que haga posible la predicción de un estado futuro a partir de uno presente.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Este otro enfoque, introducido por <Entity>Henri Poincaré</Entity> en el siglo XIX, se conoce como el estudio cualitativo de ecuaciones diferenciales (o de sistemas dinámicos diferenciables no lineales). Uno piensa en el espacio de todos los estados posibles del sistema como un espacio geométrico, conocido como <Concept>espacio de estados</Concept> o <Concept>espacio de fases</Concept>, y la forma en que el sistema cambia o se comporta con el tiempo como curvas o trayectorias en este espacio. En lugar de buscar una fórmula para cada solución como una función del tiempo, uno estudia la colección de todas las soluciones (correspondientes a trayectorias en el espacio de fases) para todos los tiempos y condiciones iniciales a la vez. Este enfoque se dice que es cualitativo porque utiliza técnicas topológicas y geométricas para estudiar el carácter general o global del comportamiento a largo plazo del sistema (su comportamiento en el espacio de fases), en lugar de buscar predecir el estado futuro exacto del sistema (los valores específicos de sus variables en un tiempo futuro). Es precisamente este enfoque cualitativo de la dinámica lo que se conoce con el nombre de teoría de sistemas dinámicos.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Necesitamos introducir una noción relacionada más: la de <Concept>complejidad</Concept>. El término complejidad describe un comportamiento que no es ni aleatorio ni ordenado y predecible; más bien, está en el medio, exhibiendo patrones cambiantes e inestables. De particular importancia en el contexto de los enfoques recientes de sistemas dinámicos no lineales para el cerebro y el comportamiento es la noción de complejidad como inestabilidad dinámica o <Concept>metaestabilidad</Concept>: "la expresión sucesiva de diferentes dinámicas transitorias con patrones temporales estereotipados siendo creados y destruidos continuamente y re-emergiendo de nuevo" (<Entity>Friston</Entity> 2000b, p. 238). La ciencia reciente indica que la complejidad de este tipo se puede encontrar en numerosas escalas y niveles, desde lo molecular y organísmico hasta lo ecológico y evolutivo, así como lo neural y conductual. En cada caso, el mensaje parece ser que la complejidad, inestabilidad o metaestabilidad es necesaria para la auto-organización y el comportamiento adaptativo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Ahora podemos volver al enfoque dinámico en la ciencia de la mente. La hipótesis dinámica fundamental de este enfoque es que los agentes cognitivos naturales (personas y otros animales) son sistemas dinámicos (o, más precisamente, que los sistemas cognitivos que los agentes instancian son sistemas dinámicos), y que, en consecuencia, la acción, la percepción y la cognición deben explicarse en términos dinámicos (<Entity>van Gelder</Entity> 1998). Los defensores de la hipótesis dinámica la contrastan con la hipótesis cognitivista, que establece que los agentes cognitivos (o los sistemas cognitivos que instancian), ya sean naturales o artificiales, son computadoras digitales o sistemas de símbolos físicos y que, en consecuencia, la cognición debe explicarse en términos de procesamiento de símbolos.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Para ilustrar estas ideas, podemos recurrir a la investigación sobre dinámica de coordinación neural y conductual de <Entity>Haken</Entity>, <Entity>Kelso</Entity> y colegas (<Entity>Bressler</Entity> y <Entity>Kelso</Entity> 2001; <Entity>Kelso</Entity> 1995). Un caso que han estudiado es el movimiento rítmico de los dedos (<Entity>Haken</Entity>, <Entity>Kelso</Entity> y <Entity>Bunz</Entity> 1985). La tarea experimental consistía en mover los dos dedos índices a la misma frecuencia de lado a lado. A bajas velocidades, hay dos patrones de coordinación cómodos (el sistema es biestable): o los dedos se mueven en fase (los grupos musculares equivalentes en cada mano se contraen simultáneamente) o en anti-fase (los grupos musculares equivalentes se alternan en su contracción y expansión). A medida que la velocidad aumenta gradualmente, el patrón en fase se vuelve inestable y, finalmente, a cierta frecuencia crítica, los dedos cambian espontáneamente a un patrón anti-fase (el sistema experimenta una bifurcación). A medida que la velocidad disminuye, el patrón en fase vuelve a ser estable, pero lo hace por debajo del punto de cambio original (este retorno retrasado a un estado anterior se conoce como histéresis).
+                            </TextBlock>
+
+                            <TextBlock>
+                                <Entity>Haken</Entity>, <Entity>Kelso</Entity> y colegas idearon un modelo de sistemas dinámicos para describir y predecir estas propiedades del comportamiento motor. El modelo describe cómo evoluciona con el tiempo la relación de fase relativa entre los dos dedos. La fase relativa es un ejemplo de una "variable colectiva": una cuyo valor se establece por la relación entre los valores de otras variables, en este caso las que describen los movimientos individuales de los dedos. Una variable colectiva describe una característica de alto nivel o global de un sistema que emerge como un patrón coherente y ordenado de las interacciones de los componentes del sistema. Este patrón de macronivel también se conoce como parámetro de orden porque reduce los grados de libertad de los componentes del sistema organizándolos en un patrón coherente y ordenado. Cuando los dedos se mueven en fase, la variable colectiva o parámetro de orden de fase relativa es cero; una vez que ocurre la transición crítica o bifurcación a anti-fase, la fase relativa se vuelve distinta de cero hasta un valor máximo. Debido a que la transición de fase ocurre a cierta frecuencia crítica de oscilación de los dedos, la frecuencia actúa como un "parámetro de control" para el sistema. El parámetro de control no dicta ni prescribe la variable colectiva o parámetro de orden (el patrón emergente de fase relativa). Más bien, sus valores cambiantes llevan al sistema a través de una variedad de patrones o estados posibles (<Entity>Kelso</Entity> 1995, p. 7). Así, el modelo describe matemáticamente cómo el parámetro de control de la frecuencia de movimiento de los dedos lleva al sistema a través de diferentes patrones de coordinación de los dedos.
+                            </TextBlock>
+
+                            <TextBlock>
+                                En el lenguaje de la teoría de sistemas dinámicos, este tipo de descripción da el espacio de estados del sistema: el espacio abstracto y multidimensional que representa todos los estados posibles del sistema especificando todos los valores posibles de las variables del sistema. La evolución temporal del sistema corresponde a su trayectoria a través de este espacio. El modelo predice el cambio observado de una fase a otra sin postular ningún programa motor interno que dirija los cambios emitiendo instrucciones simbólicas. En cambio, las transiciones de fase ocurren espontáneamente como propiedades emergentes de la dinámica de auto-organización del sistema. <Entity>Kelso</Entity> y sus colegas han extendido y desarrollado este tipo de modelo de transición de fase para aplicar a una amplia variedad de dominios cognitivos, como el aprendizaje de habilidades motoras, la percepción del habla, la percepción visual y la coordinación dinámica de la actividad entre áreas corticales del cerebro (<Entity>Bressler</Entity> y <Entity>Kelso</Entity> 2001; <Entity>Kelso</Entity> 1995).
+                            </TextBlock>
+
+                            <SubSectionHeader title="Sistemas Autónomos" />
+
+                            <TextBlock>
+                                La idea dinamicista de que los procesos cognitivos son siempre continuos, sin puntos de inicio o fin claros, puede profundizarse introduciendo la distinción entre sistemas autónomos y heterónomos. Autonomía y heteronomía significan literalmente, respectivamente, auto-gobernado y gobernado por otro. Un <Concept>sistema heterónomo</Concept> es aquel cuya organización se define por el flujo de información de entrada-salida y mecanismos externos de control. Los sistemas computacionales tradicionales, cognitivistas o conexionistas, son heterónomos. Por ejemplo, una red conexionista típica tiene una capa de entrada y una capa de salida; las entradas son asignadas inicialmente por el observador fuera del sistema; y el rendimiento de salida se evalúa en relación con una tarea impuesta externamente. Un <Concept>sistema autónomo</Concept>, sin embargo, se define por su dinámica endógena, auto-organizada y autocontrolada, no tiene entradas y salidas en el sentido habitual, y determina el dominio cognitivo en el que opera (<Entity>Varela</Entity> 1979; <Entity>Varela</Entity> y <Entity>Bourgine</Entity> 1991).
+                            </TextBlock>
+
+                            <TextBlock>
+                                En general, para especificar cualquier sistema uno necesita describir su organización: el conjunto de relaciones que lo define como el sistema que es. En la teoría de sistemas complejos, el término autónomo se refiere a un tipo genérico de organización. Las relaciones que definen la organización autónoma se mantienen entre procesos (como reacciones metabólicas en una célula o disparos neuronales en un ensamblaje celular) en lugar de entidades estáticas. En un sistema autónomo, los procesos constituyentes (i) dependen recursivamente unos de otros para su generación y su realización como una red, (ii) constituyen el sistema como una unidad en cualquier dominio que existan, y (iii) determinan un dominio de posibles interacciones con el entorno (<Entity>Varela</Entity> 1979, p. 55). El paradigma es una célula viva. Los procesos constituyentes en este caso son químicos; su interdependencia recursiva toma la forma de una red metabólica auto-productora que también produce su propia membrana; y esta red constituye el sistema como una unidad en el dominio bioquímico y determina un dominio de posibles interacciones con el entorno. Este tipo de autonomía en el dominio bioquímico se conoce como <Concept>autopoyesis</Concept> (<Entity>Maturana</Entity> y <Entity>Varela</Entity> 1980). La Figura 3.1 ilustra la organización básica requerida para la autonomía autopoyética.
+                            </TextBlock>
+
+                            <Figure description="Figura 3.1: La organización autopoyética básica." />
+
+                            <TextBlock>
+                                La autopoyesis es el caso paradigmático de autonomía biológica por dos razones. Es empíricamente el caso mejor entendido, y proporciona la "biológica" central de toda la vida en la Tierra. Para calificar como autónomo, sin embargo, un sistema no tiene que ser autopoyético en el sentido estricto (un sistema molecular delimitado auto-productor). Un sistema autopoyético produce dinámicamente su propio límite material o membrana, pero un sistema puede ser autónomo sin tener este tipo de límite material. Los miembros de una colonia de insectos, por ejemplo, forman una red social autónoma, pero el límite es social y territorial, no material.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Al explorar la noción de autonomía, podemos tomar dos enfoques complementarios: un enfoque de arriba hacia abajo y uno de abajo hacia arriba (<Entity>Ruiz-Mirazo</Entity> y <Entity>Moreno</Entity> 2004). Ambos enfoques ven la autonomía como una propiedad relacional a nivel de sistema, pero hay una diferencia crítica entre los dos. Mientras que el enfoque de arriba hacia abajo se centra en la organización relacional propia de la autonomía, el enfoque de abajo hacia arriba enfatiza los requisitos energéticos y termodinámicos para la autonomía.
+                            </TextBlock>
+
+                            <TextBlock>
+                                <Entity>Varela</Entity> toma el enfoque de arriba hacia abajo en su libro de 1979, <BookTitle>Principles of Biological Autonomy</BookTitle>. En este trabajo define un sistema autónomo como un sistema que tiene <Concept>clausura organizacional</Concept> (más tarde llamada clausura operacional) (<Entity>Varela</Entity> 1979, pp. 55-60). Aquí clausura no significa que el sistema esté material y energéticamente cerrado al mundo exterior (lo cual, por supuesto, es imposible). Por el contrario, los sistemas autónomos deben ser sistemas termodinámicamente lejos del equilibrio, que incesantemente intercambian materia y energía con sus alrededores. La clausura organizacional se refiere a la red autorreferencial (circular y recursiva) de relaciones que define el sistema como una unidad, y la clausura operacional a la dinámica reentrante y recurrente de tal sistema. Un sistema autónomo está siempre estructuralmente acoplado a su entorno. Dos o más sistemas están acoplados cuando la conducta de cada uno es una función de la conducta del otro. (En el lenguaje de sistemas dinámicos, las variables de estado de un sistema son parámetros del otro sistema, y viceversa). El "acoplamiento estructural" se refiere a la historia de interacciones recurrentes entre dos o más sistemas que conduce a una congruencia estructural entre ellos (<Entity>Maturana</Entity> 1975; <Entity>Maturana</Entity> y <Entity>Varela</Entity> 1987, p. 75). Así, los cambios de estado de un sistema autónomo resultan de su clausura operacional y acoplamiento estructural. El resultado de cualquier cambio de estado es siempre más actividad auto-organizada dentro del sistema, a menos que su clausura se interrumpa y ya no sea capaz de continuar su acoplamiento, en cuyo caso se desintegra. Los sistemas descritos como autónomos en este sentido abundan en todo el mundo vivo: células individuales, comunidades microbianas, sistemas nerviosos, sistemas inmunológicos, organismos multicelulares, ecosistemas, y así sucesivamente. Tales sistemas deben verse como fuentes de su propia actividad, especificando sus propios dominios de interacción, no como transductores o funciones para convertir instrucciones de entrada en productos de salida. En otras palabras, el carácter autónomo de estos sistemas necesita ser reconocido.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El segundo enfoque, de abajo hacia arriba, para la autonomía se basa en estas nociones de clausura organizacional y operacional, pero trata de elaborar los requisitos energéticos y termodinámicos para la instanciación de la "autonomía básica" en el mundo físico. Desde esta perspectiva, la autonomía básica es "la capacidad de un sistema para gestionar el flujo de materia y energía a través de él de modo que pueda, al mismo tiempo, regular, modificar y controlar: (i) procesos internos de auto-construcción y (ii) procesos de intercambio con el entorno" (<Entity>Ruiz-Mirazo</Entity> y <Entity>Moreno</Entity> 2004, p. 240). Esta capacidad conlleva requisitos de implementación física específicos y exigentes: el sistema debe tener ciertos tipos de componentes, específicamente un límite activo semipermeable (una membrana), un aparato de transducción/conversión de energía (una moneda de energía como el trifosfato de adenosina (ATP) en las células vivas, que transfiere energía de enlaces químicos a reacciones que absorben energía dentro de la célula), y al menos un tipo de componente que controla y facilita los procesos de auto-construcción (catalizadores) (<Entity>Ruiz-Mirazo</Entity> y <Entity>Moreno</Entity> 2004, p. 252).
+                            </TextBlock>
+
+                            <TextBlock>
+                                La Figura 3.1 representa la organización autopoyética básica para una célula viva. Una célula destaca de una sopa molecular creando los límites que la separan de lo que no es y que regulan activamente sus interacciones con el entorno. Los procesos metabólicos dentro de la célula construyen estos límites, pero los procesos metabólicos mismos son posibles gracias a esos mismos límites. De esta manera, la célula emerge como una figura de un fondo químico. Si este proceso de auto-producción se interrumpe, los componentes celulares ya no forman una unidad, difundiéndose gradualmente de nuevo en una sopa molecular.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La Figura 3.1 puede compararse con la Figura 3.2, que representa la forma mínima de clausura organizacional para un sistema nervioso. Cualquier sistema nervioso opera de acuerdo con una "neurológica" básica, un patrón que continúa y elabora la biológica de la autopoyesis. La lógica fundamental del sistema nervioso es acoplar el movimiento y un flujo de actividad sensorial en una moda circular continua (<Entity>Maturana</Entity> y <Entity>Varela</Entity> 1987, pp. 142-176). Dondequiera que el movimiento sea esencial para el modo de vida de un organismo multicelular, existe el desarrollo correspondiente de un sistema nervioso. Un sistema nervioso vincula superficies sensoriales (órganos de los sentidos y terminaciones nerviosas) y efectores (músculos, glándulas) dentro del cuerpo. De esta manera integra el organismo, manteniéndolo unido como una unidad móvil, como un agente sensorimotor autónomo.
+                            </TextBlock>
+
+                            <Figure description="Figura 3.2: Clausura organizacional del sistema nervioso." />
+
+                            <TextBlock>
+                                Esta neurológica subyace a todas las variaciones en la coordinación sensoriomotora encontradas en el reino animal. En todos los animales, las redes neuronales establecen y mantienen un ciclo sensorimotor a través del cual lo que el animal siente depende directamente de cómo se mueve, y cómo se mueve depende directamente de lo que siente. Ningún animal es un mero respondedor pasivo; cada animal se encuentra con el entorno en sus propios términos sensoriomotores. <Entity>Merleau-Ponty</Entity> reconoció este punto crucial en su primer trabajo, <BookTitle>The Structure of Behavior</BookTitle>:
+                            </TextBlock>
+
+                            <TextBlock>
+                                El organismo no puede compararse adecuadamente con un teclado en el que los estímulos externos tocarían y en el que su forma adecuada se delinearía por la sencilla razón de que el organismo contribuye a la constitución de esa forma. Cuando mi mano sigue cada esfuerzo de un animal que lucha mientras sostiene un instrumento para capturarlo, es claro que cada uno de mis movimientos responde a una estimulación externa; pero también es claro que estas estimulaciones no podrían recibirse sin los movimientos por los cuales expongo mis receptores a su influencia. Cuando el ojo y el oído siguen a un animal en vuelo, es imposible decir "cuál comenzó primero" en el intercambio de estímulos y respuestas. Dado que todos los movimientos del organismo están siempre condicionados por influencias externas, uno puede, si lo desea, tratar fácilmente el comportamiento como un efecto del medio. Pero de la misma manera, dado que todas las estimulaciones que recibe el organismo a su vez han sido posibles solo por sus movimientos precedentes que han culminado en exponer el órgano receptor a las influencias externas, también se podría decir que el comportamiento es la primera causa de las estimulaciones.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Así, la forma del excitante es creada por el propio organismo, por su manera adecuada de ofrecerse a las acciones desde el exterior. Sin duda, para poder subsistir, debe encontrar un cierto número de agentes físicos y químicos en sus alrededores. Pero es el organismo mismo —según la naturaleza adecuada de sus receptores, los umbrales de sus centros nerviosos y los movimientos de los órganos— el que elige los estímulos en el mundo físico a los que será sensible. "El entorno (Umwelt) emerge del mundo a través de la actualización o el ser del organismo—[dado que] un organismo puede existir solo si tiene éxito en encontrar en el mundo un entorno adecuado." Esto sería un teclado que se mueve de tal manera que ofrece —y de acuerdo con ritmos variables— tales o cuales de sus teclas a la acción en sí monótona de un martillo externo. (1963, p. 13)
+                            </TextBlock>
+
+                            <TextBlock>
+                                Este pasaje expresa claramente una perspectiva de autonomía. Los organismos muestran patrones de comportamiento que nos obligan a verlos como autónomos. <Entity>Varela</Entity> intenta caracterizar esta autonomía a un nivel abstracto en términos de un patrón o forma dinámica genérica, a saber, clausura organizacional y operacional. De ahí que <Entity>Varela</Entity> nos dé su "Tesis de Clausura", que establece: "Todo sistema autónomo es organizacionalmente cerrado" (<Entity>Varela</Entity> 1979, p. 58).<InteractiveFootnote id="6" setNote={setActiveNote} />
+                            </TextBlock>
+
+                            <TextBlock>
+                                La Figura 3.1 ilustra la forma mínima que toma esta clausura para la vida a nivel de una sola célula, y la Figura 3.2 ilustra la forma mínima que toma para el sistema nervioso. Mientras que la clausura autopoyética trae consigo un "yo corporal" mínimo a nivel del metabolismo celular, la clausura sensoriomotora produce un "yo sensorimotor" a nivel de percepción y acción. En un caso, el paso de la clausura de la red a la mismidad (y la otredad correlativa) ocurre a nivel de un límite o membrana semipermeable activo, que regula la interacción con el entorno exterior. En el otro caso ocurre a nivel de comportamiento y acción intencional. En ambos casos vemos la co-emergencia de interior y exterior, de mismidad y un mundo o entorno correlativo de otredad, a través del mecanismo genérico de clausura de red (autonomía) y su encarnación física (<Entity>Varela</Entity> 1997a; ver también <Entity>Moreno</Entity> y <Entity>Barandiaran</Entity> 2004).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Además de estas formas celulares y sensoriomotoras de mismidad, otras formas de mismidad surgen de otros sistemas organizacional y operacionalmente cerrados. El sistema inmunológico, por ejemplo —entendido como una red inmune autónoma que establece una identidad somática coherente para el organismo, en lugar de como un mero mecanismo de defensa— trae consigo una identidad somática dinámica a un nivel celular y molecular distribuido (<Entity>Coutinho</Entity> 2003; <Entity>Varela</Entity> y <Entity>Coutinho</Entity> 1991). La forma animada de nuestro cuerpo vivo es así el lugar de intersección para numerosos patrones emergentes de mismidad y acoplamiento. Ya sean celulares, somáticos, sensoriomotores o neurocognitivos, estos patrones derivan no de ningún yo homuncular o agente dentro del sistema organizándolo o dirigiéndolo, sino de redes distribuidas con clausura operacional. En la imagen de <Entity>Varela</Entity>, nuestro organismo es una malla de "yos sin yo", y somos y vivimos esta malla (<Entity>Varela</Entity> 1991; <Entity>Varela</Entity> y <Entity>Cohen</Entity> 1989).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Permítanme prevenir una objeción que podría surgir en este punto. El sistema nervioso está claramente incrustado en el cuerpo del organismo, y el organismo en su entorno (<Entity>Chiel</Entity> y <Entity>Beer</Entity> 1997). Este hecho aparentemente contradice la afirmación de que el sistema nervioso es un sistema autónomo y que el organismo es un agente autónomo. El pensamiento aquí sería que la operación del sistema nervioso hace bucle a través del cuerpo (vía superficies sensoriales y motoras), y por lo tanto no es posible que el sistema nervioso tenga clausura operacional (que el producto de cada proceso dentro del sistema permanezca dentro de ese sistema). Del mismo modo, debido a que la actividad corporal del organismo hace bucle a través del entorno (la actividad motora afecta la estimulación sensorial que uno recibe de vuelta del entorno), el organismo no puede tener una dinámica operacionalmente cerrada.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Varios puntos, tanto metodológicos como epistemológicos, deben hacerse en respuesta. El primer punto es que, estrictamente hablando, sistema, autonomía y heteronomía son nociones heurísticas: son ayudas cognitivas o guías en la investigación científica y caracterización de fenómenos observables y patrones de comportamiento. Como nociones heurísticas, se refieren (implícitamente) e implican la postura interpretativa y explicativa de un observador (o comunidad de observadores). Lo que cuenta como el sistema en cualquier caso dado, y por lo tanto si es autónomo o heterónomo, es dependiente del contexto y relativo al interés. Para cualquier sistema siempre es posible adoptar una perspectiva de heteronomía o control externo, y esto puede ser útil para muchos propósitos. Sin embargo, esta postura no ilumina —y de hecho puede oscurecer— ciertos patrones observables de comportamiento, a saber, patrones que surgen de la dinámica interna del sistema en lugar de parámetros externos. Un organismo produce y mantiene dinámicamente su propia organización como un invariante a través del cambio, y por lo tanto también trae consigo su propio dominio de interacción. (Aunque los organismos vivos son paradigmáticos a este respecto, nada aparentemente descarta la posibilidad de autonomía artificial). Una perspectiva de heteronomía no proporciona un marco adecuado para investigar y entender este fenómeno; se necesita una perspectiva de autonomía.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El segundo punto es que en cualquier caso dado o para cualquier sistema candidato necesitamos distinguir entre, por un lado, la operación del sistema como tal, que es una función tanto de su organización (el conjunto de relaciones que lo define como un sistema) y estructura física, y, por otro lado, su rendimiento en relación con cualquier contexto más amplio en el que se observe. Por ejemplo, si deseamos caracterizar la organización y operación del sistema nervioso como una red neuronal finita, entonces necesitamos caracterizar el sistema nervioso como organizacional y operacionalmente cerrado, de modo que cualquier cambio de actividad en una neurona (o ensamblaje neuronal) siempre conduce a un cambio de actividad en otras neuronas (ya sea directamente a través de la acción sináptica o indirectamente a través de elementos físicos y químicos intervinientes). Las neuronas sensoriales y efectoras no son una excepción porque cualquier cambio en una conduce a cambios en la otra, de modo que la red siempre se cierra sobre sí misma, independientemente de los elementos intervinientes (<Entity>Maturana</Entity> y <Entity>Varela</Entity> 1980, p. 127). Sin embargo, el dominio de estados disponibles para el sistema nervioso (como una red operacionalmente cerrada) es claramente una función de su historia de interacciones con el resto del cuerpo (y el entorno). Por lo tanto, además de caracterizar la operación del sistema nervioso como una red cerrada, necesitamos caracterizar su rendimiento en su acoplamiento estructural con el resto del cuerpo (y el entorno). Del mismo modo, para caracterizar el organismo como una entidad celular o multicelular finita, necesitamos caracterizarlo como un sistema organizacional y operacionalmente cerrado. Al mismo tiempo, necesitamos caracterizar el rendimiento o comportamiento del organismo en su acoplamiento estructural con el entorno.
+                            </TextBlock>
+
+                            <TextBlock>
+                                También podemos cambiar perspectivas y caracterizar el sistema nervioso como un sistema heterónomo, es decir, como un sistema componente con varias funciones definidas en relación con el organismo (como registrar cambios sensoriales o guiar el movimiento). Nótese, sin embargo —y este es el tercer punto— que al cambiar así de perspectivas ipso facto ya no estamos hablando del mismo sistema. El sistema con el que ahora estamos preocupados ya no es el sistema nervioso como una red neuronal finita, sino más bien el sistema más grande del organismo (en el que el sistema nervioso se ve como un componente). Del mismo modo, también podemos cambiar perspectivas y caracterizar el organismo como un sistema heterónomo sujeto al control del entorno (por ejemplo, otros organismos). Una vez más, al cambiar así de perspectivas ipso facto ya no estamos tratando con el mismo sistema. El sistema ahora es el sistema más grande de organismo-más-entorno, no el organismo como una entidad celular o multicelular finita.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Estas consideraciones nos muestran que no hay inconsistencia entre caracterizar el sistema nervioso y el organismo como autónomos y enfatizar su incrustación somática y ambiental. Sin embargo, tenemos que mantener nuestras cuentas lógicas y conceptuales claras, para que sepamos qué heurística explicativa está en juego en cualquier momento dado. En cualquier caso, para el enfoque enactivo es la perspectiva de autonomía sobre los agentes cognitivos naturales la que permanece como el punto de referencia para entender la mente y la vida, no una estructura de tarea de entrada-salida predefinida.
+                            </TextBlock>
+
+                            <SubSectionHeader title="Información y Significado" />
+
+                            <TextBlock>
+                                Adoptar una perspectiva de autonomía también trae consigo una cierta forma de pensar sobre la información semántica o el significado. Para los teóricos enactivos, la información es dependiente del contexto y relativa al agente; pertenece al acoplamiento de un sistema y su entorno. Lo que cuenta como información está determinado por la historia, estructura y necesidades del sistema actuando en su entorno.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Según la visión recibida en la ciencia cognitiva, para explicar las habilidades cognitivas necesitamos apelar a estados portadores de información dentro del sistema. Tales estados, en virtud de la información semántica que llevan sobre el mundo, califican como representaciones. Los cognitivistas conciben estas representaciones como símbolos en un "lenguaje del pensamiento" computacional, y los conexionistas como patrones restringidos de actividad de red correspondientes a "atractores" del espacio de fases (regiones del espacio de fases hacia las cuales convergen todas las trayectorias cercanas). En cualquier caso, hay una fuerte tendencia a adoptar una concepción objetivista de la representación: las representaciones son estructuras internas que codifican información independiente del contexto sobre el mundo, y la cognición es el procesamiento de tal información.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Esta noción objetivista de información presupone una perspectiva de heteronomía en la que un observador o diseñador se encuentra fuera del sistema y establece qué debe contar como información (y por lo tanto qué debe contar como error o éxito en la representación). La información se ve diferente desde una perspectiva de autonomía. Aquí el sistema, sobre la base de su dinámica operacionalmente cerrada y modo de acoplamiento estructural con el entorno, ayuda a determinar qué es o puede ser información.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Un ejemplo neurobiológico puede ayudar a ilustrar estas ideas. Ciertos tipos de neuronas corticales a menudo se describen como detectores de características porque responden preferentemente (disparan por encima de su tasa base) a varios tipos de estímulos, como bordes, líneas y puntos en movimiento. Tales neuronas se identifican registrando su actividad individual con un microelectrodo y determinando el estímulo sensorial al que la neurona es más sensible. Se dice que tales neuronas "representan" características de objetos y hacen que esa información esté disponible para un procesamiento posterior por varios sistemas en el cerebro. Esta visión se encuentra detrás de la formulación estándar del llamado problema de unión (binding problem). Este problema se refiere a cómo las características distintas (forma, color, movimiento), representadas por poblaciones celulares en vías neuronales espacialmente distribuidas y funcionalmente segregadas, pueden unirse para formar una representación completa y precisa del objeto (de modo que las formas correctas vayan con los colores y movimientos correctos). Esta forma de pensar sobre el cerebro lo trata como un sistema heterónomo: las características del objeto fuera del organismo proporcionan entradas informativas al cerebro, y la tarea de procesamiento de información del cerebro es llegar a una representación precisa del mundo objetivo y producir una salida motora adaptativa.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Desde una perspectiva de autonomía, es crucial distinguir entre la información sobre los estímulos tal como son definidos por un observador y la información en el sentido de qué significados tienen los estímulos para el animal. Solo esto último juega un papel significativo en la operación del cerebro. La noción de una "característica" de objeto es definida por un observador que se encuentra fuera del sistema, tiene acceso independiente al entorno y establece correlaciones entre características ambientales y respuestas neuronales. El cerebro del animal no tiene acceso a las características en este sentido (y a fortiori no tiene acceso a ningún mapeo de características a respuestas neuronales). Como explica <Entity>Freeman</Entity>, "En la visión desde la neurodinámica, las neuronas que responden a bordes, líneas y puntos en movimiento están manifestando las propiedades topológicas locales de los mapas neuronales, que extraen derivadas locales de tiempo y espacio en el preprocesamiento automático para el realce de contraste espacial y temporal. No se manifiestan objetos o características al nivel de la neurona individual, ciertamente no aquellos utilizados por un observador" (<Entity>Freeman</Entity> 1995, p. 54). Desde una perspectiva de autonomía, las neuronas individuales no detectan características definidas objetivamente. Más bien, los ensamblajes de neuronas dan sentido a la estimulación construyendo significado, y este significado surge como una función de cómo la actividad endógena y no lineal del cerebro compensa las perturbaciones sensoriales. Desde esta perspectiva, el problema de unión de características no es el problema del cerebro, sino el problema del teórico del cerebro; es un artefacto de una cierta forma de mirar el cerebro. La descripción de <Entity>Freeman</Entity> de la visión alternativa, basada en mirar el cerebro como un sistema autónomo que opera de acuerdo con la causalidad no lineal, vale la pena citar aquí:
+                            </TextBlock>
+
+                            <TextBlock>
+                                En esta visión, el experimentador entrena a un sujeto para cooperar mediante el uso de refuerzo positivo y negativo, induciendo así un estado de expectativa y búsqueda de un estímulo, tal como es concebido por el sujeto. Cuando llega el estímulo esperado, los receptores activados transmiten pulsos a la corteza sensorial, donde provocan la construcción por dinámica no lineal de un patrón oscilatorio macroscópico, espacialmente coherente que cubre un área completa de la corteza sensorial... Se observa mediante el electroencefalograma (EEG) de matrices de electrodos en todas las cortezas sensoriales... No se ve en grabaciones de potenciales de acción de neuronas individuales, porque la fracción de la varianza en el tren de pulsos neuronales individuales que es covariante con la masa neural es demasiado pequeña, del orden del 0.1 por ciento.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El patrón emergente no es una representación de un estímulo... Es una transición de estado que es inducida por un estímulo, seguida de una construcción de un patrón que está moldeado por la modificación sináptica entre neuronas corticales del aprendizaje previo. También es dependiente de los núcleos del tronco cerebral que bañan el cerebro anterior en químicos neuromoduladores. Es un patrón de acción dinámica que crea y lleva el significado del estímulo para el sujeto. Refleja la historia individual, el contexto presente y la expectativa, correspondiendo a la unidad y totalidad de la intencionalidad. Debido a la dependencia de la historia, los patrones creados en cada corteza son únicos para cada sujeto. (<Entity>Freeman</Entity> 1999b, pp. 149-150)
+                            </TextBlock>
+
+                            <TextBlock>
+                                La distinción entre construcción de significado autónoma y procesamiento de información heterónomo necesita situarse en el contexto más amplio de la forma de pensar dinamicista corporizada sobre la información. Para explicar esta forma de pensar, será útil volver a las ideas introducidas por <Entity>Howard Pattee</Entity> (1977). <Entity>Pattee</Entity> hizo una distinción importante entre dos modos de descripción de un sistema complejo: el modo lingüístico, que describe el sistema en términos de elementos simbólicos discretos, independientes de la tasa, y el modo dinámico, que describe el sistema en términos de procesos continuos, dependientes de la tasa, y por lo tanto incluye explícitamente el flujo del tiempo. <Entity>Pattee</Entity> planteó la siguiente pregunta: "¿Cómo sabemos que no estamos interpretando ciertas estructuras como descripciones, solo porque las reconocemos como consistentes con las reglas de uno de nuestros propios lenguajes?" (1977, p. 262). En otras palabras, ¿cómo sabemos que nuestras descripciones lingüísticas no son simplemente relativas al observador, sino que corresponden a estructuras simbólicas que pertenecen al sistema mismo y juegan un papel en su operación? Y respondió: "debemos restringir aún más nuestro modelo de un sistema complejo para eliminar el caso del observador externo leyendo un mensaje que no está realmente en el sistema mismo. Esta restricción se logra requiriendo que un sistema complejo debe leer y escribir sus propios mensajes" (1977, p. 262).
+                            </TextBlock>
+
+                            <TextBlock>
+                                El ejemplo de <Entity>Pattee</Entity> es una célula viva. Cuando describimos tripletes de ADN como "codificando" aminoácidos, empleamos el modo lingüístico de descripción. Qué aminoácido especifica un triplete de ADN dado se supone que es independiente de la tasa: no importa cuán rápido se "lea" el triplete en el curso de la síntesis de proteínas. También se supone que es arbitrario, en el sentido de que "[e]s difícil ver por qué un código en el que GGC significa glicina y AAG significa lisina es mejor o peor que uno en el que los significados se invirtieran" (<Entity>Maynard Smith</Entity> 1986, p. 19). Según <Entity>Pattee</Entity>, el modo lingüístico de descripción en este caso no es relativo al observador porque la célula es un sistema autodescriptivo que "lee y escribe sus propios mensajes". La escritura de sus propios mensajes corresponde a la replicación del ADN (la producción de un complemento de la molécula de ADN original a través de una plantilla); la lectura de sus propios mensajes corresponde a la síntesis de proteínas ("transcripción" de ADN a ARN y "traducción" de ARN a proteína).
+                            </TextBlock>
+
+                            <TextBlock>
+                                <Entity>Pattee</Entity> luego hace varios puntos cruciales. Primero, para que el código sea leído debe haber en última instancia una transducción o conversión dentro de la célula del modo lingüístico al modo dinámico. Esta conversión ocurre cuando la matriz lineal independiente de la tasa de aminoácidos se pliega para convertirse en una enzima tridimensional. Dentro del ciclo de vida de la célula, hay así una transformación de la enzima como algo designado en el genoma a la enzima como un componente operativo del metabolismo. Segundo, esta transformación (el plegamiento de proteínas) no se describe lingüísticamente en sí misma en la célula, sino que ocurre de acuerdo con la ley física (bajo la restricción de orden superior de la secuencia de aminoácidos especificada por el ADN). Tercero, si la transformación se describiera lingüísticamente, la velocidad y precisión con la que se logra se verían considerablemente comprometidas. La conclusión de <Entity>Pattee</Entity> es que "no esperaríamos que una descripción formal completa o simulación de un sistema complejo se adapte o funcione tan rápida o confiablemente como el sistema dinámico tácito, parcialmente autodescriptivo que simula" (1977, p. 264).
+                            </TextBlock>
+
+                            <TextBlock>
+                                <Entity>Pattee</Entity> enfatiza la complementariedad de los modos de descripción lingüístico y dinámico, pero también sugiere que la información simbólica emerge de y actúa como una restricción sobre la dinámica. Esta idea es importante para el dinamicismo corporizado y el enfoque enactivo. Volvamos al ejemplo de la célula. En general, los tripletes de nucleótidos son capaces de especificar predeciblemente un aminoácido si y solo si están incrustados adecuadamente en el metabolismo de la célula, es decir, en una multitud de regulaciones enzimáticas en una compleja red bioquímica. Esta red tiene un carácter de huevo y gallina en varios niveles. Primero, las proteínas pueden surgir solo de un proceso de "lectura" de ADN/ARN, pero este proceso no puede ocurrir sin proteínas. Segundo, los procesos de "escritura" y "lectura" de ADN deben estar situados adecuadamente dentro del entorno intracelular, pero este entorno es un resultado de esos mismos procesos. Finalmente, toda la célula es un sistema autopoyético, es decir, un sistema autónomo definido por una red operacionalmente cerrada de procesos moleculares que simultáneamente produce y realiza la célula concretamente en el espacio físico de sus componentes bioquímicos.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Ahora, cuando empleamos el modo lingüístico de descripción y afirmamos que el ADN/ARN "codifica" proteínas, restringimos nuestro enfoque a una secuencia particular de esta causalidad circular general. Abstraemos de los muchos pasos causales intervinientes y necesarios en el proceso dinámico real de síntesis de proteínas, y ponemos entre paréntesis la participación esencial de muchos otros elementos moleculares (como las enzimas ARN polimerasa y las proteínas reguladoras positivas y negativas). "Reducimos así nuestra descripción a un esqueleto que asocia una cierta parte de un ácido nucleico con un cierto segmento de proteína. A continuación observamos que este tipo de descripción simplificada de un proceso dinámico real es útil para seguir las secuencias de pasos reproductivos de una generación a otra, en la medida en que el proceso dinámico se mantiene estable (es decir, los tipos de dinámica responsables de la unión, plegamiento, y así sucesivamente)... Una explicación simbólica, como la descripción de algunos componentes celulares como genes, traiciona la emergencia de ciertos patrones coherentes de comportamiento a los que elegimos prestar atención" (<Entity>Varela</Entity> 1979, p. 75). Es la emergencia de tales patrones dinámicos coherentes lo que garantiza el nivel de descripción informacional simbólico: "Un objeto o evento es un símbolo solo si es un token para una cadena nómica abreviada que ocurre dentro de los límites de la clausura organizacional del sistema. En otras palabras, siempre que la clausura del sistema determina ciertas regularidades frente a interacciones y perturbaciones internas o externas, tales regularidades pueden abreviarse como un símbolo, generalmente el elemento inicial o terminal en la cadena nómica" (<Entity>Varela</Entity> 1979, pp. 79-80). Así, cuando hablamos de ADN "codificando" proteínas no nos referimos a un tipo especial de relación causal simbólica o un tipo especial de molécula intrínsecamente informacional que se eleva por encima de la refriega dinámica. Más bien, estamos abreviando un patrón dinámico largo pero notablemente estable de eventos bioquímicos. Es precisamente la estabilidad y previsibilidad de todo el patrón lo que nos permite telescopiarlo en un modo lingüístico de descripción tratando los tripletes de nucleótidos como si, en efecto, "estuvieran por" aminoácidos.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Este modo de descripción es inobjetable (y tiene valor heurístico) siempre que se recuerde que el código genético no es más que una regla de especificidad causal basada en el hecho de que las células usan ácidos nucleicos como plantillas para la estructura primaria (secuencia de aminoácidos) de las proteínas (<Entity>Godfrey-Smith</Entity> 2000b; <Entity>Thompson</Entity> 1997). Sin embargo, es inaceptable decir que el ADN contiene la información para el diseño fenotípico, porque esta afirmación atribuye un estatus semántico-informacional intrínseco a un tipo particular de componente y, por lo tanto, despoja a este componente de su incrustación necesaria en la dinámica de la red autopoyética. Es esta red en su totalidad la que especifica las características fenotípicas de una célula, no uno de sus componentes, y es esta red en su totalidad la que sirve como precondición y base causal de la replicación del ADN ("escritura") y la síntesis de proteínas ("lectura") (ver <Entity>Moss</Entity> 1992). La información no es intrínseca a la matriz lineal estática de la secuencia de ADN, sino que se constituye dinámicamente en y por la célula como una entidad tridimensional organizada autopoyéticamente: por la célula como cuerpo. En resumen, el modo lingüístico es emergente del modo dinámico, y la información existe solo como dinámicamente encarnada.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Habiendo hecho estos puntos, volvemos a la diferencia entre la construcción de significado autónoma y el procesamiento de información heterónomo. La información se forma dentro de un contexto en lugar de imponerse desde fuera. <Entity>Gregory Bateson</Entity> solía decir, "la información es una diferencia que hace una diferencia" (<Entity>Bateson</Entity> 1972, p. 315). Podríamos elaborar esta idea diciendo que la información, concebida dinámicamente, es la creación de una diferencia que hace una diferencia para alguien en algún lugar (ver <Entity>Oyama</Entity> 2000b). La información aquí se entiende en el sentido de informare, formar dentro (<Entity>Varela</Entity> 1979, p. 266). Un sistema autónomo se informa en virtud de la formación de significado en la que participa, y esta formación de significado depende de la forma en que su dinámica endógena especifica cosas que hacen una diferencia para él (<Entity>Kelso</Entity> y <Entity>Kay</Entity> 1987; <Entity>Turvey</Entity> y <Entity>Shaw</Entity> 1999).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Para otro ejemplo podemos volver al estudio de coordinación de dedos de <Entity>Haken</Entity>, <Entity>Kelso</Entity> y <Entity>Bunz</Entity> (1985). Allí, el cambio de en fase a anti-fase ocurre sin ningún comando de un programa motor; más bien, ocurre espontáneamente como una propiedad emergente de la dinámica de auto-organización del sistema. La variable colectiva o parámetro de orden de fase relativa es informacional en el sentido de que especifica patrones o relaciones coherentes que informan al sistema y que pueden realizarse física o fisiológicamente de múltiples maneras. Como explica <Entity>Kelso</Entity>:
+                            </TextBlock>
+
+                            <TextBlock>
+                                En lugar de tratar la dinámica como física ordinaria utilizando cantidades biofísicas estándar como masa, longitud, momento y energía, nuestra dinámica de coordinación o patrón es informacional desde el principio. El parámetro de orden, (fase relativa), captura las relaciones coherentes entre diferentes tipos de cosas. A diferencia de la física ordinaria, la dinámica de patrones es dependiente del contexto: la dinámica es válida para una función o tarea biológica dada, pero en gran medida independiente de cómo se implementa fisiológicamente esta función. Así, si aceptamos que el mismo parámetro de orden, captura relaciones espaciotemporales coherentes entre diferentes tipos de cosas, y las mismas ecuaciones de movimiento describen cómo se forman, coexisten y cambian diferentes patrones de coordinación, parece justificado concluir que los parámetros de orden en sistemas biológicos son variables informacionales funcionalmente específicas y sensibles al contexto; y que la dinámica de coordinación es más general que las estructuras particulares que las instancian.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Nótese, la dinámica de coordinación no está atrapada (como la física ordinaria) por su sintaxis (puramente formal). Los parámetros de orden son cantidades semánticas, relacionales que son intrínsecamente significativas para el funcionamiento del sistema. ¿Qué podría ser más significativo para un organismo que la información que especifica las relaciones coordinativas entre sus partes o entre él mismo y el entorno? Esta visión pone patas arriba la interacción mente-materia, información-dinámica. En lugar de tratar la dinámica como física ordinaria y la información como un código simbólico actuando de la manera en que un programa se relaciona con una computadora, la dinámica se proyecta en términos que son semánticamente significativos. (<Entity>Kelso</Entity> 1995, p. 145)
+                            </TextBlock>
+
+                            <TextBlock>
+                                Permítanme conectar estos puntos con la perspectiva de autonomía. Como hemos visto, desde la perspectiva de autonomía un agente cognitivo natural —un organismo, animal o persona— no procesa información en un sentido independiente del contexto. Más bien, trae consigo o enactúa significado en acoplamiento estructural con su entorno. Los significados de los estados de un sistema autónomo se forman dentro (informare) del contexto de la dinámica del sistema y el acoplamiento estructural. Por lo tanto, si deseamos continuar usando el término representación, entonces debemos ser conscientes de qué sentido puede tener este término para el enfoque enactivo. Los "vehículos" representacionales (las estructuras o procesos que encarnan significado) son patrones de actividad temporalmente extendidos que pueden cruzar los límites cerebro-cuerpo-mundo, y los significados o contenidos que encarnan son traídos o enactuados en el contexto del acoplamiento estructural del sistema con su entorno.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Otra forma de expresar este punto sería decir que los sistemas autónomos no operan sobre la base de representaciones internas en el sentido subjetivista/objetivista. En lugar de representar internamente un mundo externo en algún sentido cartesiano, enactúan un entorno inseparable de su propia estructura y acciones (<Entity>Varela</Entity>, <Entity>Thompson</Entity> y <Entity>Rosch</Entity> 1991, p. 140). En lenguaje fenomenológico, constituyen (revelan) un mundo que lleva el sello de su propia estructura. Como lo expresa <Entity>Merleau-Ponty</Entity>, citando a <Entity>Goldstein</Entity>, en el pasaje citado anteriormente: "el entorno emerge del mundo a través del ser o actualización del organismo". En el caso de la vida animal, el entorno emerge como un mundo sensorimotor a través de la actualización del organismo como un ser sensorimotor. El organismo es un ser sensorimotor gracias a su sistema nervioso. El sistema nervioso conecta procesos sensoriales y motores anatómicamente distantes, subsumiéndolos en redes sensoriomotoras operacionalmente cerradas. A través de sus patrones coherentes de actividad a gran escala, estas redes establecen una identidad sensoriomotora para el animal: un yo sensorimotor. En el mismo golpe, especifican lo que cuenta como "otro", a saber, el mundo sensorimotor del animal.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Esta idea de un mundo sensorimotor —un mundo orientado al cuerpo de percepción y acción— no es otra que la noción original de <Entity>von Uexküll</Entity> de un <Concept>Umwelt</Concept>. Un Umwelt es el entorno de un animal en el sentido de su mundo vivido, fenomenal, el mundo tal como se presenta a ese animal gracias a su repertorio sensorimotor: "todo lo que un sujeto percibe se convierte en su mundo perceptual y todo lo que hace, su mundo efector. Los mundos perceptual y efector juntos forman una unidad cerrada, el Umwelt" (<Entity>von Uexküll</Entity> 1957, p. 6). La lógica de esta co-emergencia se representa en la Figura 3.3.
+                            </TextBlock>
+
+                            <Figure description="Figura 3.3: Co-emergencia de la mismidad autónoma y el mundo." />
+
+                            <TextBlock>
+                                En esta figura, la información es la relación intencional del sistema con su medio, establecida sobre la base de la autonomía del sistema (clausura organizacional-operacional). Una de las principales tareas científicas para el dinamicismo corporizado y el enfoque enactivo es explicar cómo la dinámica de patrones del cerebro, el cuerpo y el comportamiento son informacionales en este sentido (ver <Entity>Kelso</Entity> 1995, p. 288).
+                            </TextBlock>
+
+                            <SubSectionHeader title="Procesos Emergentes" />
+
+                            <TextBlock>
+                                Otra idea clave del enfoque enactivo que necesita elaboración aquí es la idea de <Concept>emergencia</Concept> o procesos emergentes. En la teoría de sistemas complejos, un proceso emergente es aquel que resulta de la auto-organización colectiva. Un proceso emergente pertenece a un conjunto o red de elementos, surge espontáneamente o se auto-organiza a partir de las interacciones localmente definidas y globalmente restringidas o controladas de esos elementos, y no pertenece a ningún elemento individual. El enfoque enactivo se basa en esta noción de emergencia pero la reformula como "co-emergencia dinámica", en la que parte y todo co-emergen y se especifican mutuamente.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Permítanme presentar primero la emergencia en el sentido de sistemas complejos. Un ejemplo estándar de este tipo de emergencia es la formación de "células de Bénard", un patrón geométrico dinámico de flujo de fluido, en líquidos o gases sujetos a un gradiente de temperatura impuesto (ver <Entity>Kelso</Entity> 1995, pp. 7-8; <Entity>Solé</Entity> y <Entity>Goodwin</Entity> 2000, pp. 13-17). La emergencia de células de Bénard se puede ver en el comportamiento del aceite de cocina en una sartén. Aplicar calor a la sartén aumenta la diferencia de temperatura entre la capa más fría de aceite en la parte superior y la capa más caliente de aceite en la parte inferior. Cuando la diferencia de temperatura entre la parte superior e inferior es pequeña, no hay movimiento a gran escala o global del aceite, pero finalmente, cuando la diferencia se vuelve lo suficientemente grande, ocurre inestabilidad y el líquido comienza a rodar en una moda ordenada conocida como rollos de convección. En otras palabras, el sistema experimenta una transición de estado, descrita matemáticamente como una bifurcación, a medida que emergen el nuevo comportamiento de auto-organización y las estructuras espaciales de los rollos de convección. A medida que el gradiente de temperatura aumenta aún más, los rollos de convección experimentan otra transición o bifurcación y dan lugar a una matriz de patrones de flujo hexagonales de arriba a abajo llamados células de Bénard.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Este ejemplo ilustra varios puntos básicos sobre la auto-organización colectiva y la emergencia dinámica. El gradiente de temperatura es el parámetro de control para las transiciones o bifurcaciones. Lleva al sistema a través de una variedad de estados posibles pero no dicta, prescribe o codifica los patrones de flujo emergentes. Tampoco hay ningún homúnculo o programa dentro del sistema determinando esos patrones. En palabras de <Entity>Kelso</Entity>: "Tal formación espontánea de patrones es exactamente lo que queremos decir con auto-organización: el sistema se organiza a sí mismo, pero no hay un 'yo', ningún agente dentro del sistema haciendo la organización" (<Entity>Kelso</Entity> 1995, p. 8). El parámetro de orden del sistema es la amplitud de los rollos de convección. Es creado por las interacciones de las moléculas de fluido, pero al mismo tiempo gobierna o restringe su comportamiento reduciendo drásticamente el inmenso número de grados de libertad de movimiento que las moléculas individuales tendrían de otro modo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La emergencia a través de la auto-organización colectiva tiene así dos aspectos. Uno es la determinación de local a global, como resultado de lo cual emergen estructuras y procesos de macronivel novedosos. El otro es la determinación de global a local mediante la cual las estructuras y procesos globales restringen las interacciones locales. Estas influencias de global a local no toman la misma forma que las de local a global: típicamente se manifiestan a través de cambios en los parámetros de control (el gradiente de temperatura en el ejemplo anterior) y condiciones de contorno en lugar de a través de cambios en los elementos individuales (las moléculas de fluido). Comportamientos globales coherentes y ordenados, que son descritos por variables colectivas o parámetros de orden, restringen o gobiernan el comportamiento de los componentes individuales, arrastrándolos para que ya no tengan las mismas alternativas de comportamiento abiertas para ellos como tendrían si no estuvieran interdependientemente tejidos en el patrón global coherente y ordenado. Al mismo tiempo, el comportamiento de los componentes genera y sostiene el orden global. Esta determinación de dos lados o doble se conoce como <Concept>causalidad circular</Concept> (<Entity>Haken</Entity> 1983).
+                            </TextBlock>
+
+                            <TextBlock>
+                                La emergencia y la causalidad circular son crucialmente importantes en el contexto de la neurodinámica. La neurociencia indica que la cognición, la emoción y la acción requieren la integración transitoria de numerosas regiones y áreas cerebrales ampliamente distribuidas y constantemente interactuantes. Una pregunta pendiente para la neurociencia hoy es determinar los mecanismos de esta integración a gran escala. Desde una perspectiva de sistemas dinámicos, la integración a gran escala corresponde a la formación de enlaces dinámicos transitorios entre poblaciones neurales generalizadas (<Entity>Varela</Entity> et al. 2001). Por un lado, los patrones dinámicos a gran escala emergen de actividades neuronales locales distribuidas. Por otro lado, los patrones a gran escala restringen estas actividades locales. Según varios teóricos, la inestabilidad dinámica o metaestabilidad es crucial para la integración a gran escala porque permite un repertorio flexible de estados globales sin que el sistema quede atrapado en ningún estado particular.<InteractiveFootnote id="10" setNote={setActiveNote} />
+                            </TextBlock>
+
+                            <TextBlock>
+                                La emergencia y la causalidad circular también pueden ilustrarse mediante estudios neurodinámicos de la epilepsia (<Entity>Thompson</Entity> y <Entity>Varela</Entity> 2001). Las crisis epilépticas focales se originan en partes específicas de la corteza; pueden permanecer confinadas a esas áreas o extenderse a otras partes del cerebro. Sus manifestaciones clínicas dependen del área cortical en la que se originan, cuán ampliamente se extienden y cuánto tiempo duran. La actividad epiléptica local puede modificar las competencias mentales del sujeto y dar lugar a varios tipos de experiencias mentales, como ilusiones visuales o auditivas y alucinaciones, y fenómenos de memoria que implican el recuerdo real vívido de un evento pasado o ilusiones de déjà-vu. Estos fenómenos mentales también pueden ser inducidos por estimulación eléctrica directa del lóbulo temporal en pacientes epilépticos, como describió clásicamente <Entity>Wilder Penfield</Entity> (1938). Así, la actividad neuronal local al nivel de una zona epileptogénica puede producir efectos a gran escala, influyendo finalmente en el nivel global de un momento de conciencia. Este es un caso de emergencia de local a global en el cerebro.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La influencia inversa —de global a local— aunque menos documentada y más controvertida, parece ser también el caso. La idea básica es que la actividad cognitiva, que refleja la integración a gran escala en el cerebro, puede afectar la actividad local. Por ejemplo, el sujeto puede afectar voluntariamente la actividad epiléptica local, como indican numerosos informes de pacientes y algunos casos reportados clínicamente (ver <Entity>Le Van Quyen</Entity> y <Entity>Petitmengin</Entity> 2002). Ya en 1954, <Entity>Penfield</Entity> y <Entity>Jasper</Entity> describieron el bloqueo de una convulsión parietal mediante el inicio de un cálculo matemático complejo (<Entity>Penfield</Entity> y <Entity>Jasper</Entity> 1954), y recientemente observaciones más extensas han confirmado tales influencias cognitivas (<Entity>Schmid-Schonbein</Entity> 1998). Podemos suponer que tal intervención es posible porque las zonas epileptogénicas están incrustadas en una red compleja de otras regiones cerebrales que participan activamente en la integración a gran escala que subyace a los actos cognitivos. También parece razonable suponer que estos patrones globales de integración pueden influir en eventos locales, incluyendo eventualmente las zonas epileptogénicas locales, cuya actividad puede tomarse así como una indicación de la influencia global.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El trabajo experimental de <Entity>Michel Le Van Quyen</Entity>, <Entity>Francisco Varela</Entity> y sus colegas proporciona evidencia de tal influencia de global a local en el caso de un paciente con una descarga epiléptica occipitotemporal inusualmente focal y estable. Este paciente no mostró evidencia de deterioro cognitivo y estuvo dispuesto a participar en tareas cognitivas simples de discriminación visual y auditiva. Para la tarea visual, se le pidió que presionara un botón cuando apareciera el estímulo objetivo, pero no cuando se mostraran los otros dos estímulos no objetivo. Se analizaron los intervalos temporales entre descargas sucesivas del patrón de espiga epiléptica. La inspección dinámica (en forma de un espacio de fases conocido como mapa de primer retorno) mostró que la distribución de los intervalos seguía un tipo particular de patrón dinámico inestable. Las espigas mostraron una actividad periódica distinta por un corto tiempo antes de divergir a lo largo de otra dirección inestable, un tipo de patrón dinámico conocido como una órbita periódica inestable. Además, esta actividad covarió con el estado mental específico del paciente durante la tarea perceptual y pareció ser modulada por la actividad de frecuencia gamma (30-70 Hertz) asociada con sus estados cognitivos. (La actividad de frecuencia gamma se informa ampliamente que está asociada con una variedad de procesos cognitivos, incluyendo atención, percepción y memoria). Estos hallazgos sugieren que el acto de percepción del paciente contribuyó de una manera altamente específica a "tirar" de las actividades epilépticas hacia órbitas periódicas inestables particulares. Tal influencia de global a local movilizada por la actividad cognitiva podría abrir posibilidades para estrategias cognitivas de control de convulsiones epilépticas (<Entity>Le Van Quyen</Entity> y <Entity>Petitmengin</Entity> 2002).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Permítanme concluir este capítulo vinculando estas ideas sobre causalidad circular y emergencia de nuevo con la autonomía. Una perspectiva de autonomía trae consigo una cierta forma de pensar sobre la emergencia. Lo que emerge en el caso de un sistema autónomo como una célula es una entidad auto-productora que también trae consigo su propio dominio de interacciones (ver Figura 3.3). Este tipo de emergencia da un paso importante más allá de la formación de patrones dinámicos en sistemas disipativos físicos:
+                            </TextBlock>
+
+                            <TextBlock>
+                                [A]unque el fenómeno de la auto-organización siempre implica la generación y mantenimiento de un patrón o correlación global (o de alto nivel) que restringe la dinámica (de bajo nivel) de los componentes del sistema, en estructuras disipativas estándar esto ocurre solo siempre que el sistema se ponga bajo las condiciones de contorno apropiadas. Si esas condiciones (controladas externamente) se cambian (en particular, si la entrada de materia o energía está fuera de un cierto rango), la dinámica de auto-organización desaparece. Por lo tanto, hay una diferencia importante entre los ejemplos típicos de estructuras disipativas "espontáneas" y los sistemas autónomos reales: en el primer caso, el flujo de energía y/o materia que mantiene al sistema lejos del equilibrio no está controlado por la organización del sistema (las condiciones de contorno clave se establecen externamente, ya sea por el científico en el laboratorio o por algún fenómeno natural que no es causalmente dependiente del auto-organizado), mientras que en el segundo caso, las restricciones que realmente guían los flujos de energía/materia desde el entorno a través de los procesos constitutivos del sistema se crean y mantienen endógenamente. (<Entity>Ruiz-Mirazo</Entity> y <Entity>Moreno</Entity> 2004, p. 238)
+                            </TextBlock>
+
+                            <TextBlock>
+                                Un sistema autónomo, como una célula u organismo multicelular, no es meramente auto-mantenido, como la llama de una vela; también es auto-productor y, por lo tanto, produce sus propios procesos de auto-mantenimiento, incluido un límite topológico activo que demarca el interior del exterior y regula activamente la interacción con el entorno. En la forma de autonomía de una sola célula, autopoyética, una red metabólica delimitada por una membrana produce los metabolitos que constituyen tanto la red misma como la membrana que permite la dinámica delimitada de la red. Otros sistemas autónomos tienen diferentes tipos de procesos de auto-construcción y topologías de red. Ya sea que el sistema sea una célula, red inmune, sistema nervioso, colonia de insectos o sociedad animal, lo que emerge es una unidad con su propia identidad auto-productora y dominio de interacciones o medio, ya sea celular (autopoyesis), somático (redes inmunes), sensoriomotor y neurocognitivo (el sistema nervioso), o social (sociedades animales).
+                            </TextBlock>
+
+                            <TextBlock>
+                                La <Concept>co-emergencia dinámica</Concept> describe mejor el tipo de emergencia que vemos en la autonomía. En un sistema autónomo, el todo no solo surge de la (clausura organizacional de) las partes, sino que las partes también surgen del todo.<InteractiveFootnote id="12" setNote={setActiveNote} /> El todo está constituido por las relaciones de las partes, y las partes están constituidas por las relaciones que guardan entre sí en el todo. Por lo tanto, las partes no existen de antemano, antes del todo, como entidades independientes que retienen su identidad en el todo. Más bien, parte y todo co-emergen y se especifican mutuamente.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La vida biológica, vista desde la perspectiva de la autopoyesis, proporciona un caso paradigmático de co-emergencia dinámica. Un todo autopoyético mínimo emerge de la interdependencia dinámica de un límite de membrana y una red de reacción química interna. La membrana y la red de reacción (así como las moléculas que las componen) no preexisten como entidades independientes. Más bien, co-emergen a través de su relación metabólica, integradora entre sí. Producen y constituyen el todo, mientras que el todo las produce y las subordina a él. Volveremos a este caso paradigmático de co-emergencia dinámica en la Parte II.
+                            </TextBlock>
+                        </section>
+                        
+                    </main>
+
+                    <TooltipModal activeNote={activeNote} onClose={() => setActiveNote(null)} />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
