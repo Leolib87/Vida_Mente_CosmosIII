@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Mente en la Vida | Evan Thompson</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            950: '#020617', // Deep Dark Background
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #020617;
+            color: #cbd5e1;
+            overflow-x: hidden;
+        }
+        /* Hide Scrollbar but keep functionality */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .text-justify {
+            text-align: justify;
+        }
+        .hyphens-auto {
+            hyphens: auto;
+            -webkit-hyphens: auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, AnimatePresence, useScroll, useSpring } = window.Motion;
+        
+        const BOOK_DATA = {
+            title: "La Mente en la Vida",
+            subtitle: "Biología, Fenomenología y las Ciencias de la Mente",
+            author: "Evan Thompson",
+            toc: [
+                { title: "Prefacio", page: "ix", id: "preface", url: "#" },
+                { title: "Agradecimientos", page: "xi", id: "acknowledgments", url: "#" },
+                { separator: "PARTE UNO: El Enfoque Enactivo" },
+                { title: "1. Ciencia Cognitiva y Experiencia Humana", page: "3", url: "#" },
+                { title: "2. La Conexión Fenomenológica", page: "16", url: "#" },
+                { title: "3. Autonomía y Emergencia", page: "37", url: "#" },
+                { title: "4. La Estructura del Comportamiento", page: "66", url: "#chapter-4" },
+                { separator: "PARTE DOS: La Vida en la Mente" },
+                { title: "5. Autopoiesis: La Organización de lo Vivo", page: "91", url: "#" },
+                { title: "6. Vida y Mente: La Filosofía del Organismo", page: "128", url: "#" },
+                { title: "7. Haciendo Camino al Andar: Desarrollo y Evolución", page: "166", url: "#" },
+                { separator: "PARTE TRES: Conciencia en la Vida" },
+                { title: "8. La Vida más allá de la Brecha", page: "219", url: "#" },
+                { title: "9. Subjetividad Sensoriomotora", page: "243", url: "#" },
+                { title: "10. Mira de Nuevo: Conciencia e Imaginería Mental", page: "267", url: "#" },
+                { title: "11. Temporalidad y el Presente Vivo", page: "312", url: "#" },
+                { title: "12. Dinamismo Primordial: Emoción y Valencia", page: "360", url: "#" },
+                { title: "13. Empatía y Enculturación", page: "382", url: "#" },
+                { separator: "APÉNDICES" },
+                { title: "A: Husserl y la Ciencia Cognitiva", page: "413", url: "#" },
+                { title: "B: Emergencia y el Problema de la Causación Descendente", page: "417", url: "#" },
+                { title: "Notas", page: "443", url: "#" },
+                { title: "Referencias", page: "483", url: "#" },
+                { title: "Índice de Conceptos", page: "527", url: "#" }
+            ]
+        };
+
+        // --- Icons ---
+        const MenuIcon = () => <i data-lucide="menu" className="w-6 h-6"></i>;
+        const XIcon = () => <i data-lucide="x" className="w-6 h-6"></i>;
+        const ImageIcon = () => <i data-lucide="image" className="w-8 h-8 text-slate-500"></i>;
+
+        // --- Components ---
+
+        const ScrollProgress = () => {
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+
+            return (
+                <motion.div
+                    className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50"
+                    style={{ scaleX }}
+                />
+            );
+        };
+
+        const TooltipModal = ({ activeNote, onClose }) => {
+            if (!activeNote) return null;
+            return (
+                <AnimatePresence>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20, x: "-50%" }}
+                        animate={{ opacity: 1, y: 0, x: "-50%" }}
+                        exit={{ opacity: 0, y: 20, x: "-50%" }}
+                        className="fixed bottom-10 left-1/2 w-[90vw] max-w-2xl bg-slate-900/95 backdrop-blur-md border border-slate-800 p-6 rounded-lg shadow-2xl z-50 text-slate-300 text-sm leading-relaxed text-justify"
+                    >
+                        <div className="flex justify-between items-start mb-2">
+                            <span className="text-cyan-400 font-bold text-xs uppercase tracking-widest">Nota al Pie</span>
+                            <button onClick={onClose} className="hover:text-white"><XIcon /></button>
+                        </div>
+                        {activeNote}
+                    </motion.div>
+                </AnimatePresence>
+            );
+        };
+
+        const Navigation = ({ onToggleMenu }) => (
+            <motion.header 
+                initial={{ y: -100 }}
+                animate={{ y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="fixed top-0 w-full flex justify-between items-center px-6 py-4 z-40 bg-slate-950/80 backdrop-blur-sm border-b border-white/5"
+            >
+                <div className="flex flex-col">
+                    <span className="text-slate-100 font-serif font-bold text-lg tracking-wide">{BOOK_DATA.title}</span>
+                    <span className="text-cyan-400 text-xs uppercase tracking-widest">{BOOK_DATA.author}</span>
+                </div>
+                <button 
+                    onClick={onToggleMenu}
+                    className="flex items-center gap-2 text-slate-300 hover:text-cyan-400 transition-colors uppercase text-xs tracking-widest font-semibold group"
+                >
+                    <span>Índice</span>
+                    <span className="group-hover:translate-x-1 transition-transform"><MenuIcon /></span>
+                </button>
+            </motion.header>
+        );
+
+        const Sidebar = ({ isOpen, onClose }) => (
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={onClose}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        />
+                        <motion.div
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed right-0 top-0 h-full w-full max-w-md bg-slate-900 border-l border-slate-800 z-50 overflow-y-auto p-8 shadow-2xl"
+                        >
+                            <div className="flex justify-between items-center mb-10">
+                                <h2 className="text-2xl font-serif text-amber-500">Contenido</h2>
+                                <button onClick={onClose} className="text-slate-400 hover:text-white"><XIcon /></button>
+                            </div>
+                            
+                            <nav className="space-y-6">
+                                {BOOK_DATA.toc.map((item, idx) => {
+                                    if (item.separator) {
+                                        return (
+                                            <div key={idx} className="pt-6 border-t border-slate-800">
+                                                <h3 className="text-xs uppercase tracking-[0.2em] text-cyan-400 mb-4">{item.separator}</h3>
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <a 
+                                            key={idx} 
+                                            href={item.url} 
+                                            onClick={onClose}
+                                            className="group flex justify-between items-baseline py-2 hover:translate-x-2 transition-transform cursor-pointer"
+                                        >
+                                            <span className="text-slate-300 font-serif text-lg group-hover:text-white transition-colors">{item.title}</span>
+                                            <span className="text-slate-600 font-mono text-sm border-b border-dotted border-slate-700 flex-grow mx-4"></span>
+                                            <span className="text-amber-500 font-mono text-sm">{item.page}</span>
+                                        </a>
+                                    );
+                                })}
+                            </nav>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+        );
+
+        const SectionHeader = ({ title, chapterNumber }) => (
+            <div className="mb-16 border-l-2 border-amber-500 pl-6">
+                <span className="block text-cyan-400 text-sm font-bold uppercase tracking-widest mb-2">Capítulo {chapterNumber}</span>
+                <h2 className="text-4xl md:text-5xl font-serif text-slate-100">{title}</h2>
+            </div>
+        );
+
+        const SubSectionHeader = ({ title }) => (
+            <h3 className="text-2xl font-serif text-slate-200 mt-16 mb-8 border-b border-slate-800 pb-2 inline-block">
+                {title}
+            </h3>
+        );
+
+        const TextBlock = ({ children }) => (
+            <p className="text-slate-300 text-lg md:text-xl leading-8 md:leading-9 mb-8 text-justify hyphens-auto font-sans font-light">
+                {children}
+            </p>
+        );
+
+        const Concept = ({ children }) => <span className="text-amber-500 font-medium">{children}</span>;
+        const Entity = ({ children }) => <span className="text-cyan-400">{children}</span>;
+        const BookTitle = ({ children }) => <span className="text-white italic">{children}</span>;
+
+        const InteractiveFootnote = ({ id, content, setNote }) => (
+            <sup 
+                className="text-cyan-400 cursor-pointer hover:text-white transition-colors font-bold ml-1"
+                onClick={() => setNote(content || "Contenido de la nota no disponible en este extracto.")}
+            >
+                [{id}]
+            </sup>
+        );
+
+        const App = () => {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [activeNote, setActiveNote] = useState(null);
+
+            useEffect(() => {
+                lucide.createIcons();
+            }, [isMenuOpen]);
+
+            return (
+                <div className="antialiased selection:bg-cyan-900 selection:text-white pb-32">
+                    <ScrollProgress />
+                    <Navigation onToggleMenu={() => setIsMenuOpen(true)} />
+                    <Sidebar isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+                    
+                    <main className="w-full px-6 md:px-12 pt-24">
+                        
+                        <section id="chapter-4">
+                            <SectionHeader chapterNumber="4" title="La Estructura del Comportamiento" />
+                            
+                            <TextBlock>
+                                <span className="float-left text-6xl text-amber-500 font-serif mr-4 mt-[-10px] leading-[0.8]">L</span>
+                                A NOCIÓN DE EMERGENCIA presentada en el capítulo anterior puede vincularse con ideas desarrolladas por <Entity>Merleau-Ponty</Entity> en su primer y subestimado libro, <BookTitle>The Structure of Behavior</BookTitle>, publicado en 1942. Lo que estoy llamando <Concept>co-emergencia dinámica</Concept> es el tipo de emergencia que mejor describe lo que <Entity>Merleau-Ponty</Entity> entiende por <Concept>forma</Concept>, a saber, un todo que no puede ser dislocado de sus componentes pero que tampoco puede reducirse a ellos. <Entity>Merleau-Ponty</Entity> utiliza la noción de forma para caracterizar lo que él llama los tres órdenes de la materia, la vida y la mente. Afirma que la materia, la vida y la mente "participan desigualmente en la naturaleza de la forma", que "representan diferentes grados de integración y... constituyen una jerarquía en la que la individualidad se logra progresivamente" (1963, p. 133). Revisar estas ideas y conectarlas con desarrollos teóricos y empíricos más recientes ayudará a sentar las bases para la estrategia enactiva de abordar la brecha explicativa regresando a las raíces de la mente en la vida y luego trabajando hacia la subjetividad y la conciencia.
+                            </TextBlock>
+
+                            <SubSectionHeader title="Forma y Causalidad Circular" />
+
+                            <TextBlock>
+                                El objetivo de <Entity>Merleau-Ponty</Entity> en <BookTitle>The Structure of Behavior</BookTitle> es "comprender las relaciones de la conciencia y la naturaleza: orgánica, psicológica o incluso social. Por naturaleza entendemos aquí una multiplicidad de eventos externos entre sí y unidos por relaciones de causalidad" (1963, p. 3). La preocupación de <Entity>Merleau-Ponty</Entity> es por lo que hoy llamaríamos la brecha explicativa entre la conciencia y la naturaleza. Su estrategia es introducir un tercer término, algo que no encaja en la dicotomía (cartesiana) conciencia/naturaleza en la filosofía y la ciencia modernas, algo que nos obligará a revisar cómo pensamos sobre la materia, la vida y la mente. Este tercer término es <Concept>comportamiento</Concept>: "tomado en sí mismo, es neutral con respecto a las distinciones clásicas entre lo 'mental' y lo 'fisiológico' y, por lo tanto, puede darnos la oportunidad de definirlos de nuevo" (1963, p. 4). Una investigación exhaustiva del comportamiento revelará que necesitamos concebir los procesos naturales (materiales, vivos y mentales) como unidades o totalidades estructuradas en lugar de simplemente como multiplicidades de eventos externos entre sí, unidos por relaciones causales eficientes. La palabra "comportamiento", por supuesto, no es de <Entity>Merleau-Ponty</Entity>; él usa el francés *comportement*, que transmite mejor su pensamiento en el contexto actual. Las connotaciones conductistas de "comportamiento" son fuertes en la filosofía y psicología anglófonas, y <Entity>Merleau-Ponty</Entity> no es conductista. Por el contrario, <BookTitle>The Structure of Behavior</BookTitle> (*La Structure du Comportement*) incluye una extensa crítica y rechazo del conductismo. Él declara la razón de esta crítica al principio: "Al pasar por el conductismo... se gana al menos en poder introducir la conciencia, no como realidad psicológica o como causa, sino como estructura" (1963, p. 5).
+                            </TextBlock>
+
+                            <TextBlock>
+                                "Estructura" en el uso de <Entity>Merleau-Ponty</Entity> es sinónimo de "<Concept>forma</Concept>" (un concepto que toma de la psicología de la Gestalt, aunque piensa que la psicología de la Gestalt no lo entiende adecuadamente). Afirma, "hay forma siempre que las propiedades de un sistema se modifican por cada cambio provocado en una sola de sus partes y, por el contrario, se conservan cuando todas cambian manteniendo la misma relación entre sí" (1963, p. 47). Según esta concepción, "[l]a forma... posee propiedades originales con respecto a las de las partes que pueden desprenderse de ella. Cada momento en ella está determinado por la agrupación de los otros momentos, y su valor respectivo depende de un estado de equilibrio total cuya fórmula es un carácter intrínseco de la 'forma'" (1963, p. 91). Así, la clausura organizacional, en la que los procesos dependen recursivamente unos de otros para su propia generación y realización, y constituyen un sistema como una unidad, es un tipo de forma en el sentido de <Entity>Merleau-Ponty</Entity>.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Al analizar ciertas teorías psicológicas y fisiológicas de su tiempo, <Entity>Merleau-Ponty</Entity> argumenta que el comportamiento no puede descomponerse en partes entendidas como elementos separados, ya sean estímulo y respuesta condicionada según el conductismo o circuitos nerviosos aislables según la neurofisiología. Él llama a tal explicación descomposicional "análisis realista" o "pensamiento mecánico"; trata los todos como exhaustivamente analizables en partes relacionadas externamente entre sí. Ni los procesos vitales (la provincia de la biología) ni los procesos mentales (la provincia de la psicología) pueden entenderse a través del análisis realista porque (i) estos procesos son estructuras de comportamiento no descomponibles o formas de comportamiento; (ii) la forma o estructura está constituida por la determinación recíproca de todo y parte; y (iii) tal determinación recíproca es reconocible solo para el "pensamiento dialéctico", pero no para el pensamiento mecánico.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La afirmación de que el comportamiento tiene que entenderse dialécticamente nos lleva a la concepción de <Entity>Merleau-Ponty</Entity> de las relaciones dialécticas. Como queda claro por la forma en que <Entity>Merleau-Ponty</Entity> opone las relaciones mecánicas y dialécticas, parte de lo que es ser mecánico es ser lineal, y parte de lo que es ser dialéctico es ser no lineal. Al principio del libro escribe: "las relaciones entre el organismo y su medio no son relaciones de causalidad lineal sino de <Concept>causalidad circular</Concept>" (1963, p. 15). Más tarde da la siguiente definición de relaciones mecánicas:
+                            </TextBlock>
+
+                            <TextBlock>
+                                Una acción mecánica, ya sea que la palabra se tome en un sentido restringido o más amplio, es aquella en la que la causa y el efecto son descomponibles en elementos reales que tienen una correspondencia uno a uno. En acciones elementales, la dependencia es unidireccional; la causa es la condición necesaria y suficiente del efecto considerado en su existencia y su naturaleza; e, incluso cuando se habla de acción recíproca entre dos términos, puede reducirse a una serie de determinaciones unidireccionales. (1963, pp. 160-161)
+                            </TextBlock>
+
+                            <TextBlock>
+                                Por lo tanto, una relación mecánica entre A y B es aquella en la que (suponiendo que A es la causa de B): (i) A determina a B (A es la condición necesaria y suficiente de B); (ii) B no determina a A (dependencia unidireccional); y (iii) cada elemento de A que es causalmente eficaz sobre B se encuentra en un mapeo uno a uno con algún elemento resultante de B (correspondencia uno a uno). Las condiciones (ii) y (iii) hacen que la relación sea lineal. Por el contrario, una relación dialéctica es aquella en la que: (i) A determina a B, y B determina a A (dependencia bidireccional o determinación recíproca); y (ii) ni A ni B son analizables en elementos discretos, causalmente eficaces que se encuentran en una correspondencia uno a uno (no descomponibilidad). Además, las relaciones dialécticas son dinámicas, no estáticas. Por lo tanto (iii) A altera a B, y B altera a A; (iv) A es alterado por B como determinante de B, y B es alterado por A como determinante de A; y (v) tiene sentido derivativamente hablar de A haciendo lo que A es a través de B, y B haciendo lo que B es a través de A (<Entity>Priest</Entity> 1998, p. 163). Dadas estas clases de interdependencias cercanas, A y B también pueden considerarse como partes de un todo global o patrón más grande cuando están relacionados dialécticamente. Por lo tanto (vi) de lo que A es una parte es de lo que B es una parte (<Entity>Priest</Entity> 1998, p. 43).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Es sobre la base de esta concepción de las relaciones dialécticas que <Entity>Merleau-Ponty</Entity> puede afirmar: "La génesis del todo por composición de las partes es ficticia. Rompe arbitrariamente la cadena de determinaciones recíprocas" (1963, p. 50). Que tal determinación recíproca implica lo que la teoría de sistemas complejos hoy intenta describir en términos de no linealidad, autoorganización, causalidad circular y acoplamiento estructural es evidente en lo que <Entity>Merleau-Ponty</Entity> continúa escribiendo inmediatamente después de su explicación de las relaciones mecánicas citada anteriormente:
+                            </TextBlock>
+
+                            <TextBlock>
+                                Por el contrario, como hemos visto, los estímulos físicos actúan sobre el organismo solo provocando una respuesta global que variará cualitativamente cuando los estímulos varíen cuantitativamente; con respecto al organismo juegan el papel de ocasiones más que de causa; la reacción depende de su importancia vital más que de las propiedades materiales de los estímulos. (1963, p. 161)
+                            </TextBlock>
+
+                            <TextBlock>
+                                Decir que la respuesta global del organismo varía cualitativamente cuando los estímulos varían cuantitativamente es decir que los estímulos actúan sobre el organismo como parámetros de control, que al alcanzar un cierto umbral crítico inducen una discontinuidad cualitativa global en el organismo (una bifurcación en el espacio de fase). Decir que los estímulos juegan el papel de ocasiones más que de causa es decir que actúan como condiciones desencadenantes pero no como causas eficientes. Decir que la reacción del organismo depende de la importancia vital del estímulo es decir que el estímulo informativo no es equivalente al estímulo físico. Este último es definible independientemente del organismo; el primero no lo es. El estímulo informativo es el estímulo informado por (la forma o estructura de) el organismo. No puede describirse como "entrada" definible independientemente del organismo porque ya es relacional, definible solo en relación con el organismo, o especificable solo contra el fondo del acoplamiento estructural del organismo con su entorno. Así <Entity>Merleau-Ponty</Entity> continúa:
+                            </TextBlock>
+
+                            <TextBlock>
+                                Por lo tanto, entre las variables de las que realmente depende la conducta y esta conducta misma aparece una relación de significado, una relación intrínseca [énfasis añadido]. No se puede asignar un momento en el que el mundo actúa sobre el organismo, ya que el efecto mismo de esta "acción" expresa la ley interna del organismo. La exterioridad mutua del organismo y el medio se supera junto con la exterioridad mutua de los estímulos. Así, dos correlativos deben sustituirse por estos dos términos definidos en aislamiento: el "<Concept>medio</Concept>" y la "<Concept>aptitud</Concept>", que son como dos polos de comportamiento y participan en la misma estructura. (1963, p. 161)
+                            </TextBlock>
+
+                            <TextBlock>
+                                Estas observaciones pueden relacionarse con mi discusión anterior (en el Capítulo 3) sobre el significado y la información, entendidos desde la perspectiva de los sistemas autónomos. Algo adquiere significado para un organismo en la medida en que se relaciona (ya sea positiva o negativamente) con la norma del mantenimiento de la integridad del organismo (<Entity>De Preester</Entity> 2003, p. 202). Tal mantenimiento es una función de lo que <Entity>Merleau-Ponty</Entity> llama la "ley interna del organismo", que, en nuestros términos, significa la autonomía del organismo. La autonomía biológica, por lo tanto, incluye necesariamente la producción de normas. Para apreciar este punto podemos referirnos nuevamente a la Figura 3.3 (ver Capítulo 3). Esta figura intenta representar cómo la clausura organizacional-operacional genera una relación circular y dialéctica entre un sistema autónomo y su dominio correlativo de interacciones o medio. Por un lado, la clausura operacional es el mecanismo (principio de formación de patrones) para una identidad emergente o "yo". Por otro lado, la realización de un "yo" a través de la clausura es simultáneamente también la especificación de un entorno correlativo, un dominio de interacciones o medio. Este medio constituido a través de la clausura es intrínsecamente significativo para el "yo" que también está constituido de esta manera. El significado es intrínseco al acoplamiento de organismo y medio, y así supera su exterioridad mutua.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Cuando <Entity>Merleau-Ponty</Entity> escribe que los dos polos de comportamiento (organismo y medio) participan en la misma estructura, quiere decir, primero, que el comportamiento o comportarse es un todo estructurado, un patrón dinámico, y, segundo, que medio y organismo participan en esta estructura no como estímulo y reacción sino como situación y respuesta. El comportamiento es una especie de diálogo en el que el organismo tiene una "aptitud" para responder a situaciones como, en efecto, preguntas que necesitan respuesta. El comportamiento es, por así decirlo, dialógico y expresa constitución de significado en lugar de procesamiento de información. Se sigue que el comportamiento no existe en el sistema nervioso o en el cuerpo (1963, p. 161) más de lo que una conversación existe en los hablantes individuales (o sus cerebros) o una improvisación de jazz existe en los instrumentos o solistas individuales.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Estos puntos pueden vincularse con desarrollos teóricos y empíricos que han tenido lugar desde el tiempo de <Entity>Merleau-Ponty</Entity>. El primer punto de <Entity>Merleau-Ponty</Entity>, expresado en lenguaje contemporáneo, es que el comportamiento es <Concept>morfodinámico</Concept>. La morfodinámica es una rama de la teoría de sistemas dinámicos preocupada por la emergencia de forma o estructura (<Entity>Petitot</Entity> 1992, 1995, 1999). La idea básica es que "las estructuras son esencialmente dependientes de fenómenos críticos, es decir, de fenómenos de ruptura de simetría que inducen discontinuidades cualitativas (heterogeneidades) en los sustratos... Las estructuras discretas emergen a través de discontinuidades cualitativas... un sistema de discontinuidades cualitativas en un sustrato se llama una morfología y las teorías dinámicas de morfologías pertenecen a lo que se llama morfodinámica. Por lo tanto, hay un vínculo estrecho entre el concepto de 'estructura' y la morfodinámica" (<Entity>Petitot</Entity> 1995, p. 231; énfasis en el original).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Una formulación contemporánea del segundo punto de <Entity>Merleau-Ponty</Entity> es que el comportamiento es un fenómeno colectivo que comprende cerebro, cuerpo y entorno, no algo que reside dentro del sistema nervioso. Por lo tanto, necesita ser caracterizado por variables colectivas y parámetros de orden que atraviesan el cerebro, el cuerpo y el entorno. Esta idea es un tema importante de investigación en la ciencia cognitiva dinamicista corporizada (<Entity>Chiel</Entity> y <Entity>Beer</Entity> 1997; <Entity>Thelen</Entity> y <Entity>Smith</Entity> 1994; <Entity>Thelen</Entity> et al. 2001). El trabajo de <Entity>Kelso</Entity> puede servir como un ejemplo útil. En ciertos paradigmas experimentales que involucran comportamiento motor intencional y actividad cortical (<Entity>Bressler</Entity> y <Entity>Kelso</Entity> 2001; <Entity>Kelso</Entity> et al. 1998), ha demostrado que la misma variable colectiva de fase relativa expresa "un isomorfismo de parámetro de orden abstracto entre eventos cerebrales y conductuales que atraviesa el hecho de que se están coordinando cosas diferentes" (<Entity>Kelso</Entity> 1995, p. 276). En otras palabras, a un nivel morfodinámico, se toma la misma forma o estructura para caracterizar ciertos comportamientos sensoriomotores y actividades cerebrales. La tesis de <Entity>Merleau-Ponty</Entity> de que "el comportamiento es una forma" (1963, p. 127) puede así ser elaborada matemáticamente y sustanciada empíricamente por la ciencia morfodinámica. El pensamiento de <Entity>Merleau-Ponty</Entity> hacia el final de su vida también se movió en esta dirección morfodinámica, cuando habló en sus conferencias de 1959-1960 de una "topología fenomenal" de la naturaleza (2003, p. 264).
+                            </TextBlock>
+
+                            <SubSectionHeader title="Los Órdenes Físico y Vital" />
+
+                            <TextBlock>
+                                En el penúltimo capítulo de <BookTitle>The Structure of Behavior</BookTitle>, <Entity>Merleau-Ponty</Entity> esboza una topología fenomenal rudimentaria de la materia, la vida y la mente, o como él los llama, los tres órdenes de lo físico, lo vital y lo humano. Comienza considerando la noción de forma o estructura en física. Una forma física, como una pompa de jabón o un rollo de convección, es una estabilidad estructural establecida en relación con condiciones externas dadas (1963, p. 145) y, por lo tanto, se destaca como una discontinuidad cualitativa en el sustrato material. Ya en este nivel, el reduccionismo analítico debe ser rechazado:
+                            </TextBlock>
+
+                            <TextBlock>
+                                [C]ada cambio local en una forma [física] se traducirá por una redistribución de fuerzas que nos asegura la constancia de su relación; es esta circulación interna lo que es el sistema como una realidad física. Y no está más compuesto de partes que puedan distinguirse en él que una melodía (siempre transponible) está hecha de las notas particulares que son su expresión momentánea. Poseyendo unidad interna inscrita en un segmento del espacio y resistiendo la deformación de influencias externas por su causalidad circular, la forma física es un individuo. Puede suceder que, sometido a fuerzas externas que aumentan y disminuyen de manera continua, el sistema, más allá de un cierto umbral, redistribuya sus propias fuerzas en un orden cualitativamente diferente que es, sin embargo, solo otra expresión de su ley inmanente. Así, con la forma, se introduce un principio de discontinuidad y se dan las condiciones para un desarrollo por saltos o crisis, para un evento o para una historia. (1963, p. 137)
+                            </TextBlock>
+
+                            <TextBlock>
+                                Esta descripción de la forma física como introduciendo un principio de discontinuidad y las condiciones para el desarrollo por "crisis" ha sido confirmada por desarrollos teóricos posteriores a <Entity>Merleau-Ponty</Entity>. Desarrollos particulares son la "teoría de catástrofes" de <Entity>René Thom</Entity>, que describe matemáticamente transiciones abruptas y discontinuidades cualitativas en sistemas físicos (<Entity>Thom</Entity> 1975), y la extensión de <Entity>Jean Petitot</Entity> (1992) del trabajo de <Entity>Thom</Entity> a una "física de la fenomenalidad" morfodinámica, que tiene como objetivo cerrar la brecha entre el sustrato microfísico y los modos macrofísicos, fenomenales de manifestación de la materia (ver <Entity>Petitot</Entity> y <Entity>Smith</Entity> 1996).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Mientras que el orden físico se caracteriza por la emergencia de formas físicas como discontinuidades cualitativas en un sustrato material, el orden vital se caracteriza por la emergencia de estructuras vivas en el orden físico. Al igual que las estructuras físicas, las estructuras vivas también obtienen estabilidad en relación con influencias externas, pero lo hacen de una manera diferente:
+                            </TextBlock>
+
+                            <TextBlock>
+                                La forma física es un equilibrio obtenido con respecto a ciertas condiciones externas dadas... Sin duda ciertos sistemas físicos modifican las condiciones mismas de las que dependen por su evolución interna... Pero la acción que se ejerce fuera del sistema siempre tiene el efecto de reducir un estado de tensión, de hacer avanzar el sistema hacia el reposo. Hablamos de estructuras vitales, por el contrario, cuando el equilibrio se obtiene, no con respecto a condiciones reales y presentes, sino con respecto a condiciones que son solo virtuales y que el sistema mismo trae a la existencia; cuando la estructura, en lugar de procurar una liberación de las fuerzas con las que es penetrada a través de la presión de las externas, ejecuta un trabajo más allá de sus límites apropiados y constituye un medio apropiado para sí misma. (1963, pp. 145-146)
+                            </TextBlock>
+
+                            <TextBlock>
+                                Esta transición de estructuras físicas a estructuras vivas es la transición de la materia a la vida, de la física y la química a la biología. Las estructuras vivas más simples son estructuras metabólicas. Si combinamos la explicación de <Entity>Merleau-Ponty</Entity> con la teoría de la autonomía biológica (<Entity>Ruiz-Mirazo</Entity> y <Entity>Moreno</Entity> 2004; <Entity>Varela</Entity> 1979, 1997a), entonces podemos decir que una célula viva difiere de una estructura física disipativa en tres aspectos principales. Primero, una célula viva produce y mantiene dinámicamente a sí misma a través de la síntesis y descomposición química continua (anabolismo y catabolismo) de compuestos materiales, incluidos aquellos que componen su propio límite de membrana. Al hacerlo, también controla y regula endógenamente sus propias condiciones de contorno externas, mientras que una estructura física disipativa (como la llama de una vela) no lo hace. Las estructuras vivas son unidades auto-productoras y auto-reguladoras, y por lo tanto tienen un tipo cualitativamente diferente de morfodinámica de las estructuras físicas disipativas. En una célula viva, la organización producida endógenamente del sistema también controla activamente el flujo de materia y energía que mantiene al sistema lejos del equilibrio termodinámico.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Segundo, las demandas materiales y energéticas de todo este proceso orientan a la célula por necesidad hacia el entorno, no simplemente en el sentido de condiciones reales y presentes, sino también en el sentido de condiciones que necesitan ser actualizadas (efectuadas o procuradas) —en otras palabras, condiciones virtuales. Los organismos dan forma al entorno fisicoquímico en un medio (un Umwelt). Un medio, desde el punto de vista de lo que está presente y es real a nivel fisicoquímico, es virtual, algo que necesita ser actualizado, y actualizado además en otro nivel, el nivel de normas y significado vitales.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Este último punto nos lleva al tercer aspecto en el que las estructuras vivas difieren de las meras estructuras físicas: mientras que las estructuras físicas pueden expresarse por una ley, las estructuras vivas tienen que ser comprendidas en relación con normas: "Así, cada organismo, en presencia de un medio dado, tiene sus condiciones óptimas de actividad y su manera adecuada de realizar el equilibrio" (1963, p. 148). Una célula u organismo vivo "modifica su medio según las normas internas de su actividad" (1963, p. 154).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Las células bacterianas (procariotas), los sistemas autopoyéticos más simples en la Tierra, pueden usarse para ilustrar esta concepción de estructuras vivas. Escherichia coli (E. coli) es un tipo de bacteria que tiene células móviles en forma de bastón. Cuando nadan en presencia de un gradiente de sacarosa, estas células darán vueltas hasta que den con una orientación que aumente su exposición a la sacarosa. En este punto nadarán hacia adelante, gradiente arriba, propulsadas por sus flagelos, hacia la zona de mayor concentración de sacarosa. Si bien la sacarosa es una condición real y presente del entorno fisicoquímico, el estado de la sacarosa como nutriente no lo es. Ser un nutriente no es intrínseco a la estructura fisicoquímica de la molécula de sacarosa; es una característica relacional, vinculada al metabolismo de la bacteria. En la terminología de <Entity>Merleau-Ponty</Entity>, el estado de la sacarosa como alimento es virtual. Es algo actualizado en otro nivel. Específicamente, es enactuado o traído a la existencia por la forma en que el organismo, dada su autonomía y las normas que su autonomía trae consigo, se acopla con el entorno. La sacarosa pertenece al orden físico; la sacarosa-como-nutriente pertenece al orden vivo. La sacarosa tiene significado y valor como alimento pero solo en el medio que "el sistema mismo trae a la existencia" o "constituye para sí mismo".
+                            </TextBlock>
+
+                            <TextBlock>
+                                Para dar una cuenta completa y total de la actividad de la bacteria al nadar gradiente de sacarosa arriba, no es suficiente referirse simplemente a los efectos moleculares locales de la sacarosa a medida que atraviesa la membrana y es absorbida internamente. Aunque estos efectos locales son de hecho cruciales, están a cada paso subordinados a y regulados por el mantenimiento global de la autopoyesis. En otras palabras, los efectos moleculares locales ocurren como lo hacen debido al contexto global y organizacional en el que están incrustados. Y es este nivel global el que define a la bacteria como un individuo biológico y a la sacarosa como alimento.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Las estructuras vivas son así ontológicamente emergentes con respecto a las meras estructuras físicas. Constituyen un nuevo orden de la naturaleza que es cualitativamente distinto del orden meramente físico. Este nuevo orden está marcado por dos características genéricas. La primera es que un organismo es un individuo en un sentido nuevo y preciso que va más allá de la noción anterior de individualidad física. Aunque <Entity>Merleau-Ponty</Entity> declaró anteriormente que "la forma física es un individuo" (1963, p. 137), ahora afirma que un organismo "es un individuo en un sentido que no es el de ni siquiera la física moderna" (p. 154). Una forma física es un individuo en el sentido de ser un patrón topológico invariante en un sustrato material cambiante (como un rollo de convección o una pompa de jabón). La individualidad en este caso corresponde a la identidad de forma a través del cambio material. Una forma viva, en el sentido autopoyético, es aquella cuyo propia organización (red definitoria de relaciones) es el invariante morfodinámico fundamental a través del cambio material. Un sistema autopoyético es una red circular cuyos procesos moleculares constituyentes producen y encarnan esa red. La individualidad en este caso corresponde a una auto-identidad formal a un patrón dinámico invariante que es producido, mantenido y realizado por el sistema mismo, mientras el sistema experimenta una transformación material incesante y regula sus condiciones de contorno externas en consecuencia. Un sistema autopoyético es así un individuo en un sentido que comienza a ser digno del término yo. La segunda característica genérica que marca el orden vivo es que la relación entre organismo y entorno es significativa y normativa. Como representa la Figura 3.3, el significado (o significancia o información) está implicado una vez que hay el acoplamiento de un polo-yo y un polo-entorno co-definidos, y tal acoplamiento es intrínsecamente normativo (en el sentido biológico de normas discutido anteriormente).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Desarrollaré esta cuenta de la vida con más detalle en la Parte II. Se puede resumir ahora, usando la teoría de la autopoyesis para elucidar la cuenta de <Entity>Merleau-Ponty</Entity>, diciendo que las estructuras vivas son aquellas basadas en la autopoyesis.
+                            </TextBlock>
+
+                            <SubSectionHeader title="El Orden Humano" />
+
+                            <TextBlock>
+                                El tercer orden de <Entity>Merleau-Ponty</Entity> es el orden humano. El orden humano tiene originalidad en que sus estructuras y formas de comportamiento más típicas son simbólicas. Los símbolos o estructuras simbólicas no existen en aislamiento sino que pertenecen a sistemas de símbolos. En estos sistemas cada símbolo está relacionado no simplemente con lo que simboliza —la cosa o evento, por ejemplo, por el que está— sino también con otros símbolos. Estas relaciones laterales entre símbolos abren la posibilidad de expresiones o representaciones variadas de la misma cosa. Los símbolos implican la capacidad mental para captar algo como un invariante bajo una diversidad de aspectos y perspectivas. Así, los símbolos implican la capacidad de captar algo como un objeto, en el sentido fenomenológico de algo que permanece invariante a través de la variación de perspectiva y es captable por el sujeto como estando también disponible para otros sujetos. Sin embargo, lo que es especialmente distintivo sobre el comportamiento simbólico humano para <Entity>Merleau-Ponty</Entity> es que se dirige no hacia cosas u objetos como tales sino hacia "<Concept>objetos de uso</Concept>" —cosas dotadas de significados culturalmente constituidos. Así, el comportamiento simbólico implica la promulgación de un tipo completamente nuevo de medio. Este medio ya no es situación-respuesta vital sino "<Concept>situación percibida-trabajo</Concept>" (1963, p. 162).
+                            </TextBlock>
+
+                            <TextBlock>
+                                El par "situación percibida-trabajo" comprende más que el par "percepción-acción" —incluso como se entiende este segundo par hoy por teorías sensoriomotoras dinámicas, que mantienen que la percepción y la acción se constituyen mutuamente en lugar de estar simplemente relacionadas instrumentalmente como medio para fin (<Entity>Hurley</Entity> 1998; <Entity>Noë</Entity> 2004; <Entity>O'Regan</Entity> y <Entity>Noë</Entity> 2001a). La diferencia entre los dos conjuntos de pares es que la estructura "situación percibida-trabajo" es esencialmente intersubjetiva.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Por "situación percibida" <Entity>Merleau-Ponty</Entity> se refiere a la percepción de las acciones de otros sujetos, sobre la cual se funda la percepción de cosas como objetos de uso cultural. <Entity>Merleau-Ponty</Entity> mantiene que el "objeto original" de la percepción humana, tanto evolutivamente (primero en el tiempo ontogenético) como fenomenológicamente (el más fundamental o primordial en la constitución de la experiencia), es la acción intencional de otro sujeto humano (1963, p. 166). La percepción humana se dirige principalmente hacia cómo se expresan las intenciones en otros seres humanos en lugar de hacia objetos de la naturaleza y sus cualidades sensoriales. La percepción humana capta las intenciones como "realidades experimentadas", no como objetos en un sentido desapegado o intelectual. Como señala <Entity>Merleau-Ponty</Entity>, anticipando la investigación posterior en psicología del desarrollo, las primeras realidades experimentadas del infante en la percepción visual son la cara y los gestos de la madre o cuidador. La cara de la madre no es un objeto o una mera colección de cualidades sensoriales, sino un centro de expresión y acción intencional (ver, por ejemplo, <Entity>Meltzoff</Entity> y <Entity>Moore</Entity> 1998; <Entity>Stern</Entity> 2000; <Entity>Trevarthen</Entity> y <Entity>Aitken</Entity> 2001). La percepción es así ante todo fisonómica, y más tarde se dirige hacia cosas como objetos de uso. La percepción nunca pierde su cualidad fisonómica; permanece fisonómica no simplemente en sus fases nacientes, sino en su carácter fenomenal maduro (una idea que gana importancia en los escritos posteriores de <Entity>Merleau-Ponty</Entity>).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Por "trabajo", <Entity>Merleau-Ponty</Entity> se refiere a actividades (conjuntos de acciones intencionales) que transforman la naturaleza física y viva y así modifican el medio o producen uno nuevo (1963, p. 162). El trabajo mira hacia el futuro y es creativo o productivo. Al alterar el medio presente, el trabajo en efecto lo niega a favor de uno nuevo. (<Entity>Merleau-Ponty</Entity> usa la palabra "trabajo" en lugar de "acción" precisamente para transmitir esta idea hegeliana). La forma correlativa de percepción requerida para el trabajo es la percepción que presenta su objeto no como algo simplemente allí ahora (algo presente y actual), sino como algo de uso que puede cambiar otras cosas (algo orientado en relación con el futuro y las posibilidades).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Mientras que las estructuras vivas son ontológicamente emergentes con respecto a las físicas, la estructura humana "situación percibida-trabajo" es emergente con respecto a las estructuras vivas. Representa un nuevo tipo de relación dialéctica entre organismo y medio, o yo y mundo. Por esta razón, <Entity>Merleau-Ponty</Entity> afirma: "aunque todas las acciones permiten una adaptación a la vida, la palabra 'vida' no tiene el mismo significado en la animalidad y la humanidad; y las condiciones de vida están definidas por la esencia propia de la especie" (1963, p. 174). Una característica clave de la vida humana es la ambigüedad de su relación dialéctica con su medio. El medio humano es social y cultural, y es creado por los propios seres humanos. Nuestras formas simbólicas de comportamiento nos permiten crear estructuras sociales y culturales a las que estamos comprometidos. Sin embargo, nos negamos a dejarnos volver idénticos a ellas; siempre estamos tratando de pasar más allá de ellas y crear cosas nuevas. En palabras de <Entity>Merleau-Ponty</Entity>: "los objetos de uso y los objetos culturales no serían lo que son si la actividad que provoca su aparición no tuviera también como su significado rechazarlos y superarlos" (1963, p. 176; énfasis omitido). Esta mentalidad de auto-superación es una precondición estructural para las formas culturales en primer lugar (incluso mientras está siempre ya recíprocamente constituida por ellas en cualquiera de sus instancias concretas). Ejemplificada en el orden humano, esta mentalidad es emergente no simplemente en relación con el orden vivo en general, sino también en relación con los animales superiores (1963, pp. 175-176).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Con estas ideas, <Entity>Merleau-Ponty</Entity> pasa de una fenomenología estática y genética de la forma o estructura a una fenomenología generativa de la intersubjetividad y la cultura (o de una topología fenomenal de la naturaleza a una topología fenomenal de la cultura).
+                            </TextBlock>
+
+                            <TextBlock>
+                                En este libro, sigo la guía de <Entity>Merleau-Ponty</Entity>, comenzando con la vida, el desarrollo y la evolución (Capítulos 5-7), luego procediendo a la conciencia (Capítulos 8-12), y finalmente discutiendo la empatía y la enculturación (Capítulo 13).
+                            </TextBlock>
+
+                            <SubSectionHeader title="La Conciencia y la Estructura del Comportamiento" />
+
+                            <TextBlock>
+                                Permítanme volver al objetivo general de <BookTitle>The Structure of Behavior</BookTitle>, que es cerrar la brecha explicativa entre conciencia y naturaleza revisando cómo pensamos sobre la materia, la vida y la mente. La carga del argumento de <Entity>Merleau-Ponty</Entity> ha sido mostrar que la noción de forma puede tanto integrar los órdenes de la materia, la vida y la mente como dar cuenta de la originalidad de cada orden. Por un lado, la naturaleza no es pura exterioridad, sino que más bien en el caso de la vida tiene su propia interioridad y así se asemeja a la mente. Por otro lado, la mente no es pura interioridad, sino más bien una forma o estructura de compromiso con el mundo y así se asemeja a la vida.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El primer lado de esta historia comienza con la materia y la vida. Dada la noción de forma como la presenta <Entity>Merleau-Ponty</Entity>, ya no podemos entender la naturaleza a la manera cartesiana como simplemente "una multiplicidad de eventos externos entre sí y unidos por relaciones de causalidad" (1963, p. 3). Esta concepción de la naturaleza como pura exterioridad (partes extra partes, como lo pone <Entity>Merleau-Ponty</Entity>) ya es superada por la noción morfodinámica de forma a nivel físico. La forma, así entendida, "no está más compuesta de partes que puedan distinguirse en ella que una melodía (siempre transponible) está hecha de las notas particulares que son su expresión momentánea" (1963, p. 137).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Es en el nivel vital, sin embargo, que surge la interioridad. La interioridad comprende tanto la auto-producción de un interior, es decir, un individuo autopoyético, y la relación interna y normativa que se mantiene entre este individuo y su entorno (la "relación intrínseca" que supera la "exterioridad mutua de organismo y medio"—<Entity>Merleau-Ponty</Entity> 1963, p. 121).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Como hemos visto, este tipo de interioridad —la auto-producción de un interior que también especifica un exterior con el que está normativamente relacionado— surge a través de la clausura autopoyética y los requisitos termodinámicos de la autonomía básica. Así, la autopoyesis es una condición de posibilidad para la emergencia dinámica de la interioridad (<Entity>Varela</Entity> 1991, 1997a). Como acabamos de señalar, sin embargo, esta emergencia de un interior es también la especificación de un exterior. Así, la emergencia dinámica de la interioridad puede describirse más plenamente como la co-emergencia dinámica de interioridad y exterioridad.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Sin embargo, parece haber una asimetría aquí, pues es el proceso de auto-producción interno el que controla o regula la interacción del sistema con el entorno exterior (<Entity>Varela</Entity> 1991). Como hemos visto, los requisitos termodinámicos de la autonomía básica en su forma autopoyética implican que el sistema regule activamente sus condiciones de contorno externas, es decir, cómo fluyen la materia y la energía a través del sistema. La capacidad para tal regulación a su vez implica que el sistema no sea simplemente un sistema internamente auto-productor, sino también un agente interactivo en su entorno (<Entity>Ruiz-Mirazo</Entity> y <Entity>Moreno</Entity> 2004). Por lo tanto, aunque interior y exterior son dinámicamente co-emergentes, no comparten la misma relación simétrica. Como explican <Entity>Moreno</Entity> y <Entity>Barandiaran</Entity>: "la (auto) generación de un interior es ontológicamente anterior a la dicotomía dentro-fuera. Es el interior el que genera la asimetría y es en relación con este interior que se puede establecer un exterior. Aunque los procesos/relaciones interactivos son necesarios para el mantenimiento del sistema, lo presuponen (el sistema) ya que es la organización interna del sistema la que controla las relaciones interactivas" (<Entity>Moreno</Entity> y <Entity>Barandiaran</Entity> 2004, p. 17).
+                            </TextBlock>
+
+                            <TextBlock>
+                                El punto de <Entity>Merleau-Ponty</Entity> es que una vez que reconocemos este tipo de interioridad y la normatividad que incluye, entonces ya no podemos considerar la vida como un mecanismo en el sentido clásico (un arreglo de partes relacionadas externamente entre sí a través de relaciones causales eficientes). Más bien, debemos ver entonces la naturaleza como teniendo una especie de vida interior, para la cual la noción clásica de mecanismo es completamente inadecuada. Esta línea de pensamiento apunta así lejos de Descartes, quien cortó radicalmente la mente de la vida biológica, hacia Aristóteles, para quien mente y vida pertenecían juntas bajo el título de alma o psique (ver Capítulo 8).
+                            </TextBlock>
+
+                            <TextBlock>
+                                El segundo lado de la historia es el replanteamiento de la mente, y en particular de la conciencia humana, que corre junto a este replanteamiento de la naturaleza. La conciencia no es un estado interior de la mente o el cerebro que se encuentra en una relación causal lineal con la entrada sensorial y la salida motora. Es una forma o estructura de comportamiento, una sintonización perceptual y motora con el mundo. En nuestro caso humano, esta sintonización es principalmente a un entorno de símbolos significativos y las acciones intencionales de otros. <Entity>Merleau-Ponty</Entity> usa el siguiente ejemplo para ilustrar estas ideas:
+                            </TextBlock>
+
+                            <TextBlock>
+                                Para el jugador en acción el campo de fútbol no es un "objeto", es decir, el término ideal que puede dar lugar a una multiplicidad indefinida de vistas de perspectiva y permanecer equivalente bajo sus transformaciones aparentes. Está impregnado de líneas de fuerza (las "líneas de yarda"; las que demarcan el "área de penalti") y articulado en sectores (por ejemplo, las "aperturas" entre los adversarios) que llaman a un cierto modo de acción y que inician y guían la acción como si el jugador no fuera consciente de ello. El campo mismo no se le da, sino que está presente como el término inmanente de sus intenciones prácticas; el jugador se vuelve uno con él y siente la dirección de la "meta", por ejemplo, tan inmediatamente como los planos vertical y horizontal de su propio cuerpo. No sería suficiente decir que la conciencia habita este medio. En este momento la conciencia no es otra cosa que la dialéctica de medio y acción. Cada maniobra emprendida por el jugador modifica el carácter del campo y establece en él nuevas líneas de fuerza en las que la acción a su vez se despliega y se logra, alterando nuevamente el campo fenomenal. (1963, pp. 168-169)
+                            </TextBlock>
+
+                            <TextBlock>
+                                Esta concepción de la conciencia como sintonización hábil con el entorno resuena fuertemente con los enfoques sensoriomotores dinámicos contemporáneos de la conciencia perceptual. En estos enfoques, la experiencia perceptual es el ejercicio hábil del conocimiento sensoriomotor (<Entity>Noë</Entity> 2004; <Entity>O'Regan</Entity> y <Entity>Noë</Entity> 2001a). Discuto el enfoque sensoriomotor dinámico de la conciencia perceptual en el Capítulo 9 y vuelvo a la idea de <Entity>Merleau-Ponty</Entity> de conciencia hábil y sintonizada al comienzo del Capítulo 11.
+                            </TextBlock>
+
+                            <SubSectionHeader title="Naturalismo y la Actitud Fenomenológica" />
+
+                            <TextBlock>
+                                Hasta ahora he presentado solo un lado de la visión de <Entity>Merleau-Ponty</Entity>, el que él describe como "el punto de vista del 'espectador externo'" (1963, p. 184). Esta perspectiva es la adoptada por las ciencias empíricas (física, química, biología y psicología) al ver la materia, la vida y la mente como parte de la naturaleza. <Entity>Merleau-Ponty</Entity> adopta esta perspectiva para enriquecerla con la noción de forma. El otro lado de la visión de <Entity>Merleau-Ponty</Entity>, sin embargo, es dar un paso atrás y mirar cómo la forma llega a constituirse como un objeto para la cognición científica en primer lugar. ¿Cuál es el modo o manera en que aparece la forma, y cuál es el origen epistemológico de este modo de donación? Esta pregunta es filosófica y expresa la perspectiva de la fenomenología trascendental. Así, el otro lado de la visión de <Entity>Merleau-Ponty</Entity> es el del participante interno, que se niega a satisfacerse simplemente con una perspectiva de forastero o espectador sobre la materia, la vida y la mente, pero que apunta también a una comprensión fenomenológica trascendental de cómo llegan a constituirse para la conciencia.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Adoptando esta segunda perspectiva, <Entity>Merleau-Ponty</Entity> presenta el siguiente argumento: (i) La noción de forma se toma prestada del mundo percibido; (ii) la noción de forma se encuentra en física solo en la medida en que la física nos remite a cosas percibidas; (iii) por lo tanto, la noción de "forma física" no puede ser el fundamento real de la estructura del comportamiento, en particular de la estructura perceptual del comportamiento; y (iv) la noción de forma es concebible solo como un objeto de percepción (1963, p. 144). En otras palabras, <Entity>Merleau-Ponty</Entity> argumenta que el naturalismo necesita la noción de forma (y ha llegado a reconocer esta necesidad a través de su propio desarrollo interno), pero esta noción es irreductiblemente fenomenal. Por lo tanto, el naturalismo no puede explicar la materia, la vida y la mente, siempre y cuando la explicación signifique purgar la naturaleza de la subjetividad y luego tratar de reconstituir la subjetividad a partir de la naturaleza así purgada.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Hay algo importante en este argumento, pero debemos tener cuidado. En particular, debemos protegernos de convertirlo en un argumento a favor del idealismo metafísico: que las formas físicas son construcciones de una conciencia preexistente. Más bien, el argumento debe entenderse como expresando una línea de pensamiento trascendental. Cuando hacemos la pregunta constitucional de cómo se nos revelan los objetos, entonces cualquier objeto, incluido cualquier objeto científico, debe considerarse en su correlación con la actividad mental que lo intenta. Esta orientación trascendental de ninguna manera niega la existencia de un mundo físico real, sino que más bien rechaza una concepción objetivista de nuestra relación con él. El mundo nunca se nos da como un hecho bruto separable de nuestros marcos conceptuales. Más bien, aparece en todas las formas descriptibles en que lo hace gracias a la estructura de nuestra subjetividad y nuestras actividades intencionales. <Entity>Michel Bitbol</Entity> presenta una declaración clara de esta actitud trascendental:
+                            </TextBlock>
+
+                            <TextBlock>
+                                ¿Cuál es entonces la idea central de la filosofía trascendental? Es interpretar cada objeto de la ciencia como el foco de una síntesis de fenómenos en lugar de como una cosa en sí misma. Y es aceptar en consecuencia que la posibilidad misma de tales objetos depende de las estructuras de conexión proporcionadas de antemano por los procedimientos utilizados en nuestras actividades de investigación. Así, algo es objetivo si resulta de un modo universal y necesario de conexión de fenómenos. En otros términos, algo es objetivo si es válido para cualquier sujeto activo (humano), no si concierne a propiedades intrínsecas de entidades autónomas.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Aquí no se supone que la ciencia revele nada de una realidad absoluta subyacente preexistente, ni es un agregado más o menos aleatorio de recetas eficientes. La ciencia es más bien el subproducto estabilizado de una relación recíproca dinámica entre la realidad como un todo y una fracción especial de ella. Definir esta fracción especial de realidad como sujeto es el reverso de su extracción activa de grupos invariantes de fenómenos similares a objetos.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Alguien que comparte esta actitud es metafísicamente tan agnóstico como los empiristas, pero tan convencido como los realistas de que la estructura de las teorías científicas es altamente significativa. Pues, desde un punto de vista trascendental, la estructura de una teoría científica no es nada menos que el marco de racionalidades procedimentales que sustentan una cierta práctica de investigación (y que, inversamente, fueron restringidas por las resistencias que surgen de la promulgación de esta práctica). (<Entity>Bitbol</Entity> 2003, pp. 336-337)
+                            </TextBlock>
+
+                            <TextBlock>
+                                La formulación de <Entity>Bitbol</Entity> reconoce que los sujetos experimentadores activos no permanecen sin ser afectados por la objetividad que ayudan a constituir, sino que son más bien recíprocamente afectados y constituidos por ella. Como reconoció <Entity>Husserl</Entity>, aunque el mundo de la vida es el horizonte y fundamento de toda experiencia, y por lo tanto debe ser presupuesto por la ciencia, la ciencia también "fluye hacia" el mundo de la vida (<Entity>Husserl</Entity> 1970, pp. 113, 138). <Entity>Merleau-Ponty</Entity>, sin embargo, a veces parece perder de vista este punto, particularmente en su discusión sobre la relación entre forma física y forma fenomenal en <BookTitle>The Structure of Behavior</BookTitle>. Para ver a qué me refiero necesitamos considerar su argumento a favor de la prioridad de lo fenomenal a la luz de los desarrollos teóricos y empíricos desde su tiempo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                <Entity>Merleau-Ponty</Entity> introduce primero el argumento a mitad del libro al discutir la relación entre el comportamiento y el cerebro. Habiendo argumentado contra una concepción atomista del funcionamiento nervioso y a favor de la necesidad de una cuenta dinámica y estructural (morfodinámica) de los procesos cerebrales (1963, pp. 60-91) —anticipando así visiones del cerebro como un sistema complejo y auto-organizado— <Entity>Merleau-Ponty</Entity> indica que son posibles dos significados diferentes en este análisis (1963, pp. 91-93). Por un lado, al caracterizar los procesos cerebrales topológicamente, uno podría apuntar a mantener la prioridad del sistema nervioso en relación con la mente. En esta visión, los fenómenos psicológicos se localizan fisiológicamente, no topográficamente en el espacio anatómico de los componentes del cerebro, sino topológicamente como formas o patrones dinámicos de actividad neuronal, visibles como "figuras" contra el "fondo" de actividad en el resto del cerebro (y cuerpo). De esta manera, como señala <Entity>Merleau-Ponty</Entity>, "podría mantenerse un riguroso 'isomorfismo'" entre fenómenos psicológicos y fisiológicos (1963, p. 92). Esta tesis de isomorfismo psiconeural, clásicamente asociada con la psicología de la Gestalt (ver <Entity>Köhler</Entity> 1947), anima el enfoque de sistemas dinámicos de hoy:
+                            </TextBlock>
+
+                            <TextBlock>
+                                Si los pensamientos, según la teoría, deben expresarse en términos de variables colectivas similares a [fase relativa] que caracterizan patrones dinámicos de actividad espaciotemporal en el cerebro, entonces la siguiente conclusión parece lógicamente ineludible: un isomorfismo de parámetro de orden conecta mente y cuerpo, voluntad y cerebro, eventos mentales y neuronales. La mente misma es un patrón espaciotemporal que moldea los patrones dinámicos metaestables del cerebro. El dualismo mente-cuerpo es reemplazado por un solo isomorfismo, el corazón del cual son variables de patrón semánticamente significativas. (<Entity>Kelso</Entity> 1995, pp. 288-289)
+                            </TextBlock>
+
+                            <TextBlock>
+                                El segundo significado que <Entity>Merleau-Ponty</Entity> discierne es que un análisis del cerebro y el comportamiento utilizando la noción de forma también podría remitirnos a la noción fenomenal de forma. <Entity>Merleau-Ponty</Entity> explica esta línea de pensamiento de la siguiente manera:
+                            </TextBlock>
+
+                            <TextBlock>
+                                Pero el hecho mismo de que tuviéramos que tomar prestados los términos "figura" y "fondo" del mundo fenomenal o percibido para describir estas "formas fisiológicas"... nos lleva a preguntarnos si estos son todavía fenómenos fisiológicos, si podemos en principio concebir procesos que sean todavía fisiológicos y que simbolizarían adecuadamente las relaciones inherentes a lo que ordinariamente se llama "conciencia"
+                            </TextBlock>
+
+                            <TextBlock>
+                                La función, "punto sobre un fondo homogéneo", o más generalmente, la función, "figura y fondo", tiene un significado solo en el mundo percibido: es allí donde aprendemos lo que es ser una figura y lo que es ser un fondo. Lo percibido sería explicable solo por lo percibido mismo, y no por procesos fisiológicos. Un análisis fisiológico de la percepción sería pura y simplemente imposible... Dado que esta estructura del comportamiento y el funcionamiento cerebral que la soporta solo pueden concebirse en términos tomados del mundo percibido, este último ya no aparece como un orden de fenómenos paralelo al orden de los fenómenos fisiológicos sino como uno que es más rico que él. La fisiología no puede conceptualizarse completamente sin tomar prestado de la psicología. (1963, pp. 92-93)
+                            </TextBlock>
+
+                            <TextBlock>
+                                Según esta línea de pensamiento, la noción de forma es irreductiblemente fenomenal y descriptiva, no fisiológica y causal. Sin embargo, es imposible caracterizar el funcionamiento neuronal fisiológicamente sin esta noción. Así, el dominio fenomenal suministra el significado de los constructos fisiológicos, y por lo tanto no puede haber ninguna equivalencia uno a uno entre los dominios fenomenal y fisiológico.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Una vez más, hay algo importante en esta línea de pensamiento, pero debemos proceder con cuidado. Es cierto que la noción de forma fenomenal es conceptual y epistemológicamente anterior a las nociones de forma física y fisiológica. Por ejemplo, las teorías científicas de la morfogénesis (<Entity>Thom</Entity> 1975) y la morfodinámica (<Entity>Petitot</Entity> 1992) toman como su principal primitivo una noción fenomenal de "discontinuidad cualitativa" (variaciones discontinuas en cualidades). Esta noción puede describirse rigurosamente fenomenológicamente, siguiendo las Investigaciones Lógicas de <Entity>Husserl</Entity>, en términos de la distinción entre cualidades sensibles "separadas" y "mezcladas" (<Entity>Husserl</Entity> 2000, vols. 2, 3: §8, pp. 448-450). Pero a esta noción también se le puede dar una expresión matemática en topología y luego se puede usar para dar cuenta de formas macrofísicas perceptualmente salientes (ver <Entity>Petitot</Entity> y <Entity>Smith</Entity> 1996). Esta cuenta morfológica no es solo descriptiva, sino también explicativa, porque puede usarse para establecer un puente entre cuentas microfísicas del sustrato material y formas fenomenales macrofísicas.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Que haya una ciencia de "feno-física" (física cualitativa de morfologías fenomenales) implica que "discontinuidad cualitativa" y "forma" no tienen significado "solo en el mundo percibido". Primero, la forma fenomenal es matemáticamente descriptible y, por lo tanto, tiene significado en matemáticas. Segundo, esta morfología matemática puede recibir contenido físico y fisiológico, a través de modelos morfodinámicos de sistemas macrofísicos y neurofisiológicos (ver <Entity>Petitot</Entity> 1994, 1999). Por lo tanto, tampoco es el caso que lo percibido sea "explicable solo por lo percibido mismo". Por el contrario, lo percibido es explicable por modelos matemáticos que vinculan procesos cerebrales y comportamiento a niveles morfodinámicos. <Entity>Merleau-Ponty</Entity> aparentemente no previó la posibilidad de tales desarrollos (al menos no en 1942). Aquí indudablemente fue influenciado por <Entity>Husserl</Entity>, quien dudaba expresamente que pudiera haber descripciones matemáticas de formas fenomenales. Ninguno de los dos pensadores, sin embargo, ni siquiera <Entity>Husserl</Entity> el matemático, podría haber previsto los avances en topología y geometría diferencial que harían posible tal descripción (ver <Entity>Petitot</Entity> 1999; <Entity>Roy</Entity> et al. 1999, pp. 54-56). Estos nuevos desarrollos también pueden tomarse para apoyar a <Entity>Merleau-Ponty</Entity> cuando escribe: "Un análisis fisiológico de la percepción sería pura y simplemente imposible", si por "análisis fisiológico" se refiere a un análisis a un nivel estrictamente neuronal independiente de cualquier nivel de explicación morfodinámico de orden superior.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El tema del isomorfismo es complejo y surgirá nuevamente en varios puntos más adelante en este libro. Baste decir aquí que si el isomorfismo se interpreta simplemente como una hipótesis de trabajo para tratar de caracterizar la actividad neuronal en relación con los procesos psicológicos, entonces es difícil ver cómo la afirmación de <Entity>Merleau-Ponty</Entity> de que lo fisiológico no puede conceptualizarse completamente sin tomar prestado de lo fenomenal podría mantenerse como una objeción. Uno puede reconocer que los conceptos fisiológicos tienen orígenes en el mundo fenomenal, pero sin embargo mantener que puede haber isomorfismos en un cierto nivel o de un cierto tipo entre fenómenos fisiológicos y fenómenos perceptuales. Como hemos visto, la morfodinámica toma este enfoque, al igual que <Entity>Varela</Entity> (1999) en su neurofenomenología de la conciencia del tiempo, discutida en el Capítulo 11. Además, <Entity>Merleau-Ponty</Entity> parece perder el punto clave de que la noción de forma se agranda y enriquece en significado cuando se extiende desde el dominio fenomenal a las matemáticas, la física y la biología. Este enriquecimiento no necesita dejar la noción fenomenal sin cambios, sino que puede circular de vuelta para modificarla y remodelarla.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Cuando <Entity>Merleau-Ponty</Entity> critica lo que llama naturalismo o realismo, es realmente el objetivismo lo que tiene en mente. El objetivismo sostiene que "las estructuras pueden encontrarse en una naturaleza tomada en sí misma (en soi) y que la mente puede constituirse a partir de ellas" (1963, p. 140). El objetivismo trata de purgar la naturaleza de la subjetividad y luego reconstituir la subjetividad a partir de la naturaleza así purgada (ver <Entity>Husserl</Entity>, 1970, pp. 20-100). El problema con esta forma de pensar es que olvida que los procesos fisiológicos, como fenómenos descriptibles de investigación científica, también se constituyen en el sentido fenomenológico. Este punto crítico, sin embargo, se mantiene a un nivel trascendental de análisis. Por lo tanto, el argumento de <Entity>Merleau-Ponty</Entity> parece interpretarse mejor como un argumento contra el objetivista que intentaría anular el estatus trascendental de la conciencia apelando al isomorfismo psiconeural.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El punto aquí tendría que ser algo a lo largo de las siguientes líneas: debido al estatus trascendental de la conciencia (que la conciencia siempre se presupone ya como una condición invariante de posibilidad para la revelación de cualquier objeto), no hay forma de salir, por así decirlo, de la subjetividad experimentadora, para efectuar un mapeo uno a uno de ella sobre una realidad externa purgada de toda subjetividad. Es en este sentido trascendental que el mundo fenomenal es más rico que cualquier región de objetos científicos —incluso la presunta región "universal" de la física. Y es solo desde este punto de vista trascendental que la inversión de <Entity>Merleau-Ponty</Entity> del orden "físico → vital → humano" o "materia → vida → mente" tiene sentido. La mente emerge de la materia y la vida a un nivel empírico, pero a un nivel trascendental cada forma o estructura es necesariamente también una forma o estructura revelada por la conciencia. Con esta inversión se pasa de la actitud natural del científico a la actitud fenomenológica trascendental (que, según la fenomenología, es la actitud propiamente filosófica).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Si seguimos la guía de <Entity>Merleau-Ponty</Entity>, pero la combinamos con los desarrollos más recientes revisados en este capítulo y el anterior, entonces podemos comenzar a imaginar un tipo diferente de enfoque hacia la materia, la vida y la mente del objetivismo y el reduccionismo. Partiendo de un reconocimiento del estatus trascendental y, por lo tanto, ineliminable de la experiencia, el objetivo sería buscar principios morfodinámicos que puedan tanto integrar los órdenes de la materia, la vida y la mente, como dar cuenta de la originalidad de cada orden. Este enfoque es precisamente lo que <Entity>Varela</Entity> imaginó al pedir una "<Concept>neurofenomenología</Concept>" en la ciencia de la mente (<Entity>Varela</Entity> 1996).
+                            </TextBlock>
+
+                            <TextBlock>
+                                El resto de este libro asume esta tarea. Comienzo en la Parte II reconsiderando la naturaleza de la vida o el ser vivo. Para la fenomenología, el ser vivo es subjetividad viva; para la biología, son organismos vivos. El tema de los siguientes tres capítulos es el ser vivo en este sentido pleno.
+                            </TextBlock>
+                        </section>
+                        
+                    </main>
+
+                    <TooltipModal activeNote={activeNote} onClose={() => setActiveNote(null)} />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
