@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Mente en la Vida | Evan Thompson</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            950: '#020617', // Deep Dark Background
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #020617;
+            color: #cbd5e1;
+            overflow-x: hidden;
+        }
+        /* Hide Scrollbar but keep functionality */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .text-justify {
+            text-align: justify;
+        }
+        .hyphens-auto {
+            hyphens: auto;
+            -webkit-hyphens: auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, AnimatePresence, useScroll, useSpring } = window.Motion;
+        
+        const BOOK_DATA = {
+            title: "La Mente en la Vida",
+            subtitle: "Biología, Fenomenología y las Ciencias de la Mente",
+            author: "Evan Thompson",
+            toc: [
+                { title: "Prefacio", page: "ix", id: "preface", url: "#" },
+                { title: "Agradecimientos", page: "xi", id: "acknowledgments", url: "#" },
+                { separator: "PARTE UNO: El Enfoque Enactivo" },
+                { title: "1. Ciencia Cognitiva y Experiencia Humana", page: "3", url: "#chapter-1" },
+                { title: "2. La Conexión Fenomenológica", page: "16", url: "#" },
+                { title: "3. Autonomía y Emergencia", page: "37", url: "#" },
+                { title: "4. La Estructura del Comportamiento", page: "66", url: "#" },
+                { separator: "PARTE DOS: La Vida en la Mente" },
+                { title: "5. Autopoiesis: La Organización de lo Vivo", page: "91", url: "#" },
+                { title: "6. Vida y Mente: La Filosofía del Organismo", page: "128", url: "#" },
+                { title: "7. Haciendo Camino al Andar: Desarrollo y Evolución", page: "166", url: "#" },
+                { separator: "PARTE TRES: Conciencia en la Vida" },
+                { title: "8. La Vida más allá de la Brecha", page: "219", url: "#" },
+                { title: "9. Subjetividad Sensoriomotora", page: "243", url: "#" },
+                { title: "10. Mira de Nuevo: Conciencia e Imaginería Mental", page: "267", url: "#" },
+                { title: "11. Temporalidad y el Presente Vivo", page: "312", url: "#" },
+                { title: "12. Dinamismo Primordial: Emoción y Valencia", page: "360", url: "#" },
+                { title: "13. Empatía y Enculturación", page: "382", url: "#" },
+                { separator: "APÉNDICES" },
+                { title: "A: Husserl y la Ciencia Cognitiva", page: "413", url: "#" },
+                { title: "B: Emergencia y el Problema de la Causación Descendente", page: "417", url: "#" },
+                { title: "Notas", page: "443", url: "#" },
+                { title: "Referencias", page: "483", url: "#" },
+                { title: "Índice de Conceptos", page: "527", url: "#" }
+            ]
+        };
+
+        // --- Icons ---
+        const MenuIcon = () => <i data-lucide="menu" className="w-6 h-6"></i>;
+        const XIcon = () => <i data-lucide="x" className="w-6 h-6"></i>;
+        const ImageIcon = () => <i data-lucide="image" className="w-8 h-8 text-slate-500"></i>;
+
+        // --- Components ---
+
+        const ScrollProgress = () => {
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+
+            return (
+                <motion.div
+                    className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50"
+                    style={{ scaleX }}
+                />
+            );
+        };
+
+        const TooltipModal = ({ activeNote, onClose }) => {
+            if (!activeNote) return null;
+            return (
+                <AnimatePresence>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20, x: "-50%" }}
+                        animate={{ opacity: 1, y: 0, x: "-50%" }}
+                        exit={{ opacity: 0, y: 20, x: "-50%" }}
+                        className="fixed bottom-10 left-1/2 w-[90vw] max-w-2xl bg-slate-900/95 backdrop-blur-md border border-slate-800 p-6 rounded-lg shadow-2xl z-50 text-slate-300 text-sm leading-relaxed text-justify"
+                    >
+                        <div className="flex justify-between items-start mb-2">
+                            <span className="text-cyan-400 font-bold text-xs uppercase tracking-widest">Nota al Pie</span>
+                            <button onClick={onClose} className="hover:text-white"><XIcon /></button>
+                        </div>
+                        {activeNote}
+                    </motion.div>
+                </AnimatePresence>
+            );
+        };
+
+        const Navigation = ({ onToggleMenu }) => (
+            <motion.header 
+                initial={{ y: -100 }}
+                animate={{ y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="fixed top-0 w-full flex justify-between items-center px-6 py-4 z-40 bg-slate-950/80 backdrop-blur-sm border-b border-white/5"
+            >
+                <div className="flex flex-col">
+                    <span className="text-slate-100 font-serif font-bold text-lg tracking-wide">{BOOK_DATA.title}</span>
+                    <span className="text-cyan-400 text-xs uppercase tracking-widest">{BOOK_DATA.author}</span>
+                </div>
+                <button 
+                    onClick={onToggleMenu}
+                    className="flex items-center gap-2 text-slate-300 hover:text-cyan-400 transition-colors uppercase text-xs tracking-widest font-semibold group"
+                >
+                    <span>Índice</span>
+                    <span className="group-hover:translate-x-1 transition-transform"><MenuIcon /></span>
+                </button>
+            </motion.header>
+        );
+
+        const Sidebar = ({ isOpen, onClose }) => (
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={onClose}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        />
+                        <motion.div
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed right-0 top-0 h-full w-full max-w-md bg-slate-900 border-l border-slate-800 z-50 overflow-y-auto p-8 shadow-2xl"
+                        >
+                            <div className="flex justify-between items-center mb-10">
+                                <h2 className="text-2xl font-serif text-amber-500">Contenido</h2>
+                                <button onClick={onClose} className="text-slate-400 hover:text-white"><XIcon /></button>
+                            </div>
+                            
+                            <nav className="space-y-6">
+                                {BOOK_DATA.toc.map((item, idx) => {
+                                    if (item.separator) {
+                                        return (
+                                            <div key={idx} className="pt-6 border-t border-slate-800">
+                                                <h3 className="text-xs uppercase tracking-[0.2em] text-cyan-400 mb-4">{item.separator}</h3>
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <a 
+                                            key={idx} 
+                                            href={item.url} 
+                                            onClick={onClose}
+                                            className="group flex justify-between items-baseline py-2 hover:translate-x-2 transition-transform cursor-pointer"
+                                        >
+                                            <span className="text-slate-300 font-serif text-lg group-hover:text-white transition-colors">{item.title}</span>
+                                            <span className="text-slate-600 font-mono text-sm border-b border-dotted border-slate-700 flex-grow mx-4"></span>
+                                            <span className="text-amber-500 font-mono text-sm">{item.page}</span>
+                                        </a>
+                                    );
+                                })}
+                            </nav>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+        );
+
+        const PartHeader = ({ title }) => (
+            <div className="w-full flex items-center justify-center py-32 bg-slate-900/30 mb-24 border-y border-slate-900">
+                <h2 className="text-5xl font-serif text-amber-500 tracking-widest uppercase text-center">{title}</h2>
+            </div>
+        );
+
+        const SectionHeader = ({ title, chapterNumber }) => (
+            <div className="mb-16 border-l-2 border-amber-500 pl-6">
+                <span className="block text-cyan-400 text-sm font-bold uppercase tracking-widest mb-2">Capítulo {chapterNumber}</span>
+                <h2 className="text-4xl md:text-5xl font-serif text-slate-100">{title}</h2>
+            </div>
+        );
+
+        const SubSectionHeader = ({ title }) => (
+            <h3 className="text-2xl font-serif text-slate-200 mt-16 mb-8 border-b border-slate-800 pb-2 inline-block">
+                {title}
+            </h3>
+        );
+
+        const TextBlock = ({ children }) => (
+            <p className="text-slate-300 text-lg md:text-xl leading-8 md:leading-9 mb-8 text-justify hyphens-auto font-sans font-light">
+                {children}
+            </p>
+        );
+
+        const Concept = ({ children }) => <span className="text-amber-500 font-medium">{children}</span>;
+        const Entity = ({ children }) => <span className="text-cyan-400">{children}</span>;
+        const BookTitle = ({ children }) => <span className="text-white italic">{children}</span>;
+
+        const InteractiveFootnote = ({ id, content, setNote }) => (
+            <sup 
+                className="text-cyan-400 cursor-pointer hover:text-white transition-colors font-bold ml-1"
+                onClick={() => setNote(content || "Contenido de la nota no disponible en este extracto.")}
+            >
+                [{id}]
+            </sup>
+        );
+
+        const Figure = ({ description }) => (
+            <figure className="my-12 w-full">
+                <div className="w-full aspect-video bg-slate-900/50 border border-dashed border-slate-700 rounded-sm flex flex-col items-center justify-center p-8 transition-colors hover:border-cyan-500/50 hover:bg-slate-900/80 group">
+                    <ImageIcon />
+                    <span className="mt-4 text-slate-500 font-mono text-xs uppercase tracking-widest group-hover:text-cyan-400 transition-colors">Insert Link: {description}</span>
+                </div>
+                <figcaption className="mt-4 text-sm text-slate-500 leading-relaxed text-justify border-t border-slate-800 pt-2 flex gap-4">
+                    <span className="font-bold text-amber-500 whitespace-nowrap">FIG. REF</span>
+                    <span>{description}</span>
+                </figcaption>
+            </figure>
+        );
+
+        const App = () => {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [activeNote, setActiveNote] = useState(null);
+
+            useEffect(() => {
+                lucide.createIcons();
+            }, [isMenuOpen]);
+
+            return (
+                <div className="antialiased selection:bg-cyan-900 selection:text-white pb-32">
+                    <ScrollProgress />
+                    <Navigation onToggleMenu={() => setIsMenuOpen(true)} />
+                    <Sidebar isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+                    
+                    {/* Padding top ajustado para evitar espacios vacíos pero respetar el header fijo */}
+                    <main className="w-full px-6 md:px-12 pt-20">
+                        
+                        <section id="part-1">
+                            <PartHeader title="Parte Uno: El Enfoque Enactivo" />
+                        </section>
+
+                        <section id="chapter-1">
+                            <SectionHeader chapterNumber="1" title="Ciencia Cognitiva y Experiencia Humana" />
+                            
+                            <TextBlock>
+                                <span className="float-left text-6xl text-amber-500 font-serif mr-4 mt-[-10px] leading-[0.8]">L</span>
+                                A CIENCIA COGNITIVA —esa parte de la ciencia de la mente tradicionalmente preocupada por los procesos cognitivos— ha sido descrita como poseedora de <Concept>"un pasado muy largo pero una historia relativamente corta"</Concept> (<Entity>Gardner</Entity> 1985, p. 9). La preocupación científica por la mente puede rastrearse hasta <Entity>Platón</Entity> y <Entity>Aristóteles</Entity>, pero el término ciencia cognitiva no surgió hasta finales del siglo veinte, como nombre para el nuevo y moderno programa de investigación científica que integraba psicología, neurociencia, lingüística, ciencias de la computación, inteligencia artificial (IA) y filosofía. Lo que unía a estas disciplinas, y separaba a la ciencia cognitiva de enfoques anteriores en psicología y filosofía, era el objetivo de hacer explícitos los principios y mecanismos de la cognición. La ciencia cognitiva, al proporcionar toda una nueva gama de conceptos, modelos y técnicas experimentales, afirmaba ser capaz de proporcionar un conocimiento científico riguroso de la mente más allá de lo que las formas anteriores de psicología y filosofía habían ofrecido.
+                            </TextBlock>
+
+                            <TextBlock>
+                                En años recientes, sin embargo, se ha vuelto cada vez más claro para muchos investigadores que la ciencia cognitiva está incompleta. La ciencia cognitiva se ha centrado en la cognición mientras descuidaba la emoción, el afecto y la motivación (<Entity>LeDoux</Entity> 2002, p. 24). Además, una ciencia completa de la mente necesita dar cuenta de la subjetividad y la conciencia.
+                            </TextBlock>
+
+                            <TextBlock>
+                                En retrospectiva, también se ha hecho evidente que, en el paso de la filosofía y psicología tradicionales a la ciencia cognitiva moderna, se perdió algo que solo ahora comienza a ser reclamado. Lo que se perdió, en pocas palabras, fue la preocupación científica por la experiencia subjetiva. En 1892, <Entity>William James</Entity> citó con aprobación la definición de psicología de <Entity>George Trumball Ladd</Entity> <Concept>"como la descripción y explicación de los estados de conciencia como tales"</Concept> (<Entity>James</Entity> 1985, p. xxv; énfasis omitido). Se suponía que la conciencia era el tema de la psicología, sin embargo, la ciencia cognitiva no ha tenido prácticamente nada que decir al respecto hasta años recientes. Para entender este descuido necesitamos considerar el desarrollo de la ciencia cognitiva desde la década de 1950.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Tres enfoques principales para el estudio de la mente pueden distinguirse dentro de la ciencia cognitiva: el <Concept>cognitivismo</Concept>, el <Concept>conexionismo</Concept> y el <Concept>dinamicismo corporizado</Concept>. Cada enfoque tiene su metáfora teórica preferida para entender la mente. Para el cognitivismo, la metáfora es la mente como computadora digital; para el conexionismo, es la mente como red neuronal; para el dinamicismo corporizado, es la mente como un sistema dinámico corporizado. El cognitivismo dominó el campo desde la década de 1950 hasta la de 1970. En la década de 1980, el conexionismo comenzó a desafiar la ortodoxia cognitivista, seguido en la década de 1990 por el dinamicismo corporizado. En la investigación contemporánea, los tres enfoques coexisten, tanto por separado como en varias formas híbridas.<InteractiveFootnote id="1" setNote={setActiveNote} />
+                            </TextBlock>
+
+                            <SubSectionHeader title="Cognitivismo" />
+                            
+                            <TextBlock>
+                                La ciencia cognitiva nació en la década de 1950 con la <Concept>"revolución cognitiva"</Concept> contra la psicología conductista. En el centro de esta revolución estaba el modelo computacional de la mente, ahora conocido como la concepción clásica de los procesos cognitivos. Según este modelo clásico, la cognición es procesamiento de información al estilo de la computadora digital. El conductismo no había permitido ninguna referencia a estados internos del organismo; las explicaciones del comportamiento tenían que formularse en términos de estímulos sensoriales y condicionamiento conductual (en el lado de la entrada), y respuesta conductual manifiesta (en el lado de la salida). El modelo computacional de la mente no solo hizo legítima la referencia a estados internos, sino que también mostró que era necesaria para explicar el comportamiento de sistemas complejos de procesamiento de información. Aún más importante, se tomó el modelo computacional para mostrar cómo el contenido o significado podía atribuirse a estados dentro del sistema. Se supone que una computadora es una máquina manipuladora de símbolos. Un símbolo es un elemento que tiene una forma física, y que representa algo. Según el modelo computacional de la mente, el cerebro también es una computadora, un <Concept>"sistema de símbolos físicos"</Concept>, y los procesos mentales se llevan a cabo mediante la manipulación de representaciones simbólicas en el cerebro (<Entity>Newell</Entity> y <Entity>Simon</Entity> 1976; <Entity>Pylyshyn</Entity> 1984).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Un modelo cognitivista típico toma la forma de un programa para resolver un problema en algún dominio. Las entradas sensoriales no simbólicas se transducen y mapean en representaciones simbólicas del dominio de la tarea. Estas representaciones son luego manipuladas de una manera puramente formal o sintáctica para llegar a una solución al problema. Las explicaciones cognitivistas se centran en la caracterización abstracta de resolución de problemas de las tareas cognitivas, la estructura y contenido de las representaciones simbólicas, y la naturaleza de los algoritmos para manipular las representaciones con el fin de resolver un problema dado. El cognitivismo va de la mano con el funcionalismo en la filosofía de la mente, el cual, en su forma computacional extrema, sostiene que la corporización del organismo es esencialmente irrelevante para la naturaleza de la mente. Es el software, no el hardware, lo que más importa para la mentalidad.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El cognitivismo hizo que el significado, en el sentido de la semántica representacional, fuera científicamente aceptable, pero al precio de desterrar la conciencia de la ciencia de la mente. (De hecho, el cognitivismo heredó su tabú sobre la conciencia directamente del conductismo). Los procesos mentales, entendidos como computaciones realizadas por el cerebro usando un lenguaje simbólico interno, se tomaron como enteramente no conscientes. Así, la conexión entre mente y significado, por un lado, y subjetividad y conciencia, por el otro, fue completamente cortada.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Mucho antes del cognitivismo, <Entity>Freud</Entity> ya había socavado cualquier identificación simplista de mente y conciencia. Según su modelo temprano, la psique está compuesta por tres sistemas, que llamó el consciente, el preconsciente y el inconsciente (<Entity>Freud</Entity> 1915, pp. 159-222). El consciente corresponde al campo de la conciencia, y el preconsciente a lo que podemos recordar pero de lo que no somos conscientes ahora. El inconsciente, en contraste, <Entity>Freud</Entity> lo consideraba parte de nuestra herencia filogenética. Es completamente somático y afectivo, y sus contenidos han sido radicalmente separados de la conciencia por la represión y no pueden entrar en el sistema consciente-preconsciente sin distorsión.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La separación cognitivista de cognición y conciencia, sin embargo, era diferente del modelo de <Entity>Freud</Entity>. Los procesos mentales, según el cognitivismo, son <Concept>"rutinas subpersonales"</Concept>, que por naturaleza son completamente inaccesibles a la conciencia personal bajo cualquier condición. La mente se dividió en dos regiones radicalmente diferentes, con un abismo insalvable entre ellas: los estados mentales subjetivos de la persona y las rutinas cognitivas subpersonales implementadas en el cerebro. La región radicalmente no consciente y subpersonal, el llamado inconsciente cognitivo, es donde realmente ocurre la acción del pensamiento; la conciencia personal tiene acceso simplemente a unos pocos resultados o manifestaciones epifenoménicas del procesamiento subpersonal (<Entity>Jackendoff</Entity> 1987). El pensamiento corresponde a la manipulación de símbolos no consciente, confinada al cráneo. Tiene lugar en un módulo cognitivo central del cerebro separado de los sistemas de percepción, emoción y acción motora. El inconsciente cognitivo no es ni somático ni afectivo, y está alojado firmemente dentro de la cabeza.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Esta separación radical de los procesos cognitivos de la conciencia creó una peculiar <Concept>"brecha explicativa"</Concept> en la teorización científica sobre la mente. El dualismo cartesiano había creado hace mucho tiempo una brecha explicativa entre mente y materia, conciencia y naturaleza. El cognitivismo, lejos de cerrar esta brecha, la perpetuó en una forma materialista al abrir una nueva brecha entre la cognición computacional subpersonal y los fenómenos mentales subjetivos. En pocas palabras, el cognitivismo no ofreció ninguna explicación en absoluto de la mentalidad en el sentido de la experiencia subjetiva. Algunos teóricos incluso llegaron a afirmar que la subjetividad y la conciencia no caen dentro de la provincia de la ciencia cognitiva (<Entity>Pylyshyn</Entity> 1984). Sin embargo, no todos los teóricos compartieron esta opinión. Una excepción notable fue <Entity>Ray Jackendoff</Entity>, quien formuló claramente el problema que enfrentaba el cognitivismo en su libro de 1987 <BookTitle>Consciousness and the Computational Mind</BookTitle>. Según <Entity>Jackendoff</Entity>, el cognitivismo, al diferenciar radicalmente la cognición computacional de la experiencia subjetiva, produjo un nuevo <Concept>"problema mente-mente"</Concept>, además del clásico problema mente-cuerpo. El problema mente-mente es el problema de la relación entre la mente computacional y la mente fenomenológica, entre los procesos cognitivos computacionales subpersonales y la experiencia consciente (<Entity>Jackendoff</Entity> 1987, p. 20). Gracias al cognitivismo, hubo que enfrentar un nuevo conjunto de problemas mente-cuerpo:
+                            </TextBlock>
+
+                            <ul className="list-decimal pl-8 text-slate-300 text-lg md:text-xl leading-8 md:leading-9 mb-8 font-light space-y-4">
+                                <li>El problema mente-cuerpo fenomenológico: ¿Cómo puede un cerebro tener experiencias?</li>
+                                <li>El problema mente-cuerpo computacional: ¿Cómo puede un cerebro lograr razonamiento?</li>
+                                <li>El problema mente-mente: ¿Cuál es la relación entre estados computacionales y experiencia?</li>
+                            </ul>
+
+                            <TextBlock>
+                                Cada problema es una variante de la brecha explicativa. La metáfora cognitivista de la mente como computadora, que estaba destinada a resolver el problema mente-cuerpo computacional, llegó así al costo de crear un nuevo problema, el problema mente-mente. Este problema es una versión de lo que ahora se conoce como el <Concept>"problema difícil de la conciencia"</Concept> (<Entity>Chalmers</Entity> 1996; <Entity>Nagel</Entity> 1974).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Durante el apogeo del cognitivismo en la década de 1970 y principios de la de 1980, a los cognitivistas les gustaba proclamar que su visión era <Concept>"el único juego en la ciudad"</Concept> (<Entity>Fodor</Entity> 1975, 1981), e insistían en que el modelo computacional de la mente no es una metáfora sino una teoría científica (<Entity>Pylyshyn</Entity> 1984), a diferencia de modelos mecanicistas anteriores, como el cerebro como centralita telefónica. El antropólogo cognitivo <Entity>Edwin Hutchins</Entity> (1995), sin embargo, ha argumentado que una transferencia metafórica confusa de la cultura a la psicología individual yace en el origen mismo de la visión cognitivista. El cognitivismo deriva de tomar lo que es de hecho una actividad sociocultural —la computación humana— y proyectarla sobre algo que ocurre dentro de la cabeza del individuo. Las propiedades cognitivas de la computación no pertenecen a la persona individual sino al sistema sociocultural de individuo-más-entorno.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El modelo original de un sistema computacional era una persona —un matemático o lógico manipulando símbolos con manos y ojos, y lápiz y papel. (La palabra "computadora" significaba originalmente "uno que computa"). Este tipo de sistema de símbolos físicos es una forma sofisticada y culturalmente específica de actividad humana. Está corporizada, requiriendo percepción y acción motora, e incrustada en un entorno sociocultural de cognición simbólica y tecnología. No está limitada por el cráneo o la piel sino que se extiende hacia el entorno. El entorno, por su parte, juega un papel necesario y activo en los procesos cognitivos mismos; no es un mero escenario externo contingente. Sin embargo, la mente humana es capaz de idealizar y conceptualizar la computación en abstracto como la aplicación mecánica de reglas formales a cadenas de símbolos, como hizo <Entity>Alan Turing</Entity> al llegar a su noción matemática de una Máquina de Turing. <Entity>Turing</Entity> logró abstraer tanto del mundo en el que el matemático computa como de los procesos psicológicos que él o ella usa para realizar una computación. Pero, ¿qué reflejan o a qué corresponden tales sistemas formales abstractos en el mundo real? Según el <Concept>"mito de la creación"</Concept> cognitivista, lo que <Entity>Turing</Entity> logró capturar fueron los elementos esenciales puros del pensamiento inteligente o cognición dentro del individuo (todo lo demás siendo meros detalles de implementación).
+                            </TextBlock>
+
+                            <TextBlock>
+                                El problema con este mito es que la computación humana real —el dominio fuente original para conceptualizar la computación en abstracto— nunca fue simplemente un proceso psicológico interno; fue también una actividad sociocultural. La computación, en otras palabras, nunca reflejó simplemente las propiedades cognitivas del individuo, sino más bien las del sistema sociocultural en el que el individuo está incrustado. Por lo tanto, cuando uno abstrae del individuo situado, lo que queda no son precisamente los elementos esenciales puros de la cognición individual, sino más bien los elementos esenciales puros del sistema sociocultural: <Concept>"La arquitectura del sistema-de-símbolos-físicos no es un modelo de cognición individual. Es un modelo de la operación de un sistema sociocultural del cual el actor humano ha sido eliminado"</Concept> (<Entity>Hutchins</Entity> 1995, p. 363; énfasis omitido). Si la computación abstracta es adecuada para modelar la estructura de los procesos de pensamiento dentro del individuo es, por tanto, cuestionable. Sin embargo, el cognitivismo, en lugar de darse cuenta de que sus programas de computadora reproducían (o extendían) las propiedades abstractas del sistema sociocultural, proyectó el modelo de sistema-de-símbolos-físicos sobre el cerebro. Debido a que el cognitivismo desde su inicio abstrajo de la cultura, la sociedad y la corporización, permaneció resistente a este tipo de análisis crítico y se casó con una metáfora reificada de la mente como una computadora en la cabeza.<InteractiveFootnote id="4" setNote={setActiveNote} />
+                            </TextBlock>
+
+                            <SubSectionHeader title="Conexionismo" />
+
+                            <TextBlock>
+                                El desafío conexionista al cognitivismo, sin embargo, no tomó la forma de este tipo de crítica. Más bien, la crítica conexionista se centró en la implausibilidad neurológica del modelo de sistema-de-símbolos-físicos y varias deficiencias percibidas del procesamiento de símbolos comparado con las redes neuronales (<Entity>McLelland</Entity>, <Entity>Rummelhart</Entity>, y el PDP Research Group 1986; <Entity>Smolensky</Entity> 1988).
+                            </TextBlock>
+
+                            <TextBlock>
+                                El conexionismo surgió a principios de la década de 1980, revisando y revitalizando ideas de la era precognitivista de la cibernética.<InteractiveFootnote id="5" setNote={setActiveNote} /> El conexionismo está ahora muy extendido. Su metáfora central de la mente es la red neuronal. Los modelos conexionistas de procesos cognitivos toman la forma de redes neuronales artificiales, que son sistemas virtuales ejecutados en una computadora digital. Una red neuronal artificial está compuesta por capas de muchas unidades simples similares a neuronas que están unidas por conexiones ponderadas numéricamente. Las fuerzas de conexión cambian según varias reglas de aprendizaje y la historia de actividad del sistema.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La red se entrena para convertir representaciones de entrada numéricas (en lugar de simbólicas) en representaciones de salida numéricas. Dadas la entrada y el entrenamiento apropiados, la red converge hacia algún rendimiento cognitivo particular, como producir sonidos del habla a partir de texto escrito (como en el famoso sistema NETtalk de <Entity>Sejnowski</Entity> y <Entity>Rosenberg</Entity> 1986), o categorizar palabras según su papel léxico (<Entity>Elman</Entity> 1991). Tales rendimientos cognitivos corresponden a patrones emergentes de actividad en la red. Estos patrones no son símbolos en el sentido computacional tradicional, aunque se supone que son aproximadamente descriptibles en términos simbólicos (<Entity>Smolensky</Entity> 1988). Las explicaciones conexionistas se centran en la arquitectura de la red neuronal (unidades, capas y conexiones), las reglas de aprendizaje y las representaciones subsimbólicas distribuidas que emergen de la actividad de la red. Según el conexionismo, las redes neuronales artificiales capturan las propiedades cognitivas abstractas de las redes neuronales en el cerebro y proporcionan un mejor modelo de la arquitectura cognitiva de la mente que los sistemas de símbolos físicos del cognitivismo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El movimiento conexionista de la década de 1980 enfatizó el reconocimiento de patrones perceptuales como el paradigma de la inteligencia, en contraste con el razonamiento deductivo, enfatizado por el cognitivismo. Mientras que el cognitivismo alojó firmemente la mente dentro de la cabeza, el conexionismo ofreció una concepción más dinámica de la relación entre los procesos cognitivos y el entorno. Por ejemplo, los conexionistas hipotetizaron que las propiedades estructurales del razonamiento secuencial y la cognición lingüística surgen no de manipulaciones de símbolos en el cerebro, sino de la interacción dinámica de redes neuronales con recursos simbólicos en el entorno externo, como diagramas, símbolos numéricos y lenguaje natural (<Entity>Rummelhart</Entity> et al. 1986).
+                            </TextBlock>
+
+                            <TextBlock>
+                                A pesar de estos avances, los sistemas conexionistas no involucraron ningún acoplamiento sensorial y motor con el entorno, sino que operaron sobre la base de entradas y salidas artificiales (establecidas inicialmente por el diseñador del sistema). El conexionismo también heredó del cognitivismo la idea de que la cognición es básicamente la resolución de problemas predefinidos (planteados al sistema desde fuera por el observador o diseñador) y que la mente es esencialmente el inconsciente cognitivo confinado al cráneo, el dominio subpersonal de representación computacional en el mente-cerebro. El desacuerdo del conexionismo con el cognitivismo fue sobre la naturaleza de la computación y la representación (simbólica para los cognitivistas, subsimbólica para los conexionistas).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Con respecto al problema de la brecha explicativa, el conexionismo amplió el alcance de la mente computacional pero proporcionó pocos, si alguno, nuevos recursos para abordar la brecha entre la mente computacional y la mente fenomenológica. La subjetividad todavía no tenía lugar en las ciencias de la mente, y la brecha explicativa permaneció sin abordar.
+                            </TextBlock>
+
+                            <SubSectionHeader title="Dinamicismo Corporizado" />
+
+                            <TextBlock>
+                                El tercer enfoque, el dinamicismo corporizado, surgió en la década de 1990 e implicó una postura crítica hacia el computacionalismo en cualquiera de sus formas, cognitivista o conexionista. El cognitivismo y el conexionismo dejaron sin cuestionar la relación entre los procesos cognitivos y el mundo real. Como resultado, sus modelos de cognición eran incorpóreos y abstractos. Por un lado, se decía que los procesos cognitivos estaban instanciados (o realizados o implementados) en el cerebro, con poco pensamiento dado a lo que tal noción podría significar, dados los hechos biológicos del cerebro y su relación con el cuerpo vivo del organismo y con el entorno. Por otro lado, se asumió que la relación entre la mente y el mundo era de representación abstracta: representaciones simbólicas o subsimbólicas en el mente-cerebro representan estados de cosas en algún dominio exterior restringido que ha sido especificado de antemano e independientemente del sistema cognitivo. La mente y el mundo fueron así tratados como separados e independientes entre sí, con el mundo exterior reflejado por un modelo representacional dentro de la cabeza. El dinamicismo corporizado cuestionó todas estas suposiciones, en particular la concepción de la cognición como representación mental incorpórea y abstracta. Al igual que el conexionismo, el dinamicismo corporizado se centra en sistemas dinámicos auto-organizados en lugar de sistemas de símbolos físicos (las redes conexionistas son ejemplos de sistemas dinámicos auto-organizados), pero sostiene además que los procesos cognitivos emergen de la causalidad no lineal y circular de interacciones sensoriomotoras continuas que involucran al cerebro, el cuerpo y el entorno. La metáfora central para este enfoque es la mente como sistema dinámico corporizado en el mundo, en lugar de la mente como red neuronal en la cabeza.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Como su nombre sugiere, el dinamicismo corporizado combina dos compromisos teóricos principales. Un compromiso es con un enfoque de sistemas dinámicos para la cognición, y el otro es con un enfoque corporizado para la cognición.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La idea central del enfoque de sistemas dinámicos es que la cognición es un fenómeno intrínsecamente temporal y, en consecuencia, necesita ser entendido desde la perspectiva de la teoría de sistemas dinámicos (<Entity>Port</Entity> y <Entity>van Gelder</Entity> 1995; <Entity>van Gelder</Entity> 1998). Un modelo de sistemas dinámicos toma la forma de un conjunto de ecuaciones de evolución que describen cómo cambia el estado del sistema con el tiempo. La colección de todos los estados posibles del sistema corresponde al "espacio de estados" o "espacio de fase" del sistema, y las formas en que el sistema cambia de estado corresponden a trayectorias en este espacio. Las explicaciones de sistemas dinámicos se centran en las fuerzas internas y externas que dan forma a tales trayectorias a medida que se despliegan en el tiempo. Las entradas se describen como perturbaciones a la dinámica intrínseca del sistema, en lugar de como instrucciones a seguir, y los estados internos se describen como compensaciones auto-organizadas desencadenadas por perturbaciones, en lugar de como representaciones de estados de cosas externos.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La idea central del enfoque corporizado es que la cognición es el ejercicio de saber-hacer hábil en acción situada y corporizada (<Entity>Varela</Entity>, <Entity>Thompson</Entity>, y <Entity>Rosch</Entity> 1991). Las estructuras y procesos cognitivos emergen de patrones sensoriomotores recurrentes que gobiernan la percepción y la acción en agentes autónomos y situados. La cognición como saber-hacer hábil no es reducible a la resolución de problemas preespecificados, porque el sistema cognitivo plantea los problemas y especifica qué acciones deben tomarse para su solución.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Estrictamente hablando, el dinamicismo y la corporización son compromisos teóricos lógicamente independientes. Por ejemplo, el conexionismo dinámico incorpora ideas dinamicistas en redes neuronales artificiales, mientras que la investigación de agentes autónomos en robótica incorpora ideas de corporización sin emplear la teoría de sistemas dinámicos. Sin embargo, el dinamicismo y la corporización van bien juntos y están íntimamente relacionados para muchos teóricos. Como señala <Entity>Randall Beer</Entity>: <Concept>"Aunque un enfoque dinámico ciertamente puede sostenerse por sí solo, es más poderoso y distintivo cuando se acopla con una perspectiva situada y corporizada sobre la cognición"</Concept> (<Entity>Beer</Entity> 2000, p. 97).
+                            </TextBlock>
+
+                            <TextBlock>
+                                El dinamicismo corporizado proporciona una perspectiva diferente sobre el inconsciente cognitivo respecto al computacionalismo. Ya no se ve el inconsciente cognitivo como manipulación de símbolos incorpórea o reconocimiento de patrones separado de la emoción y la acción motora en el mundo. En cambio, el inconsciente cognitivo consiste en aquellos procesos de cognición y emoción corporizados e incrustados que no pueden hacerse experiencialmente accesibles a la persona. Esta caracterización del inconsciente cognitivo se ofrece no como un constructo hipotético en un modelo funcionalista abstracto de la mente, sino más bien como una indicación provisional de un gran espacio-problema en nuestro intento de entender la cognición humana.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Al menos cuatro puntos necesitan enfatizarse en este contexto. Primero, como asunto conceptual, las relaciones entre lo que es no consciente, inconsciente, preconsciente y consciente (en cualquiera de los innumerables sentidos de estas palabras) —o en un idioma diferente, pero no equivalente, lo que es subpersonal y personal— permanecen lejos de estar claras. Segundo, como asunto empírico, el alcance y los límites de la conciencia de los propios procesos psicológicos y somáticos aún no han sido claramente mapeados e indudablemente varían entre sujetos. Tercero, el punto clave sigue en pie de que la mayor parte de lo que somos como seres psicológicos y biológicos es en algún sentido inconsciente. Se sigue que la subjetividad no puede entenderse sin situarla en relación con estas estructuras y procesos inconscientes. Finalmente, estas estructuras y procesos inconscientes, incluidos aquellos descriptibles como cognitivos y emocionales, se extienden por todo el cuerpo y hacen bucle a través de los entornos materiales, sociales y culturales en los que el cuerpo está incrustado; no están limitados a procesos neuronales dentro del cráneo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La emergencia del dinamicismo corporizado en la década de 1990 coincidió con un renacimiento del interés científico y filosófico en la conciencia, junto con una renovada disposición a abordar la brecha explicativa entre las explicaciones científicas de los procesos cognitivos y la subjetividad y experiencia humanas. Un número de trabajos sobre cognición corporizada estaban explícitamente preocupados por la experiencia y desafiaron las suposiciones objetivistas del computacionalismo. Algunos de estos trabajos también tenían una orientación explícitamente dinámica. En particular, el enfoque enactivo de <Entity>Varela</Entity>, <Entity>Thompson</Entity> y <Entity>Rosch</Entity> (1991) tuvo como objetivo construir puentes entre las explicaciones dinamicistas corporizadas de la mente y las explicaciones fenomenológicas de la subjetividad y experiencia humanas. El presente libro continúa este proyecto.
+                            </TextBlock>
+
+                            <SubSectionHeader title="El Enfoque Enactivo" />
+
+                            <TextBlock>
+                                Enacción significa la acción de promulgar una ley, pero también connota la realización o ejecución de una acción más generalmente. Tomando prestadas las palabras del poeta <Entity>Antonio Machado</Entity>, <Entity>Varela</Entity> describió la enacción como el trazado de un camino al caminar: <Concept>"Caminante, son tus huellas el camino y nada más; caminante, no hay camino, se hace camino al andar"</Concept> (<Entity>Varela</Entity> 1987, p. 63).
+                            </TextBlock>
+
+                            <TextBlock>
+                                El término enfoque enactivo y el concepto asociado de enacción fueron introducidos en la ciencia cognitiva por <Entity>Varela</Entity>, <Entity>Thompson</Entity> y <Entity>Rosch</Entity> (1991) en su libro <BookTitle>The Embodied Mind</BookTitle>. Su objetivo era unificar bajo un mismo título varias ideas relacionadas. La primera idea es que los seres vivos son agentes autónomos que se generan y mantienen activamente a sí mismos, y por lo tanto también enactúan o traen a la existencia sus propios dominios cognitivos. La segunda idea es que el sistema nervioso es un sistema dinámico autónomo: Genera y mantiene activamente sus propios patrones coherentes y significativos de actividad, de acuerdo con su operación como una red circular y reentrante de neuronas interactuantes. El sistema nervioso no procesa información en el sentido computacionalista, sino que crea significado. La tercera idea es que la cognición es el ejercicio de saber-hacer hábil en acción situada y corporizada. Las estructuras y procesos cognitivos emergen de patrones sensoriomotores recurrentes de percepción y acción. El acoplamiento sensoriomotor entre organismo y entorno modula, pero no determina, la formación de patrones dinámicos endógenos de actividad neuronal, que a su vez informan el acoplamiento sensoriomotor. La cuarta idea es que el mundo de un ser cognitivo no es un reino externo preespecificado, representado internamente por su cerebro, sino un dominio relacional enactuado o traído a la existencia por la agencia autónoma de ese ser y su modo de acoplamiento con el entorno. La quinta idea es que la experiencia no es un asunto secundario epifenoménico, sino central para cualquier comprensión de la mente, y necesita ser investigada de una manera fenomenológica cuidadosa. Por esta razón, el enfoque enactivo sostiene que la ciencia de la mente y las investigaciones fenomenológicas de la experiencia humana necesitan ser perseguidas de una manera complementaria y mutuamente informadora.<InteractiveFootnote id="9" setNote={setActiveNote} />
+                            </TextBlock>
+
+                            <TextBlock>
+                                La convicción que motiva el presente libro es que el enfoque enactivo ofrece recursos importantes para avanzar en la brecha explicativa. Un punto clave es que el enfoque enactivo explica la mismidad y la subjetividad desde cero al dar cuenta de la autonomía propia de los seres vivos y cognitivos. La carga de este libro es mostrar que este enfoque de la subjetividad es fructífero.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Para avanzar en este proyecto, necesitamos extraer de la biología, neurociencia, psicología, filosofía y fenomenología. En este libro, trato de integrar investigaciones de todos estos campos.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Un hilo común que corre a través de los siguientes capítulos es una dependencia de la tradición filosófica de la fenomenología, inaugurada por <Entity>Edmund Husserl</Entity> y desarrollada en varias direcciones por numerosos otros, más notablemente para mis propósitos por <Entity>Maurice Merleau-Ponty</Entity> (<Entity>Moran</Entity> 2000; <Entity>Sokolowski</Entity> 2000; <Entity>Spiegelberg</Entity> 1994).<InteractiveFootnote id="10" setNote={setActiveNote} /> Mi objetivo, sin embargo, no es repetir los análisis de esta tradición, tal como se encuentran en este o aquel autor o texto, sino presentarlos de nuevo a la luz de las preocupaciones actuales en las ciencias de la mente. Así, este libro puede verse como una contribución al trabajo de una nueva generación de fenomenólogos que se esfuerzan por "naturalizar" la fenomenología (<Entity>Petitot</Entity> et al. 1999). El proyecto de naturalizar la fenomenología puede entenderse de diferentes maneras, y mi propia forma de pensar al respecto surgirá más tarde en este libro. La idea básica por el momento es que no es suficiente para la fenomenología simplemente describir y analizar filosóficamente la experiencia vivida; la fenomenología necesita ser capaz de entender e interpretar sus investigaciones en relación con las de la biología y la ciencia de la mente.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Sin embargo, la ciencia de la mente tiene mucho que aprender de los análisis de la experiencia vivida realizados por los fenomenólogos. De hecho, una vez que la ciencia vuelve su atención a la subjetividad y la conciencia, a la experiencia tal como se vive, entonces no puede prescindir de la fenomenología, que por lo tanto necesita ser reconocida y cultivada como un socio indispensable para las ciencias experimentales de la mente y la vida. Como veremos, este giro científico hacia la fenomenología conduce tanto a una comprensión renovada de la naturaleza, la vida y la mente como a una naturalización de la fenomenología (<Entity>Zahavi</Entity> 2004b).
+                            </TextBlock>
+
+                            <TextBlock>
+                                También hay una convergencia más profunda del enfoque enactivo y la fenomenología que vale la pena resumir brevemente aquí. Ambos comparten una visión de la mente como teniendo que constituir sus objetos. Aquí constitución no significa fabricación o creación; la mente no fabrica el mundo. "Constituir", en el sentido fenomenológico técnico, significa traer a la conciencia, presentar o revelar. La mente trae cosas a la conciencia; revela y presenta el mundo. Dicho de una manera fenomenológica clásica, la idea es que los objetos se revelan o se hacen disponibles a la experiencia en las formas en que lo hacen gracias a las actividades intencionales de la conciencia. Las cosas aparecen, por así decirlo, teniendo las características que tienen, debido a cómo son reveladas y traídas a la conciencia por las actividades intencionales de nuestras mentes. Tal constitución no es aparente para nosotros en la vida cotidiana pero requiere un análisis sistemático para revelarse. Consideremos nuestra experiencia del tiempo (discutida en el Capítulo 11). Nuestro sentido del momento presente como abriéndose simultáneamente hacia el futuro inmediato y deslizándose hacia el pasado inmediato depende de la estructura formal de nuestra conciencia del tiempo. El momento presente se manifiesta como una zona o lapso de actualidad, en lugar de como un destello instantáneo, gracias a la forma en que nuestra conciencia está estructurada. Como veremos más tarde, el momento presente también se manifiesta de esta manera debido a la dinámica no lineal de la actividad cerebral. Tejer juntos estos dos tipos de análisis, el fenomenológico y el neurobiológico, para cerrar la brecha entre la experiencia subjetiva y la biología, define el objetivo de la neurofenomenología (<Entity>Varela</Entity> 1996), una rama del enfoque enactivo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El enfoque enactivo y la fenomenología también se encuentran en el terreno común de la vida o el ser vivo. Para el enfoque enactivo, la autonomía es una característica fundamental de la vida biológica, y hay una profunda continuidad de vida y mente. Para la fenomenología, la intencionalidad es una característica fundamental del cuerpo vivido. El enfoque enactivo y la fenomenología convergen así en la proposición de que la subjetividad y la conciencia tienen que ser explicadas en relación con la autonomía e intencionalidad de la vida, en un sentido pleno de "vida" que abarca, como veremos, el organismo, el cuerpo subjetivamente vivido de uno y el mundo de la vida.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Tomará algún trabajo antes de que estas ideas puedan presentarse claramente ante nosotros en este libro. En el próximo capítulo introduzco la filosofía fenomenológica con más detalle, antes de volver al enfoque enactivo en el Capítulo 3.
+                            </TextBlock>
+                        </section>
+                        
+                    </main>
+
+                    <TooltipModal activeNote={activeNote} onClose={() => setActiveNote(null)} />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
