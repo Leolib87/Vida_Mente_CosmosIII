@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Mente en la Vida | Evan Thompson</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            950: '#020617', // Deep Dark Background
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #020617;
+            color: #cbd5e1;
+            overflow-x: hidden;
+        }
+        /* Hide Scrollbar but keep functionality */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .text-justify {
+            text-align: justify;
+        }
+        .hyphens-auto {
+            hyphens: auto;
+            -webkit-hyphens: auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, AnimatePresence, useScroll, useSpring } = window.Motion;
+        
+        const BOOK_DATA = {
+            title: "La Mente en la Vida",
+            subtitle: "Biología, Fenomenología y las Ciencias de la Mente",
+            author: "Evan Thompson",
+            toc: [
+                { title: "Prefacio", page: "ix", id: "preface", url: "#" },
+                { title: "Agradecimientos", page: "xi", id: "acknowledgments", url: "#" },
+                { separator: "PARTE UNO: El Enfoque Enactivo" },
+                { title: "1. Ciencia Cognitiva y Experiencia Humana", page: "3", url: "#" },
+                { title: "2. La Conexión Fenomenológica", page: "16", url: "#" },
+                { title: "3. Autonomía y Emergencia", page: "37", url: "#" },
+                { title: "4. La Estructura del Comportamiento", page: "66", url: "#" },
+                { separator: "PARTE DOS: La Vida en la Mente" },
+                { title: "5. Autopoiesis: La Organización de lo Vivo", page: "91", url: "#chapter-5" },
+                { title: "6. Vida y Mente: La Filosofía del Organismo", page: "128", url: "#" },
+                { title: "7. Haciendo Camino al Andar: Desarrollo y Evolución", page: "166", url: "#" },
+                { separator: "PARTE TRES: Conciencia en la Vida" },
+                { title: "8. La Vida más allá de la Brecha", page: "219", url: "#" },
+                { title: "9. Subjetividad Sensoriomotora", page: "243", url: "#" },
+                { title: "10. Mira de Nuevo: Conciencia e Imaginería Mental", page: "267", url: "#" },
+                { title: "11. Temporalidad y el Presente Vivo", page: "312", url: "#" },
+                { title: "12. Dinamismo Primordial: Emoción y Valencia", page: "360", url: "#" },
+                { title: "13. Empatía y Enculturación", page: "382", url: "#" },
+                { separator: "APÉNDICES" },
+                { title: "A: Husserl y la Ciencia Cognitiva", page: "413", url: "#" },
+                { title: "B: Emergencia y el Problema de la Causación Descendente", page: "417", url: "#" },
+                { title: "Notas", page: "443", url: "#" },
+                { title: "Referencias", page: "483", url: "#" },
+                { title: "Índice de Conceptos", page: "527", url: "#" }
+            ]
+        };
+
+        // --- Icons ---
+        const MenuIcon = () => <i data-lucide="menu" className="w-6 h-6"></i>;
+        const XIcon = () => <i data-lucide="x" className="w-6 h-6"></i>;
+        const ImageIcon = () => <i data-lucide="image" className="w-8 h-8 text-slate-500"></i>;
+
+        // --- Components ---
+
+        const ScrollProgress = () => {
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+
+            return (
+                <motion.div
+                    className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50"
+                    style={{ scaleX }}
+                />
+            );
+        };
+
+        const TooltipModal = ({ activeNote, onClose }) => {
+            if (!activeNote) return null;
+            return (
+                <AnimatePresence>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20, x: "-50%" }}
+                        animate={{ opacity: 1, y: 0, x: "-50%" }}
+                        exit={{ opacity: 0, y: 20, x: "-50%" }}
+                        className="fixed bottom-10 left-1/2 w-[90vw] max-w-2xl bg-slate-900/95 backdrop-blur-md border border-slate-800 p-6 rounded-lg shadow-2xl z-50 text-slate-300 text-sm leading-relaxed text-justify"
+                    >
+                        <div className="flex justify-between items-start mb-2">
+                            <span className="text-cyan-400 font-bold text-xs uppercase tracking-widest">Nota al Pie</span>
+                            <button onClick={onClose} className="hover:text-white"><XIcon /></button>
+                        </div>
+                        {activeNote}
+                    </motion.div>
+                </AnimatePresence>
+            );
+        };
+
+        const Navigation = ({ onToggleMenu }) => (
+            <motion.header 
+                initial={{ y: -100 }}
+                animate={{ y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="fixed top-0 w-full flex justify-between items-center px-6 py-4 z-40 bg-slate-950/80 backdrop-blur-sm border-b border-white/5"
+            >
+                <div className="flex flex-col">
+                    <span className="text-slate-100 font-serif font-bold text-lg tracking-wide">{BOOK_DATA.title}</span>
+                    <span className="text-cyan-400 text-xs uppercase tracking-widest">{BOOK_DATA.author}</span>
+                </div>
+                <button 
+                    onClick={onToggleMenu}
+                    className="flex items-center gap-2 text-slate-300 hover:text-cyan-400 transition-colors uppercase text-xs tracking-widest font-semibold group"
+                >
+                    <span>Índice</span>
+                    <span className="group-hover:translate-x-1 transition-transform"><MenuIcon /></span>
+                </button>
+            </motion.header>
+        );
+
+        const Sidebar = ({ isOpen, onClose }) => (
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={onClose}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        />
+                        <motion.div
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed right-0 top-0 h-full w-full max-w-md bg-slate-900 border-l border-slate-800 z-50 overflow-y-auto p-8 shadow-2xl"
+                        >
+                            <div className="flex justify-between items-center mb-10">
+                                <h2 className="text-2xl font-serif text-amber-500">Contenido</h2>
+                                <button onClick={onClose} className="text-slate-400 hover:text-white"><XIcon /></button>
+                            </div>
+                            
+                            <nav className="space-y-6">
+                                {BOOK_DATA.toc.map((item, idx) => {
+                                    if (item.separator) {
+                                        return (
+                                            <div key={idx} className="pt-6 border-t border-slate-800">
+                                                <h3 className="text-xs uppercase tracking-[0.2em] text-cyan-400 mb-4">{item.separator}</h3>
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <a 
+                                            key={idx} 
+                                            href={item.url} 
+                                            onClick={onClose}
+                                            className="group flex justify-between items-baseline py-2 hover:translate-x-2 transition-transform cursor-pointer"
+                                        >
+                                            <span className="text-slate-300 font-serif text-lg group-hover:text-white transition-colors">{item.title}</span>
+                                            <span className="text-slate-600 font-mono text-sm border-b border-dotted border-slate-700 flex-grow mx-4"></span>
+                                            <span className="text-amber-500 font-mono text-sm">{item.page}</span>
+                                        </a>
+                                    );
+                                })}
+                            </nav>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+        );
+
+        const PartHeader = ({ title }) => (
+            <div className="w-full flex items-center justify-center py-32 bg-slate-900/30 mb-24 border-y border-slate-900">
+                <h2 className="text-5xl font-serif text-amber-500 tracking-widest uppercase text-center">{title}</h2>
+            </div>
+        );
+
+        const SectionHeader = ({ title, chapterNumber }) => (
+            <div className="mb-16 border-l-2 border-amber-500 pl-6">
+                <span className="block text-cyan-400 text-sm font-bold uppercase tracking-widest mb-2">Capítulo {chapterNumber}</span>
+                <h2 className="text-4xl md:text-5xl font-serif text-slate-100">{title}</h2>
+            </div>
+        );
+
+        const SubSectionHeader = ({ title }) => (
+            <h3 className="text-2xl font-serif text-slate-200 mt-16 mb-8 border-b border-slate-800 pb-2 inline-block">
+                {title}
+            </h3>
+        );
+
+        const TextBlock = ({ children }) => (
+            <p className="text-slate-300 text-lg md:text-xl leading-8 md:leading-9 mb-8 text-justify hyphens-auto font-sans font-light">
+                {children}
+            </p>
+        );
+
+        const Concept = ({ children }) => <span className="text-amber-500 font-medium">{children}</span>;
+        const Entity = ({ children }) => <span className="text-cyan-400">{children}</span>;
+        const BookTitle = ({ children }) => <span className="text-white italic">{children}</span>;
+
+        const InteractiveFootnote = ({ id, content, setNote }) => (
+            <sup 
+                className="text-cyan-400 cursor-pointer hover:text-white transition-colors font-bold ml-1"
+                onClick={() => setNote(content || "Contenido de la nota no disponible en este extracto.")}
+            >
+                [{id}]
+            </sup>
+        );
+
+        const Figure = ({ description }) => (
+            <figure className="my-12 w-full">
+                <div className="w-full aspect-video bg-slate-900/50 border border-dashed border-slate-700 rounded-sm flex flex-col items-center justify-center p-8 transition-colors hover:border-cyan-500/50 hover:bg-slate-900/80 group">
+                    <ImageIcon />
+                    <span className="mt-4 text-slate-500 font-mono text-xs uppercase tracking-widest group-hover:text-cyan-400 transition-colors">Insert Link: {description}</span>
+                </div>
+                <figcaption className="mt-4 text-sm text-slate-500 leading-relaxed text-justify border-t border-slate-800 pt-2 flex gap-4">
+                    <span className="font-bold text-amber-500 whitespace-nowrap">FIG. REF</span>
+                    <span>{description}</span>
+                </figcaption>
+            </figure>
+        );
+
+        const Table = ({ title, columns, rows }) => (
+            <div className="my-12 overflow-x-auto">
+                <div className="text-amber-500 font-bold mb-4 text-sm uppercase tracking-widest">{title}</div>
+                <table className="w-full text-left border-collapse border border-slate-700">
+                    <thead>
+                        <tr>
+                            {columns.map((col, idx) => (
+                                <th key={idx} className="p-4 border-b border-slate-700 bg-slate-900 text-cyan-400 font-serif font-bold text-sm uppercase">{col}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.map((row, rIdx) => (
+                            <tr key={rIdx} className="hover:bg-slate-900/50 transition-colors">
+                                {row.map((cell, cIdx) => (
+                                    <td key={cIdx} className="p-4 border-b border-slate-800 text-slate-300 text-sm font-mono">{cell}</td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
+
+        const App = () => {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [activeNote, setActiveNote] = useState(null);
+
+            useEffect(() => {
+                lucide.createIcons();
+            }, [isMenuOpen]);
+
+            return (
+                <div className="antialiased selection:bg-cyan-900 selection:text-white pb-32">
+                    <ScrollProgress />
+                    <Navigation onToggleMenu={() => setIsMenuOpen(true)} />
+                    <Sidebar isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+                    
+                    <main className="w-full px-6 md:px-12 pt-24">
+                        
+                        <section id="part-2">
+                            <PartHeader title="Parte Dos: La Vida en la Mente" />
+                        </section>
+
+                        <section id="chapter-5">
+                            <SectionHeader chapterNumber="5" title="Autopoiesis: La Organización de lo Vivo" />
+                            
+                            <TextBlock>
+                                <span className="float-left text-6xl text-amber-500 font-serif mr-4 mt-[-10px] leading-[0.8]">E</span>
+                                N LA VIDA CADA COMIENZO ES ÚNICO, pero ninguno es aislado y autocontenido. Comenzamos como células individuales, formadas a partir de la unión de dos células parentales, un óvulo y un espermatozoide. Nuestras células parentales también son descendientes, producidas en los cuerpos de nuestras madres y padres, quienes deben sus orígenes a acoplamientos aún anteriores de óvulo y espermatozoide. Cada comienzo tiene un comienzo antes de él y otro antes de ese, conduciendo hacia atrás a través del pasado biológico en retroceso hasta su tiempo y lugar de origen, el comienzo de la vida en la Tierra.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Alrededor de cuatro mil millones de años se interponen entre nuestro tiempo y ese eón distante del surgimiento de la vida. Un número de esa magnitud es difícil de comprender para la mente humana. Su inmensidad parece disminuir la fuerza de señalar nuestra ascendencia común con todas las cosas vivas en la Tierra. Más cerca de casa están los cien mil millones de células nerviosas o neuronas que componen el cerebro humano. Todas son la progenie de un pequeño pliegue de células que surgió cuando éramos embriones de unas cuatro semanas. Dentro de cada una de ellas, en su proteína y ADN, podemos encontrar un parecido familiar con los genes y enzimas de todas las otras células vivas en la Tierra. Albergamos el pasado en todas partes dentro de nuestros cuerpos. Para las células dentro de nosotros, la composición química del entorno somático juega un papel que recuerda al entorno oceánico donde residían las células más tempranas. Hace tres mil millones de años, las bacterias nadaban en los bajos cálidos de los mares primigenios de la Tierra. Entre sus descendientes hoy están las bacterias que habitan dentro de nuestros cuerpos, sin las cuales no podríamos vivir, mientras que otros remanentes de su progenie, como las mitocondrias y los cilios móviles, existen dentro de nuestras células modernas (<Entity>Margulis</Entity> 1984, 1993).
+                            </TextBlock>
+
+                            <TextBlock>
+                                La idea de que toda la vida evolucionó de un ancestro común y, por lo tanto, que hay una unidad subyacente a la diversidad generalizada de la vida es central para la biología moderna. Se nos enseña en la escuela que la unidad de la vida se basa en tres cosas: (1) todos los seres vivos están hechos de células; (2) los ciclos de vida de todas las células —su formación, crecimiento, desarrollo, reproducción, etc.— se basan en reacciones químicas entre tipos similares de moléculas; y (3) la forma en que los aminoácidos se unen para formar proteínas está especificada por el ADN y el ARN de acuerdo con un esquema preciso y casi universal.
+                            </TextBlock>
+
+                            <TextBlock>
+                                A estos puntos podemos añadir un cuarto, siguiendo a teóricos que abordan la pregunta "¿qué es la vida?" buscando principios de organización biológica. Hay una organización formal básica de la vida, y su paradigma y caso mínimo se encuentra en la célula individual. Un organismo unicelular es un ser que se hace a sí mismo o se autoproduce. La autoproducción es diferente de la reproducción: en la reproducción, una célula se divide en dos; en la autoproducción, una célula se produce continuamente a sí misma como un sistema espacialmente delimitado, distinto de su medio o entorno. Lo que es notable sobre la autoproducción es que cada reacción molecular en el sistema es generada por el mismo sistema que esas reacciones moleculares producen. Hace algunos años, los neurobiólogos <Entity>Humberto Maturana</Entity> y <Entity>Francisco Varela</Entity> llamaron la atención sobre esta organización circular y autoproductora y la llamaron <Concept>autopoiesis</Concept> (<Entity>Maturana</Entity> y <Entity>Varela</Entity> 1973, 1980; <Entity>Varela</Entity>, <Entity>Maturana</Entity>, y <Entity>Uribe</Entity> 1974). Mi propósito en este capítulo es presentar algunas ideas clave del enfoque autopoiético de la vida.
+                            </TextBlock>
+
+                            <SubSectionHeader title="La Teoría Celular" />
+
+                            <TextBlock>
+                                En 1858, un año antes de la publicación de <BookTitle>El Origen de las Especies</BookTitle> de <Entity>Charles Darwin</Entity>, el biólogo alemán <Entity>Rudolf Virchow</Entity> propuso lo que ahora se conoce como la teoría celular: la unidad básica de toda la vida es la célula y todas las células surgen de células preexistentes. En su libro <BookTitle>Patología Celular</BookTitle> <Entity>Virchow</Entity> escribió:
+                            </TextBlock>
+
+                            <TextBlock>
+                                "Cada día trae nuevos descubrimientos, pero también abre nuevos asuntos para el descubrimiento. ¿Hay algo positivo en histología?, tenemos que preguntarnos. ¿Cuáles son las partes del cuerpo desde donde comienzan las acciones vitales? ¿Cuáles son los elementos activos y cuáles los pasivos? Estas son preguntas que han dado lugar a grandes dificultades, dominando el campo de la fisiología y la patología, y que he resuelto demostrando que 'la célula constituye la verdadera unidad orgánica', que es la forma irreductible última de cada elemento vivo, y que de ella emanan todas las actividades de la vida tanto en la salud como en la enfermedad." (<Entity>Virchow</Entity> 1967, p. 23)
+                            </TextBlock>
+
+                            <TextBlock>
+                                <Entity>Virchow</Entity> no fue el primero en observar la célula viva. Las primeras observaciones de células datan de 1674, cuando <Entity>Anton van Leeuwenhoek</Entity>, el naturalista y pulidor de lentes holandés, miró el agua de estanque a través de un microscopio y vio criaturas diminutas nadando allí. En el propio siglo de <Entity>Virchow</Entity>, muchos naturalistas observaron que los tejidos de los organismos vivos están compuestos de células. Pero muchos de ellos también creían en una idea conocida como "la formación libre de células": que las células se desarrollan a partir de un material no celular previo. <Entity>Virchow</Entity> rechazó esta idea sobre cómo las células llegan a existir. Resumió su visión rival en un famoso aforismo latino: "La existencia de una célula presupone la existencia previa de alguna otra célula —omnis cellula e cellula (toda célula debe provenir de alguna otra célula)— igual que una planta no puede ocurrir excepto que se derive de alguna otra planta, o un animal de algún otro animal" (<Entity>Virchow</Entity> 1967, p. 25).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Podría parecer que la biología ha ido más allá de la visión de <Entity>Virchow</Entity> de la célula como "la forma irreductible última de cada elemento vivo". La biología molecular nos ha llevado profundamente dentro de la célula, al universo microscópico del ADN, ARN y aminoácidos. No puede haber duda de que se ha obtenido una visión y descubrimiento irreemplazables desde la perspectiva molecular. Sin embargo, como varios biólogos han discutido en años recientes, la biología molecular puede perder de vista al organismo como un todo (<Entity>Goodwin</Entity> 1994; <Entity>Rose</Entity> 1997). Aquí también, vale la pena recordar las palabras de <Entity>Virchow</Entity>: "No hay duda de que los cambios moleculares que ocurren dentro de las células se refieren a alguna parte u otra que las compone; el resultado final se debe, sin embargo, a la célula desde la cual comenzó la acción vital y el elemento vivo no es activo excepto en la medida en que nos presenta un todo completo que disfruta de su propia existencia separada" (<Entity>Virchow</Entity> 1967, p. 23).
+                            </TextBlock>
+
+                            <TextBlock>
+                                La idea de que la célula es un todo completo y que todas las células surgen de células preexistentes parecería plantear un dilema: o la vida siempre ha existido o debe haber habido una primera célula. Pero si todas las células surgen de células preexistentes, ¿cómo podría la vida llegar a existir o comenzar en primer lugar? "Solo hay una forma de formar células", escribió <Entity>Virchow</Entity>, "es decir, por fisiparidad; un elemento se divide tras otro. Cada nueva generación procede de alguna generación precedente" (<Entity>Virchow</Entity> 1967, p. 25). Si la vida tuvo un origen, un comienzo histórico, entonces debe haber habido una primera generación de células vivas. Pero, ¿cómo podría una primera generación llegar a existir sin alguna generación anterior en la que confiar? ¿Cómo podría la vida surgir de la no vida?
+                            </TextBlock>
+
+                            <TextBlock>
+                                Según la comprensión científica actual, nuestro sistema solar y la Tierra tomaron forma hace unos cinco mil millones de años, seguidos unos mil millones de años más tarde por el origen de la vida durante el Eón Arcaico, con la posterior expansión de la vida en los cinco reinos de seres vivos conocidos hoy. Monera es el reino más antiguo; comprende todos los procariotas o células que no tienen núcleos (bacterias). Los miembros pertenecientes a los otros cuatro reinos son todos eucariotas u organismos compuestos de células nucleadas: Protoctistas (ej., amebas y algas verdes), Hongos, Plantas y Animales (<Entity>Margulis</Entity> y <Entity>Schwartz</Entity> 1988).
+                            </TextBlock>
+
+                            <TextBlock>
+                                El origen, expansión e historia de la vida generalmente se representan como un árbol con muchas ramas, una imagen que proporciona una forma de visualizar la unidad de la vida debido a la evolución de un ancestro común. Los seres vivos surgen de seres vivos anteriores, y por lo tanto hay una continuidad subyacente desde las formas de vida más antiguas hasta las más modernas. Con el origen de la vida hace más de 3.5 mil millones de años, sin embargo, sucedió algo novedoso, surgió una nueva forma u orden de cosas. Aunque la vida está compuesta de elementos físicos y químicos, los organismos vivos son diferentes de otros tipos de cosas fisicoquímicas, y la superficie de un planeta poblado por seres vivos es sorprendentemente diferente de un planeta que no tiene vida.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Dada esta perspectiva naturalista y evolutiva, la única salida del dilema planteado aquí es suponer que debe haber habido sistemas químicos precursores más simples, protocélulas o "Células-Ur", que llevaron eventualmente a las "células ancestras" de los organismos bacterianos más antiguos (<Entity>Morowitz</Entity> 1992; ver también <Entity>Margulis</Entity> 1984). Sabemos que toda la vida contemporánea debe derivar de un ancestro universal, que podría haber sido una sola célula o una población de células, pero no sabemos cuántos orígenes independientes de protocélulas hubo conduciendo a este organismo ancestral. Como observa <Entity>Harold Morowitz</Entity> en su libro <BookTitle>Beginnings of Cellular Life</BookTitle>: "El problema no es simplemente el origen de la vida, es la formación físico-química del Ur-organismo y una época evolutiva posterior que da lugar al ancestro universal" (<Entity>Morowitz</Entity> 1992, p. 88).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Una serie de preguntas diferentes, pero interrelacionadas, surgen de esta perspectiva: ¿Cuáles eran las condiciones ambientales de la Tierra primitiva cuando surgió la vida? ¿Cuándo surgió exactamente la vida? ¿Surgió la vida más de una vez, en diferentes momentos y lugares? ¿Cómo surgieron las células bacterianas complejas de sistemas protocelulares más simples? ¿Cómo surgió la vida protocelular de la no vida? ¿Qué entendemos exactamente por "vida" en este sentido mínimo?
+                            </TextBlock>
+
+                            <TextBlock>
+                                Muchos científicos prefieren evitar la última pregunta por completo porque la ven como filosófica en lugar de empírica. Pero la pregunta no desaparecerá tan fácilmente. La pregunta de cómo y cuándo se originó la vida es inseparable de la pregunta de qué es un sistema vivo. Si el objetivo es determinar cómo y cuándo surgió la vida, entonces se necesita una forma clara de caracterizar lo que distingue a los sistemas vivos de los no vivos. Tal caracterización también podría servir como estándar o criterio para reconocer vida en otros planetas, o para determinar si algo que podríamos sintetizar artificialmente algún día calificaría como vivo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                En la biología contemporánea, hay tres enfoques principales para caracterizar la vida. Un enfoque es caracterizar la vida sobre la base de la genética y las poblaciones reproductivas. Una generación de bacterias hace la siguiente generación de bacterias; una generación de moscas de la fruta produce la siguiente generación; y así sucesivamente, para todas las plantas y animales. Desde esta perspectiva, la vida depende de la continuidad histórica y la evolución, del vínculo generacional basado genéticamente y del surgimiento de nuevas variantes dentro de una población como resultado de varios factores evolutivos.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Una segunda forma de caracterizar la vida es más ecológica. Desde esta perspectiva, los organismos individuales son vistos no solo como miembros de poblaciones vinculadas reproductivamente, sino también como seres que interactúan constructivamente con sus entornos, y así cambian el mundo en el que viven ellos y sus descendientes. Los organismos son seres "constructores de nichos" (<Entity>Odling-Smee</Entity> 1988). Un ejemplo a gran escala particularmente de esta forma de pensar se puede encontrar en la teoría Gaia propuesta por el químico atmosférico <Entity>James Lovelock</Entity> y la microbióloga <Entity>Lynn Margulis</Entity> (<Entity>Lovelock</Entity> 1979, 1988; <Entity>Lovelock</Entity> y <Entity>Margulis</Entity> 1974; <Entity>Margulis</Entity> y <Entity>Lovelock</Entity> 1974). En su visión, la vida es un fenómeno que puede ocurrir solo a escala planetaria. La persistencia de la vida depende de procesos integrados que involucran a la biota (la suma total de seres vivos) y el entorno material de la Tierra (atmósfera, rocas y océanos). <Entity>Lovelock</Entity> en particular ha argumentado que si no fuera por la presencia global de organismos vivos, la Tierra se volvería inhabitable para la vida.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Finalmente, hay una tercera forma de caracterizar la vida, una en la que el foco está en la entidad u organismo individual único, aquí y ahora (<Entity>Luisi</Entity>, <Entity>Lazcano</Entity>, y <Entity>Varela</Entity> 1996). Supongamos que estás mirando un solo espécimen. Podría ser una cepa de bacterias, una medusa recién descubierta, un complejo supramolecular sintético, un espécimen de presunta vida en un planeta distante, o un nuevo robot similar a un insecto. Entonces te preguntas: ¿Es esto una cosa viva o no? Esta pregunta apunta a una entidad individual, y los antecedentes evolutivos y ecológicos son de menor importancia inmediata (podrían ser desconocidos o difíciles de establecer). En este tipo de situación local, aquí y ahora, la demanda de un criterio claro para distinguir la vida de la no vida parece especialmente apremiante.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Estas tres formas de caracterizar la vida son complementarias, no mutuamente excluyentes. En el caso de la vida en nuestro propio planeta —la única vida que conocemos actualmente— "vida" en un sentido pleno significa poblaciones vinculadas reproductivamente de organismos individuales ecológicamente incrustados y activos. La biología molecular moderna, sin embargo, ha descuidado la caracterización individual de la vida y ha adoptado casi exclusivamente la caracterización genético-poblacional. Sin embargo, la caracterización individual tiene cierta prioridad lógica sobre la reproductiva. La razón es que la reproducción presupone un individuo y algún proceso mediante el cual ese individuo se reproduce. Así, el individuo precede lógica y empíricamente a la reproducción y al proceso evolutivo de selección (<Entity>Fleischaker</Entity> 1988; <Entity>Maturana</Entity> y <Entity>Varela</Entity> 1980, pp. 96-111; 1987, pp. 55-74). En otras palabras, cualquier población o serie evolutiva dada es secundaria a la individuación de los miembros de esa población o serie. Por lo tanto, una caracterización de la vida que da cuenta de la individualidad tiene prioridad lógica sobre una que no lo hace.
+                            </TextBlock>
+
+                            <TextBlock>
+                                En la historia de la biología, se han propuesto una variedad de criterios para distinguir entre sistemas vivos y no vivos —composición química basada en carbono, ácidos nucleicos, la capacidad de moverse, la habilidad de reproducirse, y así sucesivamente. Un procedimiento estándar en los libros de texto de biología hoy en día es enumerar tales características para delinear la clase de cosas vivas. Tales listas generalmente incluyen metabolismo y automantenimiento, el material genético de ADN y ARN, y evolución por selección natural. El problema con este enfoque es que es descriptivo, no explicativo. Da por sentada la distinción entre vivo y no vivo, y luego enumera algunas características comunes de los sistemas aceptados como vivos. Pero, ¿cómo sabemos qué características deben incluirse en la lista o cuándo está completa la lista? Las listas describen cosas pero no las explican. Para explicar necesitamos una teoría.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Según la teoría celular, todos los seres vivos están formados por células. Aunque esta afirmación proporciona un criterio científico de vida, tiene deficiencias. Se basa en la observación de que nunca se ha encontrado vida en la Tierra sin células. Pero en ausencia de una caracterización clara de lo que es un sistema vivo, no podemos asumir simplemente que la vida no celular es imposible o que tal vida nunca ha existido. Además, definir la vida en términos de células es básicamente tautológico: la vida es celular porque no hay vida sin la célula. Para salir de la tautología necesitamos especificar las propiedades básicas de una célula sin invocar la noción de vida. En otras palabras, tenemos que especificar qué tiene una célula que la hace viva.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Una estrategia para cumplir con esta demanda sería caracterizar un sistema vivo, como una célula, en términos de su forma relacional u organización (<Entity>Maturana</Entity> y <Entity>Varela</Entity> 1980, 1987). La organización de un sistema consiste en las relaciones que definen al sistema como miembro de una clase específica. Para que algo califique como un automóvil, por ejemplo, sus partes tienen que estar dispuestas o relacionadas entre sí de cierta manera. Al especificar la organización de un sistema, uno abstrae un patrón o conjunto de relaciones que define qué tipo de sistema es. La organización de un sistema no es, por tanto, equivalente a sus relaciones estructurales y componentes reales porque la misma organización puede realizarse estructuralmente de diferentes maneras, y un sistema puede sufrir cambios estructurales sin cambiar necesariamente su organización. Así, la organización de un automóvil puede realizarse en diferentes materiales físicos y mecanismos, y estos pueden cambiar durante la vida del automóvil. De manera similar, una sola célula, como una bacteria, sufre muchos cambios estructurales durante su ciclo de vida sin cambiar su organización como organismo unicelular. ¿Es posible especificar una organización definitiva en el caso de los sistemas vivos? Con respecto a la teoría celular, ¿se puede especificar la organización de una célula independientemente de su estructura?
+                            </TextBlock>
+
+                            <SubSectionHeader title="La Organización Autopoyética" />
+
+                            <TextBlock>
+                                La teoría de la autopoiesis, formulada por <Entity>Maturana</Entity> y <Entity>Varela</Entity> (1973, 1980, 1987), aborda precisamente estas preguntas sobre la organización de lo vivo. <Entity>Maturana</Entity> y <Entity>Varela</Entity> se centran en el individuo biológico único, la célula viva. Una célula es un sistema termodinámicamente abierto, intercambiando continuamente materia y energía con su entorno. Algunas moléculas se importan a través de la membrana y participan en procesos dentro de la célula, mientras que otras moléculas se excretan como desecho. A lo largo de este intercambio, la célula produce una gran cantidad de sustancias que permanecen dentro de la célula (gracias a su membrana) y participan en esos mismos procesos de producción. En otras palabras, una célula produce sus propios componentes, que a su vez la producen, en un proceso circular continuo. La palabra "<Concept>autopoiesis</Concept>" fue acuñada para nombrar este tipo de autoproducción continua. Una célula es una unidad autoproductora o autopoyética. Los sistemas que no se producen a sí mismos, pero cuyo producto es diferente de ellos mismos, se dicen <Concept>alopoyéticos</Concept>. Por ejemplo, un ribosoma (un pequeño cuerpo esférico dentro de una célula viva compuesto de ARN y proteína, y el sitio de la síntesis de proteínas) es un participante crucial en la autopoiesis de una célula, pero es producido por procesos distintos a los que constituyen su propia operación (<Entity>Varela</Entity>, <Entity>Maturana</Entity>, y <Entity>Uribe</Entity> 1974, pp. 188-189). <Entity>Maturana</Entity> y <Entity>Varela</Entity> también distinguen los sistemas autopoyéticos de los heteropoyéticos, que son sistemas alopoyéticos que surgen en el ámbito del diseño humano, como los coches y las computadoras digitales. La proposición fundamental de <Entity>Maturana</Entity> y <Entity>Varela</Entity> es que los sistemas vivos son autopoyéticos o tienen una <Concept>organización autopoyética</Concept>. Están organizados de tal manera que sus procesos constituyentes producen los componentes necesarios para la continuación de esos mismos procesos.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El concepto de la organización autopoyética surgió de un intento de abstraer de los procesos moleculares de la célula la forma o patrón básico que permanece invariante a través de cualquier tipo de cambio estructural, siempre y cuando la célula se mantenga unida como una entidad distinta. Para entender la organización autopoyética necesitamos verla a nivel celular. La Figura 3.1, como vimos anteriormente, da una ilustración esquemática del patrón u organización básica de una célula mínima. Por "célula mínima" me refiero a una célula con una organización mínima suficiente para que sea una entidad distinta e independiente. Una célula está formada espacialmente por una membrana semipermeable, que establece un límite entre el interior de la célula y el entorno exterior. La membrana sirve como barrera para la libre difusión entre la célula y el entorno, pero también permite el intercambio de materia y energía a través del límite. Dentro de este límite, la célula comprende una red metabólica. Basada en parte en nutrientes que entran desde el exterior, la célula se sostiene mediante una red de transformaciones químicas. Pero —y este es el primer punto clave— la red metabólica es capaz de regenerar sus propios componentes, incluyendo los componentes que forman el límite de la membrana. Además —y este es el segundo punto clave— sin la contención del límite proporcionada por la membrana, la red química se dispersaría y se ahogaría en el medio circundante. Así, la célula encarna un proceso circular de autogeneración: gracias a su red metabólica, reemplaza continuamente los componentes que se están destruyendo, incluida la membrana, y así recrea continuamente la diferencia entre ella misma y todo lo demás.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Podemos abordar esta idea de una manera ligeramente diferente: una célula se destaca de una sopa molecular creando los límites que la separan de lo que no es. Los procesos metabólicos dentro de la célula determinan estos límites, pero los procesos metabólicos mismos son posibles gracias a esos mismos límites. De esta manera, la célula emerge como una figura de un fondo químico. Si este proceso de autoproducción se interrumpe, los componentes celulares ya no forman un todo espacialmente individuado y se difunden gradualmente de nuevo en una sopa molecular.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El patrón presentado en la Figura 3.1 es lo que <Entity>Maturana</Entity> y <Entity>Varela</Entity> entienden por la organización autopoyética. Cualquier cosa que realice esta organización es un sistema autopoyético. En la visión de <Entity>Maturana</Entity> y <Entity>Varela</Entity>, "la noción de autopoiesis es necesaria y suficiente para caracterizar la organización de los sistemas vivos" (1980, p. 82; énfasis omitido). También afirman: "La autopoiesis en el espacio físico es necesaria y suficiente para caracterizar un sistema como un sistema vivo" (p. 112). Algunos científicos han argumentado recientemente, embargo, que aunque la autopoiesis es una condición necesaria para la vida, no es suficiente (<Entity>Bitbol</Entity> y <Entity>Luisi</Entity> 2005; <Entity>Bourgine</Entity> y <Entity>Stewart</Entity> 2004; <Entity>Luisi</Entity> 2003). Abordaré este tema al final de este capítulo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                <Entity>Maturana</Entity> y <Entity>Varela</Entity> dan varias definiciones precisas de autopoiesis en sus escritos. Su definición original y canónica es de una "máquina autopoyética":
+                            </TextBlock>
+
+                            <TextBlock>
+                                Una máquina autopoyética es una máquina organizada (definida como una unidad) como una red de procesos de producción (transformación y destrucción) de componentes que produce los componentes que:
+                            </TextBlock>
+
+                            <TextBlock>
+                                (i) a través de sus interacciones y transformaciones regeneran y realizan continuamente la red de procesos (relaciones) que los produjeron; y
+                            </TextBlock>
+
+                            <TextBlock>
+                                (ii) la constituyen (la máquina) como una unidad concreta en el espacio en el que ellos (los componentes) existen especificando el dominio topológico de su realización como una red. (<Entity>Maturana</Entity> y <Entity>Varela</Entity> 1980, pp. 78-79)
+                            </TextBlock>
+
+                            <TextBlock>
+                                Por "máquina" <Entity>Maturana</Entity> y <Entity>Varela</Entity> entienden un sistema que se define por su organización y que, por lo tanto, puede explicarse en términos de las relaciones que constituyen esa organización, en lugar de en términos de los componentes estructurales que realizan esa organización en un sistema concreto particular. "Componentes" y "procesos de producción" son formas abstractas de caracterizar lo que en el dominio molecular son moléculas y reacciones químicas. Así, en términos generales, un sistema autopoyético molecular es uno en el que las reacciones químicas producen moléculas que (i) participan en y catalizan esas reacciones y (ii) individuan espacialmente el sistema produciendo una membrana que alberga esas reacciones.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Una definición ligeramente diferente de la organización autopoyética es dada por <Entity>Varela</Entity>, <Entity>Maturana</Entity>, y <Entity>Uribe</Entity> (1974) y luego ilustrada con referencia a una célula:
+                            </TextBlock>
+
+                            <TextBlock>
+                                La organización autopoyética se define como una unidad por una red de producciones de componentes que
+                            </TextBlock>
+
+                            <TextBlock>
+                                (i) participan recursivamente en la misma red de producciones de componentes que produjeron estos componentes, y
+                            </TextBlock>
+
+                            <TextBlock>
+                                (ii) realizan la red de producciones como una unidad en el espacio en el que existen los componentes.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Considere por ejemplo el caso de una célula: es una red de reacciones químicas que producen moléculas tales que
+                            </TextBlock>
+
+                            <TextBlock>
+                                (i) a través de sus interacciones generan y participan recursivamente en la misma red de reacciones que las produjeron, y
+                            </TextBlock>
+
+                            <TextBlock>
+                                (ii) realizan la célula como una unidad material.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Así, la célula como unidad física, topográfica y operacionalmente separable del fondo, permanece como tal solo en la medida en que esta organización se realiza continuamente bajo un recambio permanente de materia, independientemente de sus cambios en forma y especificidad de sus reacciones químicas constitutivas. (<Entity>Maturana</Entity>, <Entity>Varela</Entity>, y <Entity>Uribe</Entity> 1974, p. 188)
+                            </TextBlock>
+
+                            <TextBlock>
+                                Uno podría preguntarse qué significa la frase "generan y participan recursivamente" en la ilustración celular de la primera condición. Parece plausible interpretar "participar" en una reacción como significando ser un reactivo, y "generar" una reacción como significando catalizar esa reacción (<Entity>McMullin</Entity> 1999, p. 2). Así, la primera condición de la definición "es que la red de reacciones que caracteriza la organización del sistema debe producir todas las especies de componentes moleculares que se considera que constituyen materialmente el sistema, y estos componentes deben generar ellos mismos la red de reacciones, en el sentido de catalizar algunas (¿o todas?) de las reacciones (que de otro modo ocurrirían a una tasa insignificante)" (<Entity>McMullin</Entity> 1999, p. 3). La segunda condición es que la red de reacciones también debe establecer el sistema como una "unidad en el espacio", es decir, demarcar el sistema estableciendo un límite entre él y el entorno externo. Esta condición se cumple en una célula mediante la producción de una membrana semipermeable.<InteractiveFootnote id="2" setNote={setActiveNote} />
+                            </TextBlock>
+
+                            <TextBlock>
+                                En escritos posteriores, <Entity>Varela</Entity> (2000a) propuso la siguiente definición simplificada de autopoiesis. Para que un sistema sea autopoyético, (i) el sistema debe tener un límite semipermeable; (ii) el límite debe ser producido por una red de reacciones que tiene lugar dentro del límite; y (iii) la red de reacciones debe incluir reacciones que regeneren los componentes del sistema.
+                            </TextBlock>
+
+                            <TextBlock>
+                                En resumen, la forma o patrón de la organización autopoyética es la de una peculiar interdependencia circular entre una red interconectada de procesos autorregeneradores y la autoproducción de un límite, tal que todo el sistema persiste en una continua autoproducción como un individuo espacialmente distinto.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La organización autopoyética captura la organización mínima de una célula sin invocar la noción de vida ni definir la vida en términos de la célula. De hecho, la organización autopoyética podría realizarse en muchos tipos diferentes de sistemas moleculares, no solo en células biológicas tal como las conocemos. Por ejemplo, las reacciones químicas en las células vivas involucran ácidos nucleicos (ARN y ADN) y las enzimas correspondientes. La caracterización autopoyética de la vida mínima, embargo, no depende de este arreglo estructural particular de ácidos nucleicos y proteínas. La caracterización autopoyética es más general y, por lo tanto, podría sostenerse para una "vida no codificada" —por ejemplo, una protocélula terrestre temprana (<Entity>Fleischaker</Entity> 1990a) o un sistema molecular sintetizado que carece de ácidos nucleicos (<Entity>Bachman</Entity>, <Entity>Luisi</Entity>, y <Entity>Lang</Entity> 1992). En otras palabras, la caracterización autopoyética de la vida mínima, aunque basada en la célula viva, establece el patrón general del cual la vida basada en ADN es una posible expresión.
+                            </TextBlock>
+
+                            <Figure description="Figura 5.1: Versión de ADN/ARN de la autopoiesis." />
+
+                            <TextBlock>
+                                La Figura 5.1 muestra la organización autopoyética en relación con la versión de vida basada en ADN encontrada en la estructura de las células vivas en la Tierra. Como hemos visto, la organización autopoyética es circular: los componentes moleculares producidos por una red de reacción interna se ensamblan en un límite semipermeable, que contiene el microentorno interno y la red de reacción, que nuevamente produce los componentes moleculares, y así sucesivamente de forma continua mientras la célula se mantenga unida. Mientras que la Figura 3.1 representa la organización autopoyética sin especificar el tipo de reacciones y la naturaleza química de los componentes, la Figura 5.1 muestra explícitamente el papel jugado por el ADN y el ARN en las células vivas.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Una ventaja de caracterizar la vida en términos de la organización mínima o patrón de autopoiesis es que podemos listar criterios claros para determinar si algo satisface esa organización:
+                            </TextBlock>
+
+                            <ol className="list-decimal pl-8 text-slate-300 text-lg md:text-xl leading-8 md:leading-9 mb-8 font-light space-y-4">
+                                <li><strong>Límite Semipermeable:</strong> Verifique si el sistema está definido por un límite semipermeable compuesto de componentes moleculares. ¿Permite el límite discriminar entre el interior y el exterior del sistema en relación con sus componentes relevantes? Si es así, proceda al 2.</li>
+                                <li><strong>Red de Reacción:</strong> Verifique si los componentes están siendo producidos por una red de reacciones que tiene lugar dentro del límite. Si es así, proceda al 3.</li>
+                                <li><strong>Interdependencia:</strong> Verifique si 1 y 2 son interdependientes: ¿están los componentes del límite siendo producidos por la red interna de reacciones, y es esa red regenerada por condiciones debidas al límite mismo? Si es así, el sistema es autopoyético.</li>
+                            </ol>
+
+                            <TextBlock>
+                                Al aplicar estos criterios, uno puede determinar si cualquier sistema dado es autopoyético, incluso en un nivel donde las concepciones de sentido común de la vida son de poca ayuda. Considere los elementos en la Tabla 5.1, cada uno de los cuales se analiza según los tres criterios anteriores.
+                            </TextBlock>
+
+                            <Table 
+                                title="Tabla 5.1: Determinando si una entidad es autopoyética"
+                                columns={["Entidad", "Criterio 1: Límite", "Criterio 2: Red", "Criterio 3: Interdependencia", "¿Autopoyético?"]}
+                                rows={[
+                                    ["Virus", "Sí", "No", "No", "No"],
+                                    ["Cristal", "Sí", "No", "No", "No"],
+                                    ["Bacteria", "Sí", "Sí", "Sí", "Sí"],
+                                    ["Ameba", "Sí", "Sí", "Sí", "Sí"],
+                                    ["Mitocondria", "Sí", "Sí", "No", "No"],
+                                    ["Sección de ADN", "No", "No", "No", "No"],
+                                    ["Conjunto autocatalítico", "No", "Sí", "No", "No"]
+                                ]}
+                            />
+
+                            <TextBlock>
+                                Una bacteria (un procariota) y una ameba (un eucariota) son autopoyéticos porque satisfacen los tres criterios. Un cristal, sin embargo, no es autopoyético porque sus componentes no se generan desde dentro de sí mismo. Las moléculas replicativas, como el ADN y el ARN, tampoco son autopoyéticas porque no tienen ni una membrana semipermeable ni una red de reacción interna, y por lo tanto no instancian una organización circular y autoproductora. Los virus a menudo se describen como vivos, pero no satisfacen los criterios autopoyéticos. Un virus es una estructura delimitada con una cubierta proteica, satisfaciendo así el primer criterio. Pero el segundo (y por ende el tercero) no se satisface porque los componentes moleculares de un virus (ácidos nucleicos) no se generan dentro del virus, sino fuera en la célula huésped. Un virus no tiene metabolismo propio y, por lo tanto, no se automantiene en el sentido autopoyético. Fuera de una célula huésped, en el entorno, un virus puede persistir, pero no intercambia materia con su entorno de una manera continua y autoproductora.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Otro caso interesante son los conjuntos autocatalíticos de moléculas. Un catalizador es una sustancia molecular cuya presencia es necesaria para que tenga lugar una reacción química particular, o para acelerar una reacción, pero el catalizador no cambia por la reacción. Las reacciones autocatalíticas son aquellas en las que el producto de la reacción es un catalizador para esa misma reacción. Un conjunto autocatalítico o un sistema colectivamente autocatalítico es una red química compuesta por muchos bucles autoperpetuantes de reacciones moleculares. El sistema está compuesto de moléculas que actúan como catalizadores para las mismas reacciones que producen esas moléculas. Tal red será capaz de recrearse constantemente a sí misma siempre que haya un suministro suficiente de moléculas de alimento. La propiedad clave de este tipo de red química es la <Concept>clausura catalítica</Concept>. Excepto por las moléculas de alimento suministradas desde fuera, cada molécula en el sistema es producida por las reacciones autocatalíticas que componen la red.
+                            </TextBlock>
+
+                            <TextBlock>
+                                <Entity>Stuart Kauffman</Entity> ha sugerido que la clausura catalítica es la base de la vida: "La vida, en su raíz, yace en la propiedad de la clausura catalítica entre una colección de especies moleculares. Sola, cada molécula está muerta. Conjuntamente, una vez que se logra la clausura catalítica entre ellas, el sistema colectivo de moléculas está vivo" (<Entity>Kauffman</Entity> 1995, p. 50). <Entity>Kauffman</Entity> ve la clausura catalítica como similar a la autopoiesis, y ha sugerido que sus modelos de conjuntos autocatalíticos de proteínas pueden servir como modelos para la realización molecular de la autopoiesis (<Entity>Brockman</Entity> 1995, p. 217; <Entity>Kauffman</Entity> 1995, p. 274). Pero aunque hay un parecido familiar entre un sistema autopoyético y un conjunto autocatalítico, los dos no son equivalentes (<Entity>Maturana</Entity> y <Entity>Varela</Entity> 1980, p. 94; <Entity>McMullin</Entity> 1999). El parecido familiar se debe al segundo criterio, red de reacción. La diferencia es que en un sistema colectivamente autocatalítico no hay un límite semipermeable que demarque espacialmente y contenga la red (Criterio 1), y por lo tanto el conjunto autocatalítico no puede ser regenerado por condiciones debidas a tal límite (Criterio 3). Por lo tanto, un conjunto autocatalítico no califica como un individuo espacialmente distinto de la manera en que lo hace un sistema autopoyético.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Un sistema autopoyético mínimo es equivalente no simplemente a una red autocatalítica, sino a una red autocatalítica alojada dentro y vinculada interdependientemente a un límite de membrana semipermeable. La propiedad crucial es que la membrana no es un mero dispositivo de contención para la red de reacción; más bien, se produce y mantiene como un producto de esa red. Esta propiedad es decisiva para caracterizar un sistema autopoyético como un individuo autónomo (<Entity>Varela</Entity> 1979). Un sistema colectivamente autocatalítico, debido a que carece de esta propiedad, no califica como un agente autónomo propiamente dicho (pace <Entity>Kauffman</Entity> 2000; ver <Entity>McMullin</Entity> 2001).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Los tres criterios autopoyéticos se basan claramente en organismos unicelulares. ¿Qué pasa con los organismos multicelulares? ¿Son estos también sistemas autopoyéticos?
+                            </TextBlock>
+
+                            <TextBlock>
+                                Al discutir este tema, <Entity>Maturana</Entity> y <Entity>Varela</Entity> (1987, pp. 87-89) distinguen entre sistemas autopoyéticos de primer orden y de segundo orden. Las células vivas son sistemas autopoyéticos de primer orden, mientras que los sistemas que incluyen células individuales como componentes estructurales son sistemas autopoyéticos de segundo orden. <Entity>Maturana</Entity> y <Entity>Varela</Entity> llaman a tales sistemas "metacelulares" y enumeran como ejemplos organismos multicelulares, colonias y sociedades. Dada su definición de un metacelular como cualquier unidad en cuya estructura podemos distinguir agregados celulares en acoplamiento cercano, uno también podría incluir órganos, como el corazón o el hígado. La cuestión crucial es si algún sistema autopoyético de segundo orden es también un sistema autopoyético de primer orden.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Para responder a esta pregunta no es suficiente señalar que un sistema autopoyético de segundo orden contiene células como elementos de su estructura, pues la cuestión es si los componentes propios del sistema (cualesquiera que sean) realizan la organización autopoyética. Por ejemplo, uno podría pensar que un organismo multicelular como un insecto es una unidad autopoyética de primer orden porque sus componentes, incluidos los que forman su límite, están siendo reemplazados constantemente desde dentro de sí mismo, sujetos a condiciones impuestas por el límite. Al mismo tiempo, una colonia de insectos podría considerarse simplemente un agregado de sistemas autopoyéticos, pero no una unidad autopoyética por derecho propio. El pensamiento sería que debido a que un agregado de cuerpos humanos en una sociedad no es un cuerpo en un nivel superior, un agregado de sistemas autopoyéticos no es en sí mismo un sistema autopoyético. El problema es que para que esta diferenciación intuitiva sea rigurosa, debe basarse en una cuenta explícita de los tipos de organización propios de los sistemas metacelulares:
+                            </TextBlock>
+
+                            <TextBlock>
+                                "Sabemos con gran detalle cómo una célula llega a ser como una unidad autopoyética molecular, pero ¿cómo podemos describir posiblemente en un organismo los componentes y relaciones que lo hacen un sistema autopoyético molecular? En el caso de los metacelulares, todavía ignoramos los procesos moleculares que constituirían a esos metacelulares como unidades autopoyéticas comparables a las células... dejaremos abierta la cuestión de si los sistemas metacelulares son o no sistemas autopoyéticos de primer orden. Lo que podemos decir es que tienen clausura operacional en su organización: su identidad está especificada por una red de procesos dinámicos cuyos efectos no salen de esa red... cualquiera que sea la organización de los metacelulares, están compuestos de sistemas autopoyéticos de primer orden y forman linajes reproduciéndose a través de células. Estas dos condiciones son suficientes para asegurarnos de que lo que sucede en ellos, como unidades autónomas, sucede con conservación de la autopoiesis de sus células componentes, así como con conservación de su propia organización." (<Entity>Maturana</Entity> y <Entity>Varela</Entity> 1987, pp. 88-89)
+                            </TextBlock>
+
+                            <TextBlock>
+                                Dado el conocimiento que tenemos ahora de los procesos moleculares durante el desarrollo de organismos metazoos (ver Capítulo 7), parece razonable afirmar que los metazoos son sistemas autopoyéticos de primer orden además de sistemas de segundo orden. Sin embargo, persisten las dificultades, pues al determinar si un sistema dado califica como autopoyético, mucho depende de cómo interpretemos "límite" y "red de reacción interna" en los criterios para la autopoiesis. Por un lado, la teoría de la autopoiesis fue formulada para aplicarse a procesos de producción en el dominio molecular, por lo que permitir que el límite y la red sean no moleculares plantea problemas. Aquí es pertinente la distinción de <Entity>Varela</Entity> (1979) entre autonomía (clausura organizacional) y autopoiesis. Un sistema autopoyético es un tipo específico de sistema autónomo —uno que tiene una clausura organizacional de procesos de producción en el dominio molecular— pero puede haber sistemas autónomos que no son autopoyéticos si sus procesos constituyentes exhiben clausura organizacional en su dominio de operación. Por ejemplo, una colonia de insectos o un grupo de animales podrían calificar como autónomos en este sentido. Por otro lado, tomar "límite" para significar solo una membrana semipermeable unicelular o incluso una capa epidérmica multicelular parece demasiado restrictivo (las plantas y los insectos no tienen piel). Más bien, el asunto crucial es que el sistema produzca y regule su propia topología interna y límite funcional, no la estructura física particular que realiza este límite (<Entity>Bourgine</Entity> y <Entity>Stewart</Entity> 2004; <Entity>Zaretzky</Entity> y <Entity>Letelier</Entity> 2002).
+                            </TextBlock>
+
+                            <SubSectionHeader title="Autopoiesis Mínima" />
+
+                            <TextBlock>
+                                Según los criterios autopoyéticos, los sistemas vivos más simples que se encuentran en la Tierra son células procariotas o bacterianas. A diferencia de la célula eucariota estructuralmente más compleja, que contiene una serie de compartimentos internos, incluido un núcleo que alberga los cromosomas y el ADN de la célula, la célula bacteriana no tiene compartimentos, y su ADN enrollado flota dentro de la célula. No obstante, una célula bacteriana es ya una entidad biológica altamente compleja, en la que unos dos mil a cinco mil genes y un número similar de proteínas se producen mutuamente dentro de la membrana celular que fabrican juntos (<Entity>Margulis</Entity> y <Entity>Sagan</Entity> 1995, p. 50).
+                            </TextBlock>
+
+                            <TextBlock>
+                                ¿Se podría modelar un sistema molecular más aerodinámico que cumpla con los tres criterios autopoyéticos? Esta pregunta es relevante no solo para modelar la autopoiesis mínima, sino también para la investigación sobre los orígenes de la vida, pues un objetivo central de esta investigación es explicar cómo pudieron haber surgido las protocélulas y eventualmente haber conducido a las células vivas complejas que vemos hoy (<Entity>Morowitz</Entity> 1992; <Entity>Szostak</Entity>, <Entity>Bartel</Entity>, y <Entity>Luisi</Entity> 2001).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Una forma de abordar el tema de la autopoiesis mínima es a través de modelos informáticos, un enfoque central para el campo conocido como "Vida Artificial" o "Alife". Uno de los primeros modelos informáticos de vida mínima fue ideado por <Entity>Varela</Entity>, <Entity>Maturana</Entity>, y <Entity>Uribe</Entity> (1974) algunos años antes de que el campo de Alife se definiera a finales de la década de 1980 (<Entity>Langton</Entity> 1989). Este modelo ha sido revisado y reimplementado por <Entity>McMullin</Entity> y <Entity>Varela</Entity> (1997). La química cualitativa del modelo está inspirada y representa una simplificación del tipo de reacciones químicas encontradas en las células vivas. El dominio químico del modelo ocurre en un espacio discreto bidimensional. Este tipo de modelo se conoce como autómata de teselación o autómata celular bidimensional. Cada posición en el espacio está vacía o ocupada por una sola partícula. Las partículas generalmente se mueven en caminatas aleatorias en el espacio. Hay tres tipos distintos de partículas, y participan en tres reacciones distintas (ver Lámina I):
+                            </TextBlock>
+
+                            <ul className="list-disc pl-8 text-slate-300 text-lg md:text-xl leading-8 md:leading-9 mb-8 font-light space-y-4">
+                                <li><strong>Producción:</strong> Dos partículas de sustrato (S) pueden reaccionar en presencia de un catalizador (K) para formar una partícula de enlace (L).</li>
+                                <li><strong>Enlace:</strong> Las partículas L pueden unirse a otras partículas L. Cada partícula L puede formar (como máximo) dos enlaces, permitiendo así la formación de cadenas indefinidamente largas, que pueden cerrarse para formar membranas. Las partículas L unidas se vuelven inmóviles.</li>
+                                <li><strong>Desintegración:</strong> Una partícula L puede desintegrarse espontáneamente, produciendo dos partículas S. Cuando ocurre esta desintegración, cualquier enlace asociado con la partícula L también se destruye.</li>
+                            </ul>
+
+                            <TextBlock>
+                                Las cadenas de partículas L son permeables a las partículas S pero impermeables a las partículas K y L. Por lo tanto, una cadena cerrada o una membrana que encierra partículas K o L las atrapa efectivamente.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El fenómeno autopoyético básico predicho para esta química artificial es la posibilidad de realizar estructuras dinámicas similares a células que producen continuamente las condiciones para su propio mantenimiento. Tal sistema consistiría en una cadena cerrada o membrana de partículas L que encierra una o más partículas K. Puede haber una producción continua de partículas L porque se forman mediante reacciones catalizadas de las partículas S que permean a través de la membrana. Debido a que no pueden escapar a través de la membrana, las partículas L en una concentración relativamente alta se acumularán dentro del sistema. De vez en cuando, sin embargo, la membrana se romperá como resultado de la desintegración de sus partículas L componentes. Dada la alta concentración de partículas L dentro de la membrana, la probabilidad es alta de que una de estas partículas se desplace al sitio de la ruptura y efectúe una reparación, antes de que escape la partícula K. De esta manera, las condiciones que permiten la acumulación de una alta concentración de partículas L se restablecerán precisamente.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Un fenómeno secundario que podría ocurrir es el establecimiento espontáneo de un sistema autosostenible a partir de un arreglo inicial aleatorio de las partículas. Tal formación espontánea se informó en el estudio original de 1974 de <Entity>Varela</Entity>, <Entity>Maturana</Entity>, y <Entity>Uribe</Entity> pero no fue estudiada por <Entity>McMullin</Entity> y <Entity>Varela</Entity> (1997). En su lugar, introdujeron artificialmente una supuesta entidad autopoyética en el sistema e investigaron si esta entidad podría tener éxito en realizar la red de reacción autosostenible recién descrita durante un gran número de pasos de tiempo (el fenómeno autopoyético básico predicho para esta química artificial).
+                            </TextBlock>
+
+                            <TextBlock>
+                                La química cualitativa presentada en esta sección corresponde a la descripción dada originalmente por <Entity>Varela</Entity>, <Entity>Maturana</Entity>, y <Entity>Uribe</Entity> (1974). Intentos posteriores de reimplementar su trabajo, sin embargo, llevaron al descubrimiento de una interacción adicional, presente en su código de programa original pero no documentada en la descripción (<Entity>McMullin</Entity> 1997a, 1997b). Esta interacción adicional previene el enlace espontáneo y prematuro de partículas L producidas dentro de la membrana. Tal enlace hace que las partículas L sean inmóviles y no estén disponibles para efectuar una reparación a la membrana. <Entity>McMullin</Entity> y <Entity>Varela</Entity> (1997) llaman a esta interacción adicional "inhibición de enlace basada en cadena" y la describen de la siguiente manera: "Esta es una interacción mediante la cual se inhibe el enlace a cualquier partícula L libre que esté en la vecindad inmediata de otra partícula L que esté doblemente enlazada. En efecto, entonces, una partícula L libre no puede formar un enlace mientras esté junto a (en oposición a al final de) una cadena existente de partículas L; pero puede formar enlace(s) cuando está al final de una cadena; y, especialmente, cuando está posicionada en un sitio donde una cadena se ha roto (i.e. un sitio de ruptura)" (<Entity>McMullin</Entity> y <Entity>Varela</Entity> 1997, p. 6). <Entity>McMullin</Entity> y <Entity>Varela</Entity> (1997) muestran que esta interacción es crucial para realizar el fenómeno autopoyético básico en el modelo.
+                            </TextBlock>
+
+                            <Figure description="Láminas II-V: Ejecución del modelo de autopoiesis computacional." />
+
+                            <TextBlock>
+                                ¿Cumple este sistema autosostenible con todos los requisitos para la autopoiesis? Esta pregunta es en realidad algo complicada. <Entity>Varela</Entity>, <Entity>Maturana</Entity>, y <Entity>Uribe</Entity> (1974, p. 191) afirman explícitamente: "Dentro de este universo [del modelo] estos sistemas satisfacen la organización autopoyética" (ver también <Entity>Varela</Entity> 1979, p. 20). Pero hay un componente en el modelo —la partícula K o catalizador— que no es producido en sí mismo por ninguna reacción en la red. <Entity>Bourgine</Entity> y <Entity>Stewart</Entity> (2004) toman esta característica del modelo para implicar que el sistema no es completamente autopoyético. <Entity>McMullin</Entity> (1999), sin embargo, citando los criterios de <Entity>Varela</Entity>, <Entity>Maturana</Entity>, y <Entity>Uribe</Entity> (1974) para determinar si un sistema específico es autopoyético, sugiere que puede ser aceptable que algunos de los componentes no sean producidos por reacciones en el sistema, siempre y cuando estos componentes jueguen un papel necesario y permanente en la producción de otros componentes. Por ejemplo, las partículas de sustrato no son necesariamente producidas por la red de reacción porque pueden atravesar la membrana y entrar en el sistema desde fuera. Además, en el caso de la generación espontánea de una red autosostenible, el catalizador preexistente (K) interactuaría con el sustrato preexistente (S), formando así una cadena de enlaces unidos (partículas L). Eventualmente la cadena encerraría al catalizador, y como resultado las partículas L producidas dentro del recinto reemplazarían las partículas L en descomposición del límite. Tal red autosostenible parecería satisfacer los tres criterios autopoyéticos.
+                            </TextBlock>
+
+                            <TextBlock>
+                                En un artículo reciente, <Entity>Bourgine</Entity> y <Entity>Stewart</Entity> (2004) expanden el modelo de autómata de teselación de dos a tres dimensiones y dan un tratamiento matemático del modelo como un sistema dinámico aleatorio (ver Figura 5.2). Este enfoque les permite modelar agujeros temporales en la membrana. En un modelo bidimensional con una membrana unidimensional, dos agujeros interrumpirían inmediatamente la membrana, pero en un modelo tridimensional con una membrana bidimensional, la membrana retiene una continuidad topológica a pesar de una fracción sustancial de agujeros en la membrana.
+                            </TextBlock>
+
+                            <Figure description="Figura 5.2: Ilustración esquemática del modelo de autómata de teselación 3D de autopoiesis." />
+
+                            <TextBlock>
+                                Su sistema está compuesto por tres tipos de componentes: componentes-A o moléculas de sustrato; componentes-B formados por una reacción entre dos moléculas de sustrato A ($A+A \to B$); y componentes-C pertenecientes a la membrana, que tiene la forma de una lámina bidimensional y cuya superficie interior cataliza la reacción $A+A \to B$. Dentro de la membrana, los componentes-B se difunden libremente. Si dos componentes-B individuales chocan, no se combinan, pero si un componente-B libre choca con el borde de un agujero en la membrana, se une a la superficie y repara el agujero (ya sea parcial o completamente dependiendo del tamaño del agujero). Un componente-B que integra la membrana de esta manera se convierte así en un componente-C. Los componentes-C (en la superficie interior de la membrana) a su vez catalizan la producción de componentes-B. De esta manera, el sistema evita la necesidad de un catalizador no producido por el propio sistema. Finalmente, cada uno de los componentes-C puede desintegrarse, y el producto final D no puede integrar la membrana, sino que escapa al entorno exterior, dejando un agujero en la membrana.
+                            </TextBlock>
+
+                            <TextBlock>
+                                En su tratamiento matemático, <Entity>Bourgine</Entity> y <Entity>Stewart</Entity> muestran que la variable crucial es la proporción del área de superficie total ocupada por componentes-C. Cuando esta variable está por encima del 50 por ciento, el sistema se mantiene dinámicamente. Por debajo de un punto crítico, la dinámica de reparación ya no puede equilibrar la formación de agujeros, y el sistema colapsa.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Los modelos que hemos estado examinando indican que debería ser posible que los tres criterios autopoyéticos se realicen en sistemas químicos comparativamente simples. Sin embargo, estos modelos no son sistemas físicos reales sino simulados o abstractos. ¿Qué pasa con la autopoiesis mínima en un medio químico real?
+                            </TextBlock>
+
+                            <TextBlock>
+                                La creación de modelos químicos de autopoiesis ha sido el objetivo de investigación del químico <Entity>Pier Luigi Luisi</Entity> y sus colegas desde principios de la década de 1990. Trabajando con micelas y vesículas, afirman haber logrado crear sistemas autopoyéticos mínimos en el laboratorio (<Entity>Bachman</Entity>, <Entity>Luisi</Entity>, y <Entity>Lang</Entity> 1992; <Entity>Luisi</Entity> 1993). Estos sistemas pueden arrojar luz sobre varios procesos químicos de autoensamblaje molecular involucrados en los orígenes de la vida (<Entity>Szostak</Entity>, <Entity>Bartel</Entity>, y <Entity>Luisi</Entity> 2001).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Las micelas y vesículas son estructuras moleculares tridimensionalmente cerradas capaces de formación espontánea o autoensamblaje. Ciertos tipos de moléculas (tensioactivos), cuando se dispersan en soluciones acuosas, forman grupos o agregados de manera predecible. Una micela es una gotita diminuta cuyo límite está formado por tal agrupamiento. Además, ciertas moléculas pueden autoensamblarse en agregados de doble capa llamados bicapas y formar vesículas, que son pequeños sacos llenos de líquido con un límite de bicapa como una membrana celular.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La idea básica detrás del uso de micelas y vesículas para crear un sistema autopoyético mínimo es sintetizar una estructura delimitada que alberga en su interior acuoso una reacción química que conduce a la producción del tensioactivo, que a su vez se agrega para formar un límite para la reacción. Un esquema para tal sistema se presenta en la Figura 5.3 (comparar con la Figura 5.2). Se comienza con un límite de membrana semipermeable que consiste en un solo tipo de componente S. Un solo tipo de nutriente A puede permear la membrana. Dentro del sistema A se transforma en S. El sistema se caracteriza por dos interacciones competitivas, "generación" y "descomposición". La generación produce S a partir de A, y la descomposición rompe S en un producto P que deja el límite y entra en el entorno. Cuando las velocidades de estas dos interacciones son numéricamente iguales, entonces el sistema está en un estado estacionario autoperpetuante u homeostasis. Cuando la velocidad de generación es mayor que la de descomposición, entonces el sistema puede crecer y eventualmente reproducirse dividiéndose en dos sistemas más pequeños. Finalmente, cuando la velocidad de descomposición es mayor que la de generación, entonces el sistema se empobrecerá en el componente S y eventualmente implosionará.
+                            </TextBlock>
+
+                            <Figure description="Figura 5.3: El sistema autopoyético mínimo (Luisi)." />
+
+                            <TextBlock>
+                                Un ejemplo del segundo modo, reproductivo, implementado en vesículas, se muestra en la Figura 5.4. Comienza con una vesícula acuosa relativamente estática formada por el tensioactivo S. Luego, un precursor altamente lipofílico de S, indicado como S-S, se une al límite de la vesícula, donde se hidroliza, produciendo el mismo tensioactivo S. La vesícula crece y finalmente se divide en dos o más vesículas termodinámicamente más estables y pequeñas. Todo el proceso es autocatalítico: cuantas más vesículas se forman, más S-S se une y más vesículas se forman.
+                            </TextBlock>
+
+                            <Figure description="Figura 5.4: Autopoiesis y vesículas autorreproductoras." />
+
+                            <TextBlock>
+                                ¿Califican tales micelas y vesículas como sistemas autopoyéticos mínimos? La respuesta no está del todo clara. Por un lado, estos sistemas cumplen claramente los Criterios 1 y 2. Por otro lado, no está claro si estos sistemas cumplen completamente el Criterio 3 —la presencia de una red de reacción interna que se regenera a sí misma y al límite. Como observa <Entity>Luisi</Entity>: "La reacción tiene lugar en el límite, que es parte del sistema, pero uno restringido: el núcleo acuoso interno no es parte del sistema de reacción, y además estamos tratando con solo una reacción en lugar de una red de reacción internalizada" (<Entity>Luisi</Entity> 2003, p. 56).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Para cerrar esta sección, permítanme conectar brevemente la idea de autopoiesis mínima con la investigación sobre los orígenes de la vida en la Tierra. En 1985, <Entity>Freeman Dyson</Entity> señaló que la vida tal como la conocemos requiere tanto automantenimiento metabólico como la replicación de ácidos nucleicos. Propuso que las células vivas surgieron de la fusión "simbiótica" de dos sistemas evolucionados independientemente. Desde una perspectiva autopoyética, sin embargo, el paso crucial requerido para la individualidad biológica es que tales subsistemas estén encerrados dentro de una membrana que producen juntos.
+                            </TextBlock>
+
+                            <TextBlock>
+                                En <BookTitle>Beginnings of Cellular Life</BookTitle>, <Entity>Morowitz</Entity> (1992) propone que muchas características de los ácidos nucleicos y proteínas evolucionaron solo después de que estas moléculas llegaron a estar encerradas dentro de unidades delimitadas por membranas o protocélulas. En el escenario de <Entity>Morowitz</Entity>, las protocélulas en forma de vesículas se originaron primero, una forma simple de metabolismo o red de reacción interna vino después, luego se desarrollaron las proteínas, y los genes llegaron al final.
+                            </TextBlock>
+
+                            <SubSectionHeader title="Autopoiesis y Ecopoiesis" />
+
+                            <TextBlock>
+                                La caracterización autopoyética de la vida resalta la organización de un sistema vivo individual. Sin embargo, no debemos perder de vista el contexto ecológico de la autopoiesis. Como escribe <Entity>Morowitz</Entity>: "Cuando hablamos del origen de la vida, nos referimos generalmente al surgimiento de organismos... Es bueno recordar, sin embargo, que esto puede tener lugar solo dentro de un sistema ecológico global" (1992, p. 6).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Dos puntos son importantes aquí. Primero, la autopoiesis siempre tiene que estar incrustada ecológicamente. "Autoproductor" se refiere al tipo de organización circular que hace de la célula un individuo; no significa que la célula se haga a sí misma aparte de su entorno. Segundo, aunque la vida puede haber comenzado en pequeños bolsillos locales, proliferó rápidamente, evolucionó y transformó toda la superficie del planeta. La vida tal como la conocemos es un fenómeno de escala evolutiva y planetaria.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La idea de que la vida es un fenómeno planetario es central para la teoría Gaia avanzada por <Entity>Lovelock</Entity> y <Entity>Margulis</Entity>. Su teoría establece que la biota, la atmósfera, los océanos, las rocas y los suelos componen una sola entidad planetaria que es autorreguladora y automantenida. Llaman a la entidad Gaia. <Entity>Lovelock</Entity> y <Entity>Margulis</Entity> creen que este sistema planetario es el individuo biológico más grande conocido.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La afirmación de que Gaia es un superorganismo planetario no ha pasado sin críticas. Algunos biólogos argumentaron que Gaia no debería recibir el estatus de sistema vivo porque no es un individuo reproductor. Estas críticas nos llevan de vuelta a los problemas sobre la vida. Desde la perspectiva de la caracterización individual de la vida, la reproducción no entra como una característica definitoria. Por lo tanto, un sistema planetario autoproductor pero no reproductor podría contar como un individuo biológico genuino.
+                            </TextBlock>
+
+                            <TextBlock>
+                                ¿Debería considerarse a Gaia, toda la ecosfera del planeta Tierra, un sistema autopoyético? El asunto crucial es si "límite" y "red de reacción interna" tienen una interpretación clara cuando cambiamos de la escala molecular a la planetaria. <Entity>Lovelock</Entity> y <Entity>Margulis</Entity> presentan un caso fuerte para considerar la ecosfera como un sistema a gran escala que produce su propia topología interna y límite funcional. En uno de sus artículos, <Entity>Lovelock</Entity> usa el término <Concept>ecopoiesis</Concept> para describir a Gaia. Este término parece justo para transmitir tanto el parecido como la diferencia entre Gaia y la célula autopoyética.
+                            </TextBlock>
+
+                            <SubSectionHeader title="Autopoiesis y Cognición" />
+
+                            <TextBlock>
+                                Según <Entity>Maturana</Entity> y <Entity>Varela</Entity>, "la noción de autopoiesis es necesaria y suficiente para caracterizar la organización de los sistemas vivos". Mi objetivo en la sección final de este capítulo es evaluar estas afirmaciones de necesidad y suficiencia.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La afirmación de necesidad puede expresarse como la proposición de que para que una entidad individual, aquí y ahora, sea caracterizada como un sistema vivo, debe realizar la organización autopoyética. Los virus no cumplen con los criterios autopoyéticos y no tienen metabolismo propio, por lo que la teoría de la autopoiesis tiene éxito al capturar esta diferencia. En cuanto a las moléculas replicativas, la descripción molecular deriva del nivel evolutivo y poblacional y, por lo tanto, no tiene fuerza como contraargumento a la cuenta autopoyética en el nivel individual.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Permítanme pasar ahora a la afirmación de suficiencia, que establece que si algo muestra autopoiesis, entonces está vivo. Esta afirmación ha sido cuestionada recientemente por dos grupos (<Entity>Bitbol</Entity> y <Entity>Luisi</Entity> 2005; <Entity>Bourgine</Entity> y <Entity>Stewart</Entity> 2004). Ambos grupos ofrecen esencialmente el mismo argumento: todos los sistemas vivos son tanto sistemas autopoyéticos como sistemas cognitivos, pero un sistema autopoyético no es necesariamente un sistema cognitivo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Para <Entity>Bourgine</Entity> y <Entity>Stewart</Entity>, las interacciones cognitivas son aquellas en las que las respuestas sensoriales guían la acción y la acción tiene consecuencias para la estimulación sensorial posterior, sujeto a la restricción de que el sistema mantenga su viabilidad. En el caso del autómata de teselación, no hay comportamiento guiado por sensación. El sistema, aunque mínimamente autopoyético, no es cognitivo y por lo tanto no es un sistema vivo. Para <Entity>Bitbol</Entity> y <Entity>Luisi</Entity>, "la cognición es equivalente al metabolismo". En las micelas y vesículas autocatalíticas, no hay red metabólica. Estos sistemas químicos, aunque autopoyéticos, no llegan ni siquiera a la primera etapa de la cognición como asimilación metabólica.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Parecería, por lo tanto, que nos enfrentamos a la siguiente elección. Podemos mantener que el autómata de teselación y las micelas y vesículas autocatalíticas son modelos de autopoiesis mínima. También podemos afirmar que la autopoiesis en el espacio físico es necesaria, pero no suficiente, para caracterizar un sistema como un sistema vivo. O podemos afirmar que estos modelos no son autopoyéticos sino solo proto-autopoyéticos, pues la autopoiesis requiere una red de reacción interna distinta. En esta opción, la autopoiesis en el espacio físico implica ser un sistema cognitivo, y es tanto necesaria como suficiente para caracterizar un sistema como un sistema vivo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Recordemos lo que significa la cognición en este contexto. La cognición es comportamiento o conducta en relación con el significado y las normas que el sistema mismo enactúa o trae a la existencia sobre la base de su autonomía (ver Capítulo 4). No presumiré legislar este asunto: lo dejaré para que los científicos lo resuelvan. Para mis propósitos es suficiente mantener que cualquier sistema vivo es tanto un sistema autopoyético como uno cognitivo, pues esta tesis es suficiente para establecer una profunda continuidad de vida y mente. La tarea ante nosotros ahora es examinar esta profunda continuidad con mayor detalle.
+                            </TextBlock>
+                        </section>
+                        
+                    </main>
+
+                    <TooltipModal activeNote={activeNote} onClose={() => setActiveNote(null)} />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
