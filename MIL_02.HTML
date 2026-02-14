@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Mente en la Vida | Evan Thompson</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            950: '#020617', // Deep Dark Background
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #020617;
+            color: #cbd5e1;
+            overflow-x: hidden;
+        }
+        /* Hide Scrollbar but keep functionality */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .text-justify {
+            text-align: justify;
+        }
+        .hyphens-auto {
+            hyphens: auto;
+            -webkit-hyphens: auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, AnimatePresence, useScroll, useSpring } = window.Motion;
+        
+        const BOOK_DATA = {
+            title: "La Mente en la Vida",
+            subtitle: "Biología, Fenomenología y las Ciencias de la Mente",
+            author: "Evan Thompson",
+            toc: [
+                { title: "Prefacio", page: "ix", id: "preface", url: "#" },
+                { title: "Agradecimientos", page: "xi", id: "acknowledgments", url: "#" },
+                { separator: "PARTE UNO: El Enfoque Enactivo" },
+                { title: "1. Ciencia Cognitiva y Experiencia Humana", page: "3", url: "#" },
+                { title: "2. La Conexión Fenomenológica", page: "16", url: "#chapter-2" },
+                { title: "3. Autonomía y Emergencia", page: "37", url: "#" },
+                { title: "4. La Estructura del Comportamiento", page: "66", url: "#" },
+                { separator: "PARTE DOS: La Vida en la Mente" },
+                { title: "5. Autopoiesis: La Organización de lo Vivo", page: "91", url: "#" },
+                { title: "6. Vida y Mente: La Filosofía del Organismo", page: "128", url: "#" },
+                { title: "7. Haciendo Camino al Andar: Desarrollo y Evolución", page: "166", url: "#" },
+                { separator: "PARTE TRES: Conciencia en la Vida" },
+                { title: "8. La Vida más allá de la Brecha", page: "219", url: "#" },
+                { title: "9. Subjetividad Sensoriomotora", page: "243", url: "#" },
+                { title: "10. Mira de Nuevo: Conciencia e Imaginería Mental", page: "267", url: "#" },
+                { title: "11. Temporalidad y el Presente Vivo", page: "312", url: "#" },
+                { title: "12. Dinamismo Primordial: Emoción y Valencia", page: "360", url: "#" },
+                { title: "13. Empatía y Enculturación", page: "382", url: "#" },
+                { separator: "APÉNDICES" },
+                { title: "A: Husserl y la Ciencia Cognitiva", page: "413", url: "#" },
+                { title: "B: Emergencia y el Problema de la Causación Descendente", page: "417", url: "#" },
+                { title: "Notas", page: "443", url: "#" },
+                { title: "Referencias", page: "483", url: "#" },
+                { title: "Índice de Conceptos", page: "527", url: "#" }
+            ]
+        };
+
+        // --- Icons ---
+        const MenuIcon = () => <i data-lucide="menu" className="w-6 h-6"></i>;
+        const XIcon = () => <i data-lucide="x" className="w-6 h-6"></i>;
+        const ImageIcon = () => <i data-lucide="image" className="w-8 h-8 text-slate-500"></i>;
+
+        // --- Components ---
+
+        const ScrollProgress = () => {
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+
+            return (
+                <motion.div
+                    className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50"
+                    style={{ scaleX }}
+                />
+            );
+        };
+
+        const TooltipModal = ({ activeNote, onClose }) => {
+            if (!activeNote) return null;
+            return (
+                <AnimatePresence>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20, x: "-50%" }}
+                        animate={{ opacity: 1, y: 0, x: "-50%" }}
+                        exit={{ opacity: 0, y: 20, x: "-50%" }}
+                        className="fixed bottom-10 left-1/2 w-[90vw] max-w-2xl bg-slate-900/95 backdrop-blur-md border border-slate-800 p-6 rounded-lg shadow-2xl z-50 text-slate-300 text-sm leading-relaxed text-justify"
+                    >
+                        <div className="flex justify-between items-start mb-2">
+                            <span className="text-cyan-400 font-bold text-xs uppercase tracking-widest">Nota al Pie</span>
+                            <button onClick={onClose} className="hover:text-white"><XIcon /></button>
+                        </div>
+                        {activeNote}
+                    </motion.div>
+                </AnimatePresence>
+            );
+        };
+
+        const Navigation = ({ onToggleMenu }) => (
+            <motion.header 
+                initial={{ y: -100 }}
+                animate={{ y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="fixed top-0 w-full flex justify-between items-center px-6 py-4 z-40 bg-slate-950/80 backdrop-blur-sm border-b border-white/5"
+            >
+                <div className="flex flex-col">
+                    <span className="text-slate-100 font-serif font-bold text-lg tracking-wide">{BOOK_DATA.title}</span>
+                    <span className="text-cyan-400 text-xs uppercase tracking-widest">{BOOK_DATA.author}</span>
+                </div>
+                <button 
+                    onClick={onToggleMenu}
+                    className="flex items-center gap-2 text-slate-300 hover:text-cyan-400 transition-colors uppercase text-xs tracking-widest font-semibold group"
+                >
+                    <span>Índice</span>
+                    <span className="group-hover:translate-x-1 transition-transform"><MenuIcon /></span>
+                </button>
+            </motion.header>
+        );
+
+        const Sidebar = ({ isOpen, onClose }) => (
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={onClose}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        />
+                        <motion.div
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed right-0 top-0 h-full w-full max-w-md bg-slate-900 border-l border-slate-800 z-50 overflow-y-auto p-8 shadow-2xl"
+                        >
+                            <div className="flex justify-between items-center mb-10">
+                                <h2 className="text-2xl font-serif text-amber-500">Contenido</h2>
+                                <button onClick={onClose} className="text-slate-400 hover:text-white"><XIcon /></button>
+                            </div>
+                            
+                            <nav className="space-y-6">
+                                {BOOK_DATA.toc.map((item, idx) => {
+                                    if (item.separator) {
+                                        return (
+                                            <div key={idx} className="pt-6 border-t border-slate-800">
+                                                <h3 className="text-xs uppercase tracking-[0.2em] text-cyan-400 mb-4">{item.separator}</h3>
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <a 
+                                            key={idx} 
+                                            href={item.url} 
+                                            onClick={onClose}
+                                            className="group flex justify-between items-baseline py-2 hover:translate-x-2 transition-transform cursor-pointer"
+                                        >
+                                            <span className="text-slate-300 font-serif text-lg group-hover:text-white transition-colors">{item.title}</span>
+                                            <span className="text-slate-600 font-mono text-sm border-b border-dotted border-slate-700 flex-grow mx-4"></span>
+                                            <span className="text-amber-500 font-mono text-sm">{item.page}</span>
+                                        </a>
+                                    );
+                                })}
+                            </nav>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+        );
+
+        // PartHeader component is removed as requested, keeping definition just in case but not rendering it.
+        const PartHeader = ({ title }) => (
+            <div className="w-full flex items-center justify-center py-32 bg-slate-900/30 mb-24 border-y border-slate-900">
+                <h2 className="text-5xl font-serif text-amber-500 tracking-widest uppercase text-center">{title}</h2>
+            </div>
+        );
+
+        const SectionHeader = ({ title, chapterNumber }) => (
+            <div className="mb-16 border-l-2 border-amber-500 pl-6">
+                <span className="block text-cyan-400 text-sm font-bold uppercase tracking-widest mb-2">Capítulo {chapterNumber}</span>
+                <h2 className="text-4xl md:text-5xl font-serif text-slate-100">{title}</h2>
+            </div>
+        );
+
+        const SubSectionHeader = ({ title }) => (
+            <h3 className="text-2xl font-serif text-slate-200 mt-16 mb-8 border-b border-slate-800 pb-2 inline-block">
+                {title}
+            </h3>
+        );
+
+        const TextBlock = ({ children }) => (
+            <p className="text-slate-300 text-lg md:text-xl leading-8 md:leading-9 mb-8 text-justify hyphens-auto font-sans font-light">
+                {children}
+            </p>
+        );
+
+        const Concept = ({ children }) => <span className="text-amber-500 font-medium">{children}</span>;
+        const Entity = ({ children }) => <span className="text-cyan-400">{children}</span>;
+        const BookTitle = ({ children }) => <span className="text-white italic">{children}</span>;
+
+        const InteractiveFootnote = ({ id, content, setNote }) => (
+            <sup 
+                className="text-cyan-400 cursor-pointer hover:text-white transition-colors font-bold ml-1"
+                onClick={() => setNote(content || "Contenido de la nota no disponible en este extracto.")}
+            >
+                [{id}]
+            </sup>
+        );
+
+        const Figure = ({ description }) => (
+            <figure className="my-12 w-full">
+                <div className="w-full aspect-video bg-slate-900/50 border border-dashed border-slate-700 rounded-sm flex flex-col items-center justify-center p-8 transition-colors hover:border-cyan-500/50 hover:bg-slate-900/80 group">
+                    <ImageIcon />
+                    <span className="mt-4 text-slate-500 font-mono text-xs uppercase tracking-widest group-hover:text-cyan-400 transition-colors">Insert Link: {description}</span>
+                </div>
+                <figcaption className="mt-4 text-sm text-slate-500 leading-relaxed text-justify border-t border-slate-800 pt-2 flex gap-4">
+                    <span className="font-bold text-amber-500 whitespace-nowrap">FIG. REF</span>
+                    <span>{description}</span>
+                </figcaption>
+            </figure>
+        );
+
+        const App = () => {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [activeNote, setActiveNote] = useState(null);
+
+            useEffect(() => {
+                lucide.createIcons();
+            }, [isMenuOpen]);
+
+            return (
+                <div className="antialiased selection:bg-cyan-900 selection:text-white pb-32">
+                    <ScrollProgress />
+                    <Navigation onToggleMenu={() => setIsMenuOpen(true)} />
+                    <Sidebar isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+                    
+                    {/* Padding top ajustado para evitar espacios vacíos pero respetar el header fijo */}
+                    <main className="w-full px-6 md:px-12 pt-24">
+                        
+                        {/* Se eliminó la sección de Parte Uno */}
+
+                        <section id="chapter-2">
+                            <SectionHeader chapterNumber="2" title="La Conexión Fenomenológica" />
+                            
+                            <TextBlock>
+                                <span className="float-left text-6xl text-amber-500 font-serif mr-4 mt-[-10px] leading-[0.8]">E</span>
+                                STE CAPÍTULO INTRODUCE una serie de temas de la filosofía fenomenológica que aparecerán a lo largo de este libro. La fenomenología es importante aquí por dos razones principales. Primero, cualquier intento de obtener una comprensión integral de la mente humana debe en algún momento considerar la conciencia y la subjetividad: cómo el pensamiento, la percepción, la acción y el sentimiento se experimentan en el propio caso. Los eventos mentales no ocurren en el vacío; son vividos por alguien. La fenomenología está anclada a la descripción cuidadosa, análisis e interpretación de la experiencia vivida. Segundo, el enfoque enactivo pone al organismo y al cuerpo en el centro del escenario en la ciencia de la mente, pero el cuerpo humano, a menos que esté muerto, es siempre el cuerpo vivido. La fenomenología, en una de sus corrientes más fuertes que fluyen de <Entity>Husserl</Entity> y <Entity>Merleau-Ponty</Entity>, es una filosofía del cuerpo vivido. Por estas razones, la fenomenología puede guiar y aclarar la investigación científica sobre la subjetividad y la conciencia, y proporcionar un marco filosófico para evaluar el significado y la importancia de esta investigación para nuestra autocomprensión.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Este capítulo tiene dos propósitos. Primero, introduce algunas ideas centrales de la fenomenología de <Entity>Husserl</Entity>, en particular el método fenomenológico de investigar la estructura de la experiencia, conocido como la <Concept>reducción fenomenológica</Concept>, y el concepto fenomenológico de <Concept>intencionalidad</Concept>. Segundo, esboza tres fases de la fenomenología, conocidas como fenomenología <Concept>estática</Concept>, <Concept>genética</Concept> y <Concept>generativa</Concept>.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La fenomenología estática analiza las estructuras formales de la conciencia, mediante las cuales la conciencia es capaz de constituir (revelar o traer a la conciencia) sus objetos. La fenomenología estática toma estas estructuras intencionales y sus objetos correlativos como dados y los analiza estática o sincrónicamente.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La fenomenología genética se preocupa por cómo estas estructuras y objetos intencionales emergen a través del tiempo; por lo tanto, no puede tomarlos como dados. En su lugar, analiza cómo ciertos tipos de experiencia motivan tipos posteriores y más complejos; por ejemplo, cómo las experiencias implícitas y prereflexivas motivan las experiencias atentas y reflexivas. Desde la perspectiva de la fenomenología genética, la experiencia tiene una estructura sedimentada, y el proceso de sedimentación necesita ser entendido en relación con el cuerpo vivido y la conciencia del tiempo. Algunos de los fenómenos rectores clave para la fenomenología genética —afecto, motivación, atención, hábito— son familiares desde la perspectiva de la ciencia de la mente, especialmente la psicología del desarrollo, la teoría de la emoción y la neurociencia afectivo-cognitiva. Estos puntos de convergencia e iluminación mutua se abordarán en capítulos posteriores.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Mientras que la conciencia del tiempo y el cuerpo vivido son los hilos conductores para la fenomenología genética, para la fenomenología generativa el hilo conductor es el <Concept>mundo de la vida</Concept> (life-world). El tema de la fenomenología generativa es la constitución cultural, histórica e intersubjetiva de nuestro mundo humano. La importancia de la fenomenología generativa para la ciencia de la mente y el enfoque enactivo en particular se abordará en el último capítulo de este libro.
+                            </TextBlock>
+
+                            <SubSectionHeader title="Fenomenología con una Actitud" />
+
+                            <TextBlock>
+                                La fenomenología, en su inspiración husserliana original, surge del reconocimiento de que podemos adoptar en nuestro propio caso de primera persona diferentes actitudes mentales o posturas hacia el mundo, la vida y la experiencia. En la vida cotidiana estamos usualmente inmersos directamente en diversas situaciones y proyectos, ya sea como especialistas en conocimiento científico, técnico o práctico o como colegas, amigos y miembros de familias y comunidades. Además de estar dirigidos hacia estos asuntos más o menos particulares y "temáticos", también estamos dirigidos al mundo como un horizonte no temático de toda nuestra actividad (<Entity>Husserl</Entity> 1970, § 281). <Entity>Husserl</Entity> llama a esta actitud de estar directamente inmerso en el mundo <Concept>"la actitud natural"</Concept>, y piensa que se caracteriza por una especie de "posicionamiento" irreflexivo del mundo como algo que existe "ahí fuera" más o menos independientemente de nosotros.
+                            </TextBlock>
+
+                            <TextBlock>
+                                En contraste, la <Concept>"actitud fenomenológica"</Concept> surge cuando damos un paso atrás de la actitud natural, no para negarla, sino para investigar las experiencias mismas que comprende. Si tal investigación ha de ser genuinamente filosófica, entonces debe esforzarse por ser crítica y no dogmática, y por lo tanto no puede dar por sentado el realismo ingenuo de la actitud natural. Sin embargo, negar esta actitud realista sería igualmente dogmático. Más bien, el posicionamiento realista de la actitud natural debe ser suspendido, neutralizado o puesto a un lado, para que no juegue ningún papel en la investigación. De esta manera, podemos centrarnos en las experiencias que sostienen y animan la actitud natural, pero de una manera abierta y no dogmática. Podemos investigar la experiencia en la actitud natural sin estar prejuiciados por una visión no examinada de las cosas, que es característica de la actitud natural.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Pero, ¿cómo exactamente debe proceder tal investigación? ¿Qué se supone exactamente que debemos investigar? La respuesta de <Entity>Husserl</Entity> es que nuestra atención debe dirigirse hacia el mundo estrictamente como lo experimentamos. Debemos atender al mundo estrictamente como aparece y como es fenoménicamente manifiesto. Dicho de otra manera, debemos atender a los modos o formas en que las cosas nos aparecen. De este modo atendemos a las cosas estrictamente como correlatos de nuestra experiencia, y el foco de nuestra investigación se convierte en la estructura correlacional de nuestra subjetividad y la aparición o revelación del mundo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El procedimiento filosófico mediante el cual se investiga esta estructura correlacional se conoce como la <Concept>reducción fenomenológica</Concept>. "Reducción" en este contexto no significa reemplazar o eliminar una teoría o modelo a favor de otro considerado más fundamental. Significa más bien un "llevar de vuelta" (reducere) o redirección del pensamiento lejos de su inmersión irreflexiva y no examinada en el mundo hacia la forma en que el mundo nos aparece. Redirigir nuestro interés de esta manera no significa que dudemos de las cosas ante nosotros o que de alguna manera intentemos apartarnos del mundo para mirar a otra parte. Las cosas permanecen ante nosotros, pero las visualizamos de una nueva manera, a saber, estrictamente como experimentadas. Así, las cosas cotidianas disponibles para nuestra percepción no son dudadas ni consideradas como ilusiones cuando son "fenomenológicamente reducidas", sino que en cambio son visualizadas y examinadas simple y precisamente como percibidas. Las cosas recordadas son examinadas estrictamente y precisamente como recordadas, las cosas imaginadas como imaginadas. En otras palabras, una vez que adoptamos la actitud fenomenológica, estamos interesados no en lo que las cosas son en algún sentido ingenuo, independiente de la mente o independiente de la teoría, sino más bien en exactamente cómo son experimentadas, y así como estrictos correlatos relacionales de nuestra subjetividad.<InteractiveFootnote id="1" setNote={setActiveNote} />
+                            </TextBlock>
+
+                            <TextBlock>
+                                Como un procedimiento de trabajar de vuelta desde el qué al cómo de la experiencia, la reducción fenomenológica tiene que ser realizada en primera persona. Como es cierto de cualquier procedimiento de este tipo, una cosa es describir su carácter teórico general y otra describirlo pragmáticamente, los pasos concretos por los cuales se lleva a cabo. El principal paso metódico crucial para la reducción fenomenológica <Entity>Husserl</Entity> lo llamó la <Concept>epoché</Concept>. Este término deriva del escepticismo griego, donde significa suspender o abstenerse de juzgar, pero <Entity>Husserl</Entity> lo adoptó como un término para la "suspensión", "neutralización" o "poner entre paréntesis" tanto nuestra actitud natural de "posicionamiento" como nuestras creencias y afirmaciones teóricas (ya sean científicas o filosóficas) sobre la "realidad objetiva". Sin embargo, desde una perspectiva de primera persona más corporizada y situada, la epoché puede describirse como la habilidad mental flexible y entrenable de ser capaz tanto de suspender la inmersión inatenta de uno en la experiencia como de volver la atención de uno a la manera en que algo aparece o es dado a la experiencia (<Entity>Depraz</Entity> 1999b; <Entity>Depraz</Entity>, <Entity>Varela</Entity>, y <Entity>Vermersch</Entity> 2000; <Entity>Steinbock</Entity> 2004). Suspender la inmersión inatenta de uno en la experiencia implica la capacidad de notar tal inmersión, y por lo tanto implica lo que los psicólogos llaman metaconciencia (conciencia de la conciencia). Ser capaz de redirigir la atención de uno a la manera en que algo aparece implica flexibilidad de atención; en particular implica ser capaz de cambiar voluntariamente la atención de uno y estabilizarla o sostenerla en un modo de presentación dado. El objetivo final no es romper el flujo de la experiencia, sino rehabitarlo de una manera fresca, a saber, con mayor conciencia y sintonía.<InteractiveFootnote id="2" setNote={setActiveNote} />
+                            </TextBlock>
+
+                            <TextBlock>
+                                Dentro de la tradición fenomenológica uno puede discernir una cierta ambivalencia con respecto a estas dimensiones teóricas y prácticas o existenciales de la epoché. Por un lado, la gran preocupación de <Entity>Husserl</Entity> era establecer la fenomenología como un nuevo fundamento filosófico para la ciencia; así para él la epoché servía en gran medida como una herramienta crítica de la razón teórica. Por otro lado, debido a que el proyecto teórico de <Entity>Husserl</Entity> se basaba en una reevaluación radical de la experiencia como la fuente de significado y conocimiento, requería un retorno constante a la paciente descripción analítica de la experiencia vivida a través de la reducción fenomenológica. Este impulso generó un enorme corpus de cuidadosos análisis fenomenológicos de la experiencia humana —la experiencia perceptual del espacio (<Entity>Husserl</Entity> 1997), la cinestesia y la experiencia del propio cuerpo (<Entity>Husserl</Entity> 1989, 1997), la conciencia del tiempo (<Entity>Husserl</Entity> 1991), el afecto (<Entity>Husserl</Entity> 2001), el juicio (<Entity>Husserl</Entity> 1975), la imaginación y la memoria (<Entity>Husserl</Entity> 2006), y la intersubjetividad (<Entity>Husserl</Entity> 1973), por nombrar solo algunos.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Sin embargo, la epoché como un procedimiento práctico —como una práctica situada llevada a cabo en primera persona por el fenomenólogo— ha permanecido extrañamente descuidada en la literatura fenomenológica, incluso por los llamados fenomenólogos existenciales como <Entity>Heidegger</Entity> y <Entity>Merleau-Ponty</Entity>. Ellos en cambio retomaron y luego reformularon a sus propias maneras el método de la reducción fenomenológica (ver <Entity>Heidegger</Entity> 1982, pp.19-23; <Entity>Merleau-Ponty</Entity> 1962, pp. xi-xiv). Por esta razón, una nueva corriente en la fenomenología tiene como objetivo desarrollar más explícitamente la pragmática de la epoché como un método de primera persona para investigar la conciencia (<Entity>Depraz</Entity> 1999b; <Entity>Depraz</Entity>, <Entity>Varela</Entity>, y <Entity>Vermersch</Entity>, 2000, 2003; <Entity>Varela</Entity> y <Entity>Shear</Entity> 1999b). Este enfoque pragmático también implica comparar la epoché con métodos de primera persona en otros dominios, especialmente la filosofía budista y el entrenamiento mental contemplativo (<Entity>Depraz</Entity>, <Entity>Varela</Entity>, y <Entity>Vermersch</Entity>, 2003; <Entity>Lutz</Entity>, <Entity>Dunne</Entity>, y <Entity>Davidson</Entity>, 2007). Además, explora la relevancia de los métodos de primera persona para producir informes de primera persona más refinados en psicología experimental y neurociencia cognitiva (<Entity>Lutz</Entity> y <Entity>Thompson</Entity> 2003). Este esfuerzo es central para el programa de investigación conocido como neurophenomenología, introducido por <Entity>Francisco Varela</Entity> (1996) y discutido extensamente más adelante en este libro.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Volvamos a la reducción fenomenológica en su contexto filosófico original. Aquí la reducción, en su sentido pleno, es un rico modo de análisis, que comprende dos pasos principales. El primer paso conduce de vuelta de la actitud natural a la actitud fenomenológica neutralizando el posicionamiento realista de la actitud natural y luego orientando la atención hacia la revelación o aparición de la realidad a nosotros (este paso corresponde a la epoché). El segundo paso conduce de esta actitud fenomenológica a un tipo más radical de actitud filosófica. Más precisamente, este paso conduce de la fenomenología como una actitud empírica y psicológica (psicología fenomenológica) a la fenomenología como una actitud filosófica trascendental (fenomenología trascendental).
+                            </TextBlock>
+
+                            <TextBlock>
+                                El término trascendental se usa aquí en su sentido kantiano para significar una investigación preocupada por los modos o formas en que los objetos son experimentados y conocidos, y con las condiciones a priori para la posibilidad de tal experiencia y conocimiento. <Entity>Husserl</Entity> proyecta estos dos aspectos de la indagación trascendental en una forma específica que está claramente relacionada pero es no obstante diferente de la de <Entity>Kant</Entity> (ver <Entity>Steinbock</Entity> 1995, pp. 12-15). Primero, la fenomenología trascendental se centra no en lo que las cosas son sino en las formas en que las cosas son dadas. Para <Entity>Husserl</Entity>, esto significa centrarse en los fenómenos (apariencias) y los sentidos o significados que tienen para nosotros, y luego preguntar cómo estos fenómenos significativos son constituidos (traídos a la conciencia). Segundo, para abordar este problema constitucional, la fenomenología trascendental trata de descubrir las leyes formales esenciales bajo las cuales la experiencia opera necesariamente para constituir un mundo significativo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                En la actitud natural, la realidad se da por sentada como estando simplemente ahí sin ningún compromiso activo por parte de la conciencia. En otras palabras, no hay pensamiento de que la realidad involucre actos o procesos de constitución. Captada fenomenológicamente, en la actitud fenomenológica trascendental, la realidad es aquello que se nos revela como real, ya sea en la percepción cotidiana o en la investigación científica, y tal revelación es un logro de la conciencia. El punto aquí no es que el mundo no existiría si no fuera por la conciencia. Más bien, es que no tenemos control sobre lo que la realidad significa aparte de lo que se nos revela como real, y tal revelación involucra necesariamente la actividad intencional de la conciencia. El punto de la reducción fenomenológica trascendental es ganar acceso a esta actividad y al papel constitucional que juega.
+                            </TextBlock>
+
+                            <TextBlock>
+                                A menudo se dice que mientras que la orientación de <Entity>Husserl</Entity> es trascendental de esta manera, <Entity>Heidegger</Entity> y <Entity>Merleau-Ponty</Entity> rechazan el punto de vista trascendental e identifican las estructuras constitucionales desenterradas por la fenomenología con estructuras existenciales del "ser-en-el-mundo". (Los guiones indican que "ser", "en" y "mundo" no son ontológicamente separables, sino que forman una estructura irreductible y unificada). Pero esta interpretación es simplista. Primero, tanto el "Dasein" de <Entity>Heidegger</Entity> (su término para la existencia humana individual) como el "cuerpo vivido" de <Entity>Merleau-Ponty</Entity> (un concepto que viene directamente de <Entity>Husserl</Entity>) son trascendentales en el sentido relevante, pues son formas de caracterizar aquello que hace posible la revelación o manifestación del mundo como significativo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Segundo, aunque <Entity>Husserl</Entity> en las partes más conocidas de su obra (los escritos publicados durante su vida) se centró en gran medida en las estructuras constitucionales de la conciencia "egológica" (conciencia al nivel del "Yo" o "ego" individual reflexivo), estudios recientes indican que estos análisis no son completamente representativos de sus investigaciones filosóficas maduras. A medida que su pensamiento se desarrolló, expandió enormemente sus investigaciones, analizando estructuras constitucionales pertenecientes a las profundidades "nonegológicas" (o "pre-egológicas") del cuerpo vivido, la conciencia del tiempo y la intersubjetividad, así como el terreno de la vida histórica y cultural. El punto aquí es más que interpretativo o textual; es filosófico. La fenomenología trascendental no puede limitarse a —y de hecho va mucho más allá de— una filosofía de la conciencia o subjetividad "egológica". "Trascendental" significa una actitud radical, una que apunta a regresar a las raíces mismas (condiciones de posibilidad) de nuestra experiencia de un mundo significativo. Estas raíces se ramifican mucho más allá de la conciencia individual hacia las profundidades de nuestros cuerpos vividos y hacia nuestros mundos sociales y culturales.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El resto de este capítulo esboza algunos de estos desarrollos del pensamiento fenomenológico. Mi objetivo no es dar una cuenta académica detallada de ningún aspecto particular de la fenomenología, sino exponer algunos temas e ideas importantes para los capítulos venideros.
+                            </TextBlock>
+
+                            <SubSectionHeader title="Intencionalidad" />
+
+                            <TextBlock>
+                                Un buen lugar para comenzar es la doctrina fenomenológica de la <Concept>intencionalidad</Concept> de la conciencia. Según la fenomenología, la conciencia es intencional, en el sentido de que "apunta hacia" o "intenta" algo más allá de sí misma. Este sentido de intencional no debe confundirse con el sentido más familiar de tener un propósito en mente cuando uno actúa, que es solo un tipo de intencionalidad en el sentido fenomenológico. Más bien, la intencionalidad es un término genérico para el apuntar-más-allá-de-sí-misma propio de la conciencia. (Viene del latín intendere, que una vez se refirió a tensar un arco y apuntar a un objetivo).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Los fenomenólogos distinguen diferentes tipos de intencionalidad. En un sentido estrecho, definen la intencionalidad como la dirección hacia un objeto. En un sentido más amplio, la definen como apertura al mundo o a lo que es "otro" ("alteridad"). En cualquier caso, el énfasis está en negar que la conciencia esté auto-encerrada.<InteractiveFootnote id="6" setNote={setActiveNote} />
+                            </TextBlock>
+
+                            <TextBlock>
+                                Las experiencias dirigidas a objetos son aquellas en las que somos conscientes de algo en un sentido más o menos determinado. Cuando vemos, vemos algo; cuando recordamos, recordamos algo; cuando esperamos o tememos, esperamos o tememos algo. Estos tipos de "conciencia transitiva" se caracterizan por la intención de un objeto (que no necesita existir). "Objeto" en su sentido etimológico significa algo que está ante nosotros. Algo que está ante nosotros yace más allá, frente a, o fuera de nosotros. Las experiencias dirigidas a objetos pueden así entenderse como experiencias en las que somos conscientes de algo distinto de nosotros mismos como sujeto presente, ya sea un evento pasado recordado, algo percibido en los entornos que nos rodean, un evento futuro temido o esperado, algo imaginado, y así sucesivamente.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Muchos tipos de experiencia cotidiana, embargo, no están dirigidos a objetos en este sentido. Tales experiencias incluyen sentimientos corporales de dolor, estados de ánimo como ansiedad no dirigida, depresión y euforia, y actividad hábil absorbida en la vida cotidiana. Estas experiencias no son o no necesitan ser "sobre" ningún objeto intencional. No están dirigidas hacia un objeto trascendente, en el sentido de algo experimentado como estando frente a uno mismo como un sujeto distinto. Dicho de otra manera, no tienen una estructura sujeto-objeto clara.<InteractiveFootnote id="7" setNote={setActiveNote} />
+                            </TextBlock>
+
+                            <TextBlock>
+                                Los filósofos que piensan en la intencionalidad simplemente como dirección hacia un objeto negarían que experiencias como estas sean intencionales. Sin embargo, tales experiencias sí califican como intencionales en el sentido fenomenológico más amplio de estar abierto a lo que es otro o tener un carácter que involucra al mundo. Así, los sentimientos corporales no están auto-encerrados sin apertura al mundo. Por el contrario, presentan las cosas bajo una cierta luz afectiva o atmósfera y, por lo tanto, influyen profundamente en cómo percibimos y respondemos a las cosas. Un ejemplo clásico es la discusión de <Entity>Sartre</Entity> sobre sentir fatiga visual y cansancio como resultado de leer hasta tarde en la noche (1956, pp. 332-333). El sentimiento se manifiesta primero no como un objeto intencional de conciencia transitiva, sino como un temblor de los ojos y una borrosidad de las palabras en la página. El cuerpo de uno y el entorno inmediato se revelan de cierta manera a través de este sentimiento. En el caso de los estados de ánimo, aunque no están dirigidos a objetos de la misma manera que las emociones intencionales —como un sentimiento de simpatía por un ser querido o un sentimiento de envidia por un rival— no están, sin embargo, auto-encerrados sin referencia al mundo. Por el contrario, como <Entity>Heidegger</Entity> analiza extensamente en <BookTitle>Being and Time</BookTitle>, los estados de ánimo revelan nuestra incrustación en el mundo y (como él lo ve) hacen posibles formas más circunscritas de dirección en la vida cotidiana. Finalmente, en actividades hábiles absorbidas, como conducir, bailar o escribir, la experiencia de uno no es la de relacionarse con un objeto intencional distinto sino la de estar comprometido e inmerso en una actividad fluida. Tal experiencia adquiere una estructura sujeto-objeto solo durante momentos de ruptura o interrupción (ver <Entity>Dreyfus</Entity> 1991, 2002; <Entity>Dreyfus</Entity> y <Entity>Dreyfus</Entity> 1986).
+                            </TextBlock>
+
+                            <TextBlock>
+                                En fenomenología, las experiencias intencionales se describen como actos mentales: actos de percibir, recordar, imaginar, empatizar, y así sucesivamente. La fenomenología concibe la vida mental como un proceso temporalmente extendido y dinámico de actos intencionales que fluyen. Estos actos están animados por hábitos precognitivos y sensibilidades del cuerpo vivido. Los actos intencionales son realizaciones de una persona, un sujeto corporal vivo de experiencia, cuya vida cognitiva y afectiva está constituida por normas comunales, convenciones y tradiciones históricas. La vida mental está animada por un esfuerzo intencional que apunta hacia y encuentra satisfacción en la revelación del objeto intencional. De esta manera, la intencionalidad es teleológica (<Entity>Held</Entity> 2003, p. 14).
+                            </TextBlock>
+
+                            <TextBlock>
+                                Dada esta concepción de la intencionalidad, se sigue que ni el acto mental ni aquello que intenta pueden entenderse de forma aislada. Todo acto mental es el acto mismo que es en virtud de aquello que intenta, y todo objeto se constituye en y a través del curso temporalmente extendido de la experiencia intencional. Como explica <Entity>Donn Welton</Entity>:
+                            </TextBlock>
+
+                            <TextBlock>
+                                "Hay una concepción genuinamente nueva de los actos mentales aquí en juego... Por un lado, los actos no pertenecen a un reino interior cerrado disponible solo para la introspección. Más bien, tienen su ser en virtud de su relación con aquello que los trasciende. Por otro lado, las determinaciones de 'lo dado' solo pueden aclararse completamente viéndolas en relación con ciertos actos que contribuyen a su configuración. No es ni el sujeto ni el objeto sino la relación lo que es primario." (<Entity>Welton</Entity> 2000, p. 17)
+                            </TextBlock>
+
+                            <TextBlock>
+                                Los fenomenólogos llaman a esta relación la estructura correlacional de la intencionalidad. "Correlacional" no significa la conjunción constante de dos términos que podrían imaginarse existir separados; más bien, se refiere a la estructura invariante de acto intencional/objeto intencional. Las experiencias intencionales dirigidas a objetos comprenden necesariamente estos dos polos inseparables. En el lenguaje fenomenológico husserliano, estos dos polos se conocen como el <Concept>"noema"</Concept> (el objeto en su donación) y la <Concept>"noesis"</Concept> (el acto mental que intenta y revela el objeto de cierta manera).<InteractiveFootnote id="9" setNote={setActiveNote} />
+                            </TextBlock>
+
+                            <TextBlock>
+                                Necesitamos tener este marco en mente cuando pensamos en la relación entre la concepción fenomenológica de la intencionalidad y lo que los filósofos de la mente hoy llaman representación mental. En un sentido amplio y teóricamente neutral, se supone que una representación mental es una estructura mental (concepto, pensamiento, imagen) con propiedades semánticas (contenido, condiciones de verdad, referencia), o un estado o proceso que involucra tal estructura. Usualmente, una representación mental no se considera un objeto de cognición o conciencia, sino más bien aquello por lo cual uno conoce o es consciente de algo en el mundo. Muchos fenomenólogos estarían de acuerdo en que la experiencia intencional es representacional en este sentido amplio de tener contenido descriptivo: que en la experiencia intencional el mundo se representa de alguna manera particular u otra. Sin embargo, la concepción fenomenológica de la experiencia intencional tiene otras características distintivas. Primero, en fenomenología, como se mencionó anteriormente, las experiencias intencionales se conceptualizan no como estados que tienen contenido sino como actos que tienen dirección. Estas dos concepciones no son necesariamente incompatibles, pero su orientación teórica y énfasis son diferentes. Segundo, la "re-presentación", en su sentido fenomenológico técnico, se aplica solo a ciertos tipos de actos intencionales, a saber, aquellos que evocan mentalmente o traen a la presencia algo que no está presente en su ser corporal.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Los fenomenólogos distinguen así una distinción crucial entre actos intencionales de presentación (Gegenwärtigung) y de re-presentación (Vergegenwärtigung) (ver <Entity>Marbach</Entity> 1993). Por un lado, la experiencia perceptual es presentacional: en este tipo de experiencia el objeto se da como presente en su propio ser. En la memoria o la imaginación, por otro lado, el objeto imaginado o recordado no se da como presente en su propio ser, sino más bien como fenoménicamente ausente y como mentalmente evocado o llamado. De esta manera, se dice que la memoria y la imaginación son re-presentacionales. Nótese que la característica definitiva de la experiencia re-presentacional es que el objeto se da como ausente y como mentalmente evocado, pero no necesariamente como re-evocado o llamado de nuevo. Re-evocar pertenece a la memoria pero no necesariamente a visualizar o fantasear. Nótese también que las experiencias re-presentacionales no flotan libremente, por así decirlo, sino que surgen en relación con experiencias presentacionales continuas de los alrededores de uno. Discuto esta concepción fenomenológica de la re-presentación mental en conexión con la imaginería mental en el Capítulo 10.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Volvamos a la conexión entre la fenomenología y el enfoque enactivo. Como veremos en el Capítulo 3, la principal herramienta explicativa del enfoque enactivo es la teoría de los sistemas dinámicos autoorganizados y autónomos. Tales sistemas traen o enactúan significado en interacción recíproca continua con sus entornos. "Interior" y "exterior" no son esferas separadas preexistentes, sino dominios mutuamente especificantes enactuados o traídos por el acoplamiento estructural del sistema y su entorno. Esta explicación subpersonal de los sistemas cognitivos hace eco de la explicación a nivel personal de la estructura correlacional de la intencionalidad.<InteractiveFootnote id="10" setNote={setActiveNote} /> Como escribe <Entity>Jean-Pierre Dupuy</Entity> en su historia filosófica de la ciencia cognitiva, discutiendo el "encuentro perdido" entre la fenomenología y la ciencia de la mente en la era cibernética:
+                            </TextBlock>
+
+                            <TextBlock>
+                                "Una red [autónoma] dada generalmente posee una multiplicidad de autocomportamientos (o, como se les llama a veces, 'atractores'...) y converge hacia uno u otro de ellos dependiendo de las condiciones iniciales de la red. La 'vida' de una red puede concebirse así como una trayectoria a través de un 'paisaje' de atractores, pasando de uno a otro como resultado de perturbaciones o choques del mundo externo. Nótese que estos eventos externos llegan a adquirir significado en el contexto de la red como resultado de la propia actividad de la red: el contenido —el significado— que la red les atribuye es precisamente el autocomportamiento, o atractor que resulta de ellos. Obviamente, entonces, este contenido es puramente endógeno y no el reflejo de alguna objetividad 'trascendente' externa."
+                            </TextBlock>
+
+                            <TextBlock>
+                                "Debería ser obvio, también, que esta línea de argumento... nos proporciona al menos el germen de un modelo muy satisfactorio de lo que <Entity>Brentano</Entity> llamó 'objetividad inmanente'... El atractor es una entidad que participa plenamente en la actividad de la red y, sin embargo, en cierto sentido, en virtud del hecho de que resulta de un nivel superior de complejidad lógica, trasciende la actividad de la red. La dinámica de la red puede decirse, por lo tanto, que tiende hacia un atractor, aunque este último es solo un producto de esta dinámica. La red es así una criatura intencional en el sentido de <Entity>Brentano</Entity> y <Entity>Husserl</Entity>. La teoría de sistemas iba a acuñar otro término para describir esta relación paradójica entre la dinámica de un sistema y su atractor, refiriéndose a ella como 'autotrascendencia'. Esto no es muy diferente, realmente, de la noción de <Entity>Husserl</Entity> de 'trascendencia dentro de la inmanencia'." (<Entity>Dupuy</Entity> 2000, pp. 104-105)
+                            </TextBlock>
+
+                            <TextBlock>
+                                Debido a que esta noción de trascendencia-dentro-de-la-inmanencia a menudo se malinterpreta, merece aclaración aquí. No significa que lo que parece estar más allá o fuera de la esfera de la actividad mental esté realmente contenido dentro de la mente (en algún sentido idealista o internalista). Más bien, el punto crucial es que lo trascendente se da como tal en virtud de las actividades intencionales de la conciencia. Así, cae dentro de la esfera de lo que está fenomenológicamente constituido (revelado o traído a la conciencia por la conciencia). Claramente, este punto tiene sentido solo a un nivel trascendental, pues a este nivel lo trascendente se entiende como un modo de donación o revelación (uno que caracteriza a las cosas en el mundo, pero no a la propia conciencia de uno). Así, a un nivel trascendental, lo que es real o genuinamente trascendente es también fenomenológicamente inmanente (ver <Entity>Crowell</Entity>, en prensa, para más discusión).
+                            </TextBlock>
+
+                            <TextBlock>
+                                La correspondencia entre fenomenología y teoría de sistemas dinámicos a la que apunta <Entity>Dupuy</Entity> debe entenderse por lo tanto de la siguiente manera. Los eventos externos son realmente trascendentes, pues ciertamente no están contenidos dentro del sistema, ni son un mero producto de lo que ocurre dentro del sistema. Sin embargo, son intencionalmente inmanentes, en el siguiente sentido: no llegan ya etiquetados, por así decirlo, como eventos externos; en cambio, son constituidos o revelados como tales, y con el significado que tienen, en virtud de la dinámica autónoma (autoorganizada) de la red. En otras palabras, su estatus como eventos externos para el sistema (en oposición a su estatus para un observador del sistema) es una función de la propia actividad del sistema. Su significado o importancia corresponde a un atractor de la dinámica del sistema (un patrón recurrente de actividad hacia el cual el sistema tiende), que a su vez es un producto emergente de esa misma dinámica. El mundo externo se constituye como tal para el sistema en virtud de la actividad autoorganizada del sistema. La propuesta de <Entity>Dupuy</Entity>, en pocas palabras, es que la intencionalidad constitucional corresponde a un tipo de autoorganización. Esta propuesta, como veremos en capítulos posteriores, es una de las intuiciones rectoras clave del enfoque enactivo y la neurophenomenología.
+                            </TextBlock>
+
+                            <SubSectionHeader title="De la Fenomenología Estática a la Genética" />
+
+                            <TextBlock>
+                                Esta convergencia entre la fenomenología y el enfoque enactivo puede llevarse más lejos. La estructura correlacional de la intencionalidad pertenece a lo que <Entity>Husserl</Entity> llamó fenomenología estática. A medida que su pensamiento progresaba, sin embargo, <Entity>Husserl</Entity> encontró que necesitaba articular una fenomenología genética, es decir, una fenomenología cuyo punto de partida no es la estructura correlacional explícita del acto intencional (noesis) y el objeto intencional (noema), sino más bien la génesis de la experiencia intencional en el tiempo. Desde el punto de vista de la fenomenología genética, necesitamos dar cuenta de la estructura correlacional de la intencionalidad evolutivamente entendiendo cómo emerge de la experiencia inarticulada que no tiene una estructura sujeto-objeto clara. Una fuente de este tipo de experiencia es el cuerpo vivido (Leib); otra es la conciencia del tiempo. El cambio de la fenomenología estática a la genética marca así un giro hacia el cuerpo vivido y la conciencia del tiempo. Así, nos permite profundizar la conexión entre la fenomenología y el enfoque enactivo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La fenomenología estática hace uso de dos estrategias metodológicas (<Entity>Steinbock</Entity> 1995, pp. 38-39). La primera es el análisis estático o el análisis de estructuras formales invariantes de la experiencia, como la estructura correlacional de la intencionalidad, o la diferencia entre actos mentales presentacionales y re-presentacionales y las formas en que estos últimos presuponen los primeros. La segunda estrategia es el análisis constitucional —el análisis de cómo las cosas son reveladas o traídas a la conciencia en virtud de las actividades intencionales de la conciencia. Desde una perspectiva trascendental, las estructuras formales invariantes de la experiencia descubiertas por el análisis estático son precisamente las leyes formales esenciales bajo las cuales la experiencia opera necesariamente para constituir sus objetos. Un ejemplo es la investigación de <Entity>Husserl</Entity> en sus conferencias de 1907, "Cosa y Espacio", sobre las condiciones de posibilidad para la experiencia perceptual de las cosas en el espacio (<Entity>Husserl</Entity> 1997). <Entity>Husserl</Entity> muestra que la percepción visual depende constitutivamente de ciertas interdependencias funcionales invariantes entre la sensación visual y la experiencia de mover el propio cuerpo (a lo que él llama cinestesia). Estos análisis anticipan cuentas sensoriomotoras enactívas o dinámicas recientes de la percepción (discutidas en el Capítulo 9). Según estas cuentas, percibir es ejercer el dominio hábil de uno sobre las formas en que la estimulación sensorial varía como resultado del movimiento corporal (<Entity>Noë</Entity> 2004; <Entity>O'Regan</Entity> y <Entity>Noë</Entity> 2001a).
+                            </TextBlock>
+
+                            <TextBlock>
+                                A diferencia de la fenomenología estática, la fenomenología genética no toma el objeto intencional ya revelado como su punto de partida, ni se contenta con permanecer en el nivel de analizar estructuras formales y constitutivas de la experiencia. En cambio, investiga la génesis y el desarrollo de esas estructuras mismas. Después de todo, no simplemente caemos en el mundo y abrimos los ojos y vemos. Lo que vemos es una función de cómo vemos, y cómo vemos es una función de la experiencia previa. Para la fenomenología genética, lo que experimentamos no es un dado fijo sino algo que ha llegado a ser dado —algo emergente— a partir de la experiencia previa (<Entity>Bernet</Entity>, <Entity>Kern</Entity>, y <Entity>Marbach</Entity> 1993, pp. 200-201). En los Capítulos 11 y 12, discuto análisis fenomenológicos de la conciencia del tiempo y el afecto producidos desde esta orientación genética y los relaciono con la investigación en psicología y neurociencia.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La fenomenología genética también trae consigo una forma diferente de pensar sobre el sujeto consciente. Desde un punto de vista estático, el "Yo" se piensa como una especie de "polo del ego" de la estructura noético-noemática, en contraposición al "polo del objeto". Una articulación más completa de la estructura correlacional de la intencionalidad sería así [ego] noesis-noema (Yo intento el objeto intencional). Desde un punto de vista genético, sin embargo, esta forma de pensar sigue siendo abstracta porque ignora el desarrollo temporal y la individuación del sujeto. El "Yo" o "ego" no es un mero "polo vacío" de mismidad en la experiencia sino un sujeto concreto que tiene hábitos, intereses, convicciones y capacidades como resultado de la experiencia acumulada. En otras palabras, el sujeto tiene que ser visto como teniendo una "vida" en todos los ricos sentidos de esta palabra —como formado por su historia individual, como un sujeto corporal vivo de experiencia (Leib), y como perteneciente a un "mundo de la vida" intersubjetivo (Lebenswelt).
+                            </TextBlock>
+
+                            <TextBlock>
+                                La fenomenología genética distingue entre génesis activa y génesis pasiva. En la génesis activa los sujetos juegan un papel activo y deliberado, productivo en la constitución de objetos. Los productos de la génesis activa son herramientas, obras de arte, teorías científicas, intervenciones experimentales, juicios lógicos, proposiciones matemáticas, y así sucesivamente. La génesis activa, sin embargo, siempre presupone una pasividad por la cual uno es afectado de antemano. Debe enfatizarse que "pasivo" en este contexto no significa un estado de inactividad, sino más bien un estado de ser involuntariamente influenciado y afectado por algo. En particular, significa ser influenciado y afectado en un nivel estético, en el sentido griego original de aisthesis como percepción sensorial, incluyendo especialmente la percepción y experiencia sentida de lo que es atractivo y no atractivo. Así, el pensamiento detrás de la distinción activo/pasivo es que nuestra orientación activa hacia las cosas en la razón práctica o teórica, o la creación artística, presupone una apertura más profunda y fundamental al mundo. Es una apertura a ser sensualmente afectado y solicitado por el mundo a través del medio de nuestro cuerpo vivo, y responder por atracción y repulsión. Investigar estas profundidades sensoriomotoras y afectivas de la experiencia lleva a la fenomenología a la noción de génesis pasiva. En la génesis pasiva, el cuerpo vivido se constituye a sí mismo y a su entorno circundante a través de la formación involuntaria de hábitos, patrones motores, asociaciones, disposiciones, motivaciones, emociones y recuerdos.
+                            </TextBlock>
+
+                            <TextBlock>
+                                En este nivel de "síntesis pasiva" en la experiencia, la noción relevante de intencionalidad no es tanto la dirección hacia un objeto como la apertura al mundo, aquí en la forma corporal de una sensibilidad o sentiencia implícita que no tiene ninguna estructura sujeto-objeto clara. La intencionalidad en este nivel funciona anónimamente, involuntariamente, espontáneamente y receptivamente. <Entity>Husserl</Entity> distingue entre receptividad y afectividad (2001, pp. 105, 127). Como explica <Entity>Dan Zahavi</Entity>, "La receptividad se toma como el primer, más bajo y más primitivo tipo de actividad intencional, y consiste en responder o prestar atención a aquello que nos está afectando pasivamente. Así, incluso la receptividad entendida como un mero 'me doy cuenta' presupone una afección previa" (<Entity>Zahavi</Entity> 1999, p. 116; ver también la Introducción del Traductor a <Entity>Husserl</Entity> 2001). Afección aquí significa ser afectivamente influenciado o perturbado. La idea es que cualquier cosa que entre en relieve en la experiencia debe haber estado ya afectándonos y debe tener algún tipo de "fuerza afectiva" o "atractivo afectivo" en relación con nuestra atención y motivaciones. Cualquier cosa que ejerza atractivo afectivo sin que nos volvamos a ella atentamente se dice que es "predada", y cualquier cosa que logre ganar atención se dice que es "dada". Así, lo dado —el modo o manera en que algo aparece a la conciencia dirigida a objetos— tiene que entenderse dinámica y teleológicamente como emergente en relación con lo predado. Las experiencias intencionales dirigidas a objetos emergen del trasfondo de una "intencionalidad operativa" precognitiva (<Entity>Merleau-Ponty</Entity> 1962, p. xviii) que involucra una interacción dinámica de sensibilidad afectiva, motivación y atención. Esta "intencionalidad saturada" afectivamente (<Entity>Steinbock</Entity> 1999) proporciona nuestra apertura primordial al mundo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El terreno fenomenológico de la "síntesis pasiva" es rico en potencial para iluminar y ser iluminado por la investigación en psicología y neurociencia sobre emoción y cognición. Algunas de estas conexiones ya son discernibles en la descripción de <Entity>Husserl</Entity> de la síntesis pasiva operando de acuerdo con un principio de asociación (<Entity>Husserl</Entity> 1960, pp. 80-81; 2001, pp. 162-242). Para <Entity>Husserl</Entity>, la asociación es un proceso intencional mediante el cual las experiencias se construyen o sintetizan en totalidades más grandes y estructuradas. Usando la terminología de la emergencia, podríamos decir que la asociación es el proceso mediante el cual emergen patrones coherentes de experiencia a partir de experiencias conjuntas y recíprocamente afectantes. Aquí hay algunos ejemplos vívidos dados por <Entity>William James</Entity> en sus <BookTitle>Principles of Psychology</BookTitle>:
+                            </TextBlock>
+
+                            <TextBlock>
+                                "Deje que una persona entre en su habitación en la oscuridad y busque a tientas entre los objetos allí. El toque de las cerillas recordará instantáneamente su apariencia. Si su mano entra en contacto con una naranja en la mesa, el amarillo dorado de la fruta, su sabor y perfume dispararán inmediatamente a través de su mente. Al pasar la mano sobre el aparador o al sacudir el cubo de carbón con el pie, la gran forma oscura y brillante de uno y la negrura irregular del otro despertarán en un destello y constituirán lo que llamamos el reconocimiento de objetos. La voz del violín resuena débilmente a través de la mente mientras la mano se posa sobre él en la oscuridad, y la sensación de las prendas o cortinas que pueden colgar alrededor de la habitación no se entiende hasta que el aspecto correlativo a la sensación ha sido resucitado en cada caso... Pero el caso más notorio e importante de la combinación mental de impresiones auditivas con ópticas experimentadas originalmente juntas es proporcionado por el lenguaje. Al niño se le ofrece una fruta nueva y deliciosa y al mismo tiempo se le dice que se llama un 'higo'. O mirando por la ventana exclama, '¡Qué caballo tan gracioso!' y se le dice que es un caballo 'pío'. Al aprender sus letras, el sonido de cada una se le repite mientras su forma está ante su ojo. A partir de entonces, mientras viva, nunca verá un higo, un caballo pío o una letra del alfabeto sin que el nombre que escuchó por primera vez en conjunción con cada uno se adhiera a él en su mente; e inversamente nunca escuchará el nombre sin el débil despertar de la imagen del objeto." (1981, pp. 524-525)
+                            </TextBlock>
+
+                            <TextBlock>
+                                Según los filósofos empiristas <Entity>Locke</Entity> y <Entity>Hume</Entity>, tales asociaciones ocurren de una manera completamente mecánica. La asociación opera como una especie de fuerza conectiva en la mente que vincula impresiones e ideas simplemente en virtud de su ocurrencia simultánea, proximidad o sucesión repetida. El análisis de la causalidad de <Entity>Hume</Entity> proporciona un ejemplo famoso de esta forma de pensar sobre la asociación. <Entity>Hume</Entity> argumentó que las conexiones causales no son ni directamente observables ni demostrables por la razón, sino que son objetos de mera creencia basada en el hábito y la costumbre. La creencia en una conexión causal entre A y B surge de la asociación o "conjunción constante" de A y B en la experiencia pasada: experiencias de A constantemente conjuntas a experiencias de B hacen que la mente espere habitualmente que la ocurrencia de A será seguida por la ocurrencia de B.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Para <Entity>Husserl</Entity> (y <Entity>James</Entity>), sin embargo, la asociación no es sin sentido y mecánica, sino completamente intencional. La asociación no es la agregación mecánica de experiencias complejas a partir de átomos de experiencia preexistentes. <Entity>Husserl</Entity>, como <Entity>James</Entity>, rechaza completamente esta concepción atomista de la experiencia. Como procesos emergentes en un sistema autoorganizado, las experiencias asociadas se fortalecen y refuerzan recíprocamente y, por lo tanto, dan lugar a nuevas formaciones que superan su separación anterior. La asociación también implica la retención y anticipación de sentido o significado. Las experiencias anteriores son "despertadas" afectivamente por las posteriores sobre la base de sus similitudes sentidas, y motivan la anticipación de que lo que vendrá será coherente con el sentido o significado de la experiencia hasta ahora. En la terminología de <Entity>Husserl</Entity>, hay una "transferencia analógica de sentido" de la experiencia anterior a la posterior: lo que está presente ahora se aprehende pasivamente dentro de un sentido que tiene sus raíces en la experiencia anterior y que desde entonces se ha vuelto habitual (<Entity>Bernet</Entity>, <Entity>Kern</Entity>, y <Entity>Marbach</Entity> 1993, p. 202).
+                            </TextBlock>
+
+                            <TextBlock>
+                                La noción de hábito es central para la concepción de <Entity>Husserl</Entity> de la génesis pasiva, como afirma explícitamente en una conferencia de 1927: "Como <Entity>Hume</Entity> enseña correctamente, el hábito no es solo nuestra enfermera, sino que es la función de la conciencia que da forma y da forma constante al mundo" (citado por <Entity>Bernet</Entity>, <Entity>Kern</Entity>, y <Entity>Marbach</Entity> 1993, p. 203; ver también <Entity>Welton</Entity> 2000, p. 243). <Entity>Husserl</Entity> menciona a <Entity>Hume</Entity>, pero la noción de hábito también fue muy importante para <Entity>James</Entity>. En sus <BookTitle>Principles of Psychology</BookTitle> <Entity>James</Entity> declaró que el hábito es el fundamento de toda asociación en la corriente de conciencia y en la actividad cerebral (anticipando así a <Entity>Donald Hebb</Entity> y el conexionismo).<InteractiveFootnote id="12" setNote={setActiveNote} /> Más tarde, en 1945, <Entity>Merleau-Ponty</Entity> introdujo su noción del cuerpo-hábito en su <BookTitle>Phenomenology of Perception</BookTitle> mientras discutía la experiencia del miembro fantasma: "nuestro cuerpo comprende, por así decirlo, dos capas distintas, la del cuerpo-hábito y la del cuerpo en este momento. En la primera aparecen movimientos manipuladores que han desaparecido de la segunda, y el problema de cómo puedo tener la sensación de poseer todavía un miembro que ya no tengo equivale a descubrir cómo el cuerpo habitual puede actuar como garantía para el cuerpo en este momento" (1962, p. 82). Decir que el cuerpo habitual actúa como garantía para el cuerpo en este momento es decir que el cuerpo vivido de uno es un ser en desarrollo espeso con su propia historia y formas sedimentadas de sentir, percibir, actuar e imaginar. Estos patrones sedimentados no se limitan al espacio encerrado por la membrana del cuerpo; abarcan y entrelazan el cuerpo vivido y su entorno, formando así un circuito unitario de cuerpo-vivido-entorno (<Entity>Gallagher</Entity> 1986b).
+                            </TextBlock>
+
+                            <TextBlock>
+                                En la Parte III, exploraré esta convergencia de la fenomenología genética y la ciencia cognitiva enactíva con mayor detalle. Por ahora, permítanme simplemente señalar cuán importante es el acoplamiento dinámico entre el cuerpo vivido de uno y el mundo circundante para ambas perspectivas. En este acoplamiento, la corriente subyacente motivadora es el vínculo habitual y asociativo de experiencias corporales afectivas, sensoriomotoras e imaginativas.
+                            </TextBlock>
+
+                            <SubSectionHeader title="De la Fenomenología Genética a la Generativa" />
+
+                            <TextBlock>
+                                Tarde en su vida, <Entity>Husserl</Entity> comenzó a moverse en otra dirección más: de la fenomenología genética a la fenomenología generativa. Ya en la fenomenología genética, la intersubjetividad había surgido como un tema importante, en la forma del acoplamiento dinámico entre el yo y el otro sobre la base de su presencia corporal vivida el uno para el otro. La fenomenología generativa, embargo, amplió el alcance de este análisis genético más allá de la relación yo-otro para incluir los parámetros de nacimiento y muerte, así como la interconexión de las generaciones.
+                            </TextBlock>
+
+                            <TextBlock>
+                                En este contexto, el término generativo tiene un doble significado: significa tanto el proceso de llegar a ser como el proceso de ocurrir a lo largo de las generaciones (<Entity>Steinbock</Entity> 1995, p. 3). La fenomenología generativa se refiere al devenir histórico, social y cultural de la experiencia humana. Si la fenomenología estática está restringida en alcance con respecto a la fenomenología genética, entonces la fenomenología genética está restringida en alcance con respecto a la fenomenología generativa: el tema de la fenomenología generativa es el devenir histórico e intersubjetivo de la experiencia humana, mientras que la fenomenología genética se centra en el desarrollo individual sin un análisis explícito de su incrustación generacional e histórica.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Al pasar de un registro genético a uno generativo, la noción del cuerpo vivido se complementa con la del <Concept>mundo de la vida</Concept> (<Entity>Husserl</Entity> 1970; <Entity>Steinbock</Entity> 1995, pp. 86-122; <Entity>Welton</Entity> 2000, pp. 331-346). El mundo de la vida es el mundo cotidiano en el que vivimos. Está "siempre ya predado", sirviendo como el horizonte de todas nuestras actividades, prácticas y teóricas. Dos aspectos importantes de esta noción rica y multifacética necesitan mencionarse aquí: la circulación o intercambio de ida y vuelta dentro del mundo de la vida entre la ciencia empírica y la vida humana cotidiana, y el mundo de la vida como el horizonte y fundamento predado de toda actividad humana.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El mundo de la vida comprende el mundo cotidiano y las cosas que pueden experimentarse directamente dentro del mundo cotidiano —nuestros cuerpos vivos, nuestros entornos naturales y nuestras creaciones culturales (herramientas, obras de arte, y así sucesivamente). El mundo de la vida es relativo al sujeto en el sentido de que está ligado relacionalmente a la subjetividad humana. Esto está en contraste con la "naturaleza objetiva" tal como la concibe la ciencia, a la que se llega a través de la abstracción lógica y teórica. La naturaleza así interpretada es una objetivación y tiene como su correlato cognitivo la actitud intencional objetivadora adoptada por una comunidad de sujetos teóricos. La naturaleza objetiva presupone el mundo de la vida como su fuente evidencial y fundamento. En principio, no puede experimentarse directamente porque es el producto de la abstracción e idealización. Sin embargo, las proposiciones, modelos, construcciones lógicas y técnicas experimentales de las ciencias son claramente experimentables en otro sentido: son logros humanos que tienen validez experiencial para los miembros de la comunidad científica, y sus efectos fluyen hacia el mundo cotidiano y se experimentan tangiblemente en forma de tecnología y práctica social. Nuestro mundo de la vida abarca la ciencia, además de otras esferas de experiencia como el arte, la filosofía y la religión. Por lo tanto, hay una "circulación" necesaria entre la experiencia cotidiana y la experiencia científica (<Entity>Varela</Entity>, <Entity>Thompson</Entity>, y <Entity>Rosch</Entity> 1991, pp. 10-14). Por un lado, la experiencia cotidiana proporciona los contenidos sensibles y materiales a partir de los cuales y con los cuales la ciencia debe trabajar. Por otro lado, los análisis científicos construidos a partir de estos contenidos contribuyen a la formación de nuestro mundo de la vida y proporcionan pistas importantes para los análisis fenomenológicos de cómo nuestra experiencia del mundo está constituida genética y generativamente.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Al abordar estos análisis fenomenológicos, <Entity>Husserl</Entity> concibió inicialmente el mundo de la vida como una totalidad sintética. Por lo tanto, lo trató según el modelo de un objeto, aunque uno peculiar y abarcador (ver <Entity>Steinbock</Entity> 1995, pp. 98-102; <Entity>Welton</Entity> 2000, pp. 336-346). Eventualmente, sin embargo, le quedó claro que el mundo de la vida no puede ser dado como ningún tipo de objeto intencional, porque siempre está ya allí, predado en lugar de dado.<InteractiveFootnote id="13" setNote={setActiveNote} /> Así, en un pasaje crucial y famoso de su última obra, <BookTitle>The Crisis of European Sciences and Transcendental Phenomenology</BookTitle> (1970, §37, pp. 142-143), escribió que el mundo siempre está ya allí, existiendo de antemano para nosotros, como el "fundamento" y "horizonte" de cualquier actividad humana. Luego afirmó que la forma en que somos conscientes del mundo y la forma en que somos conscientes de las cosas u objetos, aunque inseparablemente unidas, son fundamentalmente diferentes. Solo podemos ser conscientes de las cosas como cosas dentro del horizonte del mundo, y solo podemos ser conscientes del horizonte del mundo como un horizonte para objetos existentes. Sin embargo, el mundo no es ningún tipo de entidad, ni es simplemente la totalidad de entidades, precisamente porque es el horizonte presupuesto por cualquier entidad o cualquier totalidad. Es tentador decir "el mundo es uno", excepto que, como lo expresa <Entity>Husserl</Entity>, el mundo "existe con tal singularidad que el plural no tiene sentido cuando se aplica a él". En otras palabras, el mundo no es uno en ningún sentido en el que podría haber sido dos. Dicho de otra manera, describir el mundo como "único", tal que "cada singular y cada plural extraído de él, presupone el horizonte del mundo", significa que la noción de contar no tiene sentido o no tiene aplicación aquí.<InteractiveFootnote id="14" setNote={setActiveNote} /> Dada esta diferencia entre la manera en que se da cualquier objeto y la manera en que se da el horizonte del mundo (a saber, como siempre ya predado), se sigue que debe haber "tipos de conciencia correlativos fundamentalmente diferentes para ellos".
+                            </TextBlock>
+
+                            <TextBlock>
+                                Los términos de <Entity>Husserl</Entity> horizonte y fundamento son metafóricos, a la vez visuales y geológicos. Un horizonte no es una cosa "ahí fuera" sino más bien una estructura de apariencia. Por lo tanto, implica o apunta de nuevo al perceptor para quien las apariencias están así estructuradas. En lenguaje fenomenológico, "horizonte" tomado noemáticamente como una estructura de apariencia implica necesariamente "horizonte" tomado noéticamente como una estructura de conciencia. Podría decirse que un horizonte es la condición previa para la aparición de cualquier cosa, excepto que "condición previa" es demasiado estático. Dicho en un registro genético, un horizonte es una estructura dinámica de revelación en la que participan tanto el objeto (noema) como la conciencia (noesis) (<Entity>Steinbock</Entity> 1995, p. 107). Cualquier cosa que surge, se manifiesta o emerge lo hace en un claro o extensión abierta, delimitada por un horizonte. El horizonte de todo horizonte posible es el mundo. Sin embargo, el horizonte-mundo no puede ser la síntesis, totalidad o suma mereológica de todos estos horizontes posibles porque es predado o a priori con respecto a cualquiera de ellos y, por lo tanto, es sui generis. Del mismo modo, describir el mundo de la vida como fundamento (Boden) no es decir que es un cimiento estático; más bien, es el suelo predado del cual todo se genera y nutre. Este suelo incluye a los antepasados y la cultura de uno. Nosotros, los seres humanos, nos constituimos y reconstituimos a nosotros mismos a través de tradiciones culturales, que experimentamos como nuestro propio desarrollo en un tiempo histórico que abarca las generaciones. Investigar el mundo de la vida como horizonte y fundamento de toda experiencia requiere, por lo tanto, investigar nada menos que la generatividad —los procesos de llegar a ser, de hacer y rehacer, que ocurren a lo largo de las generaciones y dentro de los cuales cualquier génesis individual siempre está ya situada.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La fenomenología generativa pone de relieve los aspectos intersubjetivos, sociales y culturales de nuestra encarnación radical. Los individuos nacen y mueren, se desarrollan y cambian constantemente, y emergen de sus antepasados y se perpetúan en las generaciones venideras. La subjetividad individual es desde el principio intersubjetividad, originalmente comprometida con y alterada por otros en entornos geológicos y culturales específicos (<Entity>Depraz</Entity> 1999c, p. 482; <Entity>Steinbock</Entity> 1995). La subjetividad individual está encarnada, incrustada y emergente intersubjetiva y culturalmente.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La ciencia cognitiva clásica, en la medida en que operaba bajo la suposición de que el yo individual es lo primero y el otro lo segundo, simplemente dejó fuera la intersubjetividad y la cultura. De hecho, no tenía medios reales para analizar sus contribuciones a la "arquitectura cognitiva" de la mente humana. Como resultado, la ciencia cognitiva clásica ha ofrecido modelos abstractos y reificados de la mente como un sistema de símbolos físicos incorpóreo y sin cultura o una red neuronal conexionista en la cabeza de un individuo solitario. Como veremos en el último capítulo de este libro, sin embargo, el enfoque enactivo, particularmente cuando es guiado por fenomenologías genéticas y generativas del cuerpo vivido, la intersubjetividad y el mundo de la vida, ofrece una visión diferente. Argumentaré que el yo y el otro se enactúan recíprocamente a través de la empatía y que la subjetividad humana emerge de procesos de desarrollo de enculturación y es configurada por la red cognitiva distribuida de la cultura simbólica.
+                            </TextBlock>
+                        </section>
+                        
+                    </main>
+
+                    <TooltipModal activeNote={activeNote} onClose={() => setActiveNote(null)} />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
