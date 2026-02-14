@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Mente en la Vida | Evan Thompson</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            950: '#020617', // Deep Dark Background
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #020617;
+            color: #cbd5e1;
+            overflow-x: hidden;
+        }
+        /* Hide Scrollbar but keep functionality */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .text-justify {
+            text-align: justify;
+        }
+        .hyphens-auto {
+            hyphens: auto;
+            -webkit-hyphens: auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, AnimatePresence, useScroll, useSpring } = window.Motion;
+        
+        // --- Data Structure (Derived from PDFs) ---
+        // Se ha eliminado la información editorial de la portada y añadido el campo 'url' al TOC.
+        
+        const BOOK_DATA = {
+            title: "La Mente en la Vida",
+            subtitle: "Biología, Fenomenología y las Ciencias de la Mente",
+            author: "Evan Thompson",
+            // Los enlaces (url) están vacíos para ser rellenados con los archivos correspondientes (ej: 'capitulo1.html')
+            toc: [
+                { title: "Prefacio", page: "ix", id: "preface", url: "#preface" },
+                { title: "Agradecimientos", page: "xi", id: "acknowledgments", url: "#acknowledgments" },
+                { separator: "PARTE UNO: El Enfoque Enactivo" },
+                { title: "1. Ciencia Cognitiva y Experiencia Humana", page: "3", url: "#" }, // Pon aquí el link: 'capitulo-01.html'
+                { title: "2. La Conexión Fenomenológica", page: "16", url: "#" },
+                { title: "3. Autonomía y Emergencia", page: "37", url: "#" },
+                { title: "4. La Estructura del Comportamiento", page: "66", url: "#" },
+                { separator: "PARTE DOS: La Vida en la Mente" },
+                { title: "5. Autopoiesis: La Organización de lo Vivo", page: "91", url: "#" },
+                { title: "6. Vida y Mente: La Filosofía del Organismo", page: "128", url: "#" },
+                { title: "7. Haciendo Camino al Andar: Desarrollo y Evolución", page: "166", url: "#" },
+                { separator: "PARTE TRES: Conciencia en la Vida" },
+                { title: "8. La Vida más allá de la Brecha", page: "219", url: "#" },
+                { title: "9. Subjetividad Sensoriomotora", page: "243", url: "#" },
+                { title: "10. Mira de Nuevo: Conciencia e Imaginería Mental", page: "267", url: "#" },
+                { title: "11. Temporalidad y el Presente Vivo", page: "312", url: "#" },
+                { title: "12. Dinamismo Primordial: Emoción y Valencia", page: "360", url: "#" },
+                { title: "13. Empatía y Enculturación", page: "382", url: "#" },
+                { separator: "APÉNDICES" },
+                { title: "A: Husserl y la Ciencia Cognitiva", page: "413", url: "#" },
+                { title: "B: Emergencia y el Problema de la Causación Descendente", page: "417", url: "#" }
+            ]
+        };
+
+        // --- Icons ---
+        const MenuIcon = () => <i data-lucide="menu" className="w-6 h-6"></i>;
+        const XIcon = () => <i data-lucide="x" className="w-6 h-6"></i>;
+        const ImageIcon = () => <i data-lucide="image" className="w-8 h-8 text-slate-500"></i>;
+        const ChevronRight = () => <i data-lucide="chevron-right" className="w-4 h-4"></i>;
+
+        // --- Components ---
+
+        const ScrollProgress = () => {
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+
+            return (
+                <motion.div
+                    className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50"
+                    style={{ scaleX }}
+                />
+            );
+        };
+
+        const TooltipModal = ({ activeNote, onClose }) => {
+            if (!activeNote) return null;
+
+            return (
+                <AnimatePresence>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20, x: "-50%" }}
+                        animate={{ opacity: 1, y: 0, x: "-50%" }}
+                        exit={{ opacity: 0, y: 20, x: "-50%" }}
+                        className="fixed bottom-10 left-1/2 w-[90vw] max-w-2xl bg-slate-900/95 backdrop-blur-md border border-slate-800 p-6 rounded-lg shadow-2xl z-50 text-slate-300 text-sm leading-relaxed text-justify"
+                    >
+                        <div className="flex justify-between items-start mb-2">
+                            <span className="text-cyan-400 font-bold text-xs uppercase tracking-widest">Nota al Pie</span>
+                            <button onClick={onClose} className="hover:text-white"><XIcon /></button>
+                        </div>
+                        {activeNote}
+                    </motion.div>
+                </AnimatePresence>
+            );
+        };
+
+        const Navigation = ({ onToggleMenu }) => (
+            <motion.header 
+                initial={{ y: -100 }}
+                animate={{ y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="fixed top-0 w-full flex justify-between items-center px-6 py-4 z-40 bg-slate-950/80 backdrop-blur-sm border-b border-white/5"
+            >
+                <div className="flex flex-col">
+                    <span className="text-slate-100 font-serif font-bold text-lg tracking-wide">{BOOK_DATA.title}</span>
+                    <span className="text-cyan-400 text-xs uppercase tracking-widest">{BOOK_DATA.author}</span>
+                </div>
+                <button 
+                    onClick={onToggleMenu}
+                    className="flex items-center gap-2 text-slate-300 hover:text-cyan-400 transition-colors uppercase text-xs tracking-widest font-semibold group"
+                >
+                    <span>Índice</span>
+                    <span className="group-hover:translate-x-1 transition-transform"><MenuIcon /></span>
+                </button>
+            </motion.header>
+        );
+
+        const Sidebar = ({ isOpen, onClose }) => (
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={onClose}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        />
+                        <motion.div
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed right-0 top-0 h-full w-full max-w-md bg-slate-900 border-l border-slate-800 z-50 overflow-y-auto p-8 shadow-2xl"
+                        >
+                            <div className="flex justify-between items-center mb-10">
+                                <h2 className="text-2xl font-serif text-amber-500">Contenido</h2>
+                                <button onClick={onClose} className="text-slate-400 hover:text-white"><XIcon /></button>
+                            </div>
+                            
+                            <nav className="space-y-6">
+                                {BOOK_DATA.toc.map((item, idx) => {
+                                    if (item.separator) {
+                                        return (
+                                            <div key={idx} className="pt-6 border-t border-slate-800">
+                                                <h3 className="text-xs uppercase tracking-[0.2em] text-cyan-400 mb-4">{item.separator}</h3>
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <a 
+                                            key={idx} 
+                                            href={item.url} 
+                                            onClick={onClose}
+                                            className="group flex justify-between items-baseline py-2 hover:translate-x-2 transition-transform cursor-pointer"
+                                        >
+                                            <span className="text-slate-300 font-serif text-lg group-hover:text-white transition-colors">{item.title}</span>
+                                            <span className="text-slate-600 font-mono text-sm border-b border-dotted border-slate-700 flex-grow mx-4"></span>
+                                            <span className="text-amber-500 font-mono text-sm">{item.page}</span>
+                                        </a>
+                                    );
+                                })}
+                            </nav>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+        );
+
+        const Hero = () => (
+            <section className="relative w-screen h-screen flex flex-col justify-center items-center bg-slate-950 px-6 overflow-hidden">
+                {/* Abstract Background Element */}
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black opacity-80"></div>
+                <div className="absolute w-[60vw] h-[60vw] bg-cyan-900/10 rounded-full blur-3xl -top-20 -left-20 animate-pulse"></div>
+                
+                <motion.div 
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1, delay: 0.2 }}
+                    className="z-10 text-center max-w-4xl"
+                >
+                    <h2 className="text-cyan-400 uppercase tracking-[0.3em] text-sm mb-6 font-semibold">Biología, Fenomenología y las Ciencias de la Mente</h2>
+                    <h1 className="text-6xl md:text-8xl font-serif text-slate-100 leading-tight mb-8">
+                        La Mente <br/> <span className="text-slate-400 italic">en la Vida</span>
+                    </h1>
+                    <div className="w-24 h-1 bg-amber-500 mx-auto mb-8"></div>
+                    <p className="text-2xl text-slate-300 font-light mb-12 tracking-wide">{BOOK_DATA.author}</p>
+                    
+                    {/* Editorial data removed as requested */}
+                </motion.div>
+
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.5, duration: 1 }}
+                    className="absolute bottom-10 left-1/2 -translate-x-1/2"
+                >
+                    <div className="w-[1px] h-16 bg-gradient-to-b from-cyan-500 to-transparent"></div>
+                </motion.div>
+            </section>
+        );
+
+        const SectionHeader = ({ title, subtitle }) => (
+            <div className="mb-16 mt-32 border-l-2 border-amber-500 pl-6">
+                <h2 className="text-4xl md:text-5xl font-serif text-slate-100 mb-2">{title}</h2>
+                {subtitle && <p className="text-xl text-slate-400 font-light italic">{subtitle}</p>}
+            </div>
+        );
+
+        const TextBlock = ({ children }) => (
+            <p className="text-slate-300 text-lg md:text-xl leading-8 md:leading-9 mb-8 text-justify hyphens-auto font-sans font-light">
+                {children}
+            </p>
+        );
+
+        // Term highlight
+        const Concept = ({ children }) => <span className="text-amber-500 font-medium">{children}</span>;
+        // Entity highlight
+        const Entity = ({ children }) => <span className="text-cyan-400">{children}</span>;
+
+        const InteractiveFootnote = ({ id, content, setNote }) => (
+            <sup 
+                className="text-cyan-400 cursor-pointer hover:text-white transition-colors font-bold ml-1"
+                onClick={() => setNote(content)}
+            >
+                [{id}]
+            </sup>
+        );
+
+        const Figure = ({ description }) => (
+            <figure className="my-12 w-full">
+                <div className="w-full aspect-video bg-slate-900/50 border border-dashed border-slate-700 rounded-sm flex flex-col items-center justify-center p-8 transition-colors hover:border-cyan-500/50 hover:bg-slate-900/80 group">
+                    <ImageIcon />
+                    <span className="mt-4 text-slate-500 font-mono text-xs uppercase tracking-widest group-hover:text-cyan-400 transition-colors">Insert Link: {description}</span>
+                </div>
+                <figcaption className="mt-4 text-sm text-slate-500 leading-relaxed text-justify border-t border-slate-800 pt-2 flex gap-4">
+                    <span className="font-bold text-amber-500 whitespace-nowrap">FIG. REF</span>
+                    <span>{description}</span>
+                </figcaption>
+            </figure>
+        );
+
+        const App = () => {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [activeNote, setActiveNote] = useState(null);
+
+            useEffect(() => {
+                // Initialize Lucide icons
+                lucide.createIcons();
+            }, [isMenuOpen]); // Re-run when menu opens to render icons inside
+
+            return (
+                <div className="antialiased selection:bg-cyan-900 selection:text-white pb-32">
+                    <ScrollProgress />
+                    <Navigation onToggleMenu={() => setIsMenuOpen(true)} />
+                    <Sidebar isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+                    
+                    <Hero />
+
+                    <main className="max-w-3xl mx-auto px-6 md:px-0">
+                        
+                        {/* --- PREFACE --- */}
+                        <section id="preface">
+                            <SectionHeader title="Prefacio" />
+                            
+                            <TextBlock>
+                                <span className="float-left text-6xl text-amber-500 font-serif mr-4 mt-[-10px] leading-[0.8]">E</span>
+                                L TEMA DE ESTE LIBRO es la profunda continuidad entre la vida y la mente. Donde hay vida hay mente, y la mente en sus formas más articuladas pertenece a la vida. La vida y la mente comparten un conjunto central de propiedades formales u organizacionales, y las propiedades formales u organizacionales distintivas de la mente son una versión enriquecida de aquellas fundamentales para la vida. Más precisamente, las características de auto-organización de la mente son una versión enriquecida de las características de auto-organización de la vida. La organización autoproducida o <Concept>"autopoyética"</Concept> de la vida biológica ya implica cognición, y esta mente incipiente encuentra expresión sentiente en la dinámica auto-organizada de la acción, la percepción y la emoción, así como en el flujo auto-movido de la conciencia del tiempo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Desde esta perspectiva, la vida mental es también vida corporal y está situada en el mundo. Las raíces de la vida mental no yacen simplemente en el cerebro, sino que se ramifican a través del cuerpo y el entorno. Nuestras vidas mentales involucran nuestro cuerpo y el mundo más allá de la membrana superficial de nuestro organismo, y por lo tanto no pueden reducirse simplemente a procesos cerebrales dentro de la cabeza.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Los capítulos venideros elaboran estas ideas utilizando material extraído de tres fuentes principales: biología, filosofía fenomenológica, y psicología y neurociencia. El libro en su conjunto tiene la intención de llevar a las ciencias experimentales de la vida y la mente a una relación más cercana y armoniosa con las investigaciones fenomenológicas de la experiencia y la subjetividad.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El motivo principal detrás de este objetivo es avanzar en uno de los problemas filosóficos y científicos más destacados de nuestro tiempo: la llamada <Concept>brecha explicativa</Concept> entre la conciencia y la naturaleza. ¿Exactamente cómo se relacionan la conciencia y la experiencia subjetiva con el cerebro y el cuerpo? Una cosa es ser capaz de establecer correlaciones entre la conciencia y la actividad cerebral; otra cosa es tener una explicación que explique exactamente cómo ciertos procesos biológicos generan y realizan la conciencia y la subjetividad. En el momento actual, no solo carecemos de tal explicación, sino que también estamos inseguros sobre la forma que necesitaría tener para cerrar la brecha conceptual y epistemológica entre la vida y la mente como objetos de investigación científica, y la vida y la mente tal como las experimentamos subjetivamente.
+                            </TextBlock>
+
+                            <TextBlock>
+                                En este libro, no ofrezco ninguna teoría o modelo nuevo u original de la conciencia, ningún análisis conceptual nuevo de conceptos físicos y fenoménicos, y ninguna nueva síntesis metafísica especulativa para unificar conciencia y naturaleza. Mi objetivo y enfoque son diferentes. Para hacer un progreso real en la brecha explicativa, necesitamos cuentas fenomenológicas más ricas de la estructura de la experiencia, y necesitamos explicaciones científicas de la mente y la vida informadas por estas explicaciones fenomenológicas. La fenomenología a su vez necesita ser informada por la psicología, la neurociencia y la biología. Mi objetivo no es cerrar la brecha explicativa en un sentido reductivo, sino más bien ampliar y enriquecer los recursos filosóficos y científicos que tenemos para abordar la brecha. Mi enfoque es, por tanto, llevar los análisis fenomenológicos de la experiencia a una relación mutuamente iluminadora con los análisis científicos de la vida y la mente.
+                            </TextBlock>
+                        </section>
+
+                        {/* --- ACKNOWLEDGMENTS --- */}
+                        <section id="acknowledgments">
+                            <SectionHeader title="Agradecimientos" />
+
+                            <TextBlock>
+                                NO PUEDO EVITAR pensar en este libro como ejemplificación de lo que los filósofos llaman la <Concept>teoría del haz</Concept> de la identidad personal. Según la teoría del haz, no hay un yo único y permanente que persista a través del tiempo; el yo es más bien un haz de experiencias o episodios mentales constantemente cambiantes y psicológicamente continuos. De manera similar, este libro comenzó hace muchos años y ha sufrido tantas transformaciones desde su inicio que no puedo decir con confianza que sea el "mismo" libro en el que comencé a trabajar hace más de diez años.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Originalmente, este libro (o su antepasado textual) se suponía que iba a ser coescrito con <Entity>Francisco Varela</Entity>. Esperábamos escribir una continuación de nuestro libro (coescrito con <Entity>Eleanor Rosch</Entity>), <i>The Embodied Mind: Cognitive Science and Human Experience</i> (MIT Press, 1991). Cuando comenzamos a planificar nuestro nuevo libro (en 1994), Francisco acababa de enterarse de que estaba crónicamente enfermo de Hepatitis C. Así, desde el principio, un sentido de urgencia yacía sobre este libro. Eventualmente se hizo claro que Francisco necesitaría un trasplante de hígado. En este momento (en 1998), Francisco decidió retirarse del proyecto y me animó a continuar por mi cuenta. Así me dispuse a revisar el libro yo solo. Después del éxito del trasplante, Francisco sintió un nuevo entusiasmo por el proyecto, e intentamos reanudar nuestros esfuerzos colaborativos. Tristemente, su enfermedad regresó no mucho después, y Francisco murió el 28 de mayo de 2001, en su hogar en París. El obituario que escribí unos días después para la revista en línea <i>Psyche</i> puede leerse en: <i>http://psyche.cs.monash.edu.au/v7/psyche-7-12-thompson.html</i>. Una versión abreviada también fue publicada en el <i>Journal of Consciousness Studies</i> 8 (2001): 66-69.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Después de la muerte de Francisco, intenté continuar escribiendo este libro como uno coescrito. Pero aún quedaba una gran cantidad de escritura por hacer, y a medida que pasaba el tiempo se hizo claro que el libro necesitaba ser completamente refundido y reescrito por mí solo. Reorganicé y reescribí los capítulos, y cambié el título dos veces, antes de que el libro finalmente tomara su forma actual. Así, aunque la enorme influencia del pensamiento de Francisco será evidente para cualquiera que lea este libro, asumo plena responsabilidad por los contenidos de esta obra, y todos los defectos y errores son míos.
+                            </TextBlock>
+
+                            <TextBlock>
+                                A lo largo del largo y difícil tiempo que ha tomado producir este libro, he tenido el apoyo y aliento de muchas personas.
+                            </TextBlock>
+                            
+                            <TextBlock>
+                                Nadie me ha dado más aliento, ayuda y amor, y ha compartido más en la tumultuosa vida de este libro, que <Entity>Rebecca Todd</Entity>. El amor y la gratitud que siento están más allá de la expresión. Además de vivir con mis largos períodos de auto-absorción mientras luchaba con este libro, ella ha leído numerosos borradores y me ha ayudado a mejorar mi pensamiento y escritura inmensamente. No puedo imaginar haber escrito este libro sin ella.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Nuestros hijos <Entity>Maximilian Todd Williams</Entity> y <Entity>Gareth Todd Thompson</Entity> han tenido que soportar mi trabajo en este libro durante casi toda sus vidas. Mi gratitud hacia ellos es ilimitada. Dedico este libro a ellos, y a nuestro querido amigo de la familia, <Entity>Gabriel Cohen Varela</Entity>, hijo de Francisco Varela y <Entity>Amy Cohen Varela</Entity>, y de la misma edad que mi hijo menor.
+                            </TextBlock>
+
+                            <TextBlock>
+                                <Entity>Gail Thompson</Entity>, <Entity>William Irwin Thompson</Entity>, y <Entity>Hilary Thompson</Entity> han brindado un gran apoyo en formas demasiado numerosas para detallar. Les estoy profundamente agradecido.
+                            </TextBlock>
+
+                            <TextBlock>
+                                También expreso profundas gracias a <Entity>John</Entity> y <Entity>Nancy Todd</Entity> por su aliento a lo largo de muchos años.
+                            </TextBlock>
+
+                            <TextBlock>
+                                El entusiasmo de <Entity>Amy Cohen Varela</Entity> por este libro, y su apoyo y aliento sin vacilaciones cuando decidí transformarlo en una obra de autoría única después de la muerte de Francisco, son profundamente apreciados.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La amistad y compañía intelectual de <Entity>Alva Noë</Entity> durante la escritura de este libro son enormemente valoradas. Le expreso mi gratitud también por comentarios en versiones tempranas de varios capítulos, y por su lectura y comentarios en la penúltima versión del manuscrito completo.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Muchas personas a lo largo de los años han leído varias porciones de este libro y dado consejos útiles en el camino: <Entity>Giovanna Colombetti</Entity>, <Entity>Diego Cosmelli</Entity>, <Entity>Isabela Granic</Entity>, <Entity>Robert Hanna</Entity>, <Entity>Marc Lewis</Entity>, <Entity>Antoine Lutz</Entity>, <Entity>Susan Oyama</Entity>, <Entity>Michael Silberstein</Entity>, <Entity>Dan Zahavi</Entity>, y <Entity>Phil Zelazo</Entity>.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Por discusiones útiles sobre una amplia variedad de temas relacionados con este libro, agradezco a <Entity>Lisa Adams</Entity>, <Entity>Ralph Adolphs</Entity>, <Entity>Michel Bitbol</Entity>, <Entity>Maria Botero</Entity>, <Entity>Paul Bourgine</Entity>, <Entity>Richie Davidson</Entity>, <Entity>Natalie Depraz</Entity>, <Entity>Jean-Pierre Dupuy</Entity>, <Entity>Frans de Waal</Entity>, <Entity>Adam Engle</Entity>, <Entity>Michel Ferrari</Entity>, <Entity>Shaun Gallagher</Entity>, <Entity>Vittorio Gallese</Entity>, <Entity>Tom Hollenstein</Entity>, <Entity>Evelyn Fox Keller</Entity>, <Entity>Uriah Kriegel</Entity>, <Entity>Jean-Philippe Lachaux</Entity>, <Entity>Connie Lamm</Entity>, <Entity>Alex Lamey</Entity>, <Entity>Dorothée Legrand</Entity>, <Entity>Michel Le Van Quyen</Entity>, <Entity>Luigi Luisi</Entity>, <Entity>Jun Luo</Entity>, <Entity>Eduard Marbach</Entity>, <Entity>Barry McMullin</Entity>, <Entity>Bernard Pachoud</Entity>, <Entity>Slobodan Perovic</Entity>, <Entity>Claire Petitmengin</Entity>, <Entity>Jean Petitot</Entity>, <Entity>Ljiljana Radenovic</Entity>, <Entity>Franz Reichle</Entity>, <Entity>Eugenio Rodriguez</Entity>, <Entity>Andreas Roepstorff</Entity>, <Entity>Jean-Michel Roy</Entity>, <Entity>David Rudrauf</Entity>, <Entity>Brian Cantwell Smith</Entity>, <Entity>John Stewart</Entity>, <Entity>Steve Torrence</Entity>, <Entity>Joel Walmsley</Entity>, <Entity>Mark Wexler</Entity>, y <Entity>Arthur Zajonc</Entity>.
+                            </TextBlock>
+
+                            <TextBlock>
+                                La penúltima versión de este libro sirvió como el texto principal para un seminario de posgrado en "Filosofía Fenomenológica de la Mente" que impartí durante el Trimestre de Otoño de 2005, en el Departamento de Filosofía de la Universidad de Toronto. Estoy agradecido a todos los que asistieron a ese seminario —especialmente <Entity>Ranpal Dosanjh</Entity>, <Entity>David Egan</Entity>, <Entity>Cathal Ó Madagáin</Entity>, <Entity>Joshua Ben Nichols</Entity>, <Entity>Adrienne Prettyman</Entity>, y <Entity>Joel Walmsley</Entity>— por sus respuestas críticas al texto.
+                            </TextBlock>
+
+                            <TextBlock>
+                                <Entity>Helena De Preester</Entity>, con poca antelación, leyó la penúltima versión del texto y me envió numerosos comentarios detallados y perspicaces que ayudaron considerablemente a mis revisiones finales.
+                            </TextBlock>
+
+                            <TextBlock>
+                                <Entity>Mike Wheeler</Entity> también leyó el manuscrito completo y amablemente llamó la atención sobre varios lugares donde mis argumentos podían ser mejorados.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Estoy particularmente agradecido por la paciencia de <Entity>Lindsay Waters</Entity> en Harvard University Press. Su aliento y rápida eficiencia cuando el manuscrito finalmente llegó a su escritorio son muy apreciados.
+                            </TextBlock>
+                            
+                            <TextBlock>
+                                Estoy agradecido a varias instituciones e individuos por su apoyo. Durante marzo y abril de 2003, permanecí como <i>Mâitre de Recherche</i> visitante en el Centre de Recherche en Epistemologie Appliqué (CREA), en la Ecole Polytechnique, París. Deseo agradecer a su director, <Entity>Jean Petitot</Entity>, por esta oportunidad, que me ayudó enormemente a escribir este libro. También agradezco a <Entity>Dan Zahavi</Entity>, director del Centro de Investigación en Subjetividad de la Universidad de Copenhague, por invitarme a visitar durante dos semanas en junio de 2004 y junio de 2005, y por numerosos intercambios productivos durante este tiempo. Finalmente, estoy agradecido al Proyecto McDonnell en Filosofía y Neurociencias, su directora, <Entity>Kathleen Akins</Entity>, y mis compañeros miembros del proyecto, por su interés y apoyo a mi trabajo.
+                            </TextBlock>
+                            
+                            <TextBlock>
+                                Por el apoyo financiero, estoy agradecido al Consejo de Investigación en Ciencias Sociales y Humanidades de Canadá por una Subvención de Investigación Estándar (1998-2001) y una Cátedra de Investigación de Canadá (2002-2007); a la Universidad de York por una Beca de Investigación de la Facultad de Artes (2001-2002); al Proyecto McDonnell en Filosofía y Neurociencia; al Centro de Estudios de la Conciencia en la Universidad de Arizona, Tucson; y a la Universidad de Toronto por un Premio de Investigación Connaught Start-up.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Una versión anterior del Capítulo 9 fue publicada como el artículo "Subjetividad Sensoriomotora y el Enfoque Enactivo de la Experiencia", en <i>Phenomenology and the Cognitive Sciences</i> 4 (2005): 407-427 (© Springer-Verlag). El Capítulo 10 es una versión expandida de "Mira de Nuevo: Fenomenología e Imaginería Mental", en <i>Phenomenology and the Cognitive Sciences</i> (en prensa; Springer-Verlag), y de "Representacionalismo y la Fenomenología de la Imaginería Mental", en <i>Synthese</i> (en prensa; © Springer-Verlag). Estoy agradecido al editor de estas revistas por el permiso para usar este material en forma revisada aquí.
+                            </TextBlock>
+
+                            <TextBlock>
+                                Finalmente, estoy agradecido a mis antiguos colegas de la Universidad de York y mis nuevos colegas de la Universidad de Toronto por su aliento e interés en mi trabajo.
+                            </TextBlock>
+
+                            <div className="mt-16 pt-8 border-t border-slate-800 text-center text-slate-500 font-serif italic">
+                                Fin de la sección preliminar
+                            </div>
+                        </section>
+                        
+                    </main>
+
+                    {/* Interactive Tooltip Container */}
+                    <TooltipModal activeNote={activeNote} onClose={() => setActiveNote(null)} />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
