@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Mente en la Vida | Evan Thompson - Cap. 7</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#151e2e',
+                            950: '#020617', // Deep Dark Base
+                        },
+                        cyan: {
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                            900: '#164e63',
+                        },
+                        amber: {
+                            500: '#f59e0b',
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    typography: (theme) => ({
+                        DEFAULT: {
+                            css: {
+                                color: theme('colors.slate.300'),
+                            },
+                        },
+                    }),
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #020617;
+            color: #cbd5e1;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+
+        .text-justify-hyphens {
+            text-align: justify;
+            hyphens: auto;
+            -webkit-hyphens: auto;
+        }
+        
+        /* Smooth text rendering */
+        .antialiased {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Selection color */
+        ::selection {
+            background: #06b6d4; /* cyan-500 */
+            color: #000;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-cyan-500 selection:text-slate-950">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, useScroll, useSpring, AnimatePresence } = window.Motion;
+
+        // --- ICONS ---
+        const Menu = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+            </svg>
+        );
+
+        const X = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
+        );
+
+        const Info = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+            </svg>
+        );
+
+        // --- DATA STRUCTURE ---
+
+        const BOOK_DATA = {
+            title: "La Mente en la Vida",
+            author: "Evan Thompson",
+            chapter: "Capítulo Siete",
+            toc: [
+                { title: "Inicio", id: "start" },
+                { title: "Autopoiesis, Reproducción y Herencia", id: "autopoiesis-reproduction" },
+                { title: "Genocentrismo y Evolución", id: "genocentrism" },
+                { title: "Problemas con el Genocentrismo", id: "problems-genocentrism" },
+                { title: "El Gen como Unidad de Información", id: "gene-information" },
+                { title: "Teoría de Sistemas del Desarrollo", id: "dst" },
+                { title: "Robustez y Flexibilidad", id: "robustness-flexibility" },
+                { title: "Evolución Enactiva", id: "enactive-evolution" },
+                { title: "Haciendo Camino al Andar", id: "laying-path" }
+            ]
+        };
+
+        const FOOTNOTES = {
+            1: "Para discusiones completas, ver Maturana y Varela 1980, 1987; Roth 1982.",
+            4: "Ver Endler 1986, Lewontin 1978 y Sober 1984 para definiciones precisas.",
+            5: "La metilación del ADN implica la adición de un grupo metilo a una de las bases de nucleótidos (citosina).",
+            6: "El término 'programa' proviene de la teoría de la información y la cibernética.",
+            7: "Ver Oyama 2000b para una crítica detallada de la metáfora de la información genética.",
+            8: "Dennett intenta distinguir entre información explícita e implícita.",
+            10: "Una referencia a la visión de Dawkins de la vida como información digital.",
+            11: "Ver Oyama, Griffiths y Gray 2001 para una visión general.",
+            12: "El texto ha sido ligeramente modificado para mayor claridad.",
+            14: "Ver Ingold 2000 para una crítica antropológica de la división naturaleza/cultura.",
+            15: "Ver Maturana y Mpodozis 2000 para una discusión detallada.",
+            16: "Ver también Gehring 1998.",
+            17: "El término 'gen selector' fue acuñado por Antonio García-Bellido.",
+            18: "Geoffroy Saint-Hilaire argumentó que la estructura es más importante que la función.",
+            19: "El término 'evolución enactiva' enfatiza la co-determinación de organismo y entorno.",
+            20: "Ver Goodwin 1994.",
+            21: "Ver Varela, Thompson y Rosch 1991, p. 196.",
+            22: "Ver Dennett 1995a, capítulo 8.",
+            23: "Ver el famoso argumento del relojero de Paley.",
+            24: "Ver Amundson 1996.",
+            25: "Ver Juarrero 1999."
+        };
+
+        // --- COMPONENTS ---
+
+        const ScrollProgress = () => {
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+
+            return (
+                <motion.div
+                    className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50"
+                    style={{ scaleX }}
+                />
+            );
+        };
+
+        const Navigation = ({ title, author, onToggleMenu }) => (
+            <motion.header 
+                initial={{ y: -100 }}
+                animate={{ y: 0 }}
+                className="fixed top-0 left-0 right-0 h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 z-40 flex items-center justify-between px-6"
+            >
+                <div className="flex flex-col">
+                    <span className="text-slate-100 font-serif font-semibold text-lg tracking-tight">{title}</span>
+                    <span className="text-cyan-500 text-xs uppercase tracking-widest">{author}</span>
+                </div>
+                <button 
+                    onClick={onToggleMenu}
+                    className="p-2 hover:bg-slate-800 rounded-full transition-colors group"
+                >
+                    <Menu className="w-6 h-6 text-slate-300 group-hover:text-cyan-400" />
+                </button>
+            </motion.header>
+        );
+
+        const Sidebar = ({ isOpen, onClose, toc }) => (
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={onClose}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        />
+                        <motion.aside 
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed top-0 right-0 h-full w-80 bg-slate-900 border-l border-slate-800 z-50 shadow-2xl p-6 overflow-y-auto"
+                        >
+                            <div className="flex justify-between items-center mb-10">
+                                <h3 className="text-white font-serif text-xl italic">Índice</h3>
+                                <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <nav className="space-y-4">
+                                {toc.map((item, idx) => (
+                                    <a 
+                                        key={idx} 
+                                        href={`#${item.id}`} 
+                                        onClick={onClose}
+                                        className="block text-slate-400 hover:text-cyan-400 hover:translate-x-2 transition-all duration-200 text-sm border-l-2 border-transparent hover:border-cyan-500 pl-3"
+                                    >
+                                        {item.title}
+                                    </a>
+                                ))}
+                            </nav>
+                        </motion.aside>
+                    </>
+                )}
+            </AnimatePresence>
+        );
+
+        const Concept = ({ children }) => (
+            <span className="text-amber-500 font-medium hover:text-amber-400 transition-colors cursor-help" title="Concepto Clave">
+                {children}
+            </span>
+        );
+
+        const Entity = ({ children }) => (
+            <span className="text-cyan-400 font-medium hover:text-cyan-300 transition-colors" title="Autor/Entidad">
+                {children}
+            </span>
+        );
+
+        const BookTitle = ({ children }) => (
+            <span className="text-white italic font-serif">
+                {children}
+            </span>
+        );
+
+        const BlockQuote = ({ children, author }) => (
+            <div className="my-10 relative group">
+                <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-500 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                <blockquote className="pl-6 italic text-amber-500 text-lg leading-relaxed font-serif">
+                    "{children}"
+                </blockquote>
+                {author && <div className="mt-2 pl-6 text-sm text-cyan-500 font-medium">— {author}</div>}
+            </div>
+        );
+
+        const InteractiveFootnote = ({ id, onActivate }) => (
+            <sup 
+                onClick={(e) => { e.stopPropagation(); if(onActivate) onActivate(id); }}
+                className={`text-cyan-500 font-bold ${onActivate ? 'cursor-pointer hover:text-cyan-300 hover:scale-110' : ''} transition-transform inline-block px-0.5`}
+            >
+                [{id}]
+            </sup>
+        );
+
+        const SectionHeader = ({ id, number, title }) => (
+            <div id={id} className="pt-24 mb-10 scroll-mt-24">
+                <div className="flex items-center gap-4 mb-4">
+                    <span className="h-px w-12 bg-cyan-900"></span>
+                    <span className="text-cyan-500 uppercase tracking-widest text-xs font-semibold">{number}</span>
+                </div>
+                <h2 className="text-3xl md:text-4xl text-white font-serif font-bold leading-tight">{title}</h2>
+            </div>
+        );
+
+        const TooltipModal = ({ activeNote, onClose }) => (
+            <AnimatePresence>
+                {activeNote && (
+                    <motion.div 
+                        initial={{ y: 50, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 50, opacity: 0 }}
+                        className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl bg-slate-900/95 backdrop-blur-xl border border-slate-700 p-6 rounded-2xl shadow-2xl z-50"
+                    >
+                        <div className="flex justify-between items-start gap-4">
+                            <div className="flex gap-3">
+                                <Info className="w-5 h-5 text-cyan-500 flex-shrink-0 mt-1" />
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <span className="font-bold text-white mr-2">Nota {activeNote}:</span>
+                                    {FOOTNOTES[activeNote]}
+                                </p>
+                            </div>
+                            <button onClick={onClose} className="text-slate-500 hover:text-white">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        );
+
+        // --- MAIN APP ---
+
+        const App = () => {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [activeNote, setActiveNote] = useState(null);
+
+            // Close tooltip on scroll
+            useEffect(() => {
+                const handleScroll = () => { if (activeNote) setActiveNote(null); };
+                window.addEventListener("scroll", handleScroll);
+                return () => window.removeEventListener("scroll", handleScroll);
+            }, [activeNote]);
+
+            // Helper to handle footnote clicks only if they exist in our data
+            const handleNote = (id) => {
+                if (FOOTNOTES[id]) {
+                    setActiveNote(id);
+                }
+            };
+
+            return (
+                <div className="bg-slate-950 min-h-screen pb-32" onClick={() => setActiveNote(null)}>
+                    <ScrollProgress />
+                    
+                    <Navigation 
+                        title={BOOK_DATA.title} 
+                        author={BOOK_DATA.author} 
+                        onToggleMenu={() => setIsMenuOpen(true)} 
+                    />
+                    
+                    <Sidebar 
+                        isOpen={isMenuOpen} 
+                        onClose={() => setIsMenuOpen(false)} 
+                        toc={BOOK_DATA.toc} 
+                    />
+
+                    <main className="w-full max-w-4xl mx-auto px-6 md:px-12 relative z-10 pt-20">
+                        
+                        {/* --- CONTENT START --- */}
+                        
+                        <div id="start" className="mb-16">
+                             <div className="flex flex-col items-start gap-2 mb-6">
+                                <span className="text-cyan-500 text-sm uppercase tracking-widest font-semibold">Capítulo Siete</span>
+                                <h1 className="text-5xl md:text-6xl font-serif font-bold text-white leading-tight">Haciendo Camino al Andar</h1>
+                                <h2 className="text-2xl md:text-3xl font-serif italic text-slate-400 mt-2">Desarrollo y Evolución</h2>
+                            </div>
+                            <div className="h-px w-full bg-gradient-to-r from-cyan-900 to-transparent mb-12"></div>
+                        </div>
+
+                        <article className="text-lg md:text-xl text-slate-300 leading-relaxed space-y-8 text-justify-hyphens font-sans font-light">
+                            
+                            <p className="first-letter:text-7xl first-letter:font-serif first-letter:text-white first-letter:mr-3 first-letter:float-left">
+                                NOSOTROS, LOS ORGANISMOS VIVOS, somos seres históricos y del desarrollo. Descendemos por reproducción, no solo de nuestros ancestros humanos, sino de incontables otros seres vivos, antepasados que precedieron a la especie humana, todo el camino de regreso hasta los organismos bacterianos más tempranos. Además, cada uno de nosotros tiene una historia única en la forma de una "línea de vida" o trayectoria del desarrollo a través del espacio y el tiempo (<Entity>Rose</Entity> 1997). Somos organismos multicelulares, y todas nuestras células descienden por reproducción de una célula particular, formada a partir de la fusión del óvulo y el espermatozoide parentales. Nuestra historia está así formada por la reproducción en dos niveles que se intersectan: somos la descendencia de nuestros padres, y nuestros componentes celulares individuales descienden por reproducción del embrión que cada uno de nosotros fue una vez.
+                            </p>
+
+                            <p>
+                                Aunque nuestros padres y organismos ancestrales suministran a nuestros cuerpos recursos para el desarrollo y ayudan a guiar nuestros cuerpos en el camino que recorren en la vida, ese camino no yace predeterminado dentro de nosotros—en nuestros genes o en cualquier otro lugar. Más bien, el camino son nuestros pasos, puestos al caminar. Esta imagen de hacer camino al andar, en la cual no hay una separación clara entre el camino y los pasos, la vía y su caminar, es la imagen rectora de este capítulo (<Entity>Varela</Entity> 1987).
+                            </p>
+
+                            <p>
+                                Hasta ahora he discutido la vida solo al nivel del individuo, aquí y ahora. Sin embargo, el organismo individual y único tal como es hoy es en cierto modo una abstracción, tanto con respecto al organismo como un proceso de desarrollo ecológicamente incrustado, un ciclo de vida, y con respecto al organismo como miembro de un linaje reproductivo. Por esta razón, necesitamos expandir nuestro marco para abarcar el desarrollo y la evolución.
+                            </p>
+
+                            <p>
+                                El presente capítulo se centra en la vida como un fenómeno histórico, en la evolución y desarrollo de los seres vivos. Según el punto de vista presentado aquí, nuestro cuerpo vivo, visto como una línea de vida temporalmente extendida, es un proceso de desarrollo o ciclo de vida que inicia nuevos ciclos de vida a través de la reproducción. Los seres vivos están constituidos por redes históricas de ciclos de vida, y las unidades de evolución son sistemas de desarrollo que comprenden al organismo y al entorno.
+                            </p>
+
+                            {/* AUTOPOIESIS, REPRODUCTION, AND HEREDITY */}
+                            <SectionHeader id="autopoiesis-reproduction" number="01" title="Autopoiesis, Reproducción y Herencia" />
+
+                            <p>
+                                Para entender qué hace a los seres vivos seres históricos necesitamos comenzar con el fenómeno de la reproducción.<InteractiveFootnote id={1} onActivate={handleNote} /> La reproducción consiste en la producción de nuevos individuos, más o menos similares en forma a sus organismos parentales, a través de un proceso específico como la división celular. En términos más abstractos, la reproducción consiste en una unidad originando otra unidad de la misma clase, es decir, teniendo la misma organización. La reproducción por tanto requiere dos condiciones básicas: una unidad original y algún proceso que reproduzca esa unidad. En el caso de los seres vivos, la unidad original es una unidad autopoiética, y el proceso reproductivo termina con la formación de al menos otra unidad autopoiética distinta de la primera.
+                            </p>
+
+                            <p>
+                                Aunque la autopoiesis y la reproducción van de la mano en las células vivas, hay una asimetría lógica entre las dos. La reproducción presupone la autopoiesis, pero la autopoiesis no implica necesariamente la reproducción, pues un sistema puede ser autoproductor según los criterios autopoiéticos sin ser capaz de reproducción. Tal caso, además de ser lógica o conceptualmente posible, bien podría haber sucedido en la historia de la vida temprana en la Tierra. Quizás los primeros sistemas autopoiéticos que se autoensamblaron espontáneamente eran incapaces de reproducción y por tanto no dejaron descendientes. Subsecuentemente, la reproducción podría haber sucedido al principio solo a través de fragmentación, como resultado de las protocélulas autopoiéticas tempranas chocando con otras entidades. En la red histórica así producida, algunas células variantes podrían entonces haber sufrido una fractura reproductiva como resultado de su propia dinámica interna. Estas variantes autorreproductoras habrían poseído un mecanismo de división y dado lugar a un linaje o sucesión histórica estable. Ocurrieran o no los eventos de esta manera, el siguiente punto general se mantiene: la reproducción no puede ser parte de la organización mínima de los seres vivos porque para reproducir algo, ese algo debe ser primero una unidad y tener una organización que lo defina. Por tanto la reproducción es lógica y operacionalmente secundaria a la autopoiesis.
+                            </p>
+
+                            <p>
+                                En la reproducción biológica, el padre más pequeño posible es una sola célula. En las células procariotas, la reproducción ocurre a través de fisión binaria: la célula madre se divide en dos porciones que se separan para convertirse en células hijas. En las células eucariotas, la reproducción ocurre a través de mitosis, un tipo de división nuclear que resulta en dos células hijas teniendo cada una un núcleo conteniendo el mismo número y tipo de cromosomas que la célula madre. Es esencial en cualquier caso que la reproducción ocurra a través de la partición e incorporación de la unidad celular original en su descendencia: la célula original sufre una fractura que resulta en dos nuevas células del mismo tipo.
+                            </p>
+
+                            <p>
+                                Aunque no hay separación en la célula entre la célula madre reproductora y las células hijas reproducidas, las células hijas no preexisten en la célula madre. Además, aunque las células hijas tienen la misma organización autopoiética que la célula original, y en consecuencia comparten características estructurales con ella, también difieren estructuralmente de la célula original y una de la otra. Son más pequeñas, y sus estructuras derivan directamente de la célula original durante la fase reproductiva de su ciclo de vida. Así las células vivas, como resultado de la reproducción, forman linajes históricos en los cuales hay preservación de la organización autopoiética junto con variación en su realización estructural.
+                            </p>
+
+                            <p>
+                                La reproducción ocurre a través de la división y por tanto depende de la multiplicación previa de componentes celulares, es decir, de la replicación previa de moléculas y estructuras moleculares dentro de la célula. Sin embargo, estos dos fenómenos—reproducción y replicación—pertenecen a diferentes niveles y tienen una lógica diferente. La reproducción tiene lugar al nivel de toda la célula como una unidad autopoiética; la replicación tiene lugar al nivel de los componentes moleculares dentro de la célula. En general, para que la replicación tenga lugar debe haber un mecanismo que pueda producir repetidamente entidades de la misma clase. En el caso de la síntesis de proteínas, el mecanismo productivo es uno molecular complejo, involucrando ADN, ARN y ribosomas. En el caso de la replicación del ADN, el mecanismo involucra la producción de un complemento de la molécula de ADN original a través de una plantilla.
+                            </p>
+
+                            <p>
+                                Como ilustra este caso, en la replicación (1) todo el material debe venir de fuera de la estructura original (la cadena de ADN) en forma de nuevo material del medio circundante dentro de la célula (las moléculas precursoras necesarias de adenina, guanina, citosina y timina, que ellas mismas deben ser sintetizadas a partir de sustancias más simples); (2) el mecanismo productivo de replicación (comprendiendo proteínas de unión al ADN, la enzima ADN-polimerasa, y una variedad de mecanismos de reparación del ADN) y el producto (moléculas de ADN) son sistemas operacionalmente diferentes; y (3) el mecanismo productivo genera elementos independientes. Por contraste, en la reproducción de la célula entera, solo se requiere material de dentro de la célula parental original; todo sucede dentro de la unidad como parte de la unidad, y no hay separación entre los sistemas reproductor y reproducido.
+                            </p>
+
+                            <p>
+                                Lo que significan estas diferencias, con respecto a la historia, es que mientras la reproducción necesariamente da lugar a unidades históricamente vinculadas, la replicación no. Las réplicas son a menudo históricamente independientes unas de otras. Lo que le sucede a cualquiera de ellas en su historia individual no afecta lo que le sucede a aquellas que la siguen en la serie de producción. Una excepción importante ocurre cuando una réplica se usa para hacer la siguiente réplica, como sucede en la replicación del ADN. En este caso, se genera un número de entidades históricamente conectadas, pues lo que le sucede a cada una de ellas durante el tiempo antes de que sirva como modelo determina las características de la réplica subsecuente. A diferencia de la replicación, la reproducción necesariamente da lugar a unidades históricamente conectadas porque ocurre a través de la división e incorporación de la unidad original en su descendencia.
+                            </p>
+
+                            <p>
+                                En cualquier linaje histórico generado por reproducción, habrá tanto conservación de, como variación en, las características estructurales de las unidades de una generación a otra, simplemente como resultado del mecanismo reproductivo de división. En otras palabras, dondequiera que encontremos un linaje reproductivo, encontramos los fenómenos gemelos de herencia, en la cual características estructurales pertenecientes a un miembro de la serie reaparecen en el miembro siguiente, y variación reproductiva, en la cual surgen diferencias entre padres, descendencia y hermanos. El estudio de estos fenómenos por supuesto pertenece al campo de la genética.
+                            </p>
+
+                            <p>
+                                Gran parte de la genética moderna se ha centrado en tratar de identificar los genes como unidades de herencia con longitudes de ADN. Por muchas razones que son demasiado complejas para analizar aquí, la imagen del gen como un repositorio molecular de información con una agenda replicativa propia ha llegado a ejercer una gran influencia en la ciencia y la sociedad en general, a pesar de los esfuerzos de muchos científicos por corregir esta imagen fundamentalmente sesgada. Debido a que esta doctrina genocéntrica está en desacuerdo con la visión de la vida y la mente presentada en este libro, es importante revelar sus fallas y esbozar una alternativa a ella.
+                            </p>
+
+                            {/* GENOCENTRISM AND EVOLUTION */}
+                            <SectionHeader id="genocentrism" number="02" title="Genocentrismo y la Visión Recibida de la Evolución" />
+
+                            <p>
+                                El genocentrismo surgió en el siglo XX como resultado de modificaciones o revisiones de la llamada visión recibida de la evolución, que se originó con los escritos de <Entity>Charles Darwin</Entity> y <Entity>Alfred Russel Wallace</Entity> a mediados del siglo XIX. El <BookTitle>Origen de las Especies</BookTitle> de Darwin, publicado por primera vez en 1859, eventualmente convenció a la mayoría de los científicos del hecho de la evolución—que los organismos descienden con modificaciones de organismos anteriores y que los caminos de descendencia tienen un patrón ramificado, con las especies actuales descendiendo de uno o unos pocos ancestros remotos. Según Darwin, el mecanismo principal de la evolución, aunque no el único, es lo que llamó selección natural. Con esto quería decir la "preservación de variaciones favorables y el rechazo de variaciones perjudiciales" (Darwin 1996, p. 176) de generación en generación, por analogía con la cría selectiva artificial para rasgos deseados practicada por seres humanos en plantas y animales.
+                            </p>
+
+                            <p>
+                                Aunque Darwin no proporcionó una definición explícita y precisa de selección natural, su propio argumento así como los de científicos subsecuentes dejaron claro que la evolución por selección natural puede definirse como un proceso que tiene tres requisitos básicos: (1) Variación fenotípica: debe haber variación entre los individuos de una población en sus atributos o rasgos. (2) Herencia: estos rasgos deben ser heredables; debe ser posible que se transmitan de padres a su descendencia. (3) Éxito reproductivo diferencial o aptitud (fitness): los individuos deben tener diferentes grados de éxito reproductivo (algunos individuos dejan más descendencia que otros), basado al menos en parte en sus rasgos heredables. En resumen, el proceso de evolución por selección natural requiere que haya variación heredable en aptitud (éxito reproductivo).<InteractiveFootnote id={4} onActivate={handleNote} />
+                            </p>
+
+                            <p>
+                                Permítanme esbozar ahora la imagen básica de cómo la variación heredable en aptitud contribuye a la evolución, según la visión recibida. Los organismos individuales en una población varían en sus características estructurales o rasgos. Algunos organismos, como resultado de los rasgos que poseen, son mejores que otros resolviendo los problemas planteados por su entorno. Por tanto, es más probable que sobrevivan a la edad reproductiva, y que dejen más descendencia, que otros organismos que tienen diferentes rasgos. Si los rasgos de los organismos más exitosos son (al menos en parte) heredables, entonces habrá un sesgo hacia una mayor frecuencia de esos rasgos en poblaciones subsecuentes. Así, la distribución de frecuencia de rasgos en la población cambiará, y la población habrá evolucionado.
+                            </p>
+
+                            <p>
+                                Necesitamos conectar esta noción de evolución con la de adaptación. En la imagen recién presentada, los organismos que están mejor adaptados a su entorno que sus compañeros tienen mayor éxito reproductivo. ¿Qué se entiende exactamente por esta noción de adaptación? Es tentador suponer que adaptación significa el estado de estar adaptado, basado en encarnar algún diseño o construcción que coincida bien con alguna situación física preexistente. El concepto de adaptación en el darwinismo, embargo, no es tanto el de un estado, sino un proceso—el proceso de adaptarse o volverse adaptado, el cual está vinculado a la aptitud (i.e., a la supervivencia y reproducción). Según la visión recibida, este proceso de adaptación, moldeado por la selección natural, da cuenta del grado de diseño adaptacional aparentemente observado en la naturaleza (<Entity>Lewontin</Entity> 1978).
+                            </p>
+
+                            <p>
+                                Según la visión recibida, para que la selección natural resulte en cambio adaptativo en una población, debe ocurrir gradual y acumulativamente a lo largo de muchas generaciones. La probabilidad de que una sola mutación dé lugar a un cambio adaptativo es baja, y las mutaciones individuales que tienen grandes efectos son casi siempre perjudiciales. La selección acumulativa gradual, sin embargo, requiere más que variación heredable en aptitud. También requiere una baja tasa de mutación (para que no haya demasiada variación, lo que puede inundar la selección) y una dirección de presiones de selección bastante constante a lo largo de muchas generaciones. Además, cada paso en el camino tiene que ser uno que incremente la aptitud. En la imagen de un llamado paisaje adaptativo, en el cual la altura representa la aptitud, la selección natural no puede llevar a una población hacia abajo a un valle para alcanzar una colina más alta más allá.
+                            </p>
+
+                            <p>
+                                Hasta ahora he mencionado solo algunas de las ideas básicas de la teoría evolutiva derivadas de Darwin. En el siglo XX, el darwinismo clásico se transformó en lo que a veces se llama neodarwinismo, primero durante la década de 1930 como resultado de la llamada Síntesis Moderna entre la teoría evolutiva y la genética y luego nuevamente con el auge de la biología molecular en la década de 1950. En las primeras décadas del siglo XX, la teoría darwiniana de la evolución por selección natural había sido vista en realidad como opuesta a la ciencia en desarrollo de la genética, la cual se basaba en el redescubrimiento del trabajo de Mendel a principios de siglo. Los darwinistas habían concebido los rasgos fenotípicos como difiriendo continuamente unos de otros, pero según la genética mendeliana, las diferencias entre rasgos fenotípicos son discretas y están determinadas por unidades hereditarias discretas o genes. A partir de la década de 1930, sin embargo, científicos como <Entity>R. A. Fisher</Entity>, <Entity>Sewall Wright</Entity> y <Entity>J. B. S. Haldane</Entity> mostraron cómo incorporar la genética mendeliana en la teoría darwiniana. La idea básica era que los genes actuando según las leyes de Mendel se reemplazarían unos a otros en una población a lo largo del tiempo, si estuvieran vinculados a pequeñas diferencias en los rasgos que afectan la supervivencia y reproducción de los organismos. Como resultado de estos desarrollos, así como de la posterior identificación de la base celular y molecular para las unidades de herencia en el ADN en los cromosomas en el núcleo celular, el término evolución llegó a usarse en un sentido más estrecho que antes para significar cambios en las frecuencias génicas en una población.
+                            </p>
+
+                            <p>
+                                En resumen, según la visión recibida, las presiones selectivas actúan sobre la variedad genética de una población, produciendo cambios adaptativos en la población a lo largo del tiempo. La selección natural se considera una fuerza optimizadora en el sentido de que conduce a la evolución de los rasgos más aptos presentes en la población. Así, la visión recibida va de la mano con la tesis conocida como adaptacionismo, la cual enfatiza el poder optimizador de la selección natural como el factor principal en la evolución orgánica. Esto no es decir que la visión recibida no reconozca otros factores bien conocidos e importantes—por ejemplo, la deriva genética aleatoria (aproximadamente, cambios en las frecuencias génicas debidos al azar); la migración de individuos dentro y fuera de una población; así como la pleiotropía (un gen teniendo dos efectos fenotípicos) y el ligamiento (dos genes estando localizados en el mismo cromosoma, de modo que la herencia de uno está ligada a la del otro), ambos de los cuales pueden causar que rasgos fenotípicos distintos estén correlacionados. Más bien, el punto es que la visión recibida, en particular la tesis adaptacionista, minimiza la importancia de los procesos no selectivos y enfatiza la selección natural y el cambio adaptativo.
+                            </p>
+
+                            <p>
+                                ¿Cuál es la relación entre la visión recibida y el genocentrismo? El genocentrismo acepta los principios principales de la visión recibida—en particular, la tesis adaptacionista—pero aboga por un cambio de perspectiva a una visión de la evolución desde el "ojo del gen" (<Entity>Dawkins</Entity> 1989; <Entity>Williams</Entity> 1966). Según el genocentrismo, las unidades fundamentales de la vida no son los organismos sino los genes. Los genes varían en sus características, y se multiplican haciendo copias de sí mismos, siendo algunos genes más exitosos que otros en replicarse a sí mismos como resultado de sus características particulares. Así, los genes evolucionan como resultado de la interacción competitiva y la selección natural. En contraste, los organismos son vehículos hechos por y para los genes, los cuales permiten a los genes aprovechar diferentes entornos y así replicarse más exitosamente.
+                            </p>
+
+                            <p>
+                                En esta visión, "replicación" e "interacción" son los dos procesos que componen la evolución. La replicación es el proceso mediante el cual ciertas entidades—los "replicadores"—son copiadas directa y precisamente de una generación a la siguiente, formando así un linaje. La interacción es lo que hace que la replicación sea diferencial: ciertas entidades—"interactores"—interactúan con el entorno de tal manera que los replicadores que contienen son copiados diferencialmente a la siguiente generación. Aunque en principio la misma entidad puede ser tanto un replicador como un interactor, los interactores se conciben típicamente como "vehículos" construidos por y para los replicadores, siendo los genes los replicadores paradigma y los organismos los interactores paradigma. Los replicadores (genes) compiten entre sí construyendo vehículos (organismos pero quizás también colonias y poblaciones) que median su interacción con el entorno y así ayudan a la replicación.
+                            </p>
+
+                            <p>
+                                Armado de esta manera con la distinción replicador/interactor, el genocentrismo (o "seleccionismo génico") es capaz de acomodar el punto de que la selección natural no actúa directamente sobre los genes (replicadores) sino solo sobre los fenotipos (interactores), mientras mantiene sin embargo que los genes son la fuente última y el beneficiario de la adaptación fenotípica. En resumen, según el genocentrismo, los organismos evolucionan como artilugios elaborados—"robots" o "máquinas de supervivencia", como los llama Dawkins—construidos y controlados por genes (Dawkins 1989, pp. 19-20).
+                            </p>
+
+                            {/* PROBLEMS WITH GENOCENTRISM */}
+                            <SectionHeader id="problems-genocentrism" number="03" title="Problemas con el Genocentrismo" />
+
+                            <p>
+                                La visión de que la vida es esencialmente un asunto de los genes dentro del núcleo celular es homóloga a la visión de que la mente es esencialmente un asunto de un cerebro computadora dentro de la cabeza. Los procesos genéticos se describen en el lenguaje de "información", "instrucciones" y "codificación", lo cual corresponde a la imagen computacionalista clásica de la mente (y el cerebro) como un dispositivo de procesamiento de información o computadora en la cabeza. Si la mente es una computadora, entonces sus procesos cognitivos son esencialmente abstractos (algorítmicos) e independientes de su encarnación en el organismo. En esta visión, el cerebro equivale a poco más que una implementación particular de hardware para el software de la mente. De manera similar, si el genoma es un conjunto de instrucciones codificadas, entonces él también es esencialmente abstracto y causalmente privilegiado en su rol como un programa en la célula. La célula por tanto equivale a poco más que un "vehículo" conducido por sus genes. El genocentrismo y el computacionalismo funcionan así con el mismo combustible conceptual. Ambos perpetúan los dualismos de hardware versus software, materia versus información, cuerpo versus mente, y ambos caracterizan erróneamente el rol que juegan subsistemas particulares en lo que son fundamentalmente fenómenos dinámicos del organismo completo incrustado en su entorno. Aunque estas dos visiones dominaron la escena científica y filosófica desde mediados hasta finales del siglo XX, hoy están siendo rápidamente sometidas a examen crítico y revisión. En esta sección, echo una mirada crítica al genocentrismo, en preparación para mi presentación posterior de un enfoque enactivo de la evolución.
+                            </p>
+
+                            <p>
+                                <strong>La Doctrina de Weismann</strong>
+                                <br/>
+                                Según el genocentrismo, la identidad biológica a través del tiempo se basa en replicadores genéticos, pues solo se cree que ellos sobreviven transgeneracionalmente. Esta visión deriva de la llamada Doctrina de Weismann, nombrada así por el naturalista de finales del siglo XIX <Entity>August Weismann</Entity>, quien proclamó la Doctrina de la Continuidad del Plasma Germinal. Weismann sostuvo que hay una distinción estricta entre el plasma germinal (genoma) y los tejidos somáticos del organismo. En el desarrollo del organismo, hay una diferenciación temprana y una segregación estricta de la línea germinal—células que son los ancestros de las células sexuales del organismo—y la línea somática—células que forman los tejidos y otros componentes del cuerpo del organismo. La línea germinal es únicamente responsable de la heredabilidad; sirve como el puente potencialmente inmortal entre generaciones, mientras que el soma es meramente una vasija mortal sobre la cual actúa la selección natural. Los genes en las líneas de células germinales son los replicadores paradigma; son los "replicadores activos de la línea germinal", en contraste con los "replicadores pasivos", que no tienen influencia en la probabilidad de su propia replicación, y los "replicadores de callejón sin salida", que se replican solo dentro del organismo individual (mitóticamente) (<Entity>Dawkins</Entity> 1982, p. 83). Aunque cada replicador activo de la línea germinal particular (cada replicador token) tiene solo una vida finita, sirve como el ancestro de un linaje indefinidamente largo y virtualmente abierto de copias. Los linajes de genes son así potencialmente inmortales, mientras que los organismos son "vehículos" mortales que llevan el linaje genético hacia adelante de una generación a la siguiente.
+                            </p>
+
+                            <p>
+                                El término Doctrina de Weismann (o weismannismo molecular) transmite tres ideas relacionadas, pero distintas: (1) La doctrina de la segregación: la línea germinal y la línea somática están estrictamente segregadas durante la ontogenia, y por tanto las células germinales están aisladas de cualquier cambio en las células somáticas. (2) La doctrina de la herencia: no hay herencia no genética. (3) La doctrina de la asimetría causal: los elementos y procesos extragenéticos en la célula dependen de los genes, pero los genes no dependen de manera similar de ellos. Podemos identificar los problemas con el genocentrismo revisando los problemas con estas tres ideas (<Entity>Smith</Entity> 1994).
+                            </p>
+
+                            <p>
+                                <strong>1. La Doctrina de la Segregación</strong>
+                                <br/>
+                                La división entre línea germinal y línea somática no existe en todos los animales y no es aplicable a las plantas. De hecho, la doctrina de la segregación no se cumple para la mayoría de los organismos. <Entity>Leo Buss</Entity>, en su importante libro <BookTitle>The Evolution of Individuality</BookTitle>, distingue entre tres modos de desarrollo, que llama embriogénesis somática, epigénesis y preformación (<Entity>Buss</Entity> 1987, pp. 20-22). En la embriogénesis somática, no hay una línea germinal distinta: todas las células son capaces de participar en el desarrollo del cuerpo y en la formación de gametos. Dado que no hay células de línea germinal aisladas, es posible que las mutaciones que surgen en células somáticas se transmitan a la progenie. En la epigénesis, hay una línea germinal claramente diferenciada, pero aparece relativamente tarde en el desarrollo. En este caso, el aislamiento de la línea germinal no es completo, pues cualquier cambio en tejidos somáticos que ocurra antes de la segregación completa de la línea germinal puede transmitirse a la progenie. Finalmente, en el desarrollo preformacionista, la línea germinal está terminalmente segregada en la ontogenia temprana. En este caso, la línea germinal está en gran parte aislada de la influencia somática, y la doctrina de la segregación básicamente se mantiene.
+                            </p>
+
+                            <p>
+                                El modo más común de desarrollo es la embriogénesis somática; está presente en plantas, hongos y protoctistas. Los otros dos modos de desarrollo se encuentran solo en animales, pero incluso en el reino animal hay un número de filos en los que ocurre la embriogénesis somática. Por tanto, aunque algunos organismos sí segregan la línea germinal y la línea somática en el desarrollo temprano, la doctrina de la segregación no se cumple para la mayoría de los organismos multicelulares.
+                            </p>
+
+                            <p>
+                                <strong>2. La Doctrina de la Herencia</strong>
+                                <br/>
+                                La Doctrina de Weismann se invoca a menudo en apoyo de la proposición de que la herencia no genética es imposible. Hay dos problemas con esta proposición. Primero—y este es un problema conceptual—la proposición implica una confusión del fenómeno de la herencia con el mecanismo físico de la herencia (<Entity>Maturana</Entity> y <Entity>Varela</Entity> 1987, pp. 68-69). La herencia en el sentido más amplio es la conservación transgeneracional de los recursos necesarios para el desarrollo en un linaje de unidades históricamente conectadas. La replicación del ADN, sin embargo, es un mecanismo físico de herencia. Desde una perspectiva evolutiva, no hay razón teórica para descartar la posibilidad de otros mecanismos extragenéticos de herencia, pues la evolución ocurrirá mientras haya rasgos heredables, independientemente de los mecanismos por los cuales ocurra la herencia. De hecho—y este es el segundo problema empírico—hay considerable evidencia de la existencia de los llamados sistemas de herencia epigenética—es decir, sistemas para la herencia de estructuras no genéticas dentro de la célula involucrando mecanismos distintos a la replicación del ADN (<Entity>Jablonka</Entity> 2001; ver también <Entity>Sterelny</Entity> y <Entity>Griffiths</Entity> 1999, pp. 95-97).
+                            </p>
+
+                            <p>
+                                La idea básica detrás de la herencia epigenética es que las células pueden diferir en fenotipo teniendo secuencias de ADN idénticas, y estos fenotipos pueden ser heredados, es decir, transmitidos a células hijas durante la división celular. La transmisión de fenotipos celulares requiere mecanismos distintos a la replicación del ADN; estos mecanismos se llaman sistemas de herencia epigenética. Se han distinguido tres tipos de sistema de herencia epigenética (<Entity>Jablonka</Entity> 2001; <Entity>Jablonka</Entity> y <Entity>Szathmáry</Entity> 1995):
+                            </p>
+
+                            <p>
+                                (1) El sistema de herencia de estado estacionario. Este tipo de sistema se basa en la autorregulación de la expresión génica y los productos génicos dentro de la célula. El ejemplo más simple es un sistema en el cual un gen produce un producto que facilita su propia actividad continua. Para que tal patrón de actividad o estado funcional sea heredado, una cantidad suficiente de los productos génicos reguladores debe transmitirse a las células hijas durante la división celular.
+                            </p>
+
+                            <p>
+                                (2) El sistema de herencia estructural. En este tipo de sistema, una estructura tridimensional sirve como plantilla para estructuras idénticas en las células hijas. Por ejemplo, variaciones en la organización citoesquelética y cortical de la célula pueden heredarse a través de la división celular (mitosis y meiosis).
+                            </p>
+
+                            <p>
+                                (3) El sistema de marcado de cromatina. Este tipo de sistema se basa en la herencia de marcas de cromatina, como los patrones de metilación en el ADN.<InteractiveFootnote id={5} onActivate={handleNote} /> Una secuencia de ADN particular puede tener varios patrones de metilación heredables diferentes impuestos sobre ella, y estos patrones son replicados en las células hijas por un sistema especial de replicación de metilación. Se ha propuesto que ciertas diferencias en el comportamiento social entre machos y hembras humanos pueden derivar de la herencia de diferentes patrones de metilación. En las hembras, una secuencia del cromosoma X puede estar metilada, de modo que los individuos que obtienen solo un cromosoma X y lo reciben de sus madres no pueden transcribir los genes en esa región del cromosoma. Ciertos productos génicos por tanto no están disponibles para los machos. Aun así, esa secuencia es desmetilada en las células de esperma masculinas, y por tanto las hembras obtienen de sus padres un cromosoma X que posee los genes activados (<Entity>Isles</Entity> y <Entity>Wilkinson</Entity> 2000; <Entity>Skuse</Entity> et al. 1997).
+                            </p>
+
+                            <p>
+                                La herencia epigenética es solo un ejemplo del punto general de que no toda herencia es función de linajes de genes. Otro es la simbiosis (<Entity>Margulis</Entity> y <Entity>Sagan</Entity> 2002). La simbiosis se define como la convivencia íntima de dos o más organismos de especies diferentes. Muchos organismos dependen de otros organismos que viven dentro de ellos o unidos a ellos. Las simbiosis hereditarias, en las cuales los simbiontes permanecen juntos a lo largo de su ciclo de vida, son comunes. Por ejemplo, los organismos que comen y digieren madera, como las termitas, dependen de las comunidades microbianas de protistas y bacterias en sus intestinos para descomponer la celulosa y la lignina en azúcares y acetato. Casi todo grupo de organismos tiene miembros que han formado alianzas simbióticas con otros organismos, incluyendo a los humanos. Los patrones de herencia de simbiontes típicamente involucran la transmisión de una generación a la siguiente de poblaciones enteras funcionales de simbiontes, como comunidades microbianas, además del ADN del simbionte (<Entity>Margulis</Entity> y <Entity>Sagan</Entity> 2002). Estos hechos sobre la simbiosis socavan la ecuación simplista de identidad biológica a través del tiempo con el puente transgeneracional del ADN.
+                            </p>
+
+                            <p>
+                                Un último punto sobre la herencia necesita hacerse. Hemos visto que los organismos son seres creadores de sentido. Traen o promulgan sus entornos a través de su manera particular de acoplamiento estructural con el mundo. Como resultado, los seres vivos estructuran el entorno de su progenie, de modo que un organismo hereda no simplemente un genoma sino una matriz de desarrollo entera (<Entity>Sterelny</Entity> y <Entity>Griffiths</Entity> 1999, p. 95). En palabras de <Entity>Susan Oyama</Entity>:
+                            </p>
+
+                            <BlockQuote author="Oyama 2000b, p. 39">
+                                Hacia lo que nos estamos moviendo es hacia una concepción de un sistema de desarrollo no como la lectura de un código preexistente, sino como un complejo de influencias interactuantes, algunas dentro de la piel del organismo, algunas externas a ella, e incluyendo su nicho ecológico en todos sus aspectos espaciales y temporales, muchas de las cuales son típicamente transmitidas en la reproducción ya sea porque están de alguna manera atadas a las actividades o características del organismo (o las de sus congéneres) o porque son características estables del entorno general.
+                            </BlockQuote>
+
+                            <p>
+                                Volveré a esta importante noción de un sistema de desarrollo más adelante en este capítulo.
+                            </p>
+
+                            <p>
+                                <strong>3. La Doctrina de la Asimetría Causal</strong>
+                                <br/>
+                                Simplemente no es cierto que los genes sean motores primarios y las células sus vehículos (<Entity>Moss</Entity> 2003). Por ejemplo, aunque no puede haber membranas sin los productos génicos que las constituyen, los genes no pueden existir sin membranas, y los productos génicos que constituyen membranas se ensamblan a partir de una plantilla de membrana ya existente. De hecho, el término mismo replicador es fundamentalmente engañoso, pues oscurece esta causalidad circular al implicar que los genes son autorreplicadores, como si el ADN pudiera replicarse todo por sí solo. En realidad, la replicación del ADN depende de la orquestación compleja de numerosos procesos intracelulares en el contexto global de la autopoiesis. No solo los procesos celulares hacen posible la transmisión de genes a la siguiente generación, sino que muchos elementos celulares se transmiten junto con los genes y son necesarios para el desarrollo adecuado de la célula, como vimos en el caso de los sistemas de herencia epigenética. En el caso de los gametos humanos, estos elementos epigenéticos incluyen proteínas y estructuras proteicas (como centros organizadores de microtúbulos), gradientes químicos citoplasmáticos, organelos y membranas lipídicas, y patrones de metilación del ADN, por nombrar solo algunos. Además, algunos de estos elementos celulares alteran la estructura genética en formas causalmente importantes. Por ejemplo, al unir grupos metilo al ADN, los procesos celulares establecen el estado de metilación del genoma, permitiendo así que los genes se enciendan y apaguen según sea necesario.
+                            </p>
+
+                            <p>
+                                No servirá para el genocentrista responder que los genes no obstante tienen primacía causal porque los procesos celulares se llevan a cabo de acuerdo con la información contenida en el ADN. Primero, la metáfora de los genes emitiendo "instrucciones" basadas en la "información" que "codifican" es profundamente problemática, como veremos en breve. Segundo, los genes nunca ocurren aparte de los elementos epigenéticos del entorno intracelular, ni se transmiten nunca "replicadores desnudos" o "ADN desnudo", ni siquiera en el esperma (que transmite no solo ADN parental sino también centriolos, que son centros organizadores de microtúbulos epigenéticos involucrados en la división celular). Moss expresa el punto general de esta manera: "Las exploraciones de los mecanismos involucrados al nivel de la molécula de ADN misma, no han llevado a ningún punto privilegiado de orígenes causales, sino que más bien remiten inmediatamente de vuelta al estado complejo de la célula/organismo como un todo como la base causal de la actividad de los genes" (<Entity>Moss</Entity> 1992, p. 344; ver también <Entity>Moss</Entity> 2003).
+                            </p>
+
+                            <p>
+                                Permítanme resumir esta discusión de la Doctrina de Weismann. Hemos visto que la línea germinal y la línea somática no están estrictamente segregadas en la ontogenia en la mayoría de los organismos, que hay una variedad de formas de herencia no genética, y que la activación génica depende crucialmente del medio celular. Así, un examen cuidadoso de la Doctrina de Weismann, lejos de apoyar el genocentrismo, conduce en cambio al punto fundamental de que la heredabilidad está controlada por procesos de desarrollo en la "ecología somática" del organismo (<Entity>Buss</Entity> 1987, p. 3). (Como señala Buss, esta es de hecho la contribución perdurable de Weismann.) Volveré a esta visión del desarrollo más adelante en este capítulo.
+                            </p>
+
+                            {/* THE GENE AS UNIT OF INFORMATION */}
+                            <SectionHeader id="gene-information" number="04" title="El Gen como Unidad de Información" />
+
+                            <p>
+                                Otro aspecto del genocentrismo que necesitamos examinar es el mito del gen como una unidad de información pura. Uno de los principios centrales del genocentrismo es que los genes tienen un estatus causalmente privilegiado porque transmiten información de una generación a la siguiente, mientras que otras causas del desarrollo son meramente materiales y no tienen estatus informacional. En ninguna parte se proclama esta concepción del gen como una unidad discreta de información con más fervor que en los escritos de Dawkins. Para Dawkins, un pronunciamiento como "La vida es solo bytes y bytes y bytes de información digital" (<Entity>Dawkins</Entity> 1995, p. 19) "no es una metáfora, es la pura verdad" (1986, p. 111).
+                            </p>
+
+                            <p>
+                                Esta negación de la metáfora es indefendible. La pura verdad es que el ADN no es un programa para construir organismos, como varios autores han mostrado en detalle (<Entity>Keller</Entity> 2000; <Entity>Lewontin</Entity> 1993; <Entity>Moss</Entity> 2003). En este contexto "programa" es precisamente una metáfora, y no una particularmente buena (<Entity>Coen</Entity> 1999, pp. 9-12).<InteractiveFootnote id={6} onActivate={handleNote} /> Una razón es que mientras el software y el hardware son independientes en una computadora—el hardware tiene que estar ahí antes de que el programa pueda correrse, y hardware y software no se producen el uno al otro autopoiéticamente—la replicación del ADN y la activación génica son enteramente dependientes de la autopoiesis de la célula. Contribuyen enormemente a este proceso, pero también le deben su existencia.
+                            </p>
+
+                            <p>
+                                Una mejor metáfora para el desarrollo que "seguir instrucciones codificadas" es "hacer camino al andar". Esta metáfora implica que no hay separación entre plan y acción ejecutada. También evoca la similitud entre la autoorganización orgánica y la creatividad humana, discutida por Kant y revivida por el genetista y biólogo del desarrollo <Entity>Enrico Coen</Entity>, en su libro <BookTitle>The Art of Genes: How Organisms Make Themselves</BookTitle>:
+                            </p>
+
+                            <BlockQuote author="Coen 1999, p. 13">
+                                Cuando alguien está siendo creativo no necesita haber separación entre plan y ejecución. Podemos tener una noción intuitiva de alguien pintando un cuadro o componiendo un poema sin seguir un plan definido. Sin embargo, los resultados de tales procesos creativos—la pintura o el poema—no son aleatorios sino altamente estructurados. A este respecto, quiero sugerir que la creatividad humana se acerca mucho más al proceso de desarrollo que la noción de manufactura según un conjunto de instrucciones, o la ejecución de un programa de computadora.
+                            </BlockQuote>
+
+                            <p>
+                                Esta imagen de la vida como el resultado creativo de contingencias altamente estructuradas es más precisa que la metáfora informacional. En un análisis minucioso de la historia del término información en biología molecular, el historiador y filósofo de la biología <Entity>Sahotra Sarkar</Entity> concluye que "no hay una noción técnica clara de 'información' en biología molecular. Es poco más que una metáfora que se hace pasar por un concepto teórico y... conduce a una imagen engañosa de la naturaleza de las explicaciones posibles en biología molecular" (<Entity>Sarkar</Entity> 1996, p. 187). El término información fue explícitamente introducido en biología molecular y definido en 1958 en un artículo de <Entity>Francis Crick</Entity>. "Por información," escribió, "quiero decir la especificación de la secuencia de aminoácidos de una proteína" (<Entity>Crick</Entity> 1958, p. 144). Se supone que el concepto de información genética se basa en el hecho del llamado código genético mediante el cual los genes especifican los tipos de proteínas que una célula puede hacer. Más precisamente, el código genético corresponde al sistema en el cual tripletes particulares de bases de nucleótidos en el ADN especifican aminoácidos particulares. Se dice así que la síntesis de proteínas implica "instrucciones" que están "escritas" en el ADN y luego "decodificadas" en un complejo proceso de "transcripción" y "traducción" molecular. La transcripción corresponde a la producción, a partir de la plantilla de ADN, de una secuencia complementaria de tripletes de moléculas de ARN mensajero (ARNm); la traducción corresponde a la producción de una secuencia de aminoácidos a partir de la secuencia de ARNm (lograda por ribosomas, ARN de transferencia y otras moléculas). Es así la relación fisicoquímica altamente estable de especificación entre ADN y proteína la que yace detrás de la noción del código genético (<Entity>Godfrey-Smith</Entity> 2000b; <Entity>Thompson</Entity> 1997).
+                            </p>
+
+                            <p>
+                                Uno podría pensar, dada esta estabilidad, que la relación ADN/ARN-proteína podría expresarse en la forma de una tabla de consulta a partir de la cual uno podría predecir la secuencia de aminoácidos de una proteína a partir de una cadena particular de ADN. Como discute Sarkar (1996) extensamente, sin embargo, debido a las complejidades de la genética eucariota, esta tabla de consulta tendría apenas valor predictivo o explicativo. Las complejidades son numerosas, pero el punto básico es fácil de exponer: la cadena causal entre secuencias de ADN y características fenotípicas es demasiado indirecta, compleja y multifacética para que haya alguna relación robusta de uno a uno entre ellas. Por tanto, ninguna característica fenotípica puede decirse que está "codificada por" secuencias de ADN.
+                            </p>
+
+                            <p>
+                                En términos más concretos, los procesos enzimáticos dentro de la célula orquestan la transcripción de ADN a ARN y la traducción de ARN a proteína, de tal manera que secuencias de ADN idénticas están conectadas a diferentes resultados fenotípicos por diferentes estados químicos de la célula o por diferentes entornos celulares (<Entity>Moss</Entity> 2003, pp. 75-116; <Entity>Sarkar</Entity> 1996, pp. 199-201; <Entity>Sterelny</Entity> y <Entity>Griffiths</Entity> 1999, pp. 124-128). Así, "[q]ué proteína se hace a partir de un gen dado en un momento dado en una parte dada del cuerpo depende del estado químico general de la célula, el cual puede ser influenciado por muchos elementos de la matriz de desarrollo" (<Entity>Sterelny</Entity> y <Entity>Griffiths</Entity> 1999, p. 103). Cualquier sentido en el cual pudiera decirse que los genes contienen información para el desarrollo del organismo podría entonces aplicarse igualmente bien a otras características de desarrollo del organismo.<InteractiveFootnote id={7} onActivate={handleNote} />
+                            </p>
+
+                            <p>
+                                Otro problema asociado con la noción de información es que casi invariablemente va de la mano con un dualismo de materia versus información. Este dualismo oscurece la naturaleza de la dinámica celular. El ADN es en sí mismo un producto de la operación de la célula como un sistema autopoiético. Como vimos en el Capítulo 3, la declaración "el ADN 'codifica para' proteína" aísla una secuencia particular de eventos en la dinámica de la célula y abstrae de los muchos pasos causales intermedios que componen esa secuencia. Por tanto, la declaración necesita ser entendida como una abreviatura heurística de una larga secuencia causal de eventos bioquímicos en una porción aislada de la red metabólica, y no debe tomarse como una reformulación precisa del fenómeno de la síntesis de proteínas (<Entity>Maturana</Entity> y <Entity>Varela</Entity> 1980, p. 90; <Entity>Varela</Entity> 1979, p. 75).
+                            </p>
+
+                            <p>
+                                La metáfora de "información codificada", como todas las metáforas, tiene ramificaciones conceptuales. Un código es un sistema representacional, compuesto de relaciones referenciales arbitrarias entre los símbolos del código y las cosas que representan. Los componentes moleculares de la célula, sin embargo, no son representacionales de esta manera. Los ácidos nucleicos son componentes del proceso autopoiético y no enlaces arbitrarios entre entidades independientes (<Entity>Maturana</Entity> y <Entity>Varela</Entity> 1980, p. 102). Decir que el ADN "codifica para proteína" es inobjetable siempre y cuando el código genético sea visto como no más que una regla de especificidad causal basada en el hecho de que las células usan ácidos nucleicos como plantillas para la estructura primaria (secuencia de aminoácidos) de las proteínas (<Entity>Godfrey-Smith</Entity> 2000b; <Entity>Thompson</Entity> 1997). Decir que el ADN "contiene la información para el diseño fenotípico", sin embargo, es inaceptable porque atribuye un estatus semántico o intencional especial a un tipo particular de componente. De esta manera, despoja a este componente de su necesaria interrelación con el resto de la red autopoiética. Es esta red en su totalidad la que especifica las características fenotípicas de una célula, no uno de sus componentes, y es esta red como un todo la que es la precondición y base causal de la replicación del ADN y la síntesis de proteínas.
+                            </p>
+
+                            <p>
+                                La información no es intrínseca al arreglo lineal de la secuencia de ADN. Más bien, está constituida en y por la célula como una entidad tridimensional organizada autopoiéticamente—por la célula como un cuerpo. Al continuar pensando en términos de la metáfora de la información codificada en el ADN, uno excluye la necesidad de entender la información como una característica emergente de la complejidad dinámica de los procesos moleculares y celulares (<Entity>Fleischaker</Entity> 1990b).
+                            </p>
+
+                            <p>
+                                Un genocentrista que aborda algunos de estos puntos críticos es Dennett (1995a). A sus ojos, los críticos del genocentrismo son "los deconstructores de la biología, elevando al lector [el entorno lector de código] al poder degradando el texto [el código genético]". A lo cual responde: "Es un tema útil como antídoto al centrismo genético simplificado, pero en sobredosis es casi tan tonto como el deconstruccionismo en los estudios literarios" (1995a, p. 115, n. 10). En su visión, "el 'centrismo genético', la doctrina de que el ADN es el único almacén de información para la herencia... fue siempre solo una simplificación práctica... [porque] por supuesto es realmente solo bibliotecas-más-lectores lo que preserva y almacena la información" (1995a, p. 197). Dennett permite que los entornos intracelular y extracelular completen la información codificada en el ADN. Como afirma, "Vemos aquí un caso especial de un principio muy general: cualquier estructura funcional lleva información implícita sobre el entorno en el cual su función 'funciona'" (1995a, p. 197).
+                            </p>
+
+                            <p>
+                                Hay una serie de problemas con esta posición. El genocentrismo siempre ha significado más que simplemente la doctrina de que el ADN es el único almacén de información para la herencia. El genocentrismo sostiene que el gen es la unidad fundamental de la vida y la unidad primaria de selección en la evolución. Esta visión se expresa típicamente en la metáfora de los genes como agentes egoístas y calculadores—una metáfora que Dennett no muestra vacilación en adoptar (ver 1995a, p. 326). He estado argumentando que esta afirmación de prioridad conceptual y empírica para los genes como "replicadores" es errónea. Además, no conozco a ningún genocentrista que haya admitido explícitamente que la noción de ADN como un almacén de información "fue siempre solo una simplificación práctica". Esta admisión parece por tanto ser una concesión mayor a los enemigos del genocentrismo. Al hacer esta concesión, Dennett intenta salvar el genocentrismo sugiriendo que el ADN es un almacén de información explícita cuyo funcionamiento depende de la información implícita del entorno. Pero tratar de particionar la información de esta manera—en lo que está explícitamente codificado y lo que está implícitamente dado como una condición de fondo—solo resalta nuevamente el punto de que no hay una noción clara e inequívoca de información en juego. El punto crítico principal permanece vigente: la razón por la que la noción de ADN como un almacén de información es una simplificación excesiva—y no una muy práctica—es que tiene poco o ningún poder predictivo o explicativo, sino que más bien oscurece nuestra comprensión de la dinámica de la autopoiesis, reproducción, herencia y desarrollo. De hecho, una vez que uno comienza por el camino de tratar la información—lo que sea que sea—como algo que está distribuido a través de redes de interacciones (tanto dentro como fuera de la célula), entonces la noción misma de información como algo almacenado (preexistente a la dinámica de la red) ya sea explícitamente en el arreglo lineal estático de nucleótidos o implícitamente en el entorno—y transmitido de un lugar a otro, pierde sentido. Dennett comienza a ir por este camino pero cree que puede detenerse a mitad de camino. Se da cuenta de que el hecho de que "el ADN... requiere un suministro continuo de 'lectores' que no especifica" plantea la pregunta "¿de dónde viene el resto de la información para especificar a esos lectores?" Él da esta respuesta:<InteractiveFootnote id={8} onActivate={handleNote} />
+                            </p>
+
+                            <BlockQuote author="Dennett 1995a, p. 197">
+                                [V]iene de las continuidades mismas del entorno—la persistencia en el entorno de las materias primas (y parcialmente construidas) necesarias, y las condiciones en las que pueden ser explotadas. Cada vez que te aseguras de que tu trapo de cocina se seque adecuadamente entre usos, rompes la cadena de continuidad ambiental (e.g., mucha humedad) que es parte del fondo informacional presupuesto por el ADN de las bacterias en el trapo de cocina cuya desaparición buscas.
+                            </BlockQuote>
+
+                            <p>
+                                Pero entonces, ¿cómo se ha de trazar una línea de principios entre información explícita (codificada) e implícita (no codificada)? Si se necesita información del entorno para hacer que la información genética sea informacional en primer lugar, entonces ¿cuál es el fundamento para aferrarse al principio genocéntrico de que los genes son los motores informacionales primarios? Como señala Oyama:
+                            </p>
+
+                            <BlockQuote author="Oyama 2000b, pp. 197-198">
+                                No está claro si Dennett percibe que su concepto entero de información está en peligro. Parece vacilar entre aumentar y disminuir la carga informacional en el ADN... Supongamos que tomamos en serio su descargo de responsabilidad de que el "almacén de información para la herencia" nunca estuvo realmente destinado a estar confinado a los genes. ¿Estaba realmente destinado a estar en trapos de cocina húmedos?... esto no es solo una ampliación mínima de la transmisión hereditaria para incluir otros constituyentes celulares; alcanza fuera de la célula misma. Una vez que has dispersado información heredada con la mano muy libre que se necesitaría para encargarse de todas las funciones biológicas, ¿qué pasa con los canales tradicionalmente privilegiados de herencia (genética y, en modelos de herencia dual como el suyo, genética y cultural)?... Quizás Dennett quiere decir que la información no está "ahí fuera", que no está en el núcleo ni en ningún otro lugar, que es una forma de hablar sobre ciertas interacciones en lugar de su causa o una prescripción para ellas. Si es así, no puede ser llevada, almacenada o transmitida en absoluto. Pero entonces Dennett parecería haber terminado de acuerdo con al menos algunos de los críticos que encuentra tan obtusos.
+                            </BlockQuote>
+
+                            <p>
+                                Dennett invoca otro argumento visto a menudo en estos debates, el argumento de la parsimonia: "La afirmación de que la perspectiva genocéntrica es la mejor, o la más importante, no es una afirmación sobre la importancia de la biología molecular, sino sobre algo más abstracto: sobre qué nivel hace la mayor parte del trabajo explicativo bajo la mayoría de las condiciones" (1995a, p. 327). Pero la metáfora genocéntrica del ADN como almacén de información hace poco si algún trabajo explicativo real. Además, una vez que los genes se vuelven a poner en el contexto dinámico de la célula, la imagen de la evolución y el desarrollo que emerge no es una de organismos adultos vinculados por puentes genéticos. Más bien, es una de una espiral causal continua y no lineal de factores interdependientes en múltiples niveles del ciclo de vida, de los cuales el genético es solo uno (<Entity>Keller</Entity> 2000, pp. 133-148; <Entity>Moss</Entity> 2003; <Entity>Smith</Entity> 1994).
+                            </p>
+
+                            <p>
+                                Dennett también tiene una concepción peculiar del papel del reduccionismo en este debate. Nota, "se dice a menudo que el centrismo genético es 'reduccionista'", pero responde, "Así es, en el buen sentido. Es decir, evita los ganchos celestiales [fuerzas de mente-primero o poderes de diseño que descienden desde lo alto] e insiste en que todo el levantamiento en el Espacio de Diseño debe ser hecho por grúas [mecanismos sin mente que trabajan desde el suelo hacia arriba]" (1995a, p. 326). Esta línea de pensamiento asume que cualquier crítica al genocentrismo debe nacer de un anhelo por ganchos celestiales y por lo tanto no ve que no todas las grúas en biología necesitan ser genocéntricas (o necesitan estar basadas en genocéntricas). La perspectiva autopoiética (que por supuesto no todos los críticos del genocentrismo comparten) no apela a ganchos celestiales. En cambio, emplea solo grúas en forma de principios y mecanismos de autoorganización y su realización bioquímica en células vivas.
+                            </p>
+
+                            <p>
+                                La falla más profunda de la metáfora del ADN como programa o almacén de información es que implica un marco dualista de materia e información, uno homólogo al dualismo computacionalista y funcionalista de la mente como software informacional y el cerebro como hardware. En ambos casos, procesos que son intrínsecamente dinámicos (temporalmente orquestados), encarnados (somáticos y organísmicos), e incrustados (necesariamente situados en un entorno o medio)—ya sea de ontogenia, evolución o cognición—se proyectan en las abstracciones cosificadas de un programa genético en el núcleo celular o un programa de computadora en el cerebro. En el un caso, describir el ADN como "codificando para" diseño fenotípico cosifica el contenido codificado en un tipo de mítica "información pura". Tal información "puede ser codificada, recodificada y decodificada, sin ninguna degradación o cambio de significado" (<Entity>Dawkins</Entity> 1995a, p. 19). Es así conceptual y ontológicamente distinta de su expresión material contingente en la célula, organismo o cuerpo. En el otro caso, describir el cerebro como una computadora en la cabeza cuya función es el "procesamiento de información" es cosificar la información en algo que preexiste "ahí fuera", es "recogido" y "procesado" por sistemas representacionales en el cerebro, y es independiente en principio del cuerpo, que sirve meramente como su "vehículo". En ambos casos se nos entrega no simplemente un dualismo de materia versus información pura, sino una huida hacia el espacio informacional que es en muchas formas también una huida de la materialidad y el cuerpo (<Entity>Oyama</Entity> 2000b, p. 198).
+                            </p>
+
+                            <p>
+                                Por estas razones, la noción de información que he estado criticando es en última instancia regresiva, pues implica una forma de pensar que es estructuralmente isomórfica al vitalismo y al dualismo mente-cuerpo. Consideren estos pasajes de Dawkins y Dennett en los cuales este dualismo informacional es transparente:
+                            </p>
+
+                            <BlockQuote author="Dawkins 1986, p. 112">
+                                Lo que yace en el corazón de cada cosa viviente no es un fuego, no un aliento cálido, no una "chispa de vida". Es información, palabras e instrucciones. Si quieres una metáfora, no pienses en fuegos y chispas y aliento. Piensa, en cambio, en mil millones de caracteres digitales discretos tallados en tabletas de cristal.<InteractiveFootnote id={10} onActivate={handleNote} /> Si quieres entender la vida, no pienses en geles y limos vibrantes y palpitantes, piensa en tecnología de la información.
+                            </BlockQuote>
+
+                            <p>Aquí está la versión de Dennett del dualismo informacional:</p>
+
+                            <BlockQuote author="Dennett 1991a, p. 430">
+                                Si piensas en ti mismo como un centro de gravedad narrativa [una abstracción definida por el procesamiento de información del cerebro] tu existencia depende de la persistencia de esa narrativa que podría teóricamente sobrevivir indefinidamente muchos cambios de medio, ser teletransportada tan fácilmente (en principio) como las noticias de la tarde, y almacenada indefinidamente como pura información. Si lo que eres es esa organización de información que ha estructurado el sistema de control de tu cuerpo (o, para ponerlo en su forma provocativa más habitual, si lo que eres es el programa que corre en la computadora de tu cerebro), entonces podrías en principio sobrevivir a la muerte de tu cuerpo tan intacto como un programa puede sobrevivir a la destrucción de la computadora en la que fue creado y corrido por primera vez.
+                            </BlockQuote>
+
+                            <p>Y Dawkins de nuevo:</p>
+
+                            <BlockQuote author="Dawkins 1995, p. 4">
+                                [El] río de ADN... fluye a través del tiempo, no del espacio. Es un río de información, no un río de huesos y tejidos: un río de instrucciones abstractas para construir cuerpos, no un río de cuerpos sólidos mismos. La información pasa a través de cuerpos y los afecta, pero no es afectada por ellos en su camino a través. El río no solo no es influenciado por las experiencias y logros de los cuerpos sucesivos a través de los cuales fluye. También es no influenciado por una fuente potencial de contaminación que, a primera vista, es mucho más poderosa: el sexo.
+                            </BlockQuote>
+
+                            <p>
+                                A pesar de su atuendo científico moderno, el dualismo informacional expresado en estos pasajes es filosóficamente menos sofisticado que la forma antigua de dualismo. En el dualismo antiguo de alma y cuerpo—como se expresa, por ejemplo, en el <BookTitle>Fedón</BookTitle> de Platón—el alma (psique) y el cuerpo (soma) se interpenetran e influyen mutuamente en la vida llevada por el yo. Un cuerpo impuro corrompe el alma; uno puro libera el alma. En contraste, en el nuevo dualismo, "la información pasa a través de cuerpos y los afecta, pero no es afectada por ellos en su camino a través". Esta noción de información como algo que preexiste a su propia expresión en la célula, y que no es afectada por la matriz de desarrollo del organismo y el entorno, es una cosificación que no tiene valor explicativo. Es idolatría informacional y superstición, no ciencia.
+                            </p>
+
+                            {/* DEVELOPMENTAL SYSTEMS THEORY */}
+                            <SectionHeader id="dst" number="05" title="Teoría de Sistemas del Desarrollo" />
+
+                            <p>
+                                Si el genocentrismo es homólogo a la visión computacionalista de que la mente es una computadora en la cabeza, entonces la teoría de sistemas del desarrollo es homóloga a la visión enactiva de que la mente está encarnada en el organismo activo e incrustada en el mundo.<InteractiveFootnote id={11} onActivate={handleNote} /> La teoría de sistemas del desarrollo define la evolución no como cambio en las frecuencias génicas sino como "cambio en la distribución y constitución de sistemas de desarrollo (organismo-entorno)" (<Entity>Oyama</Entity> 2000a, p. 77). La unidad fundamental de evolución así concebida es el ciclo de vida:
+                            </p>
+
+                            <BlockQuote author="Sterelny y Griffiths 1999, p. 108">
+                                Un ciclo de vida es un proceso de desarrollo que es capaz de reunir una gama completa de recursos de tal manera que el ciclo se reconstruye. La matriz de recursos que crean un ciclo de vida es el "sistema de desarrollo" del cual la teoría toma su nombre. Los ciclos de vida forman una jerarquía de unidades evolutivas similar a la descrita por visiones jerárquicas más convencionales de la evolución [que enfatizan múltiples niveles de organización y unidades de selección, tales como genes, linajes celulares, organismos, colonias, superorganismos, y así sucesivamente].
+                            </BlockQuote>
+
+                            <p>
+                                La teoría de sistemas del desarrollo rechaza las explicaciones dicotómicas del desarrollo y la evolución; estas explicaciones están estructurada conceptualmente por las dicotomías causales de interno versus externo, innato versus adquirido, naturaleza versus crianza, genético versus ambiental, replicación versus interacción, e información versus materia. Tales explicaciones incluyen no solo el "consenso interaccionista" de la visión recibida, según el cual todos los rasgos biológicos se desarrollan como resultado de factores tanto genéticos como no genéticos, sino también muchas explicaciones que enfatizan la importancia de los llamados factores intrínsecos, a saber, restricciones del desarrollo y las propiedades autoorganizativas de los sistemas complejos. Se supone que estos factores intrínsecos contrastan con el "factor externo" de la selección natural (ver <Entity>Kauffman</Entity> 1991; <Entity>Maynard Smith</Entity> 1998, pp. 21-40; <Entity>Maynard Smith</Entity> et al. 1985). Según la teoría de sistemas del desarrollo, los ciclos de vida se propagan de una generación a la siguiente construyéndose y reconstruyéndose a sí mismos (como un camino hecho al andar), en lugar de desplegarse según algún plano o programa genético transmitido. Los procesos de reconstrucción involucran numerosos elementos causales interdependientes, los cuales se relacionan entre sí recíprocamente como proceso y producto, en lugar de pertenecer a las categorías dicotómicas de naturaleza genética versus crianza ambiental.
+                            </p>
+
+                            <p>
+                                Para explicar el cambio conceptual del genocentrismo a la teoría de sistemas del desarrollo, me gustaría citar extensamente un texto de <Entity>Oyama</Entity> (2000a, pp. 197-200).<InteractiveFootnote id={12} onActivate={handleNote} /> Ella presenta cinco justificaciones típicas para el genocentrismo, a las cuales añade tanto un paréntesis indicando lo que la justificación pasa por alto como una expansión del paréntesis que expresa la perspectiva de la teoría de sistemas del desarrollo (TSD):
+                            </p>
+
+                            <div className="space-y-6 pl-4 border-l-2 border-slate-700">
+                                <div>
+                                    <p className="font-bold text-cyan-400">1. Argumento (para ser leído con voz estentórea): Los genes producen organismos.</p>
+                                    <p className="italic text-slate-400">Paréntesis calificativo: (Aunque no son, por supuesto, suficientes: deben estar disponibles materias primas y las condiciones deben ser adecuadas.)</p>
+                                    <p className="text-slate-300">Expansión TSD: Los genes mismos no "hacen" nada, aunque están involucrados en procesos que requieren muchas otras moléculas y condiciones. Otros interactuantes (o recursos, o medios) se encuentran a escalas desde la microscópica hasta la ecológica, algunos vivos, algunos no. Ninguno es suficiente, y sus efectos son interdependientes. El desarrollo nunca ocurre (y no podría ocurrir) en el vacío.</p>
+                                </div>
+
+                                <div>
+                                    <p className="font-bold text-cyan-400">2. Argumento: Los genes compartidos son responsables de las características de la especie.</p>
+                                    <p className="italic text-slate-400">Paréntesis calificativo: (De nuevo, siempre y cuando estén presentes las condiciones apropiadas.)</p>
+                                    <p className="text-slate-300">Expansión TSD: Así como los genes no pueden hacer organismos en general, no pueden crear caracteres típicos de la especie en particular. Condiciones típicas, de nuevo a muchas escalas, contribuyen a formar estos caracteres, cuya uniformidad no debe exagerarse. La actividad del organismo, incluyendo la autoestimulación, es a menudo un aspecto crucial del desarrollo típico de la especie, y también lo son las influencias de otros organismos. La variación genética y ambiental es a menudo subestimada, y los procesos flexibles pueden resultar a veces en fenotipos típicos a pesar de recursos fenotípicos atípicos.</p>
+                                </div>
+
+                                <div>
+                                    <p className="font-bold text-cyan-400">3. Argumento: Las variantes genéticas especifican los fenotipos heredables necesarios para la selección natural.</p>
+                                    <p className="italic text-slate-400">Paréntesis calificativo: (Por supuesto, la heredabilidad depende de las condiciones, y puede ser difícil separar los efectos genéticos de los ambientales.)</p>
+                                    <p className="text-slate-300">Expansión TSD: A menos que los factores no genéticos sean excluidos por estipulación, otros recursos de desarrollo también pueden "especificar" variantes fenotípicas, las cuales pueden ser heredables en una variedad de sentidos. Las correlaciones genotipo-fenotipo que justifican hablar de especificación genética pueden no ocurrir bajo todas las circunstancias, y pueden cambiar dentro y a través del tiempo generacional. La especificidad, además, es un asunto resbaladizo; depende de la pregunta que se hace, la comparación que se hace, y de la medida que se usa, así como del estado de desarrollo de los organismos y el contexto de la comparación. De hecho, las correlaciones genotipo-entorno y las interacciones estadísticas que plagan al genetista del comportamiento son manifestaciones de justamente las redes interdependientes que describen los teóricos de sistemas del desarrollo.</p>
+                                </div>
+
+                                <div>
+                                    <p className="font-bold text-cyan-400">4. Argumento: Solo los genes se pasan en la reproducción; los fenotipos, y por tanto los efectos ambientales, son evanescentes, y así evolutivamente irrelevantes.</p>
+                                    <p className="italic text-slate-400">Paréntesis calificativo: (Por supuesto, los genes están alojados en una célula.)</p>
+                                    <p className="text-slate-300">Expansión TSD: Si transmitir o "pasar" significa "entregar materialmente sin cambios", entonces pocos si es que algún recurso de desarrollo se transmiten a través del tiempo evolutivo, dependiendo de cómo uno mida el cambio material. Si la transmisión significa "confiablemente presente en el siguiente ciclo de vida", que es el significado biológicamente relevante en TSD, entonces se transmite un conjunto indefinidamente grande de recursos o medios heterogéneos. Son buscados o producidos por el organismo mismo, suministrados por otros organismos, quizás a través de procesos e instituciones sociales, o están disponibles de otra manera. Aunque muchas características ambientales importantes para el desarrollo son excesivamente estables, otras son no continuas, variando quizás estacionalmente o geográficamente. Cualquier definición de herencia que no privilegie a priori el límite nuclear o celular será aplicable a otros constituyentes del sistema. La perspectiva de sistemas del desarrollo enfatiza los procesos que reúnen los prerrequisitos para iteraciones sucesivas de un ciclo de vida...</p>
+                                </div>
+
+                                <div>
+                                    <p className="font-bold text-cyan-400">5. Argumento: Si las frecuencias génicas no cambian, entonces la evolución no ha ocurrido, por definición.</p>
+                                    <p className="italic text-slate-400">Paréntesis calificativo: (Por supuesto, el concepto de gen es históricamente reciente, y otras definiciones de evolución son posibles.)</p>
+                                    <p className="text-slate-300">Expansión TSD: Un historiador podría decirnos cómo las frecuencias génicas pasaron de ser un índice de cambio evolutivo a ser definitorias, pero no necesitamos insistir en esa única definición. De hecho, muchas ramas de la biología hablan rutinariamente de cambios en fenotipos. Si uno debe tener una "unidad" de evolución, sería el sistema de desarrollo interactivo: ciclos de vida de organismos en sus nichos. La evolución sería entonces cambio en la constitución y distribución de estos sistemas. Esta definición abarca, pero no está restringida a, las más tradicionales.</p>
+                                </div>
+                            </div>
+
+                            <p>
+                                Habiendo resaltado el contraste entre el genocentrismo y la teoría de sistemas del desarrollo, puedo ahora presentar la teoría de sistemas del desarrollo en una forma más positiva. Esta presentación tiene cinco pasos.
+                            </p>
+
+                            <p>
+                                El Paso Uno es expandir la noción de herencia. No solo genes, sino muchos otros tipos de recursos de desarrollo se heredan. Estos recursos van desde componentes citoplasmáticos dentro de la célula hasta simbiontes y tradiciones sociales, que juntos forman un sistema de desarrollo ampliamente extendido. Cualquier elemento del sistema de desarrollo que recurra confiablemente en cada generación y que juegue un rol en construir el ciclo de vida evolucionado cuenta como algo heredado (<Entity>Gray</Entity> 1992; <Entity>Sterelny</Entity> y <Entity>Griffiths</Entity> 1999, p. 97).
+                            </p>
+
+                            <p>
+                                El Paso Dos es rechazar la concepción de "molécula maestra" del gen. Los genes no son causas informacionales del desarrollo distintivamente diferentes en tipo de otros factores de desarrollo que no califican como informacionales. Según la "tesis de paridad" de la teoría de sistemas del desarrollo, la única definición coherente de información en biología del desarrollo es una que es igualmente aplicable a factores causales genéticos y no genéticos (<Entity>Griffiths</Entity> y <Entity>Knight</Entity> 1998; <Entity>Oyama</Entity> 2000c).
+                            </p>
+
+                            <p>
+                                El Paso Tres es reconceptualizar la naturaleza de la información de desarrollo. La información no se transmite de una generación a la siguiente, sino que se reconstruye en el desarrollo—de ahí la frase de Oyama la ontogenia de la información (<Entity>Oyama</Entity> 2000b). La información es lo que cuenta como información para algún proceso en algún momento; por tanto cambia con el tiempo y es dependiente del contexto.
+                            </p>
+
+                            <p>
+                                El Paso Cuatro es reconceptualizar "naturaleza" y "crianza" como producto y proceso en lugar de como factores causales dicotómicos. "Las 'naturalezas' son simplemente fenotipos en desarrollo, ya sean comunes o raros, y emergen y cambian por la constante 'crianza' de interacciones de desarrollo. Esto hace de la naturaleza y la crianza no causas internas y externas o fuentes alternativas de forma orgánica, sino más bien productos de desarrollo (naturalezas) y los procesos de desarrollo (crianza) por los cuales llegan a ser" (<Entity>Oyama</Entity> 1992b, p. 225). "Otra forma de decir esto es que la naturaleza es el estado actual de un sistema de desarrollo, mientras que la crianza es su historia ontogenética" (<Entity>Oyama</Entity> 1993, p. 8).
+                            </p>
+
+                            <p>
+                                El Paso Cinco es reconceptualizar la evolución (filogenia) y la selección natural. La evolución es cambio en la constitución y distribución de sistemas de desarrollo. La selección natural no es un agente o fuerza independiente y externa actuando sobre los organismos, sino más bien el resultado de la propagación diferencial de sistemas de desarrollo: "Es el resultado neto de muchas otras interacciones en las cuales organismo y entorno se definen y seleccionan mutuamente" (<Entity>Oyama</Entity> 1993, p. 8). La selección natural, así concebida, "requiere ciclos de vida confiables, no programas genéticos u organismos estáticos" (<Entity>Oyama</Entity> 2000a, p. 80).
+                            </p>
+
+                            <p>
+                                Este último paso del argumento une la teoría de sistemas del desarrollo a debates sobre selección natural y adaptacionismo. Dejo la discusión de este asunto para las últimas dos secciones de este capítulo, en las cuales vincularé la teoría de sistemas del desarrollo a la idea de evolución enactiva. Lo que deseo hacer ahora es resaltar tres implicaciones importantes de la línea de pensamiento anterior.
+                            </p>
+
+                            <p>
+                                Si los sistemas de desarrollo ecológicamente incrustados son las unidades fundamentales de evolución, entonces se sigue (1) que la distinción replicador/interactor ya no es útil para conceptualizar procesos evolutivos; (2) que no hay distinción inteligible entre características heredadas (genéticas) y adquiridas (ambientales); y (3) que no hay distinción inteligible entre naturaleza y cultura.
+                            </p>
+
+                            <p>
+                                Si, por un lado, un replicador se define como una entidad que tiene el poder causal intrínseco para replicarse a sí misma, entonces el único replicador es el organismo reproductor o ciclo de vida, el cual se supone que es el interactor paradigma. Por otro lado, si un replicador se define como cualquier cosa que se replica confiablemente en el desarrollo, entonces hay muchos replicadores además de los genes. Por tanto la distinción replicador/interactor no tiene aplicación clara a la evolución y el desarrollo: "En lugar de replicadores pasando de una generación a la siguiente y luego construyendo interactores, el proceso de desarrollo completo se reconstruye a sí mismo de una generación a la siguiente vía numerosas vías causales interdependientes" (<Entity>Sterelny</Entity> y <Entity>Griffiths</Entity> 1999, p. 95).
+                            </p>
+
+                            <p>
+                                Dada esta explicación, "heredado" y "adquirido" (o "innato" versus "aprendido") no pueden nombrar dos subclases mutuamente excluyentes de características de desarrollo. Los rasgos fenotípicos son tan adquiridos como heredados, pues deben ser construidos en el desarrollo, es decir, adquiridos en la ontogenia; y las condiciones ambientales son tan heredadas como adquiridas porque se pasan inseparablemente con los genes y así entran en la formación del organismo desde el principio. El punto, como enfatiza Oyama, "no es que los genes y el entorno sean necesarios para todas las características, heredadas o adquiridas (la posición ilustrada habitual), sino que no hay distinción inteligible entre características heredadas (biológicas, basadas genéticamente) y adquiridas (mediadas ambientalmente)... Una vez que la distinción entre lo heredado y lo adquirido ha sido eliminada, no solo como extremos, sino incluso como un continuo, no puede decirse que la evolución dependa de la distinción" (<Entity>Oyama</Entity> 2000b, p. 138; ver también <Entity>Scholz</Entity> 2002).
+                            </p>
+
+                            <p>
+                                Finalmente, la forma habitual de distinguir naturaleza de cultura es decir que la naturaleza es aquello que es biológicamente dado ("heredado", "innato", "cableado"), mientras que la cultura es aquello que es aprendido o "socialmente construido". A menudo se dice que mientras la evolución biológica es neodarwiniana, la evolución cultural es lamarckiana. Estas formas de distinguir naturaleza de cultura son permutaciones de las distinciones naturaleza-crianza y heredado-adquirido, y descansan en la dicotomía entre rasgos transmitidos genéticamente y adquiridos ambientalmente. Dado que esta dicotomía carece de base, no tiene sentido tratar de dividir los rasgos de los organismos en las categorías separadas de naturaleza y cultura.<InteractiveFootnote id={14} onActivate={handleNote} />
+                            </p>
+
+                            <p>
+                                Permítanme cerrar esta sección con algunas observaciones sobre la relación entre la teoría de la autopoiesis y la teoría de sistemas del desarrollo. Anteriormente en este capítulo describí cómo las unidades autopoiéticas pueden sufrir reproducción secuencial y generar linajes históricos. Podemos caracterizar tales unidades en términos de su dinámica autoproductora y su acoplamiento estructural con sus entornos. En el segundo caso, las caracterizamos como ciclos de vida o procesos de desarrollo ecológicamente incrustados, a la manera de la teoría de sistemas del desarrollo. Por tanto existe un parentesco natural entre la teoría de sistemas del desarrollo y la teoría de la autopoiesis. Ambas teorías, como nota Oyama, "expresan insatisfacción con ciertos aspectos de la síntesis evolutiva neodarwiniana: un enfoque a veces estrecho, centrado en el gen, el consecuente descuido de los organismos activos, en desarrollo, y la noción de adaptación como la resolución de problemas ambientales preexistentes... Cada una tiene también disputas con el tratamiento del neodarwinismo estándar de las relaciones interior-exterior, en las cuales la formación de desarrollo de los organismos es controlada desde el interior (a menudo por programas genéticos), y en las cuales la evolución es en gran parte un asunto de moldeado por el entorno externo" (<Entity>Oyama</Entity> 1999, p. 187). De hecho, más allá de sus críticas al neodarwinismo, las dos teorías se apoyan mutuamente. La teoría de la autopoiesis se necesita para describir la organización autoproductora de las cosas vivas sobre la base de la cual proceden el desarrollo y la evolución, y la teoría de sistemas del desarrollo se necesita para dar una explicación no dicotómica del acoplamiento estructural de organismo y entorno en la ontogenia y la filogenia.<InteractiveFootnote id={15} onActivate={handleNote} />
+                            </p>
+
+                            {/* ROBUSTNESS AND FLEXIBILITY */}
+                            <SectionHeader id="robustness-flexibility" number="06" title="Robustez y Flexibilidad en Sistemas de Desarrollo" />
+
+                            <p>
+                                Habiendo examinado la teoría de sistemas del desarrollo, podemos ahora echar una mirada fresca a los roles importantes que ciertos genes juegan en los sistemas de desarrollo de varios organismos. Pero primero se necesita algo de contexto histórico.
+                            </p>
+
+                            <p>
+                                Anteriormente en este capítulo revisé la Síntesis Moderna entre la teoría evolutiva y la genética. Sin embargo, como señalan <Entity>Gilbert</Entity>, <Entity>Opitz</Entity> y <Entity>Raff</Entity> (1996):
+                            </p>
+
+                            <BlockQuote author="Gilbert, Opitz y Raff 1996, p. 358">
+                                Si hubo una "Síntesis Moderna" entre genética y evolución, tuvo que haber habido alguna "Síntesis Inmoderna" a la que reemplazó. Esta Síntesis Inmoderna era la noción de que la evolución era causada por cambios en el desarrollo. Las síntesis de E. Haeckel, E. Metchnikoff, A. Weismann, W. K. Brooks y otros [en los siglos XIX y principios del XX] eran las de evolución y embriología. La Ley Biogenética de Haeckel [que la ontogenia es una recapitulación de la filogenia] había reemplazado a todas las otras síntesis de desarrollo, y para la década de 1930, esta síntesis se había vuelto tanto racista como científicamente insostenible... Era un blanco fácil para destruir tanto para genetistas como para embriólogos (como W. Garstang y N. J. Berrill). Pero en las décadas de 1930 y 1940, la embriología no tenía nada nuevo que sustituir por esta noción desacreditada. De hecho, los embriólogos ya no estaban interesados en la evolución y se habían separado de la biología evolutiva en un intento de volverse "más científicos", i.e., experimentales... La genética llenó fácilmente este vacío, y la Síntesis Moderna sustituyó la genética por la embriología como el motor de la evolución. Así, la embriología—que previamente había sido la "sirvienta" de la evolución... y que Darwin percibió como su mayor fuente de evidencia—cedió paso a la genética.
+                            </BlockQuote>
+
+                            <p>
+                                En la década de 1970, sin embargo, la adecuación de la Síntesis Moderna como una explicación para el origen de las especies comenzó a ser cuestionada: "La genética podría ser adecuada para explicar la microevolución, pero los cambios microevolutivos en la frecuencia génica no se veían como capaces de convertir un reptil en un mamífero o convertir un pez en un anfibio" (<Entity>Gilbert</Entity>, <Entity>Opitz</Entity> y <Entity>Raff</Entity> 1996, p. 361). Este reexamen crítico ha llevado a una "Nueva Síntesis" de biología del desarrollo y evolutiva, conocida como evo-devo (ver <Entity>Hall</Entity> y <Entity>Olson</Entity> 2003). La idea central de esta nueva síntesis—que todos los cambios importantes en la evolución son alteraciones en el desarrollo—se remonta a pensadores anteriores en los siglos XIX y XX. Sin embargo, ahora está siendo articulada con mucho mayor detalle, a través de investigación que abarca e interconecta los campos de la biología celular y embriología comparada, paleontología y genética molecular. El objetivo es nada menos que explicar cómo los procesos de desarrollo se modifican durante la evolución y cómo estas modificaciones producen cambios en las morfologías y planes corporales de los animales (<Entity>Arthur</Entity> 2002; <Entity>Coen</Entity> 1999; <Entity>Gerhart</Entity> y <Entity>Kirschner</Entity> 1997; <Entity>Holland</Entity> 1999; <Entity>Raff</Entity> 1996).
+                            </p>
+
+                            <p>
+                                Una de las ideas centrales que ha emergido de esta nueva síntesis es que la evolución es impulsada por procesos de desarrollo robustos y flexibles (<Entity>Gerhart</Entity> y <Entity>Kirschner</Entity> 1997, pp. 444-445). La robustez es la capacidad de no cambiar cuando las condiciones cambian, una capacidad de automantenimiento, autoajuste y autoorganización frente al cambio. La flexibilidad es la capacidad de cambiar en relación con condiciones cambiantes, de acomodarse al cambio. Los procesos de desarrollo robustos y flexibles, debido a que permiten que surjan variaciones fenotípicas en el desarrollo que no son letales para el organismo, mejoran la capacidad de los organismos para el cambio evolutivo. A lo largo de la evolución, "los procesos flexibles robustos se conservan y los procesos diversificados los rodean" (<Entity>Gerhart</Entity> y <Entity>Kirschner</Entity> 1997, p. 444). Esto hace de la evolución un tapiz sorprendente en el cual conservación e innovación, permanencia y cambio, y necesidad y contingencia están completamente entretejidos.
+                            </p>
+
+                            <p>
+                                En las últimas décadas, estructuras previamente tomadas como no relacionadas (evolucionadas independientemente)—como el ojo de insecto y el ojo de vertebrado, a menudo presentados como un caso clásico de evolución convergente—se ha descubierto que están relacionadas a niveles más profundos de conservación genética y de desarrollo. En otras palabras, estructuras que habían sido tomadas como análogas (similares en apariencia pero evolucionadas de diferentes maneras) se mostraron basadas en homologías más profundas (derivaciones de un origen evolutivo común). Este hallazgo fue particularmente evidente al nivel de procesos en el embrión en desarrollo involucrando grupos particulares de genes y los factores de transcripción especificados por estos genes. (Los factores de transcripción son proteínas que aumentan o disminuyen la unión de enzimas ARN polimerasa a la molécula de ADN durante el proceso de transcripción de ADN a ARN.) Así, el desarrollo del ojo tanto en insectos como en vertebrados está asociado con el factor de transcripción especificado por el gen pax-6, a pesar de las diferencias fundamentales en la anatomía del ojo en estos dos grupos de animales. Mutantes para este gen, llamados ojo pequeño en el ratón y sin ojos en la mosca de la fruta Drosophila, tienen pérdida parcial o completa de sus ojos. De manera similar, los humanos que tienen anormalidades congénitas en el gen pax-6 muestran tamaño de ojo reducido y ausencia de iris. También se ha mostrado que si el gen pax-6 del ratón se transfiere a la mosca de la fruta, causa que aparezca un ojo dondequiera que se active—el ojo de una mosca de la fruta, no de un ratón. En animales tan diferentes como insectos y mamíferos, la presencia del gen inicia una cascada de eventos en un sitio particular en el embrión que lleva al desarrollo de un ojo en ese sitio.
+                            </p>
+
+                            <p>
+                                Como señalan <Entity>Gilbert</Entity>, <Entity>Opitz</Entity> y <Entity>Raff</Entity>, estos hallazgos de genes homólogos para procesos y estructuras análogos han "causado estragos con nuestras definiciones de analogía y homología" (1996, p. 364). La noción clásica de homología pertenecía a similitudes de estructura (como esqueletos o genes). La nueva noción de "homología de proceso", embargo, pertenece a similitudes de interacciones dinámicas al nivel de mecanismos de desarrollo. El resultado es que órganos estructuralmente análogos, como el ojo de vertebrado y artrópodo o la pierna de vertebrado y artrópodo, pueden ser formados por procesos homólogos.
+                            </p>
+
+                            <p>
+                                En el caso del desarrollo del ojo en artrópodos y vertebrados, se ha tomado la homología de proceso para implicar que el gen pax-6 es un gen regulador importante de una vía conservada para la formación del ojo que surgió antes de la separación de artrópodos y vertebrados en el Cámbrico, hace 550 millones de años. Es decir, los ojos actuales de insectos y vertebrados son probablemente los descendientes modificados de una célula sensible a la luz básica en un metazoo precámbrico, cuyo desarrollo estaba asociado con la expresión de la secuencia del gen pax-6: "Aunque es difícil imaginar los ojos de invertebrados y vertebrados como homólogos, es decir brotando de un intermedio 'ojo' común, en un sentido profundo cada uno ha sido generado a partir de un conjunto conservado de componentes reguladores, reunidos en diferentes configuraciones en diferentes tiempos" (<Entity>Gerhart</Entity> y <Entity>Kirschner</Entity> 1997, p. 34).<InteractiveFootnote id={16} onActivate={handleNote} />
+                            </p>
+
+                            <p>
+                                Algunos de los ejemplos más sorprendentes de componentes reguladores conservados pueden encontrarse al nivel más alto de organización espacial de metazoos y especialización de tipo celular. Este es el nivel del plan corporal filotípico del animal entero, la organización espacial que el animal comparte con todos los miembros de su filo (ejemplos de filos son los artrópodos, cordados, anélidos, equinodermos y moluscos) (ver <Entity>Gerhart</Entity> y <Entity>Kirschner</Entity> 1997, Capítulo 7). Esta organización, también, puede describirse no solo anatómicamente, sino al nivel de procesos homólogos en el embrión en desarrollo. Para apreciar la profundidad de esta forma de mirar los planes corporales animales, consideren que después del origen de la vida y la emergencia de las células eucariotas, el siguiente evento mayor en la historia de la vida fue el establecimiento de la multicelularidad, en el Precámbrico hace 600-1000 millones de años. Este evento no podría haber sucedido a menos que diferentes linajes celulares pudieran vincularse cooperativamente (ver <Entity>Buss</Entity> 1987). Para que un metazoo opere como una entidad coherente tiene que tener formas de vincular cooperativamente células que se diferencian y especializan en el desarrollo. Por esta razón, el desarrollo de metazoos combina células diferenciadas en patrones estrechos de interacción a través de redes regulatorias metabólicas y genéticas.
+                            </p>
+
+                            <p>
+                                La diferenciación espacial en particular, mediante la cual las células llegan a tener identidades regionales en la población multicelular que es el cuerpo del metazoo, es un avance clave de la multicelularidad. Sin este avance, las diversas diferenciaciones celulares estructurales y funcionales (músculo, nervio, hueso, y así sucesivamente) serían de poca utilidad. Se sabe ahora que este establecimiento de identidad regional o posicional depende de ciertos genes conocidos como genes selectores.<InteractiveFootnote id={17} onActivate={handleNote} /> Estos genes se activan durante el desarrollo embrionario antes de que estén presentes tipos de células funcionalmente especializados, y distinguen regiones corporales unas de otras en el embrión en desarrollo. Así, células que son funcionalmente similares pero localizadas en diferentes regiones del cuerpo pueden diferir en su activación de genes selectores.
+                            </p>
+
+                            <p>
+                                Lo que esto significa con respecto a los planes corporales filotípicos de los animales es que pueden describirse tanto anatómicamente como de otras dos maneras—primero, en términos de homología génica, es decir, "en términos de compartimentos de expresión de genes selectores, una 'segunda anatomía' solo visible cuando el embrión es tratado con reactivos coloreados que revelan la ubicación de los ARNs y proteínas codificados por estos genes"; y segundo, en términos de la homología de proceso, es decir, "como una organización espacial de procesos de desarrollo compartimentados involucrando genes selectores y proteínas de señalización confiablemente distribuidas" (<Entity>Gerhart</Entity> y <Entity>Kirschner</Entity> 1997, pp. 296-297). Estos procesos de desarrollo se conocen como los procesos filotípicos del organismo, y "el plan corporal es la organización espacial de procesos filotípicos" (ibid.).
+                            </p>
+
+                            <p>
+                                El plan corporal se forma durante el curso del desarrollo temprano y surge en la llamada etapa filotípica, la etapa más temprana en la que están presentes las características distintivas del plan corporal. Por ejemplo, pertenecemos al filo de los cordados, cuya etapa filotípica se llama faríngula, la etapa más temprana en la que están presentes las cuatro características distintivas de los cordados: la notocorda (varilla esquelética reemplazada más tarde en el desarrollo por la columna vertebral), el cordón nervioso hueco dorsal, las hendiduras branquiales y una cola detrás del ano. Hay aproximadamente treinta filos modernos y por tanto otros tantos planes corporales filotípicos y etapas filotípicas de desarrollo. Estos planes corporales y etapas han sido altamente conservados en la evolución, habiendo persistido por 530 millones de años; al mismo tiempo ha habido considerable diversificación en las etapas pre y postfilotípicas del desarrollo embrionario. Esta diversificación es evidente en las diferencias anatómicas entre las clases, órdenes y familias dentro de un filo. En la etapa filotípica, todos los miembros de un filo se ven bastante similares, aunque difieren antes en el desarrollo y por supuesto divergen considerablemente más tarde. Así, el desarrollo temprano converge en la etapa filotípica y luego diverge. En la imagen de <Entity>Gerhart</Entity> y <Entity>Kirschner</Entity>: "La etapa filotípica se asienta en medio del desarrollo como un istmo, como una etapa conservada precedida y seguida por etapas grandemente diversificadas" (1997, p. 380).
+                            </p>
+
+                            <p>
+                                En el caso de los artrópodos, el plan corporal filotípico surge en la etapa de "banda germinal segmentada" del embrión (llamada así por la forma aplanada y alargada del huevo y la aparente segmentación corporal). Esta etapa ocurre justo después de que se han establecido las principales dimensiones anteroposterior y dorsoventral del cuerpo. Compartimentos particulares del cuerpo se definen a lo largo de estas dos dimensiones como resultado de la activación de genes selectores particulares. Tres clases principales de genes selectores se activan a lo largo del eje anteroposterior—los genes de polaridad de segmento, cuyos productos especificados establecen las características comunes de todos los segmentos del cuerpo; los genes terminales, cuyos productos especificados definen los extremos no segmentados del cuerpo; y los genes homeóticos, cuyos productos especificados diferencian regiones del embrión unas de otras, en particular la anterior y posterior de la cabeza, el tórax y el abdomen.
+                            </p>
+
+                            <p>
+                                Los genes homeóticos han sido objeto de mucha atención y discusión. Comprenden diez genes selectores, cada uno de los cuales se activa en un compartimento particular del plan corporal de adelante hacia atrás. Dos se expresan en la cabeza anterior del embrión; los otros ocho, conocidos como genes Hox, se activan en la cabeza posterior, el tórax y el abdomen. Cada gen homeótico contiene una secuencia de ADN llamada homeobox, que especifica una secuencia de sesenta aminoácidos conocida como homeodominio. Las proteínas que contienen esta secuencia pertenecen a la familia de factores de transcripción de homeodominio y regulan la activación génica en el embrión en desarrollo.
+                            </p>
+
+                            <p>
+                                Los genes Hox en particular, junto con sus productos de homeodominio, parecen operar no como una colección de elementos individuales sino como una red con sus propias propiedades distintivas. Por ejemplo, hay un único orden para su activación, basado de alguna manera en el hecho notable de que los ocho genes Hox están agrupados en un cromosoma en un orden que corresponde al orden anteroposterior de sus ocho compartimentos de activación en el plan corporal. Una vez que cada gen es activado regionalmente, se vuelve autoactivante y automantenido a través de un circuito regulador que incluye su factor de transcripción de homeodominio especificado. Además—y este descubrimiento se clasifica como uno de los más notables y sorprendentes de la biología reciente—genes Hox similares, con el mismo tipo de orden colineal de colocación de genes en el cromosoma y orden anteroposterior de activación en el cuerpo—se encuentran no solo en artrópodos, sino también en los metazoos de otros filos, como cordados, anélidos y moluscos. Si comparamos las secuencias de ADN de los genes en ubicaciones correspondientes en diferentes animales, encontramos más semejanza entre ellas que entre las secuencias de genes en diferentes ubicaciones en el mismo animal. El gen más anterior en la mosca de la fruta, por ejemplo, es más similar al gen más anterior en el ratón de lo que es a los otros genes Hox de la mosca de la fruta, y así sucesivamente a lo largo de la longitud del cuerpo de adelante hacia atrás.
+                            </p>
+
+                            <p>
+                                Las conclusiones que se han sacado son que el ancestro común de todos los animales bilateralmente simétricos poseía una serie de genes Hox y que estos genes han sido conservados desde entonces en la evolución de los metazoos. De hecho, dada la antigüedad y universalidad de los genes Hox, se ha propuesto que definen un plan corporal "zootípico" común para todos los metazoos (<Entity>Slack</Entity>, <Entity>Holland</Entity> y <Entity>Graham</Entity> 1993). Así, las redes de genes Hox proporcionan un ejemplo sorprendente de robustez y flexibilidad, como se evidencia por su conservación en la evolución así como su duplicación y diversificación, llevando a una correspondiente amplia variedad de compartimentos corporales y apéndices a lo largo de la dimensión anteroposterior de los metazoos modernos.
+                            </p>
+
+                            <p>
+                                Encontramos la misma robustez y flexibilidad, conservación e innovación, a lo largo de la dimensión dorsoventral de los planes corporales de los metazoos. En 1820 <Entity>Etienne Geoffroy Saint-Hilaire</Entity> propuso que los vertebrados y los insectos compartían el mismo diseño corporal básico. Su propuesta llevó al famoso debate entre Geoffroy y <Entity>Georges Cuvier</Entity> en 1830 ante la Académie des Sciences en París (ver <Entity>Coen</Entity> 1999, Capítulo 7). La visión de Geoffroy, basada en consideraciones de forma, era que vertebrados y artrópodos comparten una organización dorsoventral común, pero que el diseño de uno es el inverso del otro. Así, los vertebrados tienen un corazón ventral y un cordón nervioso dorsal, mientras que los artrópodos tienen un corazón dorsal y un cordón nervioso ventral. La visión opuesta de Cuvier se basaba en consideraciones de función; argumentó que vertebrados y artrópodos deben considerarse como tipos diferentes de animal debido a las diferencias en la organización funcional de sus partes corporales.
+                            </p>
+
+                            <p>
+                                Aunque la posición de Geoffroy fue muy criticada a lo largo de los años, resulta que estaba en el camino correcto después de todo, aunque por razones que no podría haber previsto posiblemente (ver <Entity>Arendt</Entity> y <Entity>Jung</Entity> 1994; <Entity>De Robertis</Entity> y <Entity>Sasai</Entity> 1996; <Entity>Gerhart</Entity> y <Entity>Kirschner</Entity> 1997, pp. 340-343). Mientras que él basó su posición en consideraciones esqueléticas—en particular, en su "Principio de Conexiones", según el cual los huesos mantienen las mismas conexiones en los animales, independientemente de su función<InteractiveFootnote id={18} onActivate={handleNote} />—el orden subyacente es más bien el de los procesos de desarrollo que involucran genes selectores y sus factores de transcripción dentro de regiones delimitadas específicas. Así, los planes corporales filotípicos de artrópodos y cordados sí comparten una organización dorsoventral común, con el plan corporal de uno invertido en relación con el del otro. En artrópodos, el desarrollo del lado ventral del cuerpo está regulado por la activación del gen sog (gastrulación corta); este gen está estrechamente relacionado con el gen cordado cordina, que regula el desarrollo del lado dorsal del cuerpo cordado. El desarrollo del lado dorsal del cuerpo en artrópodos está regulado por la activación de dpp (decapentapléjico), y este gen está estrechamente relacionado con el gen cordado BMP (proteína morfogenética ósea), que regula el desarrollo del lado ventral del cuerpo cordado. Se ha propuesto que sog/cordina y dpp/BMP, junto con los genes Hox y un órgano sensible a la luz asociado con pax-6, estaban presentes en el ancestro de los linajes de artrópodos y mamíferos—un hipotético animal antiguo parecido a un gusano, apodado "Urbilateria" (animal bilateral primitivo), que vivió antes de la "explosión cámbrica" de planes corporales (<Entity>De Robertis</Entity> y <Entity>Sasai</Entity> 1996).
+                            </p>
+
+                            <p>
+                                En este capítulo he estado expandiendo la explicación autopoiética de la vida para incluir sistemas de desarrollo y evolución. La discusión en esta sección ha revelado el sorprendente patrón de unidad conservada fomentando diversidad en la evolución de sistemas de desarrollo. En palabras de <Entity>Gerhart</Entity> y <Entity>Kirschner</Entity>: "Donde se encuentra diversificación, procesos robustos flexibles conservados están cerca, seleccionados para tener esas propiedades" (1997, p. 438). En el caso de los procesos filotípicos espacialmente organizados del plan corporal: "Han sido conservados debido a las selecciones sobre las diversificaciones que han permitido... es la diversificabilidad del plan corporal, su flexibilidad, versatilidad y robustez, y no solo la anatomía de la etapa filotípica, lo que ha sido continuamente seleccionado" (p. 372). El término seleccionado plantea una serie de otras cuestiones, que abordaremos en las siguientes dos secciones. Podemos mantener estas cuestiones a raya por el momento para resumir el punto principal de esta sección: procesos de desarrollo robustos y flexibles hacen posible la generación de diversidad, y por tanto el proceso de evolución como un todo.
+                            </p>
+
+                            {/* ENACTIVE EVOLUTION */}
+                            <SectionHeader id="enactive-evolution" number="07" title="Evolución Enactiva" />
+
+                            <p>
+                                Me vuelvo ahora a confrontar las cuestiones contenciosas sobre selección natural y adaptación en la teoría evolutiva y la filosofía de la biología. Mi posición es que las perspectivas autopoiética y de sistemas del desarrollo implican una reconceptualización de la selección natural y la adaptación.
+                            </p>
+
+                            <p>
+                                El genocentrismo y la visión recibida están dominados por lo que <Entity>Oyama</Entity> (2000a) llama un circuito reverberante de formas de pensar sobre los procesos vitales, formado por las tres concepciones entrelazadas de selección natural, innatismo y herencia. La selección natural se conceptualiza como una fuerza externa cuyo efecto es optimizar la aptitud; los rasgos innatos se atribuyen a programas genéticos internos de desarrollo; y la herencia se ve como la transmisión de genes para rasgos de un organismo a otro. Estas ideas se refuerzan mutuamente. Debido a que la herencia se ve como la transmisión de genes para rasgos, la evolución se reduce a cambios en las frecuencias génicas en una población, mientras que se supone que la ontogenia es el despliegue de un programa de desarrollo preexistente, codificado genéticamente: "La idea de fenotipos creados genéticamente refuerza entonces la idea de la selección natural como 'operando' sobre rasgos estáticos... Es este circuito el que debe romperse si queremos entender las relaciones entre selección, desarrollo y herencia" (<Entity>Oyama</Entity> 2000a, p. 78).
+                            </p>
+
+                            <p>
+                                Hemos visto cómo la teoría de sistemas del desarrollo rompe este circuito. Primero, la herencia depende no de la "transmisión" de información genética para el diseño fenotípico, sino de la reconstrucción de patrón en la ontogenia, un proceso que involucra muchos otros recursos de desarrollo además de los genes. Segundo, la distinción innato/adquirido no es aplicable a procesos de desarrollo. Finalmente, la selección natural no es una fuerza externa, sino la propagación diferencial de sistemas de desarrollo. Es este tercer punto sobre la selección natural el que nos ocupará ahora.
+                            </p>
+
+                            <p>
+                                Desde el punto de vista de la visión recibida, en particular desde la perspectiva conocida como adaptacionismo, el problema central de la teoría evolutiva es explicar no simplemente el hecho de la evolución—que los organismos descienden con modificación de otros organismos—sino también la apariencia generalizada de diseño en la naturaleza, o en otras palabras, que los seres vivos parecen estar bien adaptados a sus entornos. Según el adaptacionismo, la evolución y la apariencia de diseño han de explicarse por el proceso de selección natural: hay variación entre los rasgos de individuos en una población dada; los rasgos son heredables; algunos individuos dejan más descendencia que otros como resultado de los rasgos heredables que poseen; y consecuentemente los rasgos más aptos presentes en la población tienden a ser "seleccionados" de una generación a la siguiente. Se supone que la adaptación es una consecuencia directa de la selección natural. Dada una cantidad suficiente de tiempo, los organismos tenderán a estar bien adaptados a sus entornos locales como resultado de la selección natural de las variantes más aptas. Sin embargo, debido a que el entorno nunca es estático sino siempre cambiante, la selección natural inevitablemente se retrasará respecto al cambio ambiental. Por tanto no deberíamos esperar que los organismos estén perfectamente adaptados.
+                            </p>
+
+                            <p>
+                                En 1978 <Entity>Stephen Jay Gould</Entity> y <Entity>Richard Lewontin</Entity> publicaron un artículo ahora famoso en el que criticaron lo que vieron como la confianza demasiado fácil en esta imagen de la evolución, una imagen que llamaron el "programa adaptacionista" (<Entity>Gould</Entity> y <Entity>Lewontin</Entity> 1978). A lo largo de los años este artículo ha inspirado considerable argumento de ida y vuelta, pero ciertos puntos centrales han resistido la prueba del tiempo y la controversia. Uno de estos puntos es que los adaptacionistas tratan al organismo como si fuera un mosaico de partes separadas cuando en realidad es un todo integrado. Los adaptacionistas típicamente atomizan al organismo en "rasgos" y tratan de explicar estos rasgos "como estructuras óptimamente diseñadas por la selección natural para sus funciones" (<Entity>Gould</Entity> y <Entity>Lewontin</Entity> 1978, p. 256). Luego, cuando se enfrentan a las limitaciones de este análisis parte por parte, rinden servicio de labios a la integración del organismo. Lo tratan meramente como un epifenómeno de los compromisos o "intercambios" que necesitan hacerse entre las demandas competitivas de optimizar diferentes rasgos.
+                            </p>
+
+                            <p>
+                                La teoría de la autopoiesis y la teoría de sistemas del desarrollo juntas proporcionan una visión diferente del organismo. Los sistemas autopoiéticos (y sistemas autónomos generalmente) son redes unificadas de muchos procesos interdependientes. Los organismos no son en consecuencia el tipo de sistemas que tienen rasgos atomistas como sus partes propias; tales rasgos son los productos de la abstracción teórica. De manera similar, desde el punto de vista de la teoría de sistemas del desarrollo, la noción adaptacionista del organismo como un conjunto de rasgos sobre los cuales actúa la selección oscurece el desarrollo. En el desarrollo, no hay rasgos estáticos, sino más bien procesos de desarrollo integrados.
+                            </p>
+
+                            <p>
+                                Otro punto importante que Gould y Lewontin hicieron en su crítica fue que el adaptacionismo separa al organismo del entorno y ve al entorno como planteando problemas que el organismo debe resolver adaptándose. Esta visión de las relaciones organismo-entorno, combinada con el análisis atomista del organismo en rasgos separables, implica que el organismo es simplemente un objeto pasivo de selección en lugar de un agente activo o sujeto del proceso evolutivo (ver <Entity>Levins</Entity> y <Entity>Lewontin</Entity> 1985, pp. 85-106).
+                            </p>
+
+                            <p>
+                                La teoría de sistemas del desarrollo ofrece uno de los rechazos más radicales de la separación de organismo y entorno. Si la unidad de evolución es el sistema de desarrollo, y si los recursos de desarrollo heredados incluyen no solo elementos endógenos (genes, componentes citoplasmáticos, organización celular citoesquelética y cortical, y así sucesivamente), sino también entornos exógenos estructurados—entornos estructurados en nichos viables por los organismos mismos—entonces no hay base para pensar que el entorno es independiente del organismo. Por el contrario, organismo y entorno se construyen mutuamente en el desarrollo y la evolución:
+                            </p>
+
+                            <BlockQuote author="Griffiths y Gray 1994, pp. 300-301">
+                                La evolución ocurre porque hay variaciones durante la replicación de ciclos de vida, y algunas variaciones son más exitosas que otras. Tradicionalmente, se dice que las variantes están expuestas a fuerzas selectivas que existen independientemente, expresiones de un entorno que existe independientemente. En la representación de sistemas del desarrollo, las variantes difieren en su capacidad para replicarse a sí mismas. Una variante lo hace mejor que otra, no debido a una correspondencia entre ella y alguna característica ambiental preexistente, sino porque el ciclo de vida que incluye interacción con esa característica tiene una mayor capacidad para replicarse a sí mismo que el ciclo de vida que carece de esa interacción. Esta perspectiva es apropiada porque muchas de las características del entorno tradicional tienen explicaciones evolutivas. Organismo y entorno están ambos evolucionando como un efecto de la evolución de ciclos de vida diferencialmente autorreplicantes. Los ciclos de vida todavía tienen valores de aptitud, pero estos son interpretados, no como una medida de correspondencia entre el organismo y su entorno sino como medidas del poder autorreplicante del sistema. La aptitud ya no es un asunto de "ajuste" a un entorno independiente.
+                            </BlockQuote>
+
+                            <p>
+                                Esta codeterminación de organismo y entorno es central para el concepto de enacción (<Entity>Varela</Entity>, <Entity>Thompson</Entity> y <Entity>Rosch</Entity> 1991). Como dos compañeros en un baile que traen los movimientos del otro, organismo y entorno promulgan o traen mutuamente a través de su acoplamiento estructural. Dada esta visión de codeterminación organismo-entorno, se sigue que la evolución no debería describirse como un proceso mediante el cual los organismos mejoran cada vez más en adaptarse a los problemas de diseño planteados por un entorno independiente. Central a la evolución no es la optimización de la adaptación, sino más bien la conservación de la adaptación. Mientras un ser vivo no se desintegre, sino que mantenga su integridad autónoma, está adaptado porque es capaz de llevar a cabo su acoplamiento estructural con su entorno (<Entity>Maturana</Entity> y <Entity>Varela</Entity> 1987). La adaptación de un ser vivo a su entorno es por tanto una consecuencia necesaria de su autonomía y acoplamiento estructural. En otras palabras, la condición de adaptación es un invariante de la vida; se conserva necesariamente mientras continúen la autopoiesis y el acoplamiento estructural.
+                            </p>
+
+                            <p>
+                                Dada la adaptación como una condición de fondo invariante, las variaciones estructurales en los seres vivos surgen a través de la reproducción y el desarrollo. Muchas de estas variaciones producen individuos que pueden sobrevivir en un entorno dado, y estas variantes están en consecuencia todas adaptadas. Son capaces de continuar el linaje al que pertenecen en su entorno particular, independientemente de si está cambiando, al menos por algún período de tiempo. Otras variaciones estructurales dan lugar a linajes con diferente oportunidad de contribuir a la variedad de una población en un entorno cambiante. Vemos esta diferencia retrospectivamente: hay linajes que desaparecen, y lo que su desaparición nos revela es que sus configuraciones estructurales no les permitieron conservar la condición de adaptación (organización autopoiética y acoplamiento estructural) necesaria para su continuidad. Esta visión de la evolución, centrada en la conservación de la adaptación a través de la autopoiesis y el acoplamiento estructural con el entorno, puede llamarse evolución enactiva.<InteractiveFootnote id={19} onActivate={handleNote} />
+                            </p>
+
+                            <p>
+                                Según esta perspectiva, todos los seres vivos están adaptados mientras estén vivos. El éxito reproductivo—la medida de la aptitud—no está determinado por rasgos aislados, sino por el ciclo de vida completo. Por tanto asignar valores de eficiencia a rasgos es engañoso.
+                            </p>
+
+                            <p>
+                                Los biólogos adaptacionistas estarían en desacuerdo. Dawkins, por ejemplo, piensa que como resultado de la selección acumulativa y las "carreras armamentistas" evolutivas entre linajes competidores, los seres vivos a menudo se vuelven mejor diseñados o adaptados a sus nichos a corto plazo evolutivo (<Entity>Dawkins</Entity> 1986, pp. 178-181). Pero incluso esta idea circunscrita de progreso adaptativo tiene problemas. Primero, la noción de una "carrera armamentista" evolutiva es meramente una metáfora cuestionable tomada del reino de los asuntos humanos y proyectada sobre las interacciones entre ciertas especies en la historia de la vida. Es una descripción enteramente relativa al observador. Segundo, ninguna propiedad variable general de adaptabilidad o grado de "ajuste" entre un organismo y su entorno ha sido identificada y rigurosamente definida en biología evolutiva. Hay, sin duda, varias definiciones técnicas de aptitud, pero hay diferencias significativas entre ellas y se usan en diferentes contextos teóricos. No son indicativas de ninguna variable única de adaptabilidad (ver <Entity>Stearns</Entity> 1982, 1986).
+                            </p>
+
+                            <p>
+                                La idea de evolución enactiva puede detallarse más plenamente en los siguientes cuatro puntos:
+                            </p>
+
+                            <p>
+                                1. La unidad de evolución a cualquier nivel (genómico, linaje celular, individuo, grupo social, y así sucesivamente) es un sistema de desarrollo (en el sentido más amplio de una unidad propagativa incrustada en el medio).
+                                <br/>
+                                2. Los sistemas de desarrollo están compuestos de redes autónomas ecológicamente incrustadas, las cuales exhiben ricos repertorios de configuraciones autoorganizativas.
+                                <br/>
+                                3. Tales redes son analizables no en términos de optimalidad de diseño o ajuste al entorno, sino más bien en términos de viabilidad frente a un entorno impredecible o no especificado.
+                                <br/>
+                                4. A través del acoplamiento estructural reproductivo con sus entornos, estas redes generan selección en el sentido de la retención diferencial de variación heredada.
+                            </p>
+
+                            <p>
+                                El primer punto implica una postura pluralista sobre el debate acerca de las unidades de selección en la evolución. Muchas unidades anidadas de sistemas de desarrollo trabajan en paralelo. Evolucionan a través de la propagación diferencial y retención de variación heredada, y están sujetas a complejas interacciones "competitivas" y "cooperativas". Estas unidades anidadas incluyen genes ecológicamente incrustados, organismos y grupos sociales (ver <Entity>Sober</Entity> y <Entity>Wilson</Entity> 1998).
+                            </p>
+
+                            <p>
+                                Segundo, las partes propias de los sistemas de desarrollo no son "rasgos" en el sentido adaptacionista típico (el cual, de hecho, nunca ha sido bien definido), sino más bien redes autónomas. Una red autónoma, como hemos visto, es una red definida por su cierre organizacional y operacional en lugar de por flujo de información input-output y control externo. El paradigma es la célula autopoiética; otros ejemplos incluyen redes regulatorias genómicas, campos morfogenéticos en el organismo en desarrollo,<InteractiveFootnote id={20} onActivate={handleNote} /> redes inmunes y asambleas neuronales.
+                            </p>
+
+                            <p>
+                                Tercero, las redes autónomas funcionales están dotadas de la capacidad de ser viables frente a entornos impredecibles o no especificados. La idea básica detrás del concepto de viabilidad es que el comportamiento del sistema se caracteriza por un conjunto de trayectorias posibles en lugar de por una única óptima. La tarea del sistema es permanecer dentro de la zona de viabilidad (de lo contrario el sistema se desintegra) en lugar de seguir una trayectoria precisa determinada por el requisito de aptitud óptima (ver <Entity>Varela</Entity> y <Entity>Bourgine</Entity> 1991). En relación con la noción de aptitud, la noción de viabilidad puede vincularse a los llamados modelos de satisfacción (satisficing). El término satisfacción fue introducido por <Entity>Herbert Simon</Entity> (1955) para describir el proceso de tomar una solución que es subóptima pero suficientemente buena para la tarea en cuestión. <Entity>Stearns</Entity> describe su aplicabilidad a modelos de aptitud en teoría evolutiva de la siguiente manera:
+                            </p>
+
+                            <BlockQuote author="Stearns 1982, p. 13">
+                                En un contexto evolutivo, el bien es dado por alguna definición de aptitud, y el estilo de modelado determina qué se hace con esa definición. En un modelo de satisfacción, la búsqueda de un óptimo es reemplazada por la búsqueda de una regla de parada, de una forma de saber cuándo se ha encontrado una alternativa suficientemente buena. Tal modelo puede acomodar varias medidas de aptitud con dimensiones inconmensurables, pues estipula que la búsqueda se detiene cuando se ha encontrado una solución que es suficientemente buena a lo largo de todas las dimensiones. Si uno adopta esta visión, la tarea real se convierte en averiguar qué consideran los organismos como "suficientemente bueno".
+                            </BlockQuote>
+
+                            <p>
+                                Con este cambio de optimalidad a viabilidad, la selección natural ya no se asemeja a un tipo de "dirección externa" efectuada por fuerzas ambientales independientes. Más bien, se vuelve similar a un "filtro grueso" que admite cualquier estructura que sea suficientemente buena (tenga suficiente integridad) para la persistencia.<InteractiveFootnote id={21} onActivate={handleNote} /> Dicho de otra manera, muchas de las características morfológicas y fisiológicas de los organismos parecen estar grandemente subdeterminadas por los requisitos de supervivencia y reproducción en entornos cambiantes. Cuando la variación en tales características es "'notada' por la selección, el foco de la selección no es el rasgo per se sino el organismo completo, en última instancia vía su historia de vida" (<Entity>Wake</Entity>, <Entity>Roth</Entity> y <Entity>Wake</Entity> 1983, p. 220; ver también <Entity>Stearns</Entity> 1992). Sin embargo, yo iría más lejos e instaría a que la selección natural se conciba no como un filtro o restricción independiente sobre la viabilidad sino más bien como una consecuencia emergente del acoplamiento estructural entre sistemas autónomos y sus entornos. Este asunto nos lleva al cuarto punto concerniente a la evolución enactiva: que el acoplamiento estructural o danza interactiva entre sistemas autónomos reproductivos y sus entornos genera selección natural. Con esto quiero decir que la selección natural resulta de la "satisfacción" de trayectorias viables efectuada por las redes autónomas mismas en su acoplamiento estructural con sus entornos. El punto clave es que la selección natural no es una fuerza externa o restricción incidiendo sobre las redes desde un entorno independiente; más bien, es el resultado de la historia de codeterminación entre las redes y sus alrededores.
+                            </p>
+
+                            <p>
+                                Dada esta concepción de selección, podría argumentarse que el término mismo selección natural es indeseable debido a su asociación demasiado fácil con la idea de una fuerza externa actuando sobre objetos pasivos. Como sugiere <Entity>Goodwin</Entity>, quizás deberíamos "simplemente reemplazar el término selección natural con estabilización dinámica, la emergencia de estados estables en un sistema dinámico. Esto podría evitar alguna confusión sobre lo que implica la selección natural" (<Entity>Goodwin</Entity> 1994, p. 53). Admito tener cierta simpatía por esta recomendación, pero parece contraproducente abandonar el término. Una estrategia diferente es usar el término pero resituarlo dentro de un marco enactivo. Vale la pena recordar que el concepto de selección natural ha sido continuamente revisado y expandido con el aumento en el conocimiento biológico desde el tiempo de Darwin. Como observan <Entity>Weber</Entity> y <Entity>Depew</Entity>: "mientras que el núcleo estable de la tradición de investigación darwiniana es el concepto de selección natural, la selección natural misma ha sido concebida diferentemente a lo largo del tiempo en términos derivados en gran parte de ideas cambiantes sobre dinámica" (<Entity>Weber</Entity> y <Entity>Depew</Entity> 1996, p. 33; ver también <Entity>Weber</Entity> y <Entity>Depew</Entity> 1995).
+                            </p>
+
+                            <p>
+                                Sin embargo, esta observación da lugar a otras preguntas. ¿Cómo deberíamos concebir las teorías que enfatizan la autoorganización y la autonomía biológica en relación con la tradición darwiniana en su totalidad? ¿Es la idea de evolución enactiva continua con la tradición darwiniana o es post-darwiniana? Estas preguntas van al corazón de las diferentes visiones de la vida en la Tierra ofrecidas por la biología hoy; abordarlas sirve como una forma adecuada de concluir este capítulo y la Parte II.
+                            </p>
+
+                            {/* LAYING DOWN A PATH IN WALKING */}
+                            <SectionHeader id="laying-path" number="08" title="Haciendo Camino al Andar: Entre Necesidad y Contingencia" />
+
+                            <p>
+                                En su artículo "Selección Natural y Autoorganización", <Entity>Weber</Entity> y <Entity>Depew</Entity> ponen el dedo en el asunto central, que es actualmente muy debatido en biología y las ciencias de sistemas complejos:
+                            </p>
+
+                            <BlockQuote author="Weber y Depew 1996, p. 34">
+                                Si la selección natural continúa siendo concebida en formas recibidas, será necesariamente vista como compitiendo con el azar y la autoorganización. En consecuencia, la nueva dinámica puede verse como presagiando una crisis inminente en la tradición darwiniana, y como ofreciendo nuevas armas a los rivales históricos del darwinismo en teoría evolutiva, en particular la todavía vital tradición de "leyes de forma" que se remonta a Geoffroy de St. Hilaire... Si, por otro lado, reconocemos que siempre ha existido una conexión vital y vitalizante entre darwinismo y dinámica podemos llegar más fácilmente a ver que la selección natural, en lugar de competir con el azar y la autoorganización, es parte de un proceso complejo que involucra los tres elementos, y es en sí misma un fenómeno que ha evolucionado fuera del juego de los otros. En este caso, la dinámica compleja, lejos de presagiar el fin de la tradición darwiniana, habrá proporcionado una fuente tan vital para el desarrollo continuo del darwinismo como la dinámica lo ha hecho en el pasado.
+                            </BlockQuote>
+
+                            <p>
+                                La biología actual y la filosofía de la ciencia presentan una variedad de posiciones sobre este asunto. En un extremo están los estructuralistas de proceso—<Entity>Brian Goodwin</Entity> (1994) y <Entity>Gerry Webster</Entity> (<Entity>Webster</Entity> y <Entity>Goodwin</Entity> 1996), <Entity>Mae-Wan Ho</Entity> y <Entity>Peter Saunders</Entity> (1984), y a veces <Entity>Stuart Kauffman</Entity> (ver <Entity>Burian</Entity> y <Entity>Richardson</Entity> 1996). Este grupo mantiene, en la tradición de <Entity>Etienne Geoffroy Saint-Hilaire</Entity> y <Entity>D'Arcy Thompson</Entity>, que "leyes de forma" universales o principios generativos de orden proporcionan un mejor fundamento para entender estructuras biológicas que la selección natural y los linajes históricos (ver <Entity>Lambert</Entity> y <Entity>Hughes</Entity> 1988). En el otro extremo están los funcionalistas y adaptacionistas, como <Entity>John Maynard Smith</Entity> (1993), <Entity>Richard Dawkins</Entity> (1986) y <Entity>Daniel Dennett</Entity> (1995a). Sostienen que la mejor manera de estudiar sistemas biológicos (la manera inevitable, según Dennett) es buscar buen diseño y que la única explicación del buen diseño (adaptación compleja) es la selección natural, incluso si la selección resulta estar grandemente restringida por "movimientos forzados" en el "espacio de diseño" (<Entity>Dennett</Entity> 1995a), correspondiendo a lo que los estructuralistas ven como "leyes de forma" en "morfoespacio". Entre estos dos extremos yace una variedad de posiciones intermedias. <Entity>Stephen Jay Gould</Entity>, por ejemplo, abogó por el pluralismo tanto sobre las unidades de selección como las causas de evolución (que, además de selección natural, incluyen deriva genética, restricciones de desarrollo y extinciones masivas). También puso especial énfasis en el papel de la contingencia histórica en la evolución, y por tanto en la necesidad de formas de explicación histórico-narrativas (<Entity>Gould</Entity> 1989). En una vena diferente, <Entity>Kauffman</Entity> (1993), <Entity>Weber</Entity> y <Entity>Depew</Entity> (1995), y <Entity>Wimsatt</Entity> (1985) intentan sintetizar o casar autoorganización, azar y selección natural en la explicación evolutiva.
+                            </p>
+
+                            <p>
+                                De estos puntos de vista el más en desacuerdo con la idea de evolución enactiva es la posición funcionalista de que "la biología es ingeniería", como lo pone Dennett. Con esto quiere decir que los organismos son un tipo de entidad diseñada—"artefactos naturales", los llama—y que han de explicarse por la estrategia de "ingeniería inversa". A través de esta estrategia, uno intenta explicar una estructura asumiendo que hay una buena razón para su presencia y luego deducir su función dada esa suposición. Uno puede elegir interpretar organismos como artefactos de esta manera, y puede ser útil hacerlo en varias circunstancias.<InteractiveFootnote id={22} onActivate={handleNote} /> Debe recordarse, embargo, que esta noción del organismo como un artefacto natural es una heurística explicativa, no una categoría ontológica. Además, como heurística, es equivalente a tratar al organismo como un sistema heterónomo y descomponible. Por tanto necesita ser equilibrada por la perspectiva de autonomía.
+                            </p>
+
+                            <p>
+                                La interpretación de organismos como artefactos naturales deriva de la tradición británica de teología natural, en la cual Darwin estaba inmerso (ver <Entity>Ruse</Entity> 1996). El argumento central de esta tradición—el Argumento del Diseño—establece que así como una entidad bien organizada encontrada por azar, como un reloj encontrado tirado en el suelo, es más probable que sea el producto de diseño inteligente que de formación aleatoria, así también los seres vivos son más probables de ser el producto de un diseñador inteligente (a saber, Dios) que de formación aleatoria.<InteractiveFootnote id={23} onActivate={handleNote} /> Darwin aceptó la suposición clave del argumento de que hay una profunda semejanza entre organismos y entidades diseñadas o artefactos, como hacen Dawkins (1986) y Dennett (1995a, p. 68) hoy. La gran contribución de Darwin fue quitar la base del argumento haciendo el caso de que el diseño podría surgir sin un diseñador inteligente, como resultado de la selección natural. La tradición estructuralista en el Continente, embargo, remontándose a Kant, tenía una visión más sofisticada del diseño, en la cual la autonomía del organismo ocupaba el centro del escenario. En la tradición británica de teología natural, la autonomía del organismo pasa desapercibida: el organismo se asemeja a un reloj, una entidad cuyas partes no son recíprocamente la causa y efecto de la forma de la otra, y cuya función o propósito yace fuera de él en su usuario. Así el Argumento del Diseño presupone una concepción del organismo como un sistema heterónomo cuya finalidad es enteramente extrínseca.
+                            </p>
+
+                            <p>
+                                Kant, sin embargo, como vimos en el último capítulo, reconoció claramente que los seres vivos son fundamentalmente diferentes de las entidades diseñadas porque son seres autoorganizados cuya finalidad es en consecuencia intrínseca. Mientras que <Entity>William Paley</Entity>, en su <BookTitle>Natural Theology</BookTitle> (<Entity>Paley</Entity> 1996), construyó su argumento sobre la semejanza de un organismo con un reloj, Kant ya había declarado que el organismo es diferente a un reloj o cualquier otra entidad mecánica. En una entidad mecánica, las partes son las condiciones externas de la operación de la otra, y la causa de la máquina como un todo yace fuera de la máquina en su diseñador. En un organismo, sin embargo, las partes existen por medio de las otras, y la causa del todo reside dentro del sistema mismo. Es cierto que Kant eventualmente avanzó sus propias razones para la tesis del diseño inteligente. Para dar cuenta de la teleología natural del organismo, las únicas opciones que podía imaginar eran el "hilozoísmo" (toda la materia es inherentemente viva), que pensaba que era absurdo, y el teísmo, que postula un Ser inteligente que crea diseñadamente organismos como "propósitos naturales". El punto a enfatizar aquí es que Kant reconoció y formuló, probablemente por primera vez, la organización autónoma propia de los seres vivos. Este reconocimiento se trasladó a la tradición continental de estructuralismo y Morfología Racional en biología, pero nunca fue adecuadamente captado en la tradición funcionalista heredada y revolucionada por Darwin.
+                            </p>
+
+                            <p>
+                                La postura enactiva contra la afirmación de que la biología es solo ingeniería coincide así con la tradición estructuralista con respecto a la necesidad de una perspectiva de autonomía. (El enfoque enactivo no estaría de acuerdo, sin embargo, con el privilegio del estructuralista de leyes de forma ahistóricas sobre caminos históricos en la evolución.) Pasar de la afirmación de que los organismos pueden interpretarse desde una postura de ingeniería inversa a la afirmación de que son artefactos de diseño es confundir una heurística o marco interpretativo particular con los fenómenos mismos.<InteractiveFootnote id={24} onActivate={handleNote} /> Esos fenómenos también requieren una perspectiva de autonomía.
+                            </p>
+
+                            <p>
+                                El asunto en cuestión es qué hacer con la selección natural en relación con los principios generativos de autoorganización. Muchos adaptacionistas—los llamados Ultra-Darwinistas—respaldarían la descripción de Dennett de la selección natural como un "proceso algorítmico". Se supone que un algoritmo es un procedimiento paso a paso sin mente, formalmente definido, que garantiza producir un cierto resultado. Una de las propiedades definitivas de un algoritmo es que puede implementarse en cualquier sustrato material, siempre y cuando los poderes causales del sustrato permitan que los pasos del algoritmo procedan exactamente como se prescriben. Si la selección natural es algorítmica en este sentido, entonces es independiente de la implementación. Cualquier cosa puede evolucionar por selección natural siempre y cuando estén presentes replicación, variación y supervivencia diferencial. La "idea peligrosa" de Darwin (peligrosa porque altera creencias apreciadas) sería entonces solo esta idea de que la selección natural es un proceso algorítmico que sin mente da lugar al diseño. O para usar otra de las formulaciones de Dennett, la idea peligrosa de Darwin sería como el "ácido universal" de la fantasía infantil que come a través de todo, incluyendo el frasco en el que lo contendrías. Así también el principio de selección natural (como un proceso algorítmico) amenazaría con filtrarse fuera de la biología y extenderse tanto hacia abajo, dando cuenta de los orígenes de la vida e incluso del universo, y hacia arriba, dando cuenta de la conciencia humana, la cultura y la ética.
+                            </p>
+
+                            <p>
+                                El problema con una noción tan inflada de selección natural (además del problema de convertir el darwinismo en un tipo de religión sucedánea secular, como las versiones una vez populares e igualmente infladas de marxismo y freudianismo) es que se vuelve imposible dar una explicación plenamente naturalista de la selección natural. Es decir, prohíbe una explicación de la selección natural "como un fenómeno natural por derecho propio, cuya emergencia es el resultado esperado de procesos dinámicos y termodinámicos más básicos" (<Entity>Weber</Entity> y <Entity>Depew</Entity> 1996, p. 57).
+                            </p>
+
+                            <p>
+                                Según el punto de vista enactivo, la selección natural es una consecuencia emergente de la autopoiesis, no su causa. Este punto es tanto lógico como histórico. La selección natural requiere reproducción, pero la reproducción presupone unidades autopoiéticas que se reproducen. Por tanto la autopoiesis es lógicamente anterior a la selección natural. <Entity>Fontana</Entity>, <Entity>Wagner</Entity> y <Entity>Buss</Entity> expresan esta idea tanto sucinta como enérgicamente:
+                            </p>
+
+                            <BlockQuote author="Fontana, Wagner y Buss 1994, p. 212">
+                                Darwin postuló la evolución como un efecto de lo que básicamente equivale a ser una fuerza: selección natural. La selección natural es una declaración sobre cinética: En una población, aquellas variantes de organismos se acumularán que sean más capaces de sobrevivir y reproducirse que otras. Si hay variación continua y si la variación es (al menos parcialmente) heredable, entonces la operación continua de la cinética de selección conducirá a la modificación de organizaciones vivas. A uno le gustaría entender, sin embargo, cómo surge la organización en primer lugar. La teoría de Darwin no está destinada a responder esto. De hecho, esto es aparente tras la inspección de la estructura formal de la teoría. El neodarwinismo trata sobre la dinámica de alelos dentro de poblaciones, determinada por mutación, selección y deriva. Una teoría basada en la dinámica de alelos, individuos y poblaciones debe necesariamente asumir la existencia previa de estas entidades. La selección no puede establecerse hasta que haya entidades para seleccionar. La selección no tiene poder generativo; meramente prescinde de lo "no apto", identificando así el aspecto cinético de un proceso evolutivo. El problema principal en evolución es uno de construcción: entender cómo surgen las organizaciones sobre las cuales se basa el proceso de selección natural, y entender cómo la mutación puede dar lugar a novedad organizacional, es decir, fenotípica. Una solución a este problema permitirá distinguir entre aquellas características de organizaciones que son necesarias y aquellas que son coincidentes. Tal esfuerzo requiere una teoría de organización. Sin embargo, la biología carece de una teoría de organización. La necesidad de un marco conceptual para el estudio de la organización yace en el corazón de problemas no resueltos tanto en ontogenia como en filogenia.
+                            </BlockQuote>
+
+                            <p>
+                                La biología puede tener los comienzos de una teoría de organización en la forma de la teoría de la autopoiesis (la cual <Entity>Fontana</Entity>, <Entity>Wagner</Entity> y <Entity>Buss</Entity> reconocen como precursora de su propio proyecto) y otras teorías relacionadas de organización biológica, como las de <Entity>Kauffman</Entity> (1995, 2000) y <Entity>Rosen</Entity> (1991, 2000). En cualquier caso, el punto es que la selección natural no puede extenderse hacia abajo (como supone el Ultra-Darwinista) para dar cuenta de la vida en su forma autopoiética mínima porque la selección natural debe presuponer la organización autopoiética.
+                            </p>
+
+                            <p>
+                                Los Ultra-Darwinistas estarían en desacuerdo. Si la selección natural es un proceso algorítmico, declaran, entonces es independiente de la implementación y por tanto puede bajarse un paso al nivel químico. El resultado es que la organización autopoiética de la célula podría ser explicable como la consecuencia de la selección natural operando sobre una población de moléculas replicativas. Pero el problema es que está lejos de ser obvio que el sustrato sea neutral en el sentido algorítmico. En otras palabras, no está claro que "selección" tenga un significado unívoco que sea aplicable al nivel biológico de organismos reproductores y al nivel químico de replicación molecular. La selección al nivel biológico es selección de los reproductivamente aptos; la selección al nivel químico es la selección de los energéticamente eficientes. De manera similar, los conceptos especie y población al nivel biológico se refieren a individuos genealógicamente relacionados en tiempo y espacio, mientras que al nivel químico se refieren a tipos de estructura molecular.
+                            </p>
+
+                            <p>
+                                Las moléculas no son individuos en el sentido autopoiético. De hecho, no son individuos en absoluto sino agregados o colecciones estadísticas. Como nota <Entity>Fleischaker</Entity>: "las moléculas no están 'relacionadas' entre sí como lo están las células, y no pueden estarlo: mientras que son entidades físicas, las moléculas son 'individuos' estadísticos y no genealógicos—las moléculas no tienen linaje así que no redistribuyen su sustancia, no se reproducen a sí mismas, y no tienen características heredables... Si no somos cuidadosos o autoconscientes en nuestro uso de estos términos, contrabandearemos conceptos darwinianos (celulares, reproductivos) en dominios no darwinianos (moleculares, replicativos) donde no pueden tener significado" (<Entity>Fleischaker</Entity> 1994, p. 41).
+                            </p>
+
+                            <p>
+                                Esto nos lleva al punto histórico sobre la prioridad de la autopoiesis con respecto a la selección natural. El fenómeno histórico que tengo en mente es el origen de la vida en la Tierra. La emergencia de la célula autopoiética es un evento central en el origen de la vida. Marca la transición a la autonomía básica y así de la no-vida a la vida. La selección natural, en su sentido darwiniano de selección de los reproductivamente aptos, no existe antes de esta transición. Entra en juego una vez que se manifiestan la reproducción y la variación heredable en linajes de sistemas autopoiéticos. <Entity>Weber</Entity> y <Entity>Depew</Entity> presentan claramente la lógica básica de este punto (aunque no específicamente en términos de la teoría de la autopoiesis):
+                            </p>
+
+                            <BlockQuote author="Weber y Depew 1996, pp. 51-52">
+                                Es demasiado fácil olvidar que la vida se origina en un mundo en el que el fenómeno de la selección natural propiamente dicha no existe, por definición. Pues la selección natural, como la entendemos ahora, requiere capacidades replicativas, de variación y transicionales que pueden adscribirse solo a sistemas que definimos como vivos. Es una señal de que algo ha salido mal, en consecuencia, cuando el problema se concibe como uno de "arranque" (bootstrapping)—encontrar una manera para que macromoléculas primitivas que retienen información adquieran mayor fidelidad replicativa sin tener que depender de las enzimas catalíticas complejas de las que su fidelidad depende ahora, pero que son ellas mismas productos del proceso mismo cuyos orígenes están en cuestión... [No dudamos] que el proceso que llevó a la emergencia de la vida fue un proceso de selección. Pero los imperativos físicos de autoorganización y disipación requieren que el tipo particular de proceso de selección que lleva a la emergencia de sistemas vivos fuera al principio la selección de lo estable (selección física) y de lo eficiente (selección química) en lugar de lo reproductivamente apto (selección biológica). Planteado correctamente, el problema del origen de la vida es observar el fenómeno de la selección natural emerger de estas formas más básicas de selección. Desde esta perspectiva, puede ser más fructífero mirar a sistemas protocelulares primitivos como los sitios de la dinámica que lleva a la vida, o al menos favorecer la coevolución entre proteínas y ácidos nucleicos replicantes sobre una estrategia de "replicadores primero". Las formas más básicas de selección que se obtienen en tales sitios son inseparables de la amplificación de eventos estocásticos por las tendencias y propensiones autoorganizativas de sistemas abiertos y estructuras disipativas.
+                            </BlockQuote>
+
+                            <p>
+                                En lugar de hablar de selección física y química, preferiría decir que un cierto tipo de estabilización dinámica—la emergencia de procesos autoprouctores estables en un sistema bioquímico delimitado—es el prerrequisito de la selección natural. La selección natural a su vez entra en juego como una consecuencia emergente de sistemas autopoiéticos reproductivos habiendo adquirido la capacidad de variar y de pasar los recursos de desarrollo necesarios para reconstruir y propagar sus ciclos de vida. La selección natural así entendida es un proceso que emerge de la autopoiesis y en consecuencia no puede verse como un proceso algorítmico neutral al sustrato o independiente de la implementación que puede ser sacado de su base en biología.
+                            </p>
+
+                            <p>
+                                Según el punto de vista que estoy proponiendo, la autoorganización y la selección natural no son opuestas sino que son en realidad dos aspectos entretejidos de un solo proceso de evolución enactiva. Ideas similares han sido avanzadas en años recientes, notablemente por <Entity>Stuart Kauffman</Entity> (1993, 1995). Su expresión de estas ideas toma diferentes formas, con el resultado de que su punto de vista está sujeto a interpretación. A veces enfatiza la emergencia de estados estables genéricos a través de la autoorganización, a la manera del estructuralismo de proceso. A veces trata la autoorganización como el fondo estable o hipótesis nula contra la cual ha de medirse la selección. A veces ve la selección natural como una restricción sobre la autoorganización (un filtro grueso sobre lo que produce); en otros momentos, ve la autoorganización como una restricción sobre la fuerza de la selección.
+                            </p>
+
+                            <p>
+                                Esta oscilación parece derivar del mismo tipo de pensamiento dicotómico que es el blanco de la teoría de sistemas del desarrollo: la autoorganización y la selección natural se conciben dicotómicamente como lo interno y lo externo, y la noción de restricción es consecuentemente cosificada en un factor existente independientemente impuesto ya sea desde dentro o desde fuera (ver <Entity>Oyama</Entity> 1992a). El primer paso fuera de este impasse es recordar que lo que cuenta como una restricción es relativo al marco de referencia explicativo de uno.<InteractiveFootnote id={25} onActivate={handleNote} /> El siguiente paso es reconceptualizar la autoorganización y la selección natural como recíprocamente proceso y producto con respecto al otro. (El movimiento aquí es análogo a la reconceptualización de naturaleza y crianza como proceso y producto en la teoría de sistemas del desarrollo.) De esta manera, la autoorganización y la selección se convierten en dos aspectos entretejidos de un solo proceso evolutivo de codeterminación organismo-entorno. Este tipo de entretejido es claro en los modelos de coevolución de Kauffman, en los cuales las interacciones entre poblaciones se modelan en términos de paisajes de aptitud acoplados. En estos paisajes las poblaciones cambian no solo sus propios entornos sino los entornos de las demás.
+                            </p>
+
+                            <p>
+                                Una vez que se da este paso, queda claro que oponer la necesidad de la autoorganización a la contingencia de la historia no tiene sentido. Hay principios necesarios de organización, pero la manera particular en que se realizan o encarnan es siempre contingente a los caminos evolutivos y de desarrollo que la historia hace disponibles.
+                            </p>
+
+                            <p>
+                                Como asunto empírico, por supuesto, la interacción de necesidad y contingencia en la historia de la vida en la Tierra no está clara. <Entity>Gould</Entity> ha argumentado en su libro <BookTitle>Wonderful Life</BookTitle> que la evolución es en gran parte un asunto de contingencia. Quiere decir que es dependiente de eventos antecedentes particulares cuyas consecuencias son típicamente impredecibles: "el 'desfile' de la evolución [es] una serie de eventos asombrosamente improbable, bastante sensata en retrospectiva y sujeta a explicación rigurosa, pero totalmente impredecible y bastante irrepetible" (<Entity>Gould</Entity> 1989, p. 14). Al final de su libro se nos dice que la existencia del filo al que pertenecemos—el filo Chordata, cuyo nombre proviene de la notocorda o varilla dorsal endurecida que evolucionó en nuestra médula espinal—es un accidente evolutivo, "una contingencia de 'solo historia'". Es un resultado del hecho de que el cordado registrado más temprano, <Entity>Pikaia gracilens</Entity>, sobrevivió a las extinciones masivas del período Cámbrico: "Rebobina la cinta de la vida a los tiempos de Burgess [el tiempo de los restos fósiles del esquisto de Burgess en Columbia Británica], y déjala reproducirse de nuevo. Si Pikaia no sobrevive en la repetición, somos borrados de la historia futura—todos nosotros, desde el tiburón, al petirrojo, al orangután" (<Entity>Gould</Entity> 1989, p. 323).
+                            </p>
+
+                            <p>
+                                En contraste, <Entity>Simon Conway Morris</Entity>, en su libro sobre el esquisto de Burgess, argumenta que "la contingencia es inevitable, pero no notable" debido a la evolución convergente. Afirma que el mismo rasgo (como el vuelo) evoluciona independientemente en diferentes especies: "En lo que estamos interesados no es en el origen, destino o suerte de un linaje particular, sino en la probabilidad de la emergencia de una propiedad particular, digamos, la conciencia. Aquí la realidad de la convergencia sugiere que la cinta de la vida, para usar la metáfora de Gould, puede correrse tantas veces como queramos y en principio la inteligencia seguramente emergerá. En nuestro planeta la vemos en moluscos (pulpo) y mamíferos (Hombre)" (<Entity>Conway Morris</Entity> 1998, pp. 13-14). Conway Morris está argumentando desde una perspectiva adaptacionista, pero otros han hecho un punto similar en el contexto de modelos informáticos de sistemas autoorganizados, en los cuales la "cinta" puede reproducirse no solo dos veces sino una y otra vez. Así <Entity>Fontana</Entity> y <Entity>Buss</Entity> (1994) han ideado un modelo basado en una química abstracta que está dotada de una dinámica simple. Han mostrado que ciertas propiedades genéricas robustas surgen repetidamente en el mundo modelo, tales como organizaciones complejas de automantenimiento de tipo autopoiético, las cuales pueden a su vez combinarse jerárquicamente para producir nuevas organizaciones que contienen a las de nivel inferior como componentes.
+                            </p>
+
+                            <p>
+                                Como cuestión empírica, la interacción entre contingencia y necesidad en la historia de la vida permanecerá sin resolver por algún tiempo. Lo que puede decirse, sin embargo, es que es conceptualmente inútil oponer las dos. Contingencia y necesidad forman otra de esas polaridades que se encuentran en el núcleo mismo de la vida—como ser y no-ser, yo y otro, libertad y necesidad, forma y materia, como Jonas ha descrito tan perspicazmente. De hecho, las descripciones de Jonas de estas polaridades, hechas desde la perspectiva del "estudio empático de las muchas formas de vida" (1966, p. 2), coheren bien con las perspectivas científicas de la biología autopoiética, la teoría de sistemas del desarrollo, evo-devo y la teoría de sistemas complejos. Estas perspectivas nos llevan a esperar, sobre la base de la necesidad legal, que los eventos son a menudo altamente contingentes unos de otros con consecuencias impredecibles.
+                            </p>
+
+                            <p>
+                                La idea de evolución enactiva representa un intento de transmitir esta interacción de necesidad y contingencia. Ni simplemente continua con la tradición darwiniana ni una desviación radical de ella, la idea representa un intento de inscribir los principios de autoorganización autónoma propios de los seres vivos en las narrativas evolutivas de la herencia darwiniana. "Enacción" connota el desempeño o realización en acción de una línea de vida. Evoca la imagen de seres vivos trazando caminos históricos a través de sus propias dinámicas y las de los entornos a los que están estructuralmente acoplados. La evolución enactiva es el hacer camino al andar.
+                            </p>
+
+                        </article>
+                        
+                        {/* --- CONTENT END --- */}
+
+                        <footer className="mt-20 pt-10 border-t border-slate-800 text-center text-slate-500 text-sm mb-10">
+                            <p>© 2007 Harvard University Press. Edición Digital Inmersiva para propósitos académicos.</p>
+                        </footer>
+                    </main>
+
+                    <TooltipModal activeNote={activeNote} onClose={() => setActiveNote(null)} />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
