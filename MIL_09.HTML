@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Mente en la Vida | Evan Thompson - Cap. 9</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#151e2e',
+                            950: '#020617', // Deep Dark Base
+                        },
+                        cyan: {
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                            900: '#164e63',
+                        },
+                        amber: {
+                            500: '#f59e0b',
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    typography: (theme) => ({
+                        DEFAULT: {
+                            css: {
+                                color: theme('colors.slate.300'),
+                            },
+                        },
+                    }),
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #020617;
+            color: #cbd5e1;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+
+        .text-justify-hyphens {
+            text-align: justify;
+            hyphens: auto;
+            -webkit-hyphens: auto;
+        }
+        
+        /* Smooth text rendering */
+        .antialiased {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Selection color */
+        ::selection {
+            background: #06b6d4; /* cyan-500 */
+            color: #000;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-cyan-500 selection:text-slate-950">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, useScroll, useSpring, AnimatePresence } = window.Motion;
+
+        // --- ICONS ---
+        const Menu = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+            </svg>
+        );
+
+        const X = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
+        );
+
+        const Info = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+            </svg>
+        );
+
+        const ImageIcon = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+            </svg>
+        );
+
+        // --- DATA STRUCTURE ---
+
+        const BOOK_DATA = {
+            title: "La Mente en la Vida",
+            author: "Evan Thompson",
+            chapter: "Capítulo Nueve",
+            toc: [
+                { title: "Inicio", id: "start" },
+                { title: "Subjetividad y Autoconciencia Corporal", id: "subjectivity-bodily-self-consciousness" },
+                { title: "Enfoque Sensoriomotor Dinámico", id: "dynamic-sensorimotor-approach" }
+            ]
+        };
+
+        const FOOTNOTES = {
+            1: "Para discusiones sobre las diferentes clases de alma en Aristóteles, ver Nussbaum y Rorty 1992.",
+            2: "El argumento de Nagel se dirige contra la teoría de la identidad psicofísica.",
+            4: "Ver Heidegger 1985 para una discusión sobre la in-existencia.",
+            5: "La metilación del ADN implica la adición de un grupo metilo a una de las bases de nucleótidos (citosina).",
+            8: "Varela conecta la intencionalidad biológica mínima con el proceso de creación de sentido (sense-making).",
+            9: "Ver Rowlands 2003 para una discusión sobre el estatus trascendental de la conciencia.",
+            10: "Ver Thompson y Cosmelli 2011 para una crítica detallada del escenario del cerebro en una cubeta.",
+            11: "Ver Cosmelli y Thompson 2010.",
+            12: "Ver Noë 2004 para una defensa del enfoque sensoriomotor."
+        };
+
+        // --- COMPONENTS ---
+
+        const ScrollProgress = () => {
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+
+            return (
+                <motion.div
+                    className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50"
+                    style={{ scaleX }}
+                />
+            );
+        };
+
+        const Navigation = ({ title, author, onToggleMenu }) => (
+            <motion.header 
+                initial={{ y: -100 }}
+                animate={{ y: 0 }}
+                className="fixed top-0 left-0 right-0 h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 z-40 flex items-center justify-between px-6"
+            >
+                <div className="flex flex-col">
+                    <span className="text-slate-100 font-serif font-semibold text-lg tracking-tight">{title}</span>
+                    <span className="text-cyan-500 text-xs uppercase tracking-widest">{author}</span>
+                </div>
+                <button 
+                    onClick={onToggleMenu}
+                    className="p-2 hover:bg-slate-800 rounded-full transition-colors group"
+                >
+                    <Menu className="w-6 h-6 text-slate-300 group-hover:text-cyan-400" />
+                </button>
+            </motion.header>
+        );
+
+        const Sidebar = ({ isOpen, onClose, toc }) => (
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={onClose}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        />
+                        <motion.aside 
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed top-0 right-0 h-full w-80 bg-slate-900 border-l border-slate-800 z-50 shadow-2xl p-6 overflow-y-auto"
+                        >
+                            <div className="flex justify-between items-center mb-10">
+                                <h3 className="text-white font-serif text-xl italic">Índice</h3>
+                                <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <nav className="space-y-4">
+                                {toc.map((item, idx) => (
+                                    <a 
+                                        key={idx} 
+                                        href={`#${item.id}`} 
+                                        onClick={onClose}
+                                        className="block text-slate-400 hover:text-cyan-400 hover:translate-x-2 transition-all duration-200 text-sm border-l-2 border-transparent hover:border-cyan-500 pl-3"
+                                    >
+                                        {item.title}
+                                    </a>
+                                ))}
+                            </nav>
+                        </motion.aside>
+                    </>
+                )}
+            </AnimatePresence>
+        );
+
+        const Concept = ({ children }) => (
+            <span className="text-amber-500 font-medium hover:text-amber-400 transition-colors cursor-help" title="Concepto Clave">
+                {children}
+            </span>
+        );
+
+        const Entity = ({ children }) => (
+            <span className="text-cyan-400 font-medium hover:text-cyan-300 transition-colors" title="Autor/Entidad">
+                {children}
+            </span>
+        );
+
+        const BookTitle = ({ children }) => (
+            <span className="text-white italic font-serif">
+                {children}
+            </span>
+        );
+
+        const BlockQuote = ({ children, author }) => (
+            <div className="my-10 relative group">
+                <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-500 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                <blockquote className="pl-6 italic text-amber-500 text-lg leading-relaxed font-serif">
+                    "{children}"
+                </blockquote>
+                {author && <div className="mt-2 pl-6 text-sm text-cyan-500 font-medium">— {author}</div>}
+            </div>
+        );
+
+        const InteractiveFootnote = ({ id, onActivate }) => (
+            <sup 
+                onClick={(e) => { e.stopPropagation(); if(onActivate) onActivate(id); }}
+                className={`text-cyan-500 font-bold ${onActivate ? 'cursor-pointer hover:text-cyan-300 hover:scale-110' : ''} transition-transform inline-block px-0.5`}
+            >
+                [{id}]
+            </sup>
+        );
+
+        const SectionHeader = ({ id, number, title }) => (
+            <div id={id} className="pt-24 mb-10 scroll-mt-24">
+                <div className="flex items-center gap-4 mb-4">
+                    <span className="h-px w-12 bg-cyan-900"></span>
+                    <span className="text-cyan-500 uppercase tracking-widest text-xs font-semibold">{number}</span>
+                </div>
+                <h2 className="text-3xl md:text-4xl text-white font-serif font-bold leading-tight">{title}</h2>
+            </div>
+        );
+
+        const TooltipModal = ({ activeNote, onClose }) => (
+            <AnimatePresence>
+                {activeNote && (
+                    <motion.div 
+                        initial={{ y: 50, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 50, opacity: 0 }}
+                        className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl bg-slate-900/95 backdrop-blur-xl border border-slate-700 p-6 rounded-2xl shadow-2xl z-50"
+                    >
+                        <div className="flex justify-between items-start gap-4">
+                            <div className="flex gap-3">
+                                <Info className="w-5 h-5 text-cyan-500 flex-shrink-0 mt-1" />
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <span className="font-bold text-white mr-2">Nota {activeNote}:</span>
+                                    {FOOTNOTES[activeNote]}
+                                </p>
+                            </div>
+                            <button onClick={onClose} className="text-slate-500 hover:text-white">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        );
+
+        // --- MAIN APP ---
+
+        const App = () => {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [activeNote, setActiveNote] = useState(null);
+
+            // Close tooltip on scroll
+            useEffect(() => {
+                const handleScroll = () => { if (activeNote) setActiveNote(null); };
+                window.addEventListener("scroll", handleScroll);
+                return () => window.removeEventListener("scroll", handleScroll);
+            }, [activeNote]);
+
+            // Helper to handle footnote clicks only if they exist in our data
+            const handleNote = (id) => {
+                if (FOOTNOTES[id]) {
+                    setActiveNote(id);
+                }
+            };
+
+            return (
+                <div className="bg-slate-950 min-h-screen pb-32" onClick={() => setActiveNote(null)}>
+                    <ScrollProgress />
+                    
+                    <Navigation 
+                        title={BOOK_DATA.title} 
+                        author={BOOK_DATA.author} 
+                        onToggleMenu={() => setIsMenuOpen(true)} 
+                    />
+                    
+                    <Sidebar 
+                        isOpen={isMenuOpen} 
+                        onClose={() => setIsMenuOpen(false)} 
+                        toc={BOOK_DATA.toc} 
+                    />
+
+                    <main className="w-full max-w-4xl mx-auto px-6 md:px-12 relative z-10 pt-20">
+                        
+                        {/* --- CONTENT START --- */}
+                        
+                        <div id="start" className="mb-16">
+                             <div className="flex flex-col items-start gap-2 mb-6">
+                                <span className="text-cyan-500 text-sm uppercase tracking-widest font-semibold">Capítulo Nueve</span>
+                                <h1 className="text-5xl md:text-6xl font-serif font-bold text-white leading-tight">Subjetividad Sensoriomotora</h1>
+                            </div>
+                            <div className="h-px w-full bg-gradient-to-r from-cyan-900 to-transparent mb-12"></div>
+                        </div>
+
+                        <article className="text-lg md:text-xl text-slate-300 leading-relaxed space-y-8 text-justify-hyphens font-sans font-light">
+                            
+                            <p className="first-letter:text-7xl first-letter:font-serif first-letter:text-white first-letter:mr-3 first-letter:float-left">
+                                UNA DE LAS IDEAS RECTORAS de este libro es que la mente humana está encarnada en nuestro organismo completo y en el mundo. Nuestras vidas mentales implican tres modos permanentes y entrelazados de actividad corporal—autorregulación, acoplamiento sensoriomotor, e interacción intersubjetiva (<Entity>Thompson</Entity> y <Entity>Varela</Entity> 2001). La autorregulación es esencial para estar vivo y ser sintiente. Es evidente en la emoción y el sentimiento, y en condiciones tales como estar despierto o dormido, alerta o fatigado, hambriento o saciado. El acoplamiento sensoriomotor con el mundo se expresa en la percepción, la emoción y la acción. La interacción intersubjetiva es la cognición y la experiencia cargada afectivamente de uno mismo y del otro. El cerebro humano es crucial para estos tres modos de actividad, pero también es recíprocamente formado y estructurado por ellos a múltiples niveles a lo largo de la vida. Si cada mente humana individual emerge de estos modos extendidos de actividad, si está en consecuencia encarnada e incrustada en ellos como una "singularidad dinámica"—un nudo o enredo de procesos recurrentes y reentrantes centrados en el organismo (<Entity>Hurley</Entity> 1998)—entonces la "hipótesis asombrosa" del neurorreduccionismo—de que eres "nada más que un paquete de neuronas" (<Entity>Crick</Entity> 1994, p. 2) o que "tú eres tus sinapsis" (<Entity>LeDoux</Entity> 2002)—es tanto un error categorial como biológicamente incorrecta. Por el contrario, eres un sujeto corporal vivo de experiencia y un ser mental intersubjetivo.
+                            </p>
+
+                            <p>
+                                Este capítulo se centra en el segundo de estos modos de actividad corporal—la actividad sensoriomotora dinámica. Anteriormente en este libro vimos que la lógica fundamental del sistema nervioso, su "neurológica" básica, es acoplar el movimiento y una corriente de actividad sensorial de una manera circular continua. El sistema nervioso vincula superficies sensoriales (órganos de los sentidos y terminaciones nerviosas) y efectores (músculos, glándulas) dentro del cuerpo. De esa manera, el sistema nervioso integra al organismo, manteniéndolo unido como una unidad móvil, como un agente sensoriomotor autónomo. El sistema nervioso establece y mantiene un ciclo sensoriomotor, mediante el cual lo que uno siente depende directamente de cómo uno se mueve, y cómo uno se mueve depende directamente de lo que uno siente. Una manifestación de nuestra autonomía biológica es que nos encontramos con el entorno en nuestros propios términos sensoriomotores.
+                            </p>
+
+                            <p>
+                                En años recientes, un nuevo enfoque sensoriomotor dinámico para entender la conciencia perceptual ha surgido en la ciencia cognitiva y la filosofía de la mente (<Entity>Hurley</Entity> 1998; <Entity>Noë</Entity> 2004; <Entity>O'Regan</Entity> y <Entity>Noë</Entity> 2001a). En lugar de apelar a las propiedades intrínsecas de la actividad neural para entender la experiencia perceptual, este enfoque mira a las relaciones sensoriomotoras dinámicas entre la actividad neural, el cuerpo y el mundo. Al enriquecer así nuestra concepción del sustrato biológico de la experiencia perceptual, este enfoque ofrece nuevos recursos para abordar la brecha explicativa. Mi objetivo en este capítulo es recurrir a estos recursos para avanzar en el problema cuerpo-cuerpo—el problema de relacionar el cuerpo vivido subjetivamente de uno con el organismo o cuerpo vivo que uno es.
+                            </p>
+
+                            {/* SUBJECTIVITY AND BODILY SELF-CONSCIOUSNESS */}
+                            <SectionHeader id="subjectivity-bodily-self-consciousness" number="01" title="Subjetividad y Autoconciencia Corporal" />
+
+                            <p>
+                                El problema cuerpo-cuerpo es una forma no cartesiana de reformular la brecha explicativa entre la mente consciente y el cuerpo físico. Como hemos visto, en el problema cuerpo-cuerpo, la brecha ya no es entre dos ontologías radicalmente diferentes ("mental" y "física") sino entre dos tipos dentro de una tipología de encarnación (cuerpo vivido subjetivamente y cuerpo vivo). La brecha también ya no es absoluta porque para formularla necesitamos hacer referencia común a la vida o al ser vivo.
+                            </p>
+
+                            <p>
+                                El problema cuerpo-cuerpo concierne a la relación entre el cuerpo de uno tal como uno lo vive subjetivamente y el cuerpo de uno como un organismo en el mundo. Este problema es a su vez parte del problema general de la relación entre uno mismo y el mundo, pues el cuerpo vivo de uno es parte del mundo y el cuerpo de uno tal como uno lo vive subjetivamente es parte del sentido de sí mismo de uno. Podemos así hacer dos preguntas interrelacionadas: ¿cómo se relaciona el cuerpo vivido de uno con el mundo, y cómo se relaciona consigo mismo? Abordar estas preguntas es una forma de acercarse a la subjetividad sensoriomotora del cuerpo.
+                            </p>
+
+                            <p>
+                                La relación entre el sí mismo de uno y el mundo abarca la relación entre el sí mismo de uno y el cuerpo de uno. Descartes, como vimos en el último capítulo, señaló que el sí mismo de uno no está localizado en el cuerpo de uno como un piloto dentro de un barco sino que está "muy estrechamente unido" y "entremezclado" con él, de modo que los dos "forman una unidad". Sin embargo, el sí mismo y el cuerpo permanecen dos, no uno. Merleau-Ponty, en contraste, rechaza este dualismo. El sí mismo de uno no está meramente encarnado sino que es corporal: "Pero no estoy frente a mi cuerpo, estoy en mi cuerpo, o más bien soy mi cuerpo" (1962, p. 150). Sin embargo, Merleau-Ponty también se niega a entender la proposición "yo soy mi cuerpo" de una manera materialista, como significando que yo soy (o mi sí mismo es) nada más que un objeto físico complejo. En cambio, mantiene la posición original de que soy un sujeto corporal. De esta manera, rechaza los conceptos tradicionales de mente y cuerpo, sujeto y objeto, así como las ontologías que implican (dualismo, materialismo e idealismo) (ver <Entity>Priest</Entity> 1998, pp. 56-57).
+                            </p>
+
+                            <p>
+                                Para apreciar la originalidad de la posición de Merleau-Ponty, necesitamos considerar su concepción de la subjetividad corporal. Podemos comenzar con la comparación que hace Merleau-Ponty de la unidad del cuerpo con la unidad de una obra de arte. Introduce esta idea a través de un contraste entre la unidad perceptual de un objeto físico a través de sus variaciones de perspectiva y la unidad experiencial del propio cuerpo. Un objeto físico, como un cubo, está ante mí o frente a mí, y presenta varias facetas para mí; lo que une perceptualmente estas facetas como facetas de uno y el mismo cubo es la ley de su variación de perspectiva. Mi cuerpo, sin embargo, no está ante mí o frente a mí, y lo que une las diversas experiencias que tengo de mi cuerpo no es una ley o regla de variación de perspectiva, sino más bien un "fondo de significación" perceptual y motor integrado (1962, p. 150). Como explica Merleau-Ponty: "Lo que une las 'sensaciones táctiles' en la mano y las vincula a las percepciones visuales de la misma mano, y a las percepciones de otras áreas corporales, es un cierto estilo que informa mis gestos manuales e implica a su vez un cierto estilo de movimientos de los dedos, y contribuye, en última instancia, a un cierto porte corporal" (ibíd.). Es esta elucidación de la subjetividad corporal de uno como constituida por un cierto estilo o porte lo que lleva a Merleau-Ponty a comparar el cuerpo con una obra de arte:
+                            </p>
+
+                            <BlockQuote author="Merleau-Ponty, 1962, pp. 150-151">
+                                El cuerpo ha de compararse, no a un objeto físico, sino más bien a una obra de arte... Una novela, poema, cuadro u obra musical son individuos, es decir, seres en los que la expresión es indistinguible de la cosa expresada, su significado, accesible solo a través del contacto directo, siendo irradiado sin cambio de su situación temporal y espacial. Es en este sentido que nuestro cuerpo es comparable a una obra de arte. Es un nexo de significados vividos, no la ley para un cierto número de términos covariantes. Una cierta experiencia táctil sentida en la parte superior del brazo significa una cierta experiencia táctil en el antebrazo y el hombro, junto con un cierto aspecto visual del mismo brazo, no porque las diversas percepciones táctiles entre sí, o las táctiles y visuales, estén todas involucradas en un brazo inteligible, como las diferentes facetas de un cubo están relacionadas con la idea de un cubo, sino porque el brazo visto y el brazo tocado, como los diferentes segmentos del brazo, realizan juntos una y la misma acción.
+                            </BlockQuote>
+
+                            <p>
+                                Este pasaje puede ayudarnos a apreciar que cuando Merleau-Ponty afirma, "yo soy mi cuerpo", no quiere decir que yo como sujeto sea simplemente mi cuerpo considerado como un objeto. Más bien, soy mi cuerpo de una manera no diferente a la forma en que una obra de arte es lo que expresa. Mi cuerpo es un ser expresivo, y lo que expresa es mi subjetividad.
+                            </p>
+
+                            <p>
+                                Esta concepción expresiva de la subjetividad corporal apunta hacia el capítulo posterior de Merleau-Ponty sobre "El Cuerpo como Expresión y Habla" (en su <BookTitle>Fenomenología de la Percepción</BookTitle>). Al principio de ese capítulo, en una nota al pie, Merleau-Ponty llama la atención sobre dos sentidos de "ser"—un "sentido débil de existencia como una cosa, o el de predicación", y un "sentido existencial más fuerte de pertenecer a..., o asumir (soy mi cuerpo, soy mi vida)" (1962, p. 174). Claramente, la declaración "yo soy mi cuerpo", tal como Merleau-Ponty la entiende, debe tomarse en el sentido existencial. Además, cuando entendemos la declaración de esta manera, se vuelve compatible con una cierta forma en que podemos entender la declaración "tengo un cuerpo". Merleau-Ponty llama la atención sobre los dos sentidos de "ser" mientras discute la distinción de Gabriel Marcel entre "ser" y "tener". Marcel usa "ser" en el sentido existencial más rico, mientras que "tener" "designa una relación propietaria (tengo una casa, tengo un sombrero)" (1962, p. 174). Esta relación propietaria es externa, pues mis posesiones son especificables independientemente de mí. Merleau-Ponty, sin embargo, señala que hay otro sentido de "tener"—"para la relación que el sujeto tiene con el término en el cual se proyecta (tengo una idea, tengo un deseo, tengo miedos)" (ibíd.). Aquí la relación no es externa sino interna, pues lo que tengo no es especificable independientemente de mí. De hecho, me "pertenece" o lo "asumo", en el sentido existencial. El vínculo entre estos sentidos en los que "soy un cuerpo" y "tengo un cuerpo" es precisamente la relación expresiva entre mi ser corporal y mi subjetividad.
+                            </p>
+
+                            <p>
+                                De acuerdo con esta visión original, que pretende "dejar atrás, de una vez por todas, la dicotomía sujeto-objeto tradicional" (1962, p. 174), Merleau-Ponty mantiene que la relación entre el sí mismo y el mundo no es la de sujeto a objeto sino más bien lo que llama, siguiendo a Heidegger, ser-en-el-mundo. Para un sujeto corporal no es posible especificar qué es el sujeto en abstracción del mundo, ni es posible especificar qué es el mundo en abstracción del sujeto: "El mundo es inseparable del sujeto, pero de un sujeto que no es nada más que un proyecto del mundo, y el sujeto es inseparable del mundo, pero de un mundo que el sujeto mismo proyecta" (1962, p. 430). Pertenecer al mundo de esta manera significa que nuestra forma principal de relacionarnos con las cosas no es ni puramente sensorial y reflexiva, ni cognitiva o intelectual, sino más bien corporal y hábil. Merleau-Ponty llama a este tipo de intencionalidad corporal "intencionalidad motora" (1962, p. 110, 137). Su ejemplo es agarrar o tomar intencionalmente un objeto. Al agarrar algo nos dirigimos hacia ello, y así nuestra acción es intencional. Pero la acción no se refiere a la cosa representándola por sus características objetivas y determinadas; se refiere a ella pragmáticamente a la luz de un objetivo motor contextual efectuado por el cuerpo de uno (1962, p. 138). Al levantar una taza de té para beber de ella, la identifico no por su ubicación objetiva en el espacio sino por su relación egocéntrica con mis manos, y la agarro a la luz del objetivo de beber de ella.
+                            </p>
+
+                            <p>
+                                Al mismo tiempo, las cosas en mis alrededores, como tazas de té, teclas de computadora y manijas de puertas, tienen sentidos o significados motores, lo que Gibson (1979) llama "affordances" (posibilidades de acción), que provocan acciones apropiadas. Las cosas en el mundo provocan acciones intencionales adecuadas y proyectos motores del sujeto (el sujeto es un proyecto del mundo), pero las cosas en el mundo tienen sentidos motores o affordances específicos solo en relación con las habilidades motoras del sujeto (el mundo es proyectado por el sujeto). Este circuito cuerpo-entorno de intencionalidad motora pertenece a lo que Merleau-Ponty llama el "arco intencional" que subtiende la vida de la conciencia, el cual integra sensibilidad y motilidad, percepción y acción (1962, p. 136). El arco intencional y el ser-en-el-mundo en general no son ni puramente de primera persona (subjetivos) ni puramente de tercera persona (objetivos), ni mentales ni físicos. Son estructuras existenciales anteriores a y más fundamentales que estas abstracciones. Por esta razón, Merleau-Ponty mantiene que pueden "efectuar la unión de lo 'psíquico' y lo 'fisiológico'" (p. 80) en un análisis existencial de la subjetividad corporal (y su colapso en la patología).
+                            </p>
+
+                            <p>
+                                En el arco intencional que subtiende la vida de la conciencia, el cuerpo de uno está presente "no como un objeto entre todos los otros objetos, sino como el vehículo del ser en el mundo" (1962, p. 139). Pero si el cuerpo de uno es el vehículo del ser en el mundo y es de esta manera una condición de posibilidad para la revelación del mundo, ¿cómo o de qué manera puede él también ser dado a la experiencia? Esta pregunta indaga sobre cómo uno se experimenta a sí mismo como un sujeto corporal o cómo un cuerpo vivido se experimenta a sí mismo como un cuerpo vivido.
+                            </p>
+
+                            <p>
+                                Una forma de abordar la autoconciencia corporal es trabajar desde el mundo, que trasciende al yo corporal, hacia el cuerpo como el correlato de su presencia perceptual. Un tema familiar de la fenomenología, que se remonta a Husserl, es que el cuerpo vivido es una presuposición de la presencia perceptual del mundo. Las cosas están situadas perceptualmente en virtud de la orientación que tienen hacia nuestros cuerpos en movimiento y percepción. Levantar la taza de té es agarrarla desde un cierto ángulo y sostenerla y manipularla de una cierta manera. Escuchar la radio es oírla desde un cierto punto de vista, que cambia a medida que uno se mueve por la habitación. Ver la botella de vino en la mesa es verla desde una cierta perspectiva y verla como dentro o más allá del alcance de uno. Si algo aparece en perspectiva, entonces el sujeto a quien aparece debe estar espacialmente relacionado con ello. Estar espacialmente relacionado con algo requiere que uno esté encarnado. Decir que percibimos un perfil dado de algo, mientras somos conscientes de que tiene otros perfiles ausentes pero posiblemente presentes, significa que cualquier perfil que percibimos contiene referencias a estos otros perfiles; cada perfil implica a los otros. Estas referencias (noemáticas) corresponden a nuestra capacidad (noética) de intercambiar un perfil por otro a través de nuestro propio movimiento libre, inclinando nuestras cabezas, manipulando un objeto en nuestras manos, caminando alrededor de algo, y así sucesivamente.
+                            </p>
+
+                            <p>
+                                El punto crucial sobre el cuerpo vivido en este contexto es doble. Primero, el cuerpo funciona como el "punto cero", "punto nulo de orientación", o "aquí" indexical absoluto en relación con el cual las cosas aparecen en perspectiva. Segundo, el cuerpo vivido no puede reducirse a otro objeto intencional más de percepción sino que siempre excede este tipo de intencionalidad. El cuerpo vivido se manifiesta en la experiencia perceptual, no principalmente como un objeto intencional sino como un "yo puedo" implícito y práctico de movimiento e intencionalidad motora (<Entity>Husserl</Entity> 1989, pp. 266-277). Husserl contrasta este "yo puedo" con el famoso "yo pienso" de Descartes, pues la estructura intencional de la subjetividad corporal no es yo pienso un cierto pensamiento (ego cogito cogitatum), sino más bien yo puedo y me muevo de tal y cual manera (1989, pp. 159, 228, 273; ver también <Entity>Sheets-Johnstone</Entity> 1999a, pp. 134-135, 230-232). De esta manera entre otras, la experiencia perceptual implica una conciencia no dirigida a objetos e implícita del cuerpo vivido de uno, una autoconciencia corporal intransitiva y prerreflexiva.
+                            </p>
+
+                            <p>
+                                Uno puede, por supuesto, también experimentar el cuerpo de uno como un objeto, por ejemplo, mirándolo directamente o a su reflejo en un espejo. En tales casos, uno está tratando con lo que se ha llamado la "imagen corporal" consciente en contraste con el "esquema corporal" inconsciente (<Entity>Gallagher</Entity> 1986a, 1995). La imagen corporal es el cuerpo como un objeto intencional de conciencia. Es conciencia del cuerpo-como-objeto (<Entity>Legrand</Entity> 2006). En la imagen corporal, el cuerpo se experimenta como propio del sujeto que experimenta, y la imagen es típicamente una representación parcial en tanto que la conciencia consciente usualmente atiende solo a una parte o área del cuerpo a la vez. El esquema corporal, sin embargo, no es un objeto intencional de conciencia o una representación parcial del cuerpo, sino más bien un conjunto integrado de procesos sensoriomotores dinámicos que organizan la percepción y la acción de una manera subpersonal y no consciente.
+                            </p>
+
+                            <p>
+                                Esta distinción entre esquema corporal e imagen corporal deja fuera una forma fundamental de experiencia corporal, a saber, la autoconciencia corporal prerreflexiva (<Entity>Legrand</Entity> 2006; <Entity>Zahavi</Entity> 1999, pp. 98, 240). El esquema corporal no está fenomenológicamente disponible para el sujeto: "El esquema corporal... no es la percepción de 'mi' cuerpo; no es la imagen, la representación, o incluso la conciencia marginal del cuerpo. Más bien, es precisamente el estilo que organiza el cuerpo mientras funciona en comunión con su entorno" (<Entity>Gallagher</Entity> 1986b, p. 549). La conciencia de uno de su cuerpo, sin embargo, no se limita a la imagen corporal, ni es la imagen corporal la forma más fundamental de conciencia corporal. Por el contrario, la mayor parte del tiempo el cuerpo de uno no está presente como un objeto intencional sino que se experimenta de una manera implícita, tácita y prerreflexiva. Este tipo de experiencia es conciencia del cuerpo-como-sujeto. Corresponde a la relación del cuerpo vivido consigo mismo, es decir, a la experiencia de uno de su cuerpo como percibiendo y actuando en lugar de como percibido. Sartre (1956, p. liii) describe este tipo de autoconciencia como "no posicional" o "no tética" porque no pone el cuerpo de uno como un objeto; Merleau-Ponty la llama prerreflexiva. Autores en la tradición filosófica analítica la han descrito como una forma no observacional de autoconciencia (<Entity>Shoemaker</Entity> 1968, 1984).
+                            </p>
+
+                            <p>
+                                El término prerreflexivo es útil para nuestros propósitos porque tiene un sentido tanto lógico como temporal. La experiencia prerreflexiva es lógicamente anterior a la reflexión, pues la reflexión presupone algo sobre lo que reflexionar; y es temporalmente anterior a la reflexión, pues aquello sobre lo que uno reflexiona es una experiencia hasta ahora no reflejada.
+                            </p>
+
+                            <p>
+                                La autoconciencia corporal prerreflexiva es evidente en el tacto; no solo sentimos las cosas que tocamos, sino que nos sentimos tocándolas y tocados por ellas. Cuando levanto una taza de té caliente, siento la superficie caliente y lisa de la porcelana y el calor penetrando mis dedos, y estas sensaciones perduran por un tiempo después de que he puesto la taza de nuevo en la mesa. Tal experiencia corporal ofrece no solo la experiencia de eventos físicos que relacionan el cuerpo de uno con las cosas, sino también la experiencia de eventos sensoriales que relacionan el cuerpo vivido subjetivamente de uno consigo mismo. Usualmente estos eventos sensoriales son aquellos en los que el cuerpo de uno no se siente a sí mismo explícitamente. Al levantar la taza de té, vivo a través del calor en mis dedos, pero el objeto perceptual es la taza de té, no yo mismo. Pero el cuerpo de uno también puede sentirse a sí mismo explícitamente, como cuando una mano toca la otra. En este caso, el que toca es la cosa tocada, y la cosa tocada se siente a sí misma como la que está siendo tocada.
+                            </p>
+
+                            <p>
+                                Los fenomenólogos han reflexionado sobre este tipo de autoexperiencia corporal por una serie de razones importantes. Hay un vínculo dinámico de percepción externa y sentimiento interno, de modo que uno encuentra la propia sintiencia corporal de uno directamente. El cuerpo de uno se muestra como una cosa material, pero una animada desde dentro por la sensación y la motilidad (<Entity>Husserl</Entity> 1989, p. 153). Esta forma de autoconciencia corporal hace vívidamente aparente el estatus único del cuerpo vivido como un sujeto físico:
+                            </p>
+
+                            <BlockQuote author="Merleau-Ponty 1964, p. 166">
+                                Cuando mi mano derecha toca mi izquierda, soy consciente de ella como una "cosa física". Pero en el mismo momento, si lo deseo, un evento extraordinario tiene lugar: aquí está mi mano izquierda también comenzando a percibir mi derecha. es wird Leib, es empfindet [se convierte en cuerpo, siente]. La cosa física se vuelve animada. O, más precisamente, permanece lo que era (el evento no la enriquece), pero un poder exploratorio viene a descansar sobre o habitar en ella. Así me toco tocando: mi cuerpo realiza "una especie de reflexión". En él, a través de él, no hay solo la relación unidireccional del que percibe con lo que percibe. La relación se invierte, la mano tocada se convierte en la mano que toca, y estoy obligado a decir que el sentido del tacto aquí se difunde en el cuerpo—que el cuerpo es una "cosa que percibe", un "sujeto-objeto".
+                            </BlockQuote>
+
+                            <p>
+                                Sin embargo, las experiencias de tocar y ser tocado nunca coinciden absolutamente. Las dos manos nunca son simultáneamente tocadas y tocando en relación la una con la otra, sino que alternan sus roles espontáneamente (<Entity>Merleau-Ponty</Entity> 1962, p. 93). Esta alternancia espontánea es una expresión de la relación sensoriomotora dinámica del cuerpo con su propia subjetividad, y este tipo de autorrelación distingue el cuerpo de uno de otras cosas reveladas a uno en la percepción (<Entity>Husserl</Entity> 1960, p. 97; <Entity>Merleau-Ponty</Entity> 1962, p. 93).
+                            </p>
+
+                            <p>
+                                En esta experiencia también podemos vislumbrar cómo la subjetividad sensoriomotora puede implicar un tipo de intersubjetividad sensoriomotora. Un proceso dinámico de "auto-otredad" tiene lugar en esta experiencia, de modo que el cuerpo de uno se vuelve otro para sí mismo. Cuando mi mano izquierda toca mi derecha (o cuando experimento mi cuerpo de otras maneras), surge la posibilidad de experimentarme a mí mismo de una manera que anticipa tanto la forma en que otro sujeto corporal me experimentaría como la forma en que yo experimentaría al otro. La autoconciencia corporal está de esta manera condicionada por una forma de otredad o alteridad. Según Husserl, esta dinámica de auto-otredad es una precondición crucial para la empatía, en el sentido amplio de ser capaz de reconocer a otros como sujetos como uno mismo sobre la base de su presencia corporal (<Entity>Zahavi</Entity> 2003a, p. 113). Es precisamente el estatus doble del cuerpo de ser un "sujeto-objeto", un cuerpo vivido subjetivamente y un cuerpo vivo físico, así como el juego dinámico entre ipseidad (yoidad) y alteridad (otredad) inherente en esta ambigüedad, lo que fundamenta la capacidad de uno de reconocer otros cuerpos como sujetos corporales como uno mismo. Volveré a estas ideas en el último capítulo de este libro.
+                            </p>
+
+                            <p>
+                                Estas breves reflexiones fenomenológicas son suficientes para mostrar que la conciencia involucra al cuerpo de una manera doble única. Uno experimenta el cuerpo de uno como sujeto y objeto. El cuerpo de uno es el objeto intencional de la conciencia de uno cuando uno atiende a uno u otro aspecto o parte de él. El contenido de este tipo de conciencia corporal corresponde a la imagen corporal o el cuerpo-como-objeto de uno. La conciencia corporal no puede reducirse a este tipo de experiencia, embargo, porque uno también experimenta prerreflexiva y no intencionalmente el cuerpo-como-sujeto de uno mientras experimenta objetos en el mundo (el cuerpo-como-objeto de uno incluido). El desafío para cualquier explicación científica de la conciencia es preservar este carácter doble único de la autoconciencia corporal. Por tanto, cualquier explicación científica debe cumplir con estos dos criterios: debe dar cuenta de las formas en que el cuerpo de uno está intencionalmente dirigido hacia el mundo, y debe dar cuenta de una forma de autoconciencia que no implique la identificación del cuerpo de uno como un objeto.
+                            </p>
+
+                            <p>
+                                <Entity>Dorothée Legrand</Entity> (2006) ha trabajado para dar una explicación de la autoconciencia corporal que cumpla con estos criterios. Ella argumenta que la conciencia corporal en el caso de la conciencia de acción no es reducible ni a la conciencia de las intenciones de uno de actuar ni a la propiocepción entendida como un modo interno de identificación del cuerpo. Por tanto, la conciencia corporal, concluye, no puede basarse ni en mecanismos eferentes ni aferentes solos. La conciencia corporal consiste en experimentar el cuerpo de uno como un lugar de convergencia de percepción y acción, y por tanto depende de una coincidencia de información sensorial y motora, de modo que la percepción y la acción sean coherentes (ver también <Entity>Hurley</Entity> 1998, pp. 140-143). Debe haber una coincidencia específica entre (1) la intención de actuar, (2) las consecuencias motoras de esta intención, incluyendo la guía de los movimientos corporales durante la acción ejecutada, y (3) las consecuencias sensoriales de esta acción, incluyendo tanto la propiocepción como la exterocepción.
+                            </p>
+
+                            <p>
+                                Una implicación importante de esta explicación es que los correlatos neuronales de la autoconciencia permanecerán explicativamente opacos con respecto a la vida mental mientras los entendamos solo en términos de sus propiedades neuronales intrínsecas y no en el contexto sensoriomotor dinámico del cuerpo como un todo (<Entity>Hurley</Entity> y <Entity>Noë</Entity> 2003; <Entity>Legrand</Entity> 2003; <Entity>Thompson</Entity> y <Entity>Varela</Entity> 2001). Este punto nos lleva a las explicaciones sensoriomotoras dinámicas de la experiencia perceptual y su importancia para el problema cuerpo-cuerpo.
+                            </p>
+
+                            {/* THE DYNAMIC SENSORIMOTOR APPROACH */}
+                            <SectionHeader id="dynamic-sensorimotor-approach" number="02" title="El Enfoque Sensoriomotor Dinámico para la Conciencia Perceptual" />
+
+                            <p>
+                                En un artículo reciente sobre plasticidad neuronal y el enfoque sensoriomotor dinámico para la experiencia perceptual, <Entity>Susan Hurley</Entity> y <Entity>Alva Noë</Entity> (2003) distinguen tres tipos diferentes de brecha explicativa para la conciencia. El primero lo llaman la brecha absoluta: "¿Por qué deberían los procesos neuronales estar acompañados por alguna experiencia consciente en absoluto?" (<Entity>Hurley</Entity> y <Entity>Noë</Entity> 2003, p. 132). El segundo y tercer tipos son brechas comparativas. La brecha comparativa intermodal, por un lado, es la cuestión de por qué una cierta actividad neuronal da lugar a experiencia visual, por ejemplo, en lugar de experiencia auditiva. La brecha comparativa intramodal, por otro lado, es la cuestión de por qué una cierta actividad neuronal da lugar a experiencia como de rojo, digamos, en lugar de verde. Hurley y Noë presentan el enfoque sensoriomotor dinámico como preocupado por estas dos brechas comparativas, no la brecha absoluta. En otros escritos, <Entity>J. Kevin O'Regan</Entity> y <Entity>Noë</Entity> (2001b) presentan el enfoque sensoriomotor como abordando también la brecha absoluta (ver también <Entity>Myin</Entity> y <Entity>O'Regan</Entity> 2002). Miraré primero el enfoque sensoriomotor para las brechas comparativas y luego examinaré el enfoque sensoriomotor para la brecha absoluta.
+                            </p>
+
+                            <p>
+                                Hurley y Noë abordan las brechas comparativas examinando casos de plasticidad neuronal. Distinguen entre dos formas en que las cualidades de la experiencia perceptual pueden verse afectadas por cambios en la relación normal entre estimulación sensorial y actividad neuronal.
+                            </p>
+
+                            <p>
+                                1. "Dominancia cortical" ocurre cuando "la activación cortical desde una nueva fuente de entrada periférica da lugar a experiencia con un carácter cualitativo normalmente o previamente asociado con la actividad cortical en esa área" (<Entity>Hurley</Entity> y <Entity>Noë</Entity> 2003, p. 133). Por ejemplo, en ciertos pacientes que experimentan miembros fantasmas, una caricia en la cara también se siente como una caricia en el brazo fantasma. Según Ramachandran, quien ha estudiado a tales pacientes, la explicación para esta experiencia es que después de la amputación, el área táctil de la corteza somatosensorial que sirve a la cara se hace cargo del área del brazo desaferenciada (<Entity>Ramachandran</Entity> y <Entity>Blakeslee</Entity> 1998; <Entity>Ramachandran</Entity> y <Entity>Hirstein</Entity> 1998). Cuando esta área del brazo recibe estimulación de su nueva fuente no estándar (la cara), retiene su expresión cualitativa normal como una sensación de toque-al-brazo. Así esta área cortical "domina" en el sentido de que "retiene su 'signo natural' o expresión cualitativa normal" (<Entity>Hurley</Entity> y <Entity>Noë</Entity> 2003, p. 133).
+                            </p>
+
+                            <p>
+                                2. "Deferencia cortical" ocurre cuando "la actividad cortical en un área dada parece tomar su expresión cualitativa del carácter de su fuente de entrada no estándar o nueva" (ibíd.). Cuando personas ciegas congénitas leen Braille, por ejemplo, la sensación táctil de lectura es mediada por actividad en la corteza visual (<Entity>Sadato</Entity> et al. 1996). En este caso, la expresión cualitativa de la actividad en la corteza visual aparentemente "defiere" a su nueva fuente de entrada.
+                            </p>
+
+                            <p>
+                                Estos casos de dominancia y deferencia cortical plantean tipos de preguntas de brecha explicativa. ¿Por qué la actividad en la corteza somatosensorial o corteza visual se siente de una manera en lugar de otra? ¿Por qué en el caso del miembro fantasma hay sensación de toque-al-brazo en lugar de solo sensación de toque-a-la-cara? ¿Por qué en lectores de Braille ciegos congénitos la actividad en la corteza visual se experimenta como sensación táctil en lugar de sensación visual? "¿Qué explica si la expresión cualitativa va de una manera o de la otra en casos particulares? ¿Qué explica por qué la actividad en una cierta área cortical se experimenta como esto en lugar de como aquello?" (<Entity>Hurley</Entity> y <Entity>Noë</Entity> 2003, p. 139).
+                            </p>
+
+                            <p>
+                                La hipótesis sensoriomotora dinámica es que "los cambios en la expresión cualitativa han de explicarse no solo en términos de las propiedades de las entradas sensoriales y de la región cerebral que las recibe, sino en términos de patrones dinámicos de interdependencia entre estimulación sensorial y actividad encarnada" (<Entity>Hurley</Entity> y <Entity>Noë</Entity> 2003, pp. 145-146). Según el enfoque sensoriomotor dinámico, en particular la "teoría de contingencia sensoriomotora" de <Entity>O'Regan</Entity> y <Entity>Noë</Entity> (2001a), la experiencia perceptual no es un evento o estado interno del cerebro sino una actividad hábil constituida en parte por el conocimiento implícito y práctico del perceptor de la forma en que la estimulación sensorial varía con el movimiento. Diferentes sentidos tienen diferentes patrones de dependencia sensoriomotora, y los perceptores tienen un dominio implícito y hábil de estas diferencias. En la visión, por ejemplo, cuando los ojos giran, la estimulación sensorial en la retina se desplaza y distorsiona de maneras precisas, determinadas por el tamaño del movimiento ocular, la forma esférica de la retina, la densidad variable de los fotorreceptores retinianos de la fóvea a la parafóvea, y así sucesivamente. Cuando el cuerpo se mueve hacia adelante, el patrón de flujo óptico en la retina se expande: cuando el cuerpo se mueve hacia atrás, se contrae. Cuando los ojos se cierran durante los parpadeos, la estimulación se vuelve uniforme (la imagen retiniana se pone en blanco). Estas dependencias sensoriomotoras son distintivamente visuales, mientras que las características de la audición y el tacto tienen estructuras diferentes. Percibir es confiar implícita y fluidamente en estos patrones de dependencias sensoriomotoras.
+                            </p>
+
+                            <p>
+                                Hurley y Noë usan este marco para explicar la distinción dominancia/deferencia. Toman la deferencia como la norma y la dominancia como la excepción. Hay otros casos de deferencia además de la sensación táctil siendo mediada por la corteza visual en lectores de Braille competentes. Por ejemplo, neuronas auditivas pueden desarrollar propiedades visuales como resultado del redireccionamiento neuronal quirúrgico de la estimulación visual a la corteza auditiva en hurones recién nacidos (<Entity>Roe</Entity> et al. 1990, 1992; <Entity>Sur</Entity>, <Entity>Angelecci</Entity> y <Entity>Sharma</Entity> 1999). Otro ejemplo viene de los sistemas de sustitución táctil-visual (TVSS), en los cuales la entrada visual a una cámara que produce estimulación táctil en la piel conduce a un tipo de "visión táctil" una vez que los sujetos son capaces de controlar los movimientos de la cámara (<Entity>Bach-y-Rita</Entity> 2002). Tales casos no pueden explicarse simplemente por referencia a qué áreas corticales particulares se activan porque el redireccionamiento endógeno o exógeno de las vías sensoriales-corticales cambia los patrones sensoriomotores dinámicos en los que esas áreas corticales participan.
+                            </p>
+
+                            <p>
+                                De acuerdo con esta explicación, se predice deferencia cuando los patrones sensoriomotores son sistemáticamente transformados por redireccionamiento, y el agente es capaz de aprender los nuevos patrones y sus relaciones con los antiguos (como sucede, por ejemplo, con TVSS). Cuando cualquiera de estas condiciones no se cumple, sin embargo, entonces se predice dominancia. La segunda condición no se cumple cuando el agente es pasivo o incapaz de moverse. Por ejemplo, TVSS provoca experiencias cuasi-visuales de ser capaz de percibir la forma y el movimiento de objetos a distancia solo si el sujeto es capaz de ejercer control activo de la cámara y así integrarla en su repertorio sensoriomotor. Si, sin embargo, la estimulación sensorial redirigida da lugar solo a actividad cortical "colgante"—actividad que no está integrada en un patrón sensoriomotor dinámico—entonces la primera condición no se cumple y de nuevo se predice dominancia. Por ejemplo, las sensaciones de miembro fantasma pueden surgir cuando un área particular de la corteza somatosensorial es tomada por un área adyacente como resultado de la desaferenciación. Si tal actividad colgante pudiera reintegrarse en un patrón sensoriomotor dinámico, entonces se predeciría que la dominancia daría paso a la deferencia. Este tipo de reintegración parece ocurrir parcial y temporalmente en los experimentos de caja de espejo de Ramachandran, en los cuales al paciente se le da retroalimentación visual ilusoria de su mano intacta cuando se le instruye mover su mano fantasma (<Entity>Ramachandran</Entity> y <Entity>Blakeslee</Entity> 1998).
+                            </p>
+
+                            <p>
+                                El psicólogo <Entity>Nicholas Humphrey</Entity>, en sus escritos sobre la brecha explicativa, ha comentado que "no puede haber esperanza de progreso científico mientras continuemos escribiendo la identidad [estado mental m = estado cerebral b] de tal manera que los términos de la mente y los términos del cerebro sean patentemente inconmensurables... Necesitaremos trabajar en ambos lados para definir los estados mentales y estados cerebrales relevantes en términos de conceptos que realmente tengan doble moneda—siendo igualmente aplicables a lo mental y a lo material" (<Entity>Humphrey</Entity> 2000, pp. 7, 10).
+                            </p>
+
+                            <p>
+                                Esta estrategia de trabajar en ambos lados de la brecha es precisamente la estrategia perseguida por el enfoque sensoriomotor dinámico. En lugar de mirar a las propiedades intrínsecas de la actividad neuronal—por ejemplo, los patrones de disparo de neuronas en un área cortical dada—este enfoque mira a las relaciones sensoriomotoras dinámicas entre la actividad neuronal, el cuerpo y el mundo. El concepto que tiene doble moneda para este enfoque es el concepto de actividad sensoriomotora dinámica. En el lado mental, las experiencias perceptuales se explican como formas de actuar, constituidas en parte por el conocimiento implícito y práctico del perceptor, o dominio hábil, de la relación entre experiencia sensorial y movimiento (<Entity>Noë</Entity> 2004; <Entity>O'Regan</Entity> y <Entity>Noë</Entity> 2001a). Los sentidos tienen diferentes patrones característicos de dependencia sensoriomotora, y los perceptores tienen un dominio implícito y hábil de estas diferencias.
+                            </p>
+
+                            <p>
+                                Es importante notar que esta explicación del lado mental no identifica la experiencia perceptual con la ocurrencia de las dependencias sensoriomotoras mismas, sino en cambio con el perceptor ejerciendo su dominio hábil de los patrones invariantes de dependencias sensoriomotoras. Contrariamente al conductismo, la experiencia perceptual, siendo en parte constituida por conocimiento endógeno (dominio hábil), media entre la estimulación sensorial y el comportamiento motor. Contrariamente al cognitivismo, sin embargo, la experiencia no interviene de una manera causal lineal entre la "entrada" sensorial y la "salida" motora. La estimulación sensorial no causa experiencia en nosotros, que a su vez causa nuestro comportamiento, porque "la actividad hábil (consistente en comportamiento y estimulación sensorial) es la experiencia" (<Entity>O'Regan</Entity> y <Entity>Noë</Entity> 2001b, p. 1015). En otras palabras, como una actividad hábil del animal o persona completa, la experiencia perceptual emerge de las interacciones continuas y recíprocas (no lineales) de procesos sensoriales, motores y cognitivos, y es así constituida por comportamiento motor, estimulación sensorial y conocimiento práctico. En el lado del cerebro, los estados neuronales se describen no al nivel de sus propiedades neurofisiológicas intrínsecas o como meros correlatos neuronales de estados mentales, sino más bien en términos de cómo participan en patrones sensoriomotores dinámicos que involucran al organismo activo completo.
+                            </p>
+
+                            <p>
+                                El enfoque sensoriomotor dinámico se entiende mejor no como un intento de cerrar las brechas explicativas comparativas en un sentido reduccionista, sino en cambio como un intento de tender un puente sobre estas brechas desplegando nuevos recursos teóricos para entender la experiencia perceptual y los procesos neuronales en un marco sensoriomotor coherente y abarcador. Para cada modalidad de experiencia perceptual—ver, oír, tocar, y así sucesivamente—hay un patrón correspondiente de interdependencia sensoriomotora que es constitutivo de esa modalidad. Lo que es experimentar el mundo perceptualmente es ejercer el dominio corporal o saber-hacer de uno de ciertos patrones de dependencia sensoriomotora entre el cuerpo que siente y se mueve de uno y el entorno. Si distintos patrones sensoriomotores son de esta manera constitutivos de ver, oír, y así sucesivamente, entonces no tiene sentido preguntar, "¿Por qué estos patrones sensoriomotores van con lo que es ver, en lugar de oír o tocar?" Por contraste, uno siempre puede plantear este tipo de pregunta con respecto a la actividad neuronal en un área cerebral particular: "¿Por qué debería la actividad cerebral en esta región de la corteza ir con lo que es ver, en lugar de oír o tocar?" La forma de satisfacer el hambre detrás de este tipo de pregunta es dar una explicación que incruste la actividad neuronal local en su contexto sensoriomotor dinámico. Por estas razones, los patrones sensoriomotores (abarcando la actividad neuronal endógena) parecen más prometedores que los meros correlatos neuronales de la conciencia (<Entity>Hurley</Entity> y <Entity>Noë</Entity> 2003, pp. 146-147; <Entity>Noë</Entity> y <Entity>Thompson</Entity> 2004a, 2004b).
+                            </p>
+
+                            <p>
+                                Al trabajar para tender un puente sobre las brechas explicativas comparativas, el enfoque sensoriomotor contribuye al problema cuerpo-cuerpo. Sin embargo, la explicación de Hurley y Noë no aborda completamente el núcleo del problema cuerpo-cuerpo—el problema de la sintiencia. Admiten que usar un enfoque sensoriomotor dinámico para tender un puente sobre las brechas explicativas comparativas no es tender un puente sobre la brecha absoluta de por qué hay experiencia en absoluto. Su objetivo es explicar por qué el agente tiene experiencia como esta en lugar de como aquella, pero no explicar qué hace al agente un sujeto consciente en primer lugar. De hecho, su explicación presupone la sintiencia porque comienzan desde la suposición de que el agente ya tiene experiencia de un tipo u otro.
+                            </p>
+
+                            <p>
+                                O'Regan y Noë (2001b), sin embargo, argumentan que el enfoque sensoriomotor también es capaz de explicar por qué el agente tiene experiencia en absoluto, y Myin y O'Regan (2002) repiten este argumento. Su propuesta es relevante para el problema cuerpo-cuerpo. Examinar su explicación servirá para indicar por qué y cómo el enfoque sensoriomotor dinámico debería combinarse con tanto una explicación enactiva de la mismidad autónoma como una explicación fenomenológica de la autoconciencia corporal.
+                            </p>
+
+                            <p>
+                                La estrategia de O'Regan, Noë y Myin es dar una explicación sensoriomotora de ciertas propiedades características de la experiencia sensorial. Estas propiedades son "continuidad" (ongoingness), "presencia forzosa", "inefabilidad" y "subjetividad", y se supone que constituyen el carácter fenoménico de la experiencia consciente:
+                            </p>
+
+                            <BlockQuote author="Myin y O'Regan 2002, p. 30">
+                                Continuidad significa que una experiencia se experimenta como ocurriéndome a mí, o pasándome a mí aquí, ahora, como si estuviera habitado por algún proceso continuo como el zumbido de un motor. Presencia forzosa es el hecho de que, contrariamente a otros estados mentales como mi conocimiento de historia, por ejemplo, una experiencia sensorial se impone sobre mí desde el exterior, y está presente para mí sin que yo haga ningún esfuerzo mental, y de hecho está mayormente fuera de mi control voluntario. Inefabilidad indica que siempre hay más en la experiencia de lo que podemos describir en palabras. Finalmente, subjetividad indica que la experiencia es, de una manera inalienable, mi experiencia. Es tuya o mía, suya o de ella, y no puede tenerse sin que alguien la tenga. Pero subjetividad también indica que la experiencia es algo para mí, algo que me ofrece una oportunidad para actuar o pensar con respecto a lo que sea que se experimente.
+                            </BlockQuote>
+
+                            <p>
+                                La continuidad y la presencia forzosa han de explicarse en términos de "corporalidad" (bodiliness) y "agarrabilidad" (grabbiness), dos características complementarias de la operación de sistemas sensoriomotores. Estas características distinguen la conciencia perceptual de la conciencia no perceptual o pensamiento (<Entity>O'Regan</Entity> y <Entity>Noë</Entity> 2001b). Corporalidad es la dependencia de la estimulación sensorial de los movimientos corporales de uno. Cuanto mayor es el cambio a la estimulación sensorial como resultado del movimiento corporal, mayor el grado de corporalidad. Así nuestra experiencia visual de un libro que está frente a nosotros tiene un alto grado de corporalidad, comparado con nuestra conciencia no perceptual de un libro en la habitación de al lado. Parpadear, movimientos oculares, y movimientos de cabeza y torso modulan la forma en que el libro afecta el aparato sensorial de uno, pero no hacen diferencia al libro en la habitación de al lado. Agarrabilidad es la tendencia de algo a atraer la atención de uno. La visión tiene alta agarrabilidad, pues cambios repentinos en la escena visual alrededor de nosotros atraen inmediatamente nuestra atención. Así movimientos o cambios en el libro frente a nosotros afectarán inmediatamente nuestro aparato sensorial de una manera que atrae la atención, mientras que movimientos del libro en la habitación de al lado no lo harán. Se supone que corporalidad y agarrabilidad explican la presencia forzosa y la continuidad de la siguiente manera:
+                            </p>
+
+                            <BlockQuote author="O'Regan y Noë 2001b, p. 1012">
+                                (1) el libro se fuerza sobre nosotros porque cualquier movimiento del libro causa que dirijamos nuestra atención (nuestros recursos de procesamiento) a él. (2) El más ligero movimiento de las partes relevantes de nuestros cuerpos modifica la estimulación sensorial en relación con el libro. Metafóricamente, es como si estuviéramos en contacto con el libro... [P]odemos explicar la continuidad de una manera similar. El sentido de un estado cualitativo continuo consiste, (a) en nuestra comprensión de que movimientos del cuerpo pueden dar lugar actualmente al patrón relevante de estimulación sensorial (corporalidad), y (b) en nuestra comprensión de que el más ligero cambio en lo que estamos mirando agarrará nuestra atención y de esa manera se forzará sobre nosotros. De esta manera explicamos por qué nos parece como si hubiera algo continuo en nosotros sin suponer realmente que hay algo continuo, y en particular, sin suponer que hay un mecanismo o proceso físico continuo correspondiente.
+                            </BlockQuote>
+
+                            <p>
+                                Quedan las dos características de inefabilidad y subjetividad. Según el enfoque sensoriomotor, las experiencias perceptuales son manifestaciones activas de un tipo de conocimiento hábil y se definen en términos de potencial para la acción. En general, es difícil describir el conocimiento subyacente a una habilidad. Así la inefabilidad se explica por nuestra incapacidad para describir verbalmente nuestro conocimiento implícito y práctico de los patrones sensoriomotores constitutivos de la experiencia perceptual. La subjetividad se explica de la siguiente manera:
+                            </p>
+
+                            <BlockQuote author="Myin y O'Regan 2002, p. 39">
+                                Alguien es perceptualmente consciente de algo porque está interactuando con ello. Es su poner todos los recursos que tiene sobre lo que sea de lo que es consciente lo que la hace consciente de ello. Así, una vez que es consciente de ello, es "para ella"—es su proyecto subjetivo al cual está dedicando todas sus capacidades. Así, la conciencia es, por definición, "para el sujeto".
+                            </BlockQuote>
+
+                            <p>
+                                Esta explicación es iluminadora en la medida en que da cuenta de características importantes de la experiencia en términos sensoriomotores dinámicos. Es incompleta de dos maneras, sin embargo. Primero, necesita ser respaldada por una explicación enactiva de la mismidad o agencia en términos de sistemas autónomos. Segundo, necesita enriquecer su explicación de la subjetividad para incluir la autoconciencia corporal prerreflexiva.
+                            </p>
+
+                            <p>
+                                El enfoque sensoriomotor dinámico necesita una noción de mismidad autónoma o agencia porque para explicar la experiencia perceptual apela al conocimiento sensoriomotor. El conocimiento implica un conocedor o agente o sí mismo que encarna este conocimiento. ¿Qué organización necesita tener un sistema sensoriomotor para ser un agente sensoriomotor genuino con un entorno sensoriomotor correlativo?
+                            </p>
+
+                            <p>
+                                Según el enfoque enactivo, la agencia y la mismidad requieren que el sistema sea autónomo. El caso mínimo de autonomía, como hemos visto, es una célula viva. Una célula es un sistema autopoiético. Es una red autoorganizada de reacciones bioquímicas que produce un límite de membrana que regula las condiciones de límite externas y hace posible la red de reacción interna. Una célula se relaciona activamente con su entorno para satisfacer una restricción de viabilidad. Sus respuestas "sensoriales" sirven para desencadenar comportamientos "motores" sujetos al mantenimiento de la autopoiesis (robustez) y regulados por normas internas de adaptabilidad (flexibilidad). También hemos visto que esta organización circular y modo de acoplamiento con el entorno se recapitulan en una forma más compleja por el sistema nervioso. El sistema nervioso establece y mantiene un ciclo sensoriomotor, mediante el cual lo que uno siente depende directamente de cómo uno se mueve, y cómo uno se mueve depende directamente de lo que uno siente. Mientras que la mismidad biológica en su forma celular central es traída por el cierre operacional de la red autopoiética, la mismidad sensoriomotora resulta del cierre operacional del sistema nervioso (<Entity>Varela</Entity> 1997a). En cualquier caso, es legítimo invocar la noción de "sí mismo" porque la dinámica del sistema se caracteriza por un patrón topológico invariante que es producido recursivamente por el sistema y que define un exterior con el cual el sistema está activa y normativamente relacionado.
+                            </p>
+
+                            <p>
+                                Compare estos casos con el ejemplo de O'Regan y Noë de un sistema de guía de misiles. Escriben que este sistema "sabe todo sobre o tiene dominio sobre las posibles relaciones entrada/salida que ocurren durante el seguimiento de un avión" (<Entity>O'Regan</Entity> y <Entity>Noë</Entity> 2001a, p. 943). En este caso, sin embargo, a diferencia del caso de una bacteria móvil o un organismo metazoo, el "conocimiento sensoriomotor" es meramente atribuido al sistema por el observador, no original al sistema mismo. No hay conocimiento sensoriomotor genuino o dominio en este sistema porque el sistema no es autónomo (no tiene una organización autónoma). No es un sistema autoproductor y automantenido que regula activamente sus propias condiciones de límite para asegurar su viabilidad continua. No produce y mantiene su propia identidad sensoriomotora como un invariante de sus interacciones sensoriomotoras con el entorno. Por tanto no tiene agencia sensoriomotora genuina o mismidad, y no se puede decir que esté activa y normativamente relacionado con el mundo.
+                            </p>
+
+                            <p>
+                                Añadir una explicación enactiva de la mismidad al enfoque sensoriomotor dinámico va solo en parte hacia abordar el problema cuerpo-cuerpo. Además, necesitamos incluir la subjetividad en el sentido de autoconciencia corporal prerreflexiva.
+                            </p>
+
+                            <p>
+                                Cuando levanto una botella y la agarro con mis manos, experimento la botella como otra a mí, pero el sentimiento de agarrar la botella se experimenta inmediata y no inferencialmente como mío. El objeto intencional de mi experiencia táctil es la botella, pero al mismo tiempo vivo a través de mi sentimiento de agarrar de una manera no intencional (no dirigida a objetos). Para experimentar el sentimiento como mío no tengo que identificarlo como mío. Más bien, el sentimiento viene con una "miedad" o "donación de primera persona" o "ipseidad" (yoidad) intrínseca que constituye su subjetividad (<Entity>Kriegel</Entity> 2003a, 2003b; <Entity>Zahavi</Entity> 2002a, 2003c).
+                            </p>
+
+                            <p>
+                                Myin y O'Regan (2002), como hemos visto, afirman dar cuenta de la subjetividad de la experiencia perceptual. Su estrategia, siguiendo a O'Regan y Noë (2001b), es "des-cosificar" la experiencia desglosando sus diferentes características fenoménicas: subjetividad, continuidad, presencia forzosa e inefabilidad. Sin embargo, la continuidad y la presencia forzosa involucran subjetividad de una manera constitutiva: "Continuidad significa que una experiencia se experimenta como ocurriéndome a mí, o pasándome a mí aquí, ahora, como si estuviera habitado por algún proceso continuo como el zumbido de un motor. Presencia forzosa es el hecho de que... una experiencia sensorial se impone sobre mí desde el exterior, y está presente para mí sin ningún esfuerzo mental, y de hecho está mayormente bajo mi control voluntario" (<Entity>Myin</Entity> y <Entity>O'Regan</Entity> 2002, p. 30; énfasis añadido). Cada frase en cursiva describe un aspecto de la subjetividad o carácter de primera persona de la experiencia. Similarmente, inefabilidad significa que mi experiencia perceptual me parece indescriptible a mí en ciertos aspectos.
+                            </p>
+
+                            <p>
+                                Myin y O'Regan dedican la mayor parte de sus esfuerzos a explicar la continuidad y la presencia forzosa. Lo que escriben sobre la subjetividad no aborda el carácter de primera persona y la autoconciencia no dirigida a objetos o intransitiva propia de la experiencia (o el experimentar), sino que en cambio trata con el acceso consciente del sujeto a los objetos intencionales de la experiencia perceptual. Proponen que la conciencia es "para el sujeto", porque ser consciente de X es poner todos los recursos hábiles sensoriomotores y atencionales de uno sobre X, de tal manera que uno es consciente no simplemente de X sino también de las oportunidades para acción o pensamiento adicional que X ofrece. Esta explicación es plausible como una cuenta de lo que es para un objeto dado X ser "para el sujeto" (o accesible al sujeto): X es el objeto intencional de la atención del sujeto (o está disponible para la atención). Pero esta explicación no explica qué es para la experiencia perceptual de uno de X ser intransitivamente autoconsciente y así tener donación de primera persona. Por ejemplo, esta explicación podría explicar qué es para el rojo lanoso de la alfombra ser el contenido de mi experiencia visual actual, pero no explica qué es para la experiencia de ver el rojo lanoso de la alfombra ser fenoménicamente manifiesta como mía. En otras palabras, se nos da una explicación del acceso consciente a los objetos intencionales de la experiencia perceptual, pero no de la subjetividad en el sentido de la cualidad de primera persona de la experiencia como tal. Así queda una brecha significativa en esta explicación.
+                            </p>
+
+                            <p>
+                                Un problema relacionado es que esta explicación identifica toda conciencia con experiencia transitiva o dirigida a objetos y toda conciencia con atención (<Entity>O'Regan</Entity> y <Entity>Noë</Entity> 2001a, pp. 944, 955, 960). Estas identificaciones son demasiado estrechas.
+                            </p>
+
+                            <p>
+                                Considere primero la identificación de la conciencia con la atención. <Entity>Ned Block</Entity> da el ejemplo de estar involucrado en una conversación intensa mientras un taladro suena fuera de la ventana (<Entity>Block</Entity> 1997, pp. 386-387). Absorto en la conversación, uno no nota el ruido, pero luego eventualmente y de repente uno lo nota. Block usa este ejemplo para ilustrar la distinción entre un estado mental siendo "fenoménicamente consciente" (experimentado subjetivamente) y siendo "consciente de acceso" (accesible al pensamiento, informe verbal y guía de acción). Su propuesta es que en la medida en que uno es consciente del ruido todo el tiempo, uno es fenoménicamente consciente de él pero no necesariamente consciente de acceso de él. Cuando uno nota el ruido, uno se vuelve consciente de acceso de él (y quizás también se da cuenta de que uno lo ha estado oyendo todo el tiempo), de modo que uno ahora tiene tanto conciencia fenoménica como conciencia de acceso del sonido.
+                            </p>
+
+                            <p>
+                                O'Regan y Noë (2001a, p. 964) disputan esta descripción, afirmando que uno no oye el taladro hasta que uno lo nota y le presta atención. El sistema auditivo de uno puede responder selectivamente al ruido, pero uno no hace uso de la información proporcionada de ese modo, ni está uno preparado para hacer uso de esa información hasta que uno nota el taladro. Por tanto no hay base para pensar que tenemos un caso de conciencia fenoménica sin conciencia de acceso. En ausencia de acceso, no hay conciencia fenoménica.
+                            </p>
+
+                            <p>
+                                Desde el punto de vista del análisis fenomenológico, ambas descripciones parecen bastante planas. La diferencia experiencial entre no notar y luego notar un ruido se trata estáticamente, como si fuera una transición de estado discreta, sin dinámica temporal extendida, y no hay diferenciación dentro de la dinámica temporal de la experiencia entre aspectos implícitos y explícitos. Uno puede notar un ruido de una manera implícita, en cuyo caso uno vive a través del sonido sin captarlo como un objeto distinto. Uno puede también notar un ruido en el sentido de volver la atención de uno hacia él o tener la atención de uno capturada por él, en cuyo caso el ruido se capta como un objeto distinto. Finalmente, a un nivel implícito, es importante diferenciar entre momentos de fuerza afectiva comparativamente débil y fuerte por parte del ruido a medida que la experiencia se desarrolla.<InteractiveFootnote id={9} onActivate={handleNote} />
+                            </p>
+
+                            <p>
+                                Dos distinciones de la fenomenología husserliana, mencionadas en el Capítulo 2, son relevantes aquí. La primera es entre actividad y pasividad. "Actividad" significa tomar una posición cognitiva en actos de atender, juzgar, valorar, desear, y así sucesivamente. "Pasividad" significa ser influenciado y afectado involuntariamente por algo. La segunda distinción es entre receptividad y afectividad. "Receptividad" significa responder a algo que está afectando pasivamente a uno y por tanto presupone una afección previa (<Entity>Zahavi</Entity> 1999, p. 116). "Afección" significa ser influenciado o perturbado afectivamente. La idea es que lo que sea que se vuelve notable debe haber estado ya afectando a uno y debe tener algún tipo de fuerza afectiva o atractivo, o "agarrabilidad" afectiva, en relación con la atención de uno. Como saben los psicólogos, típicamente la atención está motivada afectivamente (<Entity>Derryberry</Entity> y <Entity>Tucker</Entity> 1994). El atractivo afectivo o agarrabilidad implica una estructura dinámica de gestalt o figura-fondo: algo se vuelve notable, a cualquier nivel, debido a la fuerza de su atractivo o agarrabilidad, emergiendo en prominencia afectiva, saliencia, o relieve, mientras otras cosas se vuelven menos notables debido a la debilidad comparativa de su atractivo. Este juego dinámico de pasividad y actividad, afectividad y receptividad, expresa una "intencionalidad operativa" continua subyacente a la conciencia dirigida a objetos o intencional (<Entity>Merleau-Ponty</Entity> 1962, pp. xviii, 418).
+                            </p>
+
+                            <p>
+                                Estas consideraciones sugieren que oír el sonido antes de notarlo debería contarse como un caso de conciencia fenoménica. Uno oye conscientemente el sonido antes de notarlo, si "notar" significa volver la atención de uno hacia él. El sonido se experimenta implícita y prerreflexivamente. Uno vive a través del estado de ser afectado por el sonido sin tematizar el sonido o la afectación de uno por él. Esta conciencia prerreflexiva cuenta como conciencia fenoménica porque la apariencia del sonido y la influencia afectiva tienen un carácter fenoménico, aunque uno indeterminado. Como afirma Merleau-Ponty, "la atención... es la constitución activa de un nuevo objeto que hace explícito y articulado lo que hasta entonces se presentaba como no más que un horizonte indeterminado" (<Entity>Merleau-Ponty</Entity> 1962, p. 30). Por tanto no parece correcto decir que uno no tiene experiencia del sonido en absoluto hasta que uno lo nota. Sin embargo, no hay razón para creer que esta experiencia no sea también un caso de conciencia de acceso. Después de todo, uno está preparado para hacer uso de la audición implícita y prerreflexiva de uno del sonido. El contenido de la experiencia es al menos accesible, incluso si no se accede explícitamente. Si imaginamos, sin embargo, que uno no está preparado cognitivamente de ninguna manera para confiar en el sonido, entonces necesitaríamos una razón para creer que uno es no obstante fenoménicamente consciente de él en lugar de simplemente discriminar o responder diferencialmente a él no conscientemente, pero ninguna razón se ofrece simplemente a partir de este ejemplo.
+                            </p>
+
+                            <p>
+                                Considere ahora la afirmación de que toda conciencia es conciencia transitiva. Ya hemos visto que la autoconciencia corporal intransitiva o no intencional es constitutiva de la experiencia perceptual. Cuando veo el rojo lanoso de la alfombra, soy transitivamente consciente de la alfombra roja-lanosa, pero también experimento conscientemente mi ver (mi ver es intransitivamente autoconsciente). Cuando agarro la botella, soy transitivamente consciente de la botella, pero también experimento conscientemente mi agarrar (mi agarrar es intransitivamente autoconsciente). No parece correcto mantener ni que mi ver o agarrar no es consciente o que estoy meramente preparado para volverme transitivamente consciente de ellos.
+                            </p>
+
+                            <p>
+                                La primera interpretación parece incoherente. Es difícil dar sentido a la idea de que uno podría tener una percepción consciente de X sin experimentar la percepción de uno de X.
+                            </p>
+
+                            <p>
+                                La segunda interpretación es conceptual y fenomenológicamente poco clara. ¿El estar preparado de uno para volverse transitivamente consciente de la percepción de uno (a través de un cambio atencional) tiene en sí mismo un carácter fenoménico o subjetivo? Si no lo tiene, entonces parecería ser una disposición inconsciente o una disposición subpersonal del sistema nervioso de uno. El problema entonces es explicar cómo una disposición completamente inconsciente o subpersonal puede dar cuenta del carácter aparentemente ocurrente de la autoconciencia corporal no intencional. Pero si el estar así preparado de uno sí tiene un carácter fenoménico y subjetivo—si uno se siente así preparado—entonces ese sentimiento necesita ser explicado como parte del carácter subjetivo de la experiencia. Este sentimiento no puede explicarse simplemente en términos de conciencia transitiva, precisamente porque no tiene una estructura transitiva o sujeto-objeto. Por el contrario, parecería ser otra forma de describir o llegar al fenómeno de la autoconciencia corporal intransitiva y no intencional.
+                            </p>
+
+                            <p>
+                                Estas reflexiones muestran que una explicación completa de la experiencia perceptual requiere una explicación de la autoconciencia corporal no intencional (intransitiva, no dirigida a objetos), prerreflexiva. Aunque el enfoque sensoriomotor dinámico ha hecho un progreso significativo en dar cuenta de la conciencia perceptual transitiva, se necesita hacer más trabajo para abordar la autoconciencia corporal. Este trabajo será crucial para el progreso en el problema cuerpo-cuerpo.
+                            </p>
+
+                            <p>
+                                En este capítulo espero haber mostrado que el enfoque sensoriomotor dinámico para la experiencia perceptual puede combinarse provechosamente con una explicación enactiva de la mismidad y una explicación fenomenológica de la autoconciencia corporal. También espero haber mostrado que esta síntesis es necesaria para avanzar en la brecha explicativa reformulada como el problema cuerpo-cuerpo.
+                            </p>
+
+                            <p>
+                                Central para el enfoque enactivo es la idea de que la ciencia de la mente y la fenomenología pueden vincularse de una manera recíproca y mutuamente iluminadora (<Entity>Varela</Entity>, <Entity>Thompson</Entity> y <Entity>Rosch</Entity> 1991). El enfoque enactivo usa la fenomenología para explicar la ciencia de la mente y la ciencia de la mente para explicar la fenomenología. Conceptos como cuerpo vivido y organismo, mismidad corporal y agencia autónoma, el arco intencional y las dependencias sensoriomotoras dinámicas, pueden así convertirse en conceptos mutuamente iluminadores en lugar de meramente correlacionales (<Entity>Gallagher</Entity> 1997; <Entity>Varela</Entity> 1996). Esta idea de la iluminación mutua entre fenomenología y ciencia de la mente figura prominentemente en los capítulos restantes de este libro.
+                            </p>
+
+                            <p>
+                                El próximo capítulo continúa el análisis fenomenológico de la conciencia comenzado en este capítulo y pone este análisis a trabajar en el debate científico sobre la imaginería mental.
+                            </p>
+
+                        </article>
+                        
+                        {/* --- CONTENT END --- */}
+
+                        <footer className="mt-20 pt-10 border-t border-slate-800 text-center text-slate-500 text-sm mb-10">
+                            <p>© 2007 Harvard University Press. Edición Digital Inmersiva para propósitos académicos.</p>
+                        </footer>
+                    </main>
+
+                    <TooltipModal activeNote={activeNote} onClose={() => setActiveNote(null)} />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
