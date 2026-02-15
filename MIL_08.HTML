@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Mente en la Vida | Evan Thompson - Cap. 8</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#151e2e',
+                            950: '#020617', // Deep Dark Base
+                        },
+                        cyan: {
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                            900: '#164e63',
+                        },
+                        amber: {
+                            500: '#f59e0b',
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    typography: (theme) => ({
+                        DEFAULT: {
+                            css: {
+                                color: theme('colors.slate.300'),
+                            },
+                        },
+                    }),
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #020617;
+            color: #cbd5e1;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+
+        .text-justify-hyphens {
+            text-align: justify;
+            hyphens: auto;
+            -webkit-hyphens: auto;
+        }
+        
+        /* Smooth text rendering */
+        .antialiased {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Selection color */
+        ::selection {
+            background: #06b6d4; /* cyan-500 */
+            color: #000;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-cyan-500 selection:text-slate-950">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, useScroll, useSpring, AnimatePresence } = window.Motion;
+
+        // --- ICONS ---
+        const Menu = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+            </svg>
+        );
+
+        const X = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
+        );
+
+        const Info = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+            </svg>
+        );
+
+        const ImageIcon = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+            </svg>
+        );
+
+        // --- DATA STRUCTURE ---
+
+        const BOOK_DATA = {
+            title: "La Mente en la Vida",
+            author: "Evan Thompson",
+            chapter: "Capítulo Ocho",
+            toc: [
+                { title: "Inicio", id: "start" },
+                { title: "Conciencia y Vida", id: "consciousness-life" },
+                { title: "El Legado de Descartes", id: "descartes-legacy" },
+                { title: "Zombis: Una Crítica Fenomenológica", id: "zombies-critique" },
+                { title: "El Problema Cuerpo-Cuerpo", id: "body-body-problem" },
+                { title: "Naturalismo Biológico", id: "biological-naturalism" },
+                { title: "Figuras", id: "figures-gallery" }
+            ]
+        };
+
+        const FOOTNOTES = {
+            1: "Para discusiones sobre las diferentes clases de alma en Aristóteles, ver Nussbaum y Rorty 1992.",
+            2: "El argumento de Nagel se dirige contra la teoría de la identidad psicofísica.",
+            4: "Ver Heidegger 1985 para una discusión sobre la in-existencia.",
+            5: "La metilación del ADN implica la adición de un grupo metilo a una de las bases de nucleótidos (citosina).",
+            8: "Varela conecta la intencionalidad biológica mínima con el proceso de creación de sentido (sense-making).",
+            9: "Ver Rowlands 2003 para una discusión sobre el estatus trascendental de la conciencia.",
+            10: "Ver Thompson y Cosmelli 2011 para una crítica detallada del escenario del cerebro en una cubeta.",
+            11: "Ver Cosmelli y Thompson 2010.",
+            12: "Ver Noë 2004 para una defensa del enfoque sensoriomotor."
+        };
+
+        // --- IMÁGENES / FIGURAS (ESPACIO PARA LINKS) ---
+        // INSTRUCCIÓN: Inserta los URLs de las imágenes en el campo 'src' correspondiente.
+        const FIGURES_DATA = [
+            {
+                id: "plate-1",
+                label: "Lámina I",
+                src: "", // <--- PONER LINK AQUI
+                caption: "Modelo computacional de autopoiesis, clave para tipos de partículas en la química artificial SCL (sustrato-catalizador-enlace). Reproducido con permiso de Barry McMullin, 'Rediscovering Computational Autopoiesis'."
+            },
+            {
+                id: "plate-2",
+                label: "Lámina II",
+                src: "", // <--- PONER LINK AQUI
+                caption: "Modelo computacional de autopoiesis, configuración inicial. Reproducido con permiso de Barry McMullin."
+            },
+            {
+                id: "plate-3",
+                label: "Lámina III",
+                src: "", // <--- PONER LINK AQUI
+                caption: "Modelo computacional de autopoiesis, Experimento 2, Ejecución 1, Tiempo 444. Reproducido con permiso de Barry McMullin."
+            },
+            {
+                id: "plate-4",
+                label: "Lámina IV",
+                src: "", // <--- PONER LINK AQUI
+                caption: "Modelo computacional de autopoiesis, Experimento 2, Ejecución 1, Tiempo 1310. Reproducido con permiso de Barry McMullin."
+            },
+            {
+                id: "plate-5",
+                label: "Lámina V",
+                src: "", // <--- PONER LINK AQUI
+                caption: "Modelo computacional de autopoiesis, Experimento 2, Ejecución 1, Tiempo 1746. Reproducido con permiso de Barry McMullin."
+            },
+            {
+                id: "plate-6",
+                label: "Lámina VI",
+                src: "", // <--- PONER LINK AQUI
+                caption: "La sombra de una percepción. Distribución promedio en el cuero cabelludo de la actividad gamma y sincronía de fase. El EEG fue grabado con electrodos en la superficie del cuero cabelludo. Se mostró a los sujetos figuras de Mooney (rostros de alto contraste) en posición vertical e invertida. La tarea de los sujetos era una respuesta rápida de botón de dos opciones sobre si percibían o no una cara a primera vista. El código de colores indica la potencia gamma (promediada en el rango de frecuencia de 34-40 Hz) sobre un electrodo dado y durante una ventana de tiempo de 180 milisegundos, desde el inicio de la estimulación (0 ms) hasta la respuesta motora (720 ms). La actividad gamma es espacialmente homogénea y similar entre condiciones a lo largo del tiempo. Por el contrario, la sincronía de fase es marcadamente regional y difiere entre condiciones. La sincronía entre pares de electrodos se indica mediante líneas negras y verdes, correspondientes a un aumento o disminución significativos en la sincronía, respectivamente. Estas se muestran solo si el valor de sincronía está más allá de la distribución de conjuntos de datos barajados (P < 0.01). Reimpreso de Evan Thompson y Francisco Varela, 'Radical Embodiment: Neural Dynamics and Consciousness', Trends in Cognitive Sciences 5 (2001)."
+            },
+            {
+                id: "plate-7",
+                label: "Lámina VII",
+                src: "", // <--- PONER LINK AQUI
+                caption: "Firmas neuronales dinámicas de la percepción consciente en curso. Se presentan firmas neuronales dinámicas de las actividades previas a la estimulación y las respuestas cerebrales para un sujeto durante la preparación con percepción inmediata (SR) (154 ensayos) y la falta de preparación espontánea con sorpresa durante la estimulación (SU) (38 ensayos). El código de colores indica la distribución en el cuero cabelludo de la potencia gamma tiempo-frecuencia alrededor de 35 Hz normalizada en comparación con una línea base distante (-1800 ms, -1700 ms; 0 ms corresponde a la presentación del estereograma) promediada para ensayos y para ventanas de tiempo indicadas por una flecha. Las líneas negras y blancas corresponden a un aumento y disminución significativos en la sincronía, respectivamente. Reimpreso con permiso de Antoine Lutz et al., 'Guiding the Study of Brain Dynamics by Using First-Person Data', PNAS 99 (2002)."
+            },
+            {
+                id: "plate-8",
+                label: "Lámina VIII",
+                src: "", // <--- PONER LINK AQUI
+                caption: "Estabilidad de la firma neuronal dinámica en un sujeto. Estabilidad para grabaciones de un sujeto durante la preparación estable (SR) en electrodos frontales (FP1 a FT8), con aumento significativo a 36 Hz y disminución entre 44-64 Hz durante -1200 ms, -200 ms para cada grabación (59, 60 y 35 ensayos, respectivamente). Este sujeto informó estar globalmente menos enfocado durante la tercera grabación que durante la segunda. El código de colores indica la distribución en el cuero cabelludo de la potencia gamma tiempo-frecuencia normalizada en comparación con la línea base distante (-8200 ms, -7200 ms) promediada para ensayos y electrodos. Reimpreso con permiso de Antoine Lutz et al., PNAS 99 (2002)."
+            }
+        ];
+
+        // --- COMPONENTS ---
+
+        const ScrollProgress = () => {
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+
+            return (
+                <motion.div
+                    className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50"
+                    style={{ scaleX }}
+                />
+            );
+        };
+
+        const Navigation = ({ title, author, onToggleMenu }) => (
+            <motion.header 
+                initial={{ y: -100 }}
+                animate={{ y: 0 }}
+                className="fixed top-0 left-0 right-0 h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 z-40 flex items-center justify-between px-6"
+            >
+                <div className="flex flex-col">
+                    <span className="text-slate-100 font-serif font-semibold text-lg tracking-tight">{title}</span>
+                    <span className="text-cyan-500 text-xs uppercase tracking-widest">{author}</span>
+                </div>
+                <button 
+                    onClick={onToggleMenu}
+                    className="p-2 hover:bg-slate-800 rounded-full transition-colors group"
+                >
+                    <Menu className="w-6 h-6 text-slate-300 group-hover:text-cyan-400" />
+                </button>
+            </motion.header>
+        );
+
+        const Sidebar = ({ isOpen, onClose, toc }) => (
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={onClose}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        />
+                        <motion.aside 
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed top-0 right-0 h-full w-80 bg-slate-900 border-l border-slate-800 z-50 shadow-2xl p-6 overflow-y-auto"
+                        >
+                            <div className="flex justify-between items-center mb-10">
+                                <h3 className="text-white font-serif text-xl italic">Índice</h3>
+                                <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <nav className="space-y-4">
+                                {toc.map((item, idx) => (
+                                    <a 
+                                        key={idx} 
+                                        href={`#${item.id}`} 
+                                        onClick={onClose}
+                                        className="block text-slate-400 hover:text-cyan-400 hover:translate-x-2 transition-all duration-200 text-sm border-l-2 border-transparent hover:border-cyan-500 pl-3"
+                                    >
+                                        {item.title}
+                                    </a>
+                                ))}
+                            </nav>
+                        </motion.aside>
+                    </>
+                )}
+            </AnimatePresence>
+        );
+
+        const Concept = ({ children }) => (
+            <span className="text-amber-500 font-medium hover:text-amber-400 transition-colors cursor-help" title="Concepto Clave">
+                {children}
+            </span>
+        );
+
+        const Entity = ({ children }) => (
+            <span className="text-cyan-400 font-medium hover:text-cyan-300 transition-colors" title="Autor/Entidad">
+                {children}
+            </span>
+        );
+
+        const BookTitle = ({ children }) => (
+            <span className="text-white italic font-serif">
+                {children}
+            </span>
+        );
+
+        const BlockQuote = ({ children, author }) => (
+            <div className="my-10 relative group">
+                <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-500 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                <blockquote className="pl-6 italic text-amber-500 text-lg leading-relaxed font-serif">
+                    "{children}"
+                </blockquote>
+                {author && <div className="mt-2 pl-6 text-sm text-cyan-500 font-medium">— {author}</div>}
+            </div>
+        );
+
+        const Figure = ({ data }) => (
+            <figure id={data.id} className="my-12 border-y border-slate-800/50 py-8 bg-slate-900/20 rounded-lg overflow-hidden w-full scroll-mt-24">
+                <div className="w-full bg-slate-900 flex items-center justify-center relative group min-h-[300px] border border-dashed border-slate-800 rounded transition-colors hover:border-slate-700">
+                    {data.src ? (
+                        <img src={data.src} alt={data.label} className="max-w-full max-h-[600px] object-contain p-4" />
+                    ) : (
+                        <div className="text-slate-600 flex flex-col items-center gap-3 p-10 select-none">
+                            <ImageIcon className="w-16 h-16 opacity-30" />
+                            <span className="text-sm uppercase tracking-widest font-semibold text-slate-500">Espacio para Imagen</span>
+                            <span className="text-xs text-slate-700 font-mono bg-slate-950 px-2 py-1 rounded border border-slate-800">{data.id}</span>
+                            <span className="text-xs text-amber-500/50 italic mt-2">Insertar URL en el código</span>
+                        </div>
+                    )}
+                </div>
+                <figcaption className="mt-6 px-4 md:px-10 text-sm text-slate-400 font-serif leading-relaxed text-center mx-auto max-w-3xl">
+                    <span className="text-cyan-500 font-bold uppercase tracking-wider mr-2 block mb-2 sm:inline sm:mb-0">{data.label}.</span>
+                    {data.caption}
+                </figcaption>
+            </figure>
+        );
+
+        const InteractiveFootnote = ({ id, onActivate }) => (
+            <sup 
+                onClick={(e) => { e.stopPropagation(); if(onActivate) onActivate(id); }}
+                className={`text-cyan-500 font-bold ${onActivate ? 'cursor-pointer hover:text-cyan-300 hover:scale-110' : ''} transition-transform inline-block px-0.5`}
+            >
+                [{id}]
+            </sup>
+        );
+
+        const SectionHeader = ({ id, number, title }) => (
+            <div id={id} className="pt-24 mb-10 scroll-mt-24">
+                <div className="flex items-center gap-4 mb-4">
+                    <span className="h-px w-12 bg-cyan-900"></span>
+                    <span className="text-cyan-500 uppercase tracking-widest text-xs font-semibold">{number}</span>
+                </div>
+                <h2 className="text-3xl md:text-4xl text-white font-serif font-bold leading-tight">{title}</h2>
+            </div>
+        );
+
+        const TooltipModal = ({ activeNote, onClose }) => (
+            <AnimatePresence>
+                {activeNote && (
+                    <motion.div 
+                        initial={{ y: 50, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 50, opacity: 0 }}
+                        className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl bg-slate-900/95 backdrop-blur-xl border border-slate-700 p-6 rounded-2xl shadow-2xl z-50"
+                    >
+                        <div className="flex justify-between items-start gap-4">
+                            <div className="flex gap-3">
+                                <Info className="w-5 h-5 text-cyan-500 flex-shrink-0 mt-1" />
+                                <p className="text-slate-300 text-sm leading-relaxed">
+                                    <span className="font-bold text-white mr-2">Nota {activeNote}:</span>
+                                    {FOOTNOTES[activeNote]}
+                                </p>
+                            </div>
+                            <button onClick={onClose} className="text-slate-500 hover:text-white">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        );
+
+        // --- MAIN APP ---
+
+        const App = () => {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [activeNote, setActiveNote] = useState(null);
+
+            // Close tooltip on scroll
+            useEffect(() => {
+                const handleScroll = () => { if (activeNote) setActiveNote(null); };
+                window.addEventListener("scroll", handleScroll);
+                return () => window.removeEventListener("scroll", handleScroll);
+            }, [activeNote]);
+
+            // Helper to handle footnote clicks only if they exist in our data
+            const handleNote = (id) => {
+                if (FOOTNOTES[id]) {
+                    setActiveNote(id);
+                }
+            };
+
+            return (
+                <div className="bg-slate-950 min-h-screen pb-32" onClick={() => setActiveNote(null)}>
+                    <ScrollProgress />
+                    
+                    <Navigation 
+                        title={BOOK_DATA.title} 
+                        author={BOOK_DATA.author} 
+                        onToggleMenu={() => setIsMenuOpen(true)} 
+                    />
+                    
+                    <Sidebar 
+                        isOpen={isMenuOpen} 
+                        onClose={() => setIsMenuOpen(false)} 
+                        toc={BOOK_DATA.toc} 
+                    />
+
+                    <main className="w-full max-w-4xl mx-auto px-6 md:px-12 relative z-10 pt-20">
+                        
+                        {/* --- CONTENT START --- */}
+                        
+                        <div id="start" className="mb-16">
+                             <div className="flex flex-col items-start gap-2 mb-6">
+                                <span className="text-cyan-500 text-sm uppercase tracking-widest font-semibold">PARTE TRES: Conciencia en la Vida</span>
+                                <h1 className="text-5xl md:text-6xl font-serif font-bold text-white leading-tight">Capítulo Ocho</h1>
+                                <h2 className="text-2xl md:text-3xl font-serif italic text-slate-400 mt-2">La Vida más allá de la Brecha</h2>
+                            </div>
+                            <div className="h-px w-full bg-gradient-to-r from-cyan-900 to-transparent mb-12"></div>
+                        </div>
+
+                        <article className="text-lg md:text-xl text-slate-300 leading-relaxed space-y-8 text-justify-hyphens font-sans font-light">
+                            
+                            <p className="first-letter:text-7xl first-letter:font-serif first-letter:text-white first-letter:mr-3 first-letter:float-left">
+                                A PESAR DE SU GRAN DIVERSIDAD de formas, la vida ha traído solo unos pocos modos básicos de ser durante su historia natural en la Tierra. La autopoiesis unicelular, como hemos visto, es la organización mínima de la vida. La multicelularidad, la vinculación cooperativa de múltiples individuos celulares para formar un cuerpo, es la base para los otros modos de ser. Si consideramos que las bacterias y los protistas forman colonias multicelulares en lugar de individuos distintos, entonces podemos decir que hay básicamente tres formas de ser un organismo multicelular, clasificadas sobre la base de cómo se deriva la subsistencia o se procura el alimento: el modo vegetal, en el cual la subsistencia toma la forma de alimentarse de luz; el modo fúngico, en el cual el alimento se extrae o absorbe de un entorno circundante de otros seres orgánicos; y el modo animal, en el cual el alimento debe buscarse y perseguirse activamente. La vida animal está así marcada por una forma distintiva sensoriomotora de estar en el mundo. Esta forma sensoriomotora de ser, en su plena extensión, comprende la locomoción y la percepción, la emoción y el sentimiento, y un sentido de agencia y del yo—en una palabra, sintiencia.
+                            </p>
+
+                            <p>
+                                El tema de la Parte III es la conciencia, comenzando con la sintiencia corporal. Anteriormente en este libro describí la sintiencia como el sentimiento de estar vivo. Ser sintiente significa ser capaz de sentir la presencia del propio cuerpo y del mundo. La sintiencia se basa en la identidad autopoiética y la creación de sentido (<Concept>sense-making</Concept>) de los seres vivos, pero además implica un sentimiento del yo y del mundo. Cómo dar cuenta de la emergencia y presencia de la sintiencia en el mundo natural es uno de los problemas pendientes de las ciencias de la mente hoy en día.
+                            </p>
+
+                            <p>
+                                Para preparar el camino para nuestra investigación de la conciencia en los capítulos restantes de este libro, comienzo examinando algunas suposiciones filosóficas prevalentes sobre la conciencia y la vida biológica. El punto de este examen es mostrar que la separación dualista de la conciencia y la vida hace imposible entender la conciencia en su forma básica de sintiencia corporal. Según el enfoque enactivo, hay una continuidad profunda entre la vida y la mente, incluida la mentalidad consciente, y la filosofía de la mente necesita estar arraigada en una filosofía fenomenológica del cuerpo vivo.
+                            </p>
+
+                            {/* CONSCIOUSNESS AND LIFE */}
+                            <SectionHeader id="consciousness-life" number="01" title="Conciencia y Vida" />
+
+                            <p>
+                                Muchos filósofos de la mente hoy creen que existe una profunda diferencia entre la conciencia y la mera vida biológica. Por un lado, se piensa que la conciencia, o más precisamente, la llamada conciencia fenoménica, es una propiedad interna, subjetiva, cualitativa e intrínseca de ciertos estados mentales. La vida, por otro lado, se piensa que es una propiedad externa, objetiva, estructural y funcional de ciertos sistemas físicos. Dada esta forma de pensar, el intento de entender la conciencia y su lugar en la naturaleza genera un problema especial, el llamado <Concept>problema difícil</Concept> de la conciencia (<Entity>Chalmers</Entity> 1996, 2002; <Entity>Nagel</Entity> 1974): ¿cómo se relaciona la conciencia, tal como se experimenta desde el interior por un ser consciente individual, con la vida natural de ese ser, tal como se observa y entiende desde el exterior? En palabras de <Entity>Thomas Nagel</Entity>:
+                            </p>
+
+                            <BlockQuote author="Nagel 1979, pp. 172, 175">
+                                Pues si los hechos de la experiencia—hechos sobre cómo es para el organismo que experimenta—son accesibles solo desde un punto de vista [el punto de vista subjetivo], entonces es un misterio cómo el verdadero carácter de las experiencias podría ser revelado en la operación física de ese organismo... El problema es único. Si los procesos mentales son procesos físicos, entonces hay algo que se siente, intrínsecamente, al sufrir ciertos procesos físicos. Qué es para tal cosa ser el caso sigue siendo un misterio.
+                            </BlockQuote>
+
+                            <p>
+                                El problema es que las explicaciones físicas explican la estructura y función de un sistema tal como se caracteriza desde el exterior, pero un estado consciente se define por su carácter subjetivo tal como se experimenta desde el interior. Dada esta diferencia, las explicaciones físicas de estructura y función parecen insuficientes para explicar la conciencia. En otras palabras, parece haber una <Concept>brecha explicativa</Concept> entre las estructuras y funciones físicas y la conciencia (<Entity>Levine</Entity> 1983). Así, es un misterio cómo las experiencias conscientes podrían ser procesos físicos.
+                            </p>
+
+                            <p>
+                                Según esta forma de pensar, no hay un problema difícil equivalente sobre cómo la vida biológica se relaciona con la estructura y función física. Así escribe <Entity>David Chalmers</Entity>:
+                            </p>
+
+                            <BlockQuote author="Chalmers 1997, p. 5">
+                                Cuando se trata del problema de la vida... es simplemente obvio que lo que necesita explicación es la estructura y la función: ¿Cómo se autoorganiza un sistema vivo? ¿Cómo se adapta a su entorno? ¿Cómo se reproduce? Incluso los vitalistas reconocieron este punto central: su pregunta impulsora fue siempre "¿Cómo podría un mero sistema físico realizar estas funciones complejas?", no "¿Por qué estas funciones están acompañadas por vida?"... No hay un "problema difícil" distinto de la vida, y nunca lo hubo, ni siquiera para los vitalistas.
+                            </BlockQuote>
+
+                            <p>
+                                El pensamiento propuesto aquí es que, aunque las explicaciones físicas de estructura y función son conceptual y lógicamente suficientes para dar cuenta de los procesos vivos, la conciencia es diferente. La experiencia consciente, aunque asociada con varias funciones cognitivas, tales como percibir cosas alrededor de uno e informar o expresar el estado mental de uno, parece resistente al análisis funcional. Muchos filósofos creen que las estructuras y funciones físicas que componen a un ser consciente no son conceptual y lógicamente suficientes para dar cuenta del carácter subjetivo de su experiencia. Estos filósofos piensan que pueden concebir un sistema que es físicamente idéntico a un ser consciente, pero que tiene sistemáticamente diferentes tipos de experiencias de ese ser consciente (un "invertido") o carece de experiencia consciente por completo (un "zombi"). Según esta forma de pensar, cualquier continuidad que exista entre la vida y la mente se mantiene solo para las propiedades funcionales de la mente y no para la conciencia. No hay una continuidad profunda de la vida y la conciencia, sino más bien una ruptura radical entre ellas. Dada una explicación completa y precisa de la estructura y función física de un ser vivo y consciente, nada sobre su experiencia consciente se sigue lógica o conceptualmente. Como escribe Chalmers: "Para un fenómeno tal como la vida... los hechos físicos implican que se realizarán ciertas funciones, y la realización de esas funciones es todo lo que necesitamos explicar para explicar la vida. Pero ninguna respuesta tal bastará para la conciencia" (1996, pp. 106-107).
+                            </p>
+
+                            <p>
+                                Esta línea de pensamiento es cuestionable. Es bien sabido que la sintiencia está profundamente involucrada con los procesos de regulación de la vida de los organismos complejos (<Entity>Damasio</Entity> 1999; <Entity>Panksepp</Entity> 1998b; <Entity>Parvizi</Entity> y <Entity>Damasio</Entity> 2001). Por tanto, deberíamos sospechar de cualquier dicotomía aparentemente intratable entre la conciencia y la vida. En otras palabras, deberíamos sospechar de los conceptos de conciencia y vida que yacen detrás de esta formulación del problema difícil.
+                            </p>
+
+                            <p>
+                                Un comentario histórico puede ser útil en este punto. Chalmers afirma que incluso los vitalistas reconocieron que el concepto de vida es un concepto funcional. Por tanto, dice, no hubo un problema difícil sobre la vida para el vitalismo, solo un problema sobre entender cómo un sistema físico podría llevar a cabo varias funciones vitales (metabolismo, crecimiento, reparación, reproducción, y así sucesivamente). Esta interpretación, sin embargo, parece incorrecta. Algunos vitalistas sí encontraron un problema difícil sobre la vida (<Entity>Garrett</Entity>, en prensa). Al igual que aquellos filósofos que piensan que es concebible que un duplicado físico de un ser consciente pudiera carecer de conciencia por completo, estos vitalistas pensaron que era concebible que cuerpos organizados y en movimiento, funcionalmente indistinguibles de los organismos, pudieran carecer de "vitalidad". Estos vitalistas preguntaron, ¿por qué estos movimientos organizados están acompañados por vida? Este razonamiento nos parece vacío porque ya no aceptamos los conceptos vitalistas de materia y vida. Nuestro concepto de materia ya no es el de cuerpos diminutos, extendidos e inanimados gobernados por leyes mecánicas de movimiento, y nuestro concepto de vida ya no es el de una propiedad especial de vitalidad. Parece razonable suponer que los conceptos de conciencia y vida que figuran en la formulación estándar del problema difícil son similarmente inadecuados.
+                            </p>
+
+                            <p>
+                                Mi punto al trazar esta analogía no es implicar que la conciencia es definible funcionalmente de la misma manera que los materialistas piensan que la vida es definible funcionalmente. Por el contrario, como argumenté en el Capítulo 6, hay una interioridad en la vida que las explicaciones materialistas estándar no reconocen. Mi punto es más bien que para avanzar en el problema de la conciencia necesitamos ir más allá de los conceptos dualistas de conciencia y vida en las formulaciones estándar del problema difícil. En particular, necesitamos ir más allá de la idea de que la vida es simplemente un fenómeno "externo" en el sentido materialista habitual. Contrariamente tanto al dualismo como al materialismo, la vida o el ser vivo ya está más allá de la brecha entre "interno" y "externo". Una visión puramente externa o de afuera de la estructura y función es inadecuada para la vida. Un ser vivo no es pura exterioridad (<Concept>partes extra partes</Concept>) sino que en cambio encarna un tipo de interioridad, la de su propia finalidad inmanente. Esta interioridad, como hemos visto, comprende la autoproducción de un interior que especifica un exterior con el cual ese interior está constitutiva y normativamente relacionado.
+                            </p>
+
+                            <p>
+                                Para tomar prestada la terminología de <Entity>Heidegger</Entity>, el ser vivo tiene un tipo de "ser-en" (<Concept>in-being</Concept>), y el ser-en es una estructura existencial que no puede describirse adecuadamente en el lenguaje de estructura y función externa (<Entity>Heidegger</Entity> 1985, pp. 165-166). Este tipo de ser-en, el de la interioridad autopoiética, no es una cuestión de limitación material. Como señala Heidegger, un ser vivo está "en" su mundo en un sentido completamente diferente al del agua estando en un vaso (ibíd.). La interioridad de la vida es la interioridad de la mismidad y la creación de sentido, que es un precursor de la interioridad de la conciencia. Un ser vivo promulga un medio marcado por significancia y valencia. La exterioridad es superada por una relación interna de significado y normatividad entre los dos polos de organismo y medio. Hay así una interioridad en la vida que escapa a una concepción puramente externa. Esta interioridad subyace a la profunda continuidad de la vida y la mente, y es el contexto en el cual la emergencia de la conciencia debe entenderse.
+                            </p>
+
+                            <p>
+                                El problema con los conceptos dualistas de conciencia y vida en las formulaciones estándar del problema difícil es que se excluyen mutuamente por construcción. Por tanto, no hay forma de cerrar la brecha entre ellos. Reducir la experiencia consciente a estructura y función externa sería hacer desaparecer la conciencia (materialismo); reducir la estructura y función externa a conciencia interna sería hacer desaparecer las cosas externas (idealismo); e inyectar algún tercer ingrediente entre los dos es un esfuerzo desesperado por tender un puente sobre un abismo infranqueable. El problema difícil no es tanto difícil como imposible. El problema de hacer comprensible la relación de mente y cuerpo no puede resolverse mientras la conciencia y la vida se conceptualicen de tal manera que se excluyan intrínsecamente una a la otra. Por esta razón, es crucial darse cuenta de que este abismo es una construcción filosófica construida sobre formas de pensar sedimentadas y problemáticas que se remontan a Descartes. Necesitamos mirar más de cerca este legado cartesiano, pues sigue siendo una fuerza poderosa en muchos tratamientos contemporáneos del problema de la conciencia.
+                            </p>
+
+                            {/* DESCARTES'S LEGACY */}
+                            <SectionHeader id="descartes-legacy" number="02" title="El Legado de Descartes" />
+
+                            <p>
+                                Descartes es principalmente responsable de conceptualizar la conciencia como experiencia interna accesible solo a la reflexión en primera persona, y la vida como estructura y función externa y mecánica. Antes de Descartes, en la tradición aristotélica, la vida y la mente pertenecían juntas bajo el encabezado de alma (<Concept>psyche</Concept>). Para Aristóteles, el alma no es una sustancia inmaterial, sino que en el sentido más amplio es la capacidad del organismo para estar activo de varias maneras. Abarca así cualesquiera capacidades o habilidades que pertenecen a la vida, incluidas las cognitivas o mentales. En una imagen llamativa, Aristóteles dice que el alma es al cuerpo como la visión es al ojo: "si el ojo fuera una criatura viva, su alma sería su vista" (<BookTitle>De Anima</BookTitle> II, I, 412b 19; ver <Entity>Mensch</Entity> 1996, p. 175). En esta concepción, el alma es lógicamente inseparable del cuerpo. Precisamente de la manera en que es inconsistente suponer que el acto de ver puede existir sin el funcionamiento del ojo, o que el ojo puede funcionar correctamente sin el acto de ver, así es inconsistente suponer que el alma—las capacidades vitales del cuerpo—pueden existir sin un cuerpo vivo o que un cuerpo vivo puede existir sin un alma. Para Aristóteles, exactamente como ver es el objetivo o propósito del ojo, así el alma es la totalidad de objetivos que algo debe encarnar para estar vivo. Alma y cuerpo son así dos lados del único proceso de vivir. Hay diferentes tipos de alma, sin embargo, dependiendo de los objetivos que la vida puede o debe encarnar. Estos fines son el alimento y el crecimiento (el alma nutritiva o vegetativa); el sentimiento y la sensación (el alma sensitiva); el automovimiento y la autodirección (el alma volitiva); y la razón y el uso de símbolos (el alma racional o intelectual).<InteractiveFootnote id={1} onActivate={handleNote} />
+                            </p>
+
+                            <p>
+                                Con el auge de la filosofía natural mecanicista en el siglo XVI, la visión aristotélica de los fenómenos naturales como dirigidos a objetivos fue rechazada. Según la cosmovisión mecanicista, no hay objetivos o propósitos inherentes en el mundo natural; la naturaleza opera solo según las leyes mecánicas que gobiernan la materia en movimiento. Estar vivo no es esforzarse por realizar un cierto <Concept>telos</Concept> sino ser una configuración particular de materia gobernada por principios mecánicos. La noción aristotélica de alma llegó a verse como una ficción que no se aplicaba a nada en el mundo natural. En cambio, el alma se equiparó ahora con la mente racional, que trasciende la naturaleza y cuya esencia es el pensamiento consciente.
+                            </p>
+
+                            <p>
+                                Descartes jugó un papel clave en efectuar esta separación de mente y naturaleza, conciencia y vida. Rechazó tanto la conexión tradicional entre ser consciente y estar vivo, como la separación tradicional de cosas vivas y mecanismos (<Entity>Matthews</Entity> 1991). Por un lado, la conciencia es una propiedad de la mente o alma inmaterial, y por tanto la mente consciente <Concept>per se</Concept> no está viva. Por otro lado, estar vivo es una propiedad del cuerpo humano, que es simplemente una máquina, y por tanto el cuerpo vivo <Concept>per se</Concept> no es consciente. La conciencia y la vida tienen naturalezas diferentes, y no importa cuán estrechamente unidas estén dentro de una persona humana, pueden sin embargo existir separadas (como de hecho supuestamente sucede después de la muerte, según el catolicismo de Descartes).
+                            </p>
+
+                            <p>
+                                La separación de Descartes de la conciencia y la vida implicó una nueva forma de pensar sobre la conciencia en relación con la experiencia sensorial (<Entity>Matthews</Entity> 1991). Según la concepción aristotélica tradicional, la sensación y la percepción requieren lógicamente un cuerpo. Es decir, la declaración (1) S siente o percibe algo, implica (2) S tiene un órgano corporal de sensación o percepción; y por tanto (3) S tiene un cuerpo (o es un cuerpo). Descartes, sin embargo, en la "Segunda Meditación" de sus <BookTitle>Meditaciones Metafísicas</BookTitle>, propone un nuevo significado para "experiencia sensorial" (<Concept>sentire</Concept>), en el cual la implicación de la experiencia sensorial a la existencia del propio cuerpo ya no se mantiene. Escribe que puede dudar de si tiene un cuerpo (es posible que sea engañado), y por tanto su cuerpo podría no pertenecer a su esencia propia. No puede dudar, sin embargo, de que está pensando conscientemente, y por tanto debe ser esencialmente una cosa pensante. Pero, ¿qué es exactamente una cosa pensante? Es, declara, "Una cosa que duda, entiende, afirma, niega, quiere, no quiere, y también imagina y tiene percepciones sensoriales" (<Entity>Descartes</Entity> 1986, p. 19). Sin embargo, ¿cómo puede una mera cosa pensante, es decir, una cosa pensante que se supone que no tiene cuerpo, también imaginar y tener percepciones sensoriales, que aparentemente requieren un cuerpo? La respuesta de Descartes es que incluso si ninguno de los objetos de su imaginación es real, el poder de imaginación sin embargo pertenece a su pensamiento. De manera similar, incluso si ninguna de las cosas que siente es real, ciertamente le parece a él que las siente: "Ciertamente me parece ver, oír, y ser calentado. Esto no puede ser falso; lo que se llama 'tener una percepción sensorial' es estrictamente solo esto, y en este sentido restringido del término es simplemente pensar [o conciencia]" (ibíd.).
+                            </p>
+
+                            <p>
+                                El resultado de este sentido restringido de percepción sensorial, según la explicación de <Entity>Gareth Matthews</Entity>, es "un nuevo concepto, conciencia, que incluye el pensamiento más la 'parte interna' (por así decirlo) de la sensación y la percepción" (<Entity>Matthews</Entity> 1991, p. 68). Dicho de otra manera, para llegar a la concepción adecuada de conciencia, "Debemos (por así decirlo) 'pelar' de ver, oír, probar, etc., el <Concept>parecer</Concept> ver, oír, probar, etc., que es tal que uno no puede hacer eso y también dudar de que uno lo esté haciendo" (ibíd.). Tales "pareceres" proporcionan los "contenidos fenoménicos" intrínsecos (como se llaman hoy) de la percepción, y no implican lógicamente la existencia del propio cuerpo (o cualquier otra cosa de la naturaleza para el caso).
+                            </p>
+
+                            <p>
+                                A diferencia del concepto aristotélico de alma, el nuevo concepto de conciencia de Descartes estaba radicalmente divorciado del concepto de vida. Sin embargo, también tenía una orientación fenomenológica en primera persona que faltaba en el concepto de alma. Aristóteles reconoció la unidad de alma y vida solo desde un punto de vista impersonal. Nunca discutió el cuerpo desde un punto de vista interno, como el propio cuerpo de uno (<Entity>Patočka</Entity> 1998, pp. 8-11). Descartes, sin embargo, estableció su separación de conciencia y vida sobre la base de un punto de partida en primera persona. Comenzando desde su propia autoconciencia, preguntó qué debe ser indudablemente el caso dada su propia experiencia. A veces este impulso en primera persona lo llevó a reflexionar sobre la experiencia corporal, en particular cuando tuvo que dar cuenta de la unidad experiencial de mente y cuerpo en su propio caso. Así, en un pasaje famoso en la "Sexta Meditación", Descartes rechazó la metáfora del alma como un piloto de su nave:
+                            </p>
+
+                            <BlockQuote author="Descartes 1986, p. 56">
+                                No hay nada que mi naturaleza me enseñe más vívidamente que el que tengo un cuerpo, y que cuando siento dolor hay algo mal con el cuerpo, y que cuando tengo hambre o sed el cuerpo necesita comida y bebida y así sucesivamente. Así que no debería dudar de que hay algo de verdad en esto.
+                                <br/><br/>
+                                La naturaleza también me enseña, por estas sensaciones de dolor, hambre, sed, y así sucesivamente, que no estoy meramente presente en mi cuerpo como un marinero en un barco [la versión francesa dice: como un piloto en su barco], sino que estoy muy estrechamente unido y, por así decirlo, entremezclado con él, de modo que yo y el cuerpo formamos una unidad. Si esto no fuera así, yo, que no soy nada más que una cosa pensante, no sentiría dolor cuando el cuerpo fuera herido, sino que recibiría el daño puramente por el intelecto, tal como un marinero percibe por la vista si algo en su barco está roto.
+                            </BlockQuote>
+
+                            <p>
+                                Sin embargo, el hecho innegable de que yo y mi cuerpo formamos una unidad es precisamente lo que la filosofía de Descartes es incapaz de explicar. El cuerpo para Descartes es simplemente una cosa mecánica, y cualquier interioridad o sintiencia que aparentemente pertenezca a su funcionamiento vital yace al otro lado de una división metafísica, en el reino de la conciencia inmaterial. Pero si la mente consciente y el cuerpo vivo son así completamente diferentes, entonces el hecho de que formen una unidad distinta en cada ser humano individual es incomprensible. En particular, el hecho de que mi mente esté unida a mi cuerpo es completamente accidental o arbitrario, pues como cuestión de principio metafísico mi mente podría igual de fácilmente estar unida a algún otro cuerpo. No hay así forma de que Descartes haga valer su avance sobre Aristóteles al reconocer el carácter personal del cuerpo vivo (ver <Entity>Patočka</Entity> 1998, pp. 9-20).
+                            </p>
+
+                            <p>
+                                Después de Descartes hubo una corriente de pensamiento europeo que confrontó la separación cartesiana de mente y cuerpo, conciencia y vida, reflexionando una vez más sobre la experiencia corporal (ver <Entity>Merleau-Ponty</Entity> 2001). Un ejemplo principal es el filósofo francés <Entity>Marie-François-Pierre Maine de Biran</Entity> (1766-1824), quien desde sus primeros textos en 1794 hasta las últimas páginas de su Diario nunca dejó de maravillarse ante lo que llamó el "sentimiento de existencia" (<Concept>le sentiment de l'existence</Concept>). Maine de Biran no impugnó el ego pensante cartesiano incorpóreo en nombre de algún tipo de sentimentalismo. En cambio, trató de captar la fuente misma del "Yo" personal, que, sostuvo, se encuentra en la experiencia corporal de ejercer esfuerzo en el movimiento. <Entity>Jan Patočka</Entity>, el destacado fenomenólogo checo, describe la percepción de Maine de Biran de esta manera:
+                            </p>
+
+                            <BlockQuote author="Patočka 1998, p. 25">
+                                Tengo una conciencia primordial del esfuerzo, de tener ciertas posibilidades, por ejemplo, de mover mi mano. El significado del esfuerzo, de mi manipulación propositiva de mi cuerpo, proviene de mí mismo. De este esfuerzo sé inmediatamente que el movimiento proviene de mí como de un centro autónomo... Somos primordialmente un Yo activo, ejerciendo esfuerzo. El esfuerzo tiene sus límites: algo se le resiste. No es energía ilimitada, es una eficacia del cuerpo, una efectividad corporal. Aquí se hace evidente que el Yo es posible solo como corpóreo... el Yo es un Yo dispuesto, que se esfuerza y, consecuentemente, uno corpóreo. Esto incluye varios modos—frescura, fatiga, agotamiento, etc.... Un Yo es posible solo en un organismo biológico. Un organismo biológico se convierte en una persona real en el momento en que puedo hacer algo por mi cuenta (i.e., moverme).
+                            </BlockQuote>
+
+                            <p>
+                                El "sentimiento de existencia" de Maine de Biran es otra forma de describir la sintiencia, el sentimiento de estar vivo. Esta noción apunta lejos del concepto cartesiano incorpóreo de conciencia y de vuelta a la experiencia primordial de ejercer esfuerzo y ser afectado, es decir, a la conciencia como sintiencia corporal.
+                            </p>
+
+                            {/* ZOMBIES: A PHENOMENOLOGICAL CRITIQUE */}
+                            <SectionHeader id="zombies-critique" number="03" title="Zombis: Una Crítica Fenomenológica" />
+
+                            <p>
+                                La atención a la sintiencia también puede ayudarnos a ver las limitaciones de otro aspecto del legado de Descartes: la inclinación por los "zombis" entre muchos filósofos de la mente hoy en día (<Entity>Chalmers</Entity> 1996, pp. 94-99; <Entity>Moody</Entity> 1994). Un zombi es una entidad ficticia que tiene exactamente la misma estructura física, mecanismos funcionales y comportamiento que un ser humano consciente, pero no tiene experiencia consciente en absoluto. Si tal entidad es lógica o conceptualmente posible, si es genuinamente concebible sin contradicción o algún otro tipo de incoherencia, entonces (así va el argumento) los análisis materialistas de la conciencia en términos de estructura y función física no pueden ser correctos.
+                            </p>
+
+                            <p>
+                                Este argumento es profundamente cartesiano en su forma. Descartes argumentó en sus <BookTitle>Meditaciones Metafísicas</BookTitle> que la mente es esencialmente pensamiento consciente, el cuerpo es esencialmente extensión o la ocupación del espacio, y es perfectamente concebible que el pensamiento consciente pueda existir aparte de la extensión. Aunque Descartes concluyó que la mente y el cuerpo no son idénticos, su argumento puede invertirse, como señaló Nagel en una de las versiones más tempranas del argumento zombi moderno:
+                            </p>
+
+                            <BlockQuote author="Nagel 1980, p. 205">
+                                La existencia del cuerpo sin la mente es tan concebible como la existencia de la mente sin el cuerpo. Es decir, puedo concebir mi cuerpo haciendo precisamente lo que está haciendo ahora, por dentro y por fuera, con completa causalidad física de su comportamiento (incluyendo comportamiento típicamente autoconsciente), pero sin ninguno de los estados mentales que estoy experimentando ahora, o cualesquiera otros para el caso. Si eso es realmente concebible, entonces los estados mentales deben ser distintos de los estados físicos del cuerpo.<InteractiveFootnote id={2} onActivate={handleNote} />
+                            </BlockQuote>
+
+                            <p>
+                                Con respecto a este tipo de argumentos, Nagel pasó a observar lo siguiente: "El verdadero problema es si uno puede saber que uno ha concebido tal cosa... Lo que debe mostrarse, para derrotar el argumento cartesiano, es que cuando tratamos de concebir nuestras mentes sin nuestros cuerpos, o viceversa, no logramos hacer eso, sino que en cambio hacemos otra cosa, que confundimos con ello" (1980, p. 205).
+                            </p>
+
+                            <p>
+                                El argumento cartesiano en su forma zombi proporciona un caso extremo del divorcio conceptual radical entre conciencia y vida. Tu gemelo zombi hipotético es física y biológicamente idéntico a ti; es un duplicado completo del organismo biológico que eres. Está por tanto vivo exactamente como tú lo estás, con respecto a cada detalle estructural, funcional y conductual. Sin embargo, no se siente vivo en lo más mínimo; no es sintiente.
+                            </p>
+
+                            <p>
+                                Este pensamiento parece incomprensible. Se nos pide imaginar un ser vivo, un organismo humano, cuya vida corporal es idéntica con respecto a su estructura física y función a la de un ser humano consciente, pero que no tiene sintiencia corporal, ninguna experiencia subjetiva de su existencia corporal y entorno. En lenguaje fenomenológico, se nos pide imaginar un cuerpo vivo físico (un <Concept>Körper</Concept>) que es física y conductualmente idéntico a un ser consciente, pero que no es un cuerpo vivido (un <Concept>Leib</Concept>). Difícilmente está claro que este escenario sea concebible o imaginable estrictamente como se describe. El escenario requiere que una contraparte física (un duplicado molécula por molécula) del cuerpo del mundo real de un sujeto consciente dado tenga una vida corporal indistinguible de la del sujeto consciente en todos los aspectos excepto por no tener ninguna experiencia subjetiva en absoluto de su propio cuerpo (<Entity>Hanna</Entity> y <Entity>Thompson</Entity> 2003).
+                            </p>
+
+                            <p>
+                                Sin embargo, muchas de las habilidades perceptuales y motoras del cuerpo vivo físico de uno (el cuerpo como <Concept>Körper</Concept>) evidentemente dependen de que ese cuerpo sea un cuerpo vivido subjetivamente (un <Concept>Leib</Concept>). Sin experiencia propioceptiva y cinestésica, por ejemplo, muchos tipos de percepción y acción motora normal no pueden suceder. El escenario zombi requiere la suposición de que la experiencia corporal no es necesaria para ni de ninguna manera constitutiva del comportamiento relevante, que exactamente el mismo comportamiento es posible sin sintiencia corporal. Esta suposición es bastante fuerte y necesita ser argumentada independientemente. Hay poca razón para creerla. Aunque uno puede hacer una distinción conceptual entre la experiencia corporal desde el interior y el funcionamiento corporal desde el exterior, difícilmente se sigue que este último podría existir sin la primera.
+                            </p>
+
+                            <p>
+                                Vale la pena elaborar esta línea de pensamiento en relación con los análisis fenomenológicos de la percepción. Uno de los temas centrales de los análisis de la percepción de <Entity>Husserl</Entity> es que cada percepción visual o táctil está acompañada por, y funcionalmente vinculada a, la sensación de los propios movimientos corporales (movimientos de la mano, movimientos del ojo, movimientos de la cabeza, movimientos de todo el cuerpo, y así sucesivamente) (<Entity>Husserl</Entity> 1997). Cada aspecto o perfil de un objeto dado a la percepción táctil o visual no está simplemente correlacionado con una experiencia cinestésica del propio cuerpo sino que está funcionalmente atado a esa experiencia. Cuando uno toca las teclas de la computadora, por ejemplo, las teclas se dan en conjunción con una sensación de los movimientos de los dedos de uno; cuando uno observa un pájaro en vuelo, el pájaro se da en conjunción con una sensación de los movimientos de la cabeza y los ojos de uno. Husserl argumenta extensamente que la continuidad perceptual—la continuidad del objeto a través de una variedad cambiante de apariencias—depende de este vínculo de cinestesia y percepción. Como afirma, es a través del movimiento de uno y la autoexperiencia corporal en el movimiento que un objeto se presenta a sí mismo como una serie unificada de apariencias. En otras palabras, la autoexperiencia corporal en la forma de cinestesia es una condición constitutiva de la percepción ordinaria.
+                            </p>
+
+                            <p>
+                                Detrás de este análisis está la idea de que para percibir un objeto desde una cierta perspectiva—para tomar su apariencia o perfil desde esa perspectiva como una apariencia de una cosa objetiva en el espacio—uno necesita ser consciente, tácita o prerreflexivamente, de otros perfiles coexistentes pero ausentes del objeto. Estos perfiles ausentes están en una cierta relación con el presente: pueden volverse presentes si uno lleva a cabo ciertos movimientos. En otras palabras, están correlacionados con el sistema cinestésico de uno de posibles movimientos y posiciones corporales. Si uno se mueve de esta manera, entonces ese aspecto del objeto se vuelve visible; si uno se mueve de esa manera, entonces este aspecto se vuelve visible. En la terminología de Husserl, la percepción está "cinestésicamente motivada".
+                            </p>
+
+                            <p>
+                                Para simplificar, podemos tomar el caso de un objeto inmóvil. Si la experiencia cinestésica ($K_1$) permanece constante a lo largo de un intervalo de tiempo dado, entonces la apariencia perceptual ($A_1$) permanece constante también. Si la experiencia cinestésica cambia ($K_1$ se convierte en $K_2$), entonces la apariencia perceptual cambia también ($A_1$ se convierte en $A_2$). Hay así una interdependencia funcional entre las experiencias cinestésicas y las perceptuales. Una apariencia dada ($A_1$) no siempre está correlacionada con la misma experiencia cinestésica (e.g., $K_1$), pero debe estar correlacionada con alguna experiencia cinestésica u otra. Por esta razón, la percepción está ligada a la experiencia cinestésica y propioceptiva.
+                            </p>
+
+                            <p>
+                                El resultado es que la experiencia corporal prerreflexiva, la experiencia tácita del propio cuerpo, es constitutiva de la percepción. ¿Cómo, entonces, podemos dar sentido a la idea de un ser completamente inconsciente, un ser con ninguna experiencia en absoluto de su propio cuerpo, cuyas habilidades perceptuales (definidas funcionalmente) son exactamente las de su contraparte consciente (físicamente idéntica)? Para que este escenario tenga sentido debe ser concebible que un ser que tenga habilidades perceptuales humanas normales pueda no tener experiencia cinestésica de su cuerpo y ninguna experiencia prerreflexiva de sí mismo como un agente encarnado. Pero si el análisis fenomenológico es correcto, entonces la experiencia corporal es constitutiva de la función perceptual de individuar objetos continuos en el espacio a través de una variedad de apariencias sensoriales. Así que cualquier ser que fuera capaz de la misma función perceptual necesitaría tener una experiencia de su propio cuerpo y por tanto no podría ser un zombi.
+                            </p>
+
+                            <p>
+                                Esta línea de razonamiento desafía la confianza en la imaginabilidad del escenario zombi pero no demuestra que el escenario sea inconcebible. Mi objetivo, sin embargo, no es refutar la creencia en la posibilidad lógica de los zombis, por así decirlo de frente. Uno no necesita demostrar la imposibilidad lógica de los zombis derivando una contradicción formal de la suposición para cuestionar el valor filosófico de esta suposición (pese a <Entity>Chalmers</Entity> 1996, p. 96). Uno solo necesita revelar las suposiciones problemáticas sobre las que descansa: que exactamente el mismo comportamiento puede suceder en la presencia y ausencia de sintiencia, y que la sintiencia es una ocurrencia estrictamente interna y fenoménica, mientras que el comportamiento es enteramente un asunto de estructura y función externa. Dadas estas suposiciones problemáticas, no debería permitirse a los filósofos salirse con la suya simplemente afirmando que el escenario zombi les parece concebible. Deben describir el escenario con suficiente detalle para que sea inteligible dada la aparente inseparabilidad del cuerpo vivo físico de un sujeto consciente (su <Concept>Körper</Concept>) y su cuerpo vivido (su <Concept>Leib</Concept>).
+                            </p>
+
+                            <p>
+                                Esta demanda requiere más de lo que proporcionan los aficionados a los zombis. <Entity>Jaegwon Kim</Entity>, por ejemplo, simplemente afirma que los zombis parecen concebibles "sin mucha dificultad" (<Entity>Kim</Entity> 1998, pp. 101-102). Y Chalmers escribe:
+                            </p>
+
+                            <BlockQuote author="Chalmers 1996, p. 96">
+                                Confieso que la posibilidad lógica de los zombis me parece igualmente obvia [que la de un monociclo de una milla de altura]. Un zombi es solo algo físicamente idéntico a mí, pero que no tiene experiencia consciente—todo es oscuro por dentro. Mientras que esto es probablemente empíricamente imposible, ciertamente parece que se describe una situación coherente: no puedo discernir ninguna contradicción en la descripción. De algunas maneras una afirmación de esta posibilidad lógica se reduce a una intuición bruta, pero no más que con el monociclo. Casi todo el mundo, me parece, es capaz de concebir esta posibilidad.
+                            </BlockQuote>
+
+                            <p>
+                                No estoy de acuerdo. Difícilmente parece cierto que, cuando se pide imaginar el escenario con suficiente detalle, casi todo el mundo puede concebir esta posibilidad o que pueden hacerlo sin mucha dificultad (ver <Entity>Cottrell</Entity> 1999; <Entity>Dennett</Entity> 1995b). Lo que sí parece cierto es que el escenario parecerá concebible a cualquiera que esté bajo el dominio del concepto cartesiano de conciencia y que no haya pensado cuidadosamente sobre lo que el escenario, estrictamente descrito, demanda realmente de la imaginación de uno, en particular con respecto a la fenomenología de la experiencia corporal. La supuesta posibilidad lógica de los zombis por tanto no es como la posibilidad lógica de un monociclo de una milla de altura. La última suposición implica simplemente una variación imaginada sobre el tamaño físico y las proporciones estructurales de una cosa, pero la primera suposición implica una extrapolación intelectual hasta el límite de una forma de pensar profundamente problemática sobre la conciencia y la vida corporal.
+                            </p>
+
+                            <p>
+                                El concepto cartesiano de conciencia también lleva a un escepticismo extremo sobre otras mentes conscientes. ¿Cómo podría uno distinguir alguna vez la diferencia entre un zombi y un sujeto consciente? Si la "zombidad" es posible, entonces es posible (conceptual o lógicamente, si no empíricamente) que tu cónyuge, hijo, amigo más cercano o amante sea un zombi sin que tú o nadie más lo sepa. Tal suposición expresa en su forma más extrema el problema cartesiano de las otras mentes. Pero se pone aún peor. Como observa <Entity>Güven Güzeldere</Entity>: "La zombidad trae consigo no solo el problema de las otras mentes, y así el escepticismo de tercera persona [y segunda persona], sino también el escepticismo de primera persona. Si tú, el lector de estas líneas, te convirtieras repentinamente en un zombi, nadie notaría ninguna diferencia, y en un sentido significativo de 'notar' [el sentido externo, funcional], tampoco tú" (<Entity>Güzeldere</Entity> 1997, p. 43). Un problema con este tipo de escepticismo es que nuestra comprensión de lo que es ser un sujeto consciente está constituida intersubjetivamente a través de la empatía. (Por "empatía" quiero decir el acoplamiento sensoriomotor y afectivo de nuestros cuerpos vividos así como nuestro intercambio imaginativo mutuo de perspectivas cognitivas y emocionales.) Volveré a esta idea en el Capítulo 13.
+                            </p>
+
+                            <p>
+                                La moraleja de esta discusión es que en lugar de comenzar desde los conceptos de mente y cuerpo en las formulaciones estándar del problema difícil, necesitamos tomar nuestro comienzo desde el cuerpo vivido. Para cerrar este capítulo me gustaría reformular el problema de la brecha explicativa tomando la vida y el cuerpo como nuestro punto de partida.
+                            </p>
+
+                            {/* THE BODY-BODY PROBLEM */}
+                            <SectionHeader id="body-body-problem" number="04" title="El Problema Cuerpo-Cuerpo" />
+
+                            <p>
+                                Si por un lado los procesos mentales son procesos corporales, entonces hay algo que se siente, intrínsecamente, al sufrir ciertos procesos corporales. Por otro lado, si pertenece a ciertos procesos corporales algo que se siente al sufrirlos, entonces esos procesos corporales son experiencias. Como lo pone Nagel (1974), tienen un "carácter subjetivo", sin el cual dejarían de ser experiencias. Son sentimientos en el sentido amplio que <Entity>William James</Entity> tenía en mente cuando usó la palabra "sentimiento" "para designar todos los estados de conciencia meramente como tales" (1981, p. 185) y que <Entity>Antonio Damasio</Entity> ha revivido describiendo los sentimientos como "dando testimonio de la vida dentro de nuestras mentes" (<Entity>Damasio</Entity> 2003, p. 140). El problema de qué es para los procesos mentales ser también procesos corporales es así en gran parte el problema de qué es para la subjetividad y el sentimiento ser un fenómeno corporal.
+                            </p>
+
+                            <p>
+                                En esta formulación del problema difícil, he sustituido el término cuerpo por físico. Cuerpo connota vida, un organismo vivo, y es más rico en significado que físico en el sentido cartesiano. Recurrir a esta riqueza puede ayudarnos a refinar los términos de la brecha explicativa.
+                            </p>
+
+                            <p>
+                                Los fenomenólogos distinguen entre dos formas en que el cuerpo puede ser revelado o constituido en la experiencia: como una cosa material (<Concept>Körper</Concept>) y como un sujeto vivo de experiencia o cuerpo vivido (<Concept>Leib</Concept>). Necesitamos refinar esta distinción, sin embargo, por al menos dos razones. Primero, necesitamos protegernos contra el peligro de cosificar una distinción fenomenológica entre dos formas en que nuestro cuerpo puede ser revelado en una dualidad ontológica. El cuerpo puede ser revelado como un cuerpo físico y como un cuerpo vivido, pero esto no implica que haya dos cuerpos o que el cuerpo tenga dos propiedades o aspectos metafísicos mutuamente irreducibles. Segundo, incluso esta distinción entre dos modos de presencia corporal, correlacionada con dos formas de experimentar el cuerpo, es inadecuada, porque no transmite la diversidad de formas en que el cuerpo puede ser revelado en nuestra experiencia.
+                            </p>
+
+                            <p>
+                                Husserl tuvo que valerse de una variedad de términos para el espectro de formas diferenciadas en que el cuerpo puede ser revelado, desde un cuerpo físico objetivo hasta un flujo de vida subjetivo, con varias nociones del cuerpo como viviente o vivido en el medio (<Entity>Depraz</Entity> 2001a, pp. 2-111). Fenomenólogos posteriores han elaborado, enriquecido y refinado estos análisis. Como veremos en el Capítulo 13, hay también una estructura intersubjetiva compleja de la experiencia, vinculando cómo el propio cuerpo de uno es revelado a uno mismo y cómo es revelado a otro (así como cómo el cuerpo de otro es revelado a uno mismo). Por estas razones, "cuerpo" tiene que tomarse como nombrando una región abierta de investigación y análisis, no un punto de referencia ontológico fijo en algún esquema metafísico abstracto (como "físico" y "mental" en la metafísica dualista o materialista cartesiana).
+                            </p>
+
+                            <p>
+                                He argumentado que la formulación estándar del problema difícil está incrustada en el marco cartesiano de lo "mental" versus lo "físico", y que este marco debería abandonarse en favor de un enfoque centrado en la noción de vida o ser vivo. Aunque la brecha explicativa no desaparece cuando adoptamos este enfoque, sí toma un carácter diferente. El asunto guía ya no es el artificial de si un concepto subjetivista de conciencia puede derivarse de un concepto objetivista del cuerpo. Más bien, el asunto guía es entender la emergencia de la subjetividad viva desde el ser vivo, donde el ser vivo se entiende como ya poseído de una interioridad que escapa a la imagen objetivista de la naturaleza. Es este asunto de emergencia el que necesitamos abordar, no la versión cartesiana del problema difícil.
+                            </p>
+
+                            <p>
+                                Para agudizar este asunto, necesitamos refinar la distinción fenomenológica entre el cuerpo físico y el cuerpo vivido. Además de esta distinción básica, podemos distinguir entre la morfología estructural del cuerpo físico y su dinámica viva y vivida (<Entity>Cole</Entity>, <Entity>Depraz</Entity> y <Entity>Gallagher</Entity> 2000). La morfología comprende las estructuras corporales de extremidades, órganos, sistemas reguladores, estructuras cerebrales, y así sucesivamente, mientras que la dinámica comprende el flujo vivido de la vida, es decir, el flujo de movimiento intencional y sensaciones vividas (interoceptivas, exteroceptivas y propioceptivas). No parece haber ninguna brecha explicativa en la transición de ver el cuerpo como un objeto físico a verlo en su morfología estructural como un cuerpo vivo. Pero sí parece haber una brecha o discontinuidad en el movimiento de ver el cuerpo como un cuerpo vivo a verlo como un cuerpo vivido, como un lugar de sentimiento y actividad intencional—en resumen como sintiente. ¿Cuál es exactamente la naturaleza de esta brecha?
+                            </p>
+
+                            <p>
+                                Dos puntos son importantes aquí. Primero, la brecha ya no es entre dos ontologías radicalmente diferentes (mental y física), sino entre dos tipos dentro de una tipología de encarnación. Segundo, la brecha ya no es absoluta porque para formularla necesitamos hacer referencia común a la vida o al ser vivo. Por estas razones, y para resaltar el contraste con la formulación cartesiana del problema difícil, podríamos llamar a esta brecha explicativa el <Concept>problema cuerpo-cuerpo</Concept> (<Entity>Hanna</Entity> y <Entity>Thompson</Entity> 2003). La diferencia entre el problema cuerpo-cuerpo y el problema difícil cartesiano es filosóficamente no trivial. En el problema difícil, la brecha explicativa es absoluta porque no hay factor común entre lo mental y lo físico (y no puede haber ninguno dado cómo se definen). Por tanto, las opciones principales son aceptar la brecha como un hecho ontológico bruto (dualismo), cerrar la brecha por reducción (materialismo o idealismo), o tender un puente sobre la brecha introduciendo algún tercer "ingrediente extra" especulativo (para el cual no hay evidencia científica o motivación). Estas opciones no tienen sentido para el problema cuerpo-cuerpo. Al encontrar nuestro camino a este problema, hemos tenido que desechar el vocabulario cartesiano tradicional de entidades y propiedades mentales versus físicas. El cuerpo vivido es el cuerpo vivo; es una condición dinámica del cuerpo vivo. Podríamos decir que nuestro cuerpo vivido es una actuación de nuestro cuerpo vivo, algo que nuestro cuerpo promulga al vivir. Una tarea filosófica importante es mostrar cómo puede haber una explicación del cuerpo vivido que integre la biología y la fenomenología, y así vaya "más allá de la brecha" (<Entity>Bruzina</Entity> 2004; <Entity>Roy</Entity> et al. 1999). La tarea científica es entender cómo los procesos organizacionales y dinámicos de un cuerpo vivo pueden volverse constitutivos de un punto de vista subjetivo, de modo que haya algo que se sienta ser ese cuerpo. Para el enfoque enactivo, esta tarea toma la forma de tratar de entender un cuerpo vivido como un tipo especial de sistema autónomo, uno cuya creación de sentido trae, promulga o constituye un mundo fenoménico.
+                            </p>
+
+                            {/* BIOLOGICAL NATURALISM */}
+                            <SectionHeader id="biological-naturalism" number="05" title="Naturalismo Biológico" />
+
+                            <p>
+                                Antes de terminar este capítulo, me gustaría comparar el enfoque a la conciencia y la vida que he estado explorando con el "naturalismo biológico" de <Entity>John Searle</Entity> (<Entity>Searle</Entity> 1992, 2004). Searle también rechaza las categorías tradicionales de mental y físico. Escribe: "Si vamos a mantener esta terminología en absoluto, necesitamos una noción expandida de lo físico para permitir su componente mental intrínseco y subjetivo" (2004, p. 116). Para Searle, los estados conscientes son procesos biológicos que son intrínsecamente cualitativos, subjetivos y de primera persona. Tienen una ontología subjetiva o de primera persona, lo que significa que existen solo en la medida en que son experimentados por un sujeto animal o humano consciente. Los estados conscientes son constitutivamente de primera persona, y por tanto son ontológicamente irreducibles a procesos cerebrales descritos neurofisiológicamente, que son constitutivamente de tercera persona. Al mismo tiempo, la conciencia es causalmente reducible al cerebro porque es enteramente causada por procesos neurobiológicos de nivel inferior y se realiza en la actividad cerebral de nivel superior o sistémica.
+                            </p>
+
+                            <p>
+                                Comparto la visión de Searle de que la conciencia es un proceso biológico subjetivo y que, así descrita, es irreducible a procesos cerebrales descritos neurofisiológicamente en tercera persona. Pero también hay diferencias entre nuestras visiones.
+                            </p>
+
+                            <p>
+                                He argumentado que ya necesitamos una noción expandida de lo físico para dar cuenta de la vida y para preparar el camino para cualquier expansión adicional necesaria para dar cuenta de la conciencia. La vida no es física en el sentido materialista estándar de estructura y función puramente externa. La vida realiza un tipo de interioridad, la interioridad de la mismidad y la creación de sentido. Necesitamos en consecuencia una noción expandida de lo físico para dar cuenta del organismo o ser vivo. Además, encuentro convincente la visión de <Entity>Robert Rosen</Entity> de que tal noción biológica expandida de lo físico sería genérica o típica en su aplicación a la naturaleza en lugar de un caso especial (<Entity>Rosen</Entity> 1991, 2000). Aunque los organismos son estadísticamente raros en la clase de sistemas físicos, no se sigue que sean especiales o no genéricos en esa clase (<Entity>Rosen</Entity> 1991, pp. 13, 37; 2000, p. 27). La mayor parte de la física se ha desarrollado para sistemas termodinámicamente cerrados en lugar de abiertos, y especialmente no para sistemas autopoiéticos o sistemas vivos generalmente, que son precisamente aquellos sistemas para los cuales la individualidad y la interioridad son conceptos aplicables. Son los sistemas cerrados los que son organizacionalmente especiales o no genéricos, no los abiertos. Rosen hace una analogía con los números racionales e irracionales en aritmética: "Tenemos... una predilección por los números racionales, una predilección que les da peso fuera de toda proporción a su abundancia real. Sin embargo, en cada sentido matemático, son los números racionales los que son raros y muy especiales de hecho. ¿Por qué no debería ser el caso con la física y la biología? ¿Por qué no podría ser que los 'universales' de la física son solo así en una clase pequeña y especial (si bien desmesuradamente prominente) de sistemas materiales, una clase a la cual los organismos son demasiado generales para pertenecer? ¿Qué si la física es lo particular, y la biología lo general, en lugar de al revés?" (1991, p. 13).
+                            </p>
+
+                            <p>
+                                También difiero de Searle en mi evaluación de la irreducibilidad de la conciencia. Searle observa que, en casos estándar de reducción científica, un tipo dado de fenómeno, como el calor o el color, se redefine en términos de sus causas microfísicas subyacentes (energía cinética molecular o reflectancias de luz), de tal manera que su apariencia subjetiva (calor sentido o color percibido) se excluye de su definición. Así, la reducción causal de las propiedades causales macroscópicas a las microestructurales, y la redefinición del fenómeno en términos de su microestructura, se supone que apoyan la reducción ontológica del fenómeno a sus constituyentes microestructurales.
+                            </p>
+
+                            <p>
+                                Este patrón de reducción depende de la distinción apariencia/realidad: se supone que el fenómeno es reducible porque puede redefinirse en términos de la realidad subyacente y no de la apariencia. En el caso de la conciencia, sin embargo, no podemos hacer esta distinción apariencia/realidad porque "la conciencia consiste en las apariencias mismas" (<Entity>Searle</Entity> 1992, p. 122). Por tanto "el punto de la reducción se perdería si tratáramos de cortar la apariencia y simplemente definimos la conciencia en términos de la realidad física subyacente" (ibíd.). Searle, sin embargo, piensa que la irreducibilidad de la conciencia es trivial, pues es simplemente "una consecuencia trivial de la pragmática de nuestras prácticas definicionales" (ibíd.). Definimos la conciencia en términos de las apariencias subjetivas, no de la realidad física subyacente, con el resultado de que "las reducciones... que dejan fuera las bases epistémicas, las apariencias, no pueden funcionar para las bases epistémicas mismas" (ibíd.).
+                            </p>
+
+                            <p>
+                                Por el contrario, pienso que la irreducibilidad de la conciencia no es trivial e indica que la conciencia tiene un estatus trascendental además de uno empírico. La conciencia, considerada como base epistémica, no es equivalente a las apariencias perceptuales, que pertenecen a objetos empíricos tal como se dan a nuestra conciencia. La conciencia como base epistémica es equivalente a los actos experienciales por los cuales esos objetos nos son revelados. Desde una perspectiva fenomenológica, los objetos son revelados en las formas en que lo son—como variedades estructuradas complejas de apariencia—gracias a ciertas leyes formales esenciales bajo las cuales la experiencia opera necesariamente para revelar un mundo significativo. La conciencia considerada de esta manera es una condición de posibilidad para que haya apariencias en absoluto. Entender la conciencia de esta manera es entenderla trascendentalmente y no meramente empíricamente. Así tomo la irreducibilidad de las bases epistémicas mismas para apuntar hacia la necesidad de una perspectiva trascendental sobre la conciencia (ver también <Entity>Rowlands</Entity> 2003).<InteractiveFootnote id={9} onActivate={handleNote} />
+                            </p>
+
+                            <p>
+                                La última diferencia que quiero mencionar concierne a la visión de Searle de que la conciencia es causalmente reducible enteramente al cerebro. Esta visión proporciona una manera de ver la conciencia como un proceso biológico causalmente eficaz. La conciencia en la visión de Searle es un estado de nivel superior o global del cerebro que es causalmente relevante para el comportamiento del organismo y la actividad neuronal subsecuente. Esta conjetura neurobiológica coincide con varias propuestas neurodinámicas sobre la conciencia (ver <Entity>Cosmelli</Entity>, <Entity>Lachaux</Entity> y <Entity>Thompson</Entity> 2007; y Capítulos 3, 11 y 12 del presente volumen). Sin embargo, la visión de que la conciencia es enteramente causalmente reducible al cerebro puede ser biológicamente prematura. Simplemente no sabemos aún si el cerebro solo es la base causal mínima para la conciencia o si esta base también incluye características de la interfaz cerebro-cuerpo o la interfaz cerebro-cuerpo-entorno.
+                            </p>
+
+                            <p>
+                                Considere el experimento mental filosófico del cerebro en una cubeta. Su cerebro es removido de su cuerpo y mantenido artificialmente en una cubeta química donde recibe exactamente la misma estimulación a todas sus terminales neuronales que recibe normalmente mientras usted vive su vida. ¿Notaría usted (o su cerebro) alguna diferencia? ¿No tendría usted una experiencia subjetiva cualitativamente idéntica? Los filósofos han usado este escenario para motivar muchas ideas, una de las cuales es que el cerebro (o algún subsistema del cerebro), y nada fuera del cerebro, es la condición mínimamente suficiente para la conciencia o experiencia subjetiva. Sin embargo, esta afirmación no se sigue del escenario del cerebro en una cubeta. Más bien, lo que se sigue es que, cualquiera que sea la condición mínimamente suficiente para la conciencia, esta condición ha sido realizada exitosamente por la configuración de la cubeta. Por lo que sabemos, esta condición necesariamente incluye como parte propia algo fuera del cerebro, proporcionado en este caso por la cubeta.<InteractiveFootnote id={10} onActivate={handleNote} />
+                            </p>
+
+                            <p>
+                                Note que la configuración de la cubeta tendría que ser capaz de (1) mantener el cerebro vivo y funcionando, (2) duplicar toda la estimulación exógena, y (3) compensar de exactamente la manera correcta toda la actividad endógena (y autoorganizativa). Tal configuración casi con certeza tendría que duplicar muchas de las propiedades químicas, biomecánicas y sensoriomotoras del cuerpo, probablemente incluso el acoplamiento sensoriomotor del cuerpo con el mundo. En otras palabras, la hipótesis nula es que cualquier cubeta que cumpla con los requisitos de este escenario será un cuerpo sustituto. Por tanto, el experimento mental del cerebro en una cubeta no establece ni que la conciencia sea enteramente causalmente reducible al cerebro ni que la condición mínimamente suficiente para la conciencia resida exclusivamente dentro del cerebro. Quizás los procesos corporales pertenecen a la condición mínimamente suficiente para la conciencia y la "cubeta" tendría que ser un cuerpo sustituto.<InteractiveFootnote id={11} onActivate={handleNote} />
+                            </p>
+
+                            <p>
+                                Uno podría objetar que ya sabemos que la estimulación eléctrica directa a la corteza puede producir varios tipos de experiencias conscientes. ¿No es este hecho una buena razón para pensar que, dadas las condiciones de fondo apropiadas en el resto del cerebro y el cuerpo, debe haber algún sustrato neural que sea mínimamente suficiente para la instanciación o realización de la conciencia?
+                            </p>
+
+                            <p>
+                                Esta propuesta, sin embargo, depende de consideraciones empíricas que están lejos de estar resueltas. Simplemente no sabemos aún los requisitos biológicos mínimos para la instanciación o realización de la conciencia. Una cosa es que la actividad neural sea la condición suficiente mínima para la instanciación de un momento fugaz y episódico de conciencia fenoménica. Otra cosa muy distinta es que la actividad neural sea la condición suficiente mínima para la instanciación de la conciencia en el sentido de experiencia intencional coherente y temporalmente extendida del mundo. Como sugieren las consideraciones anteriores sobre el escenario del cerebro en una cubeta, tal conciencia podría requerir nada menos que un cuerpo vivo comprometido con el mundo.
+                            </p>
+
+                            <p>
+                                Incluso si la condición mínimamente suficiente para la conciencia es de hecho el cerebro, no se sigue que no seamos nada más allá de nuestros cerebros. Considere estas declaraciones de Searle: "El cerebro es todo lo que tenemos para el propósito de representarnos el mundo a nosotros mismos y todo lo que podemos usar debe estar dentro del cerebro. Cada una de nuestras creencias debe ser posible para un ser que es un cerebro en una cubeta porque cada uno de nosotros es precisamente un cerebro en una cubeta; la cubeta es el cráneo y los 'mensajes' que entran vienen por vía de impactos en el sistema nervioso" (<Entity>Searle</Entity> 1983, p. 230). Sin embargo, el cerebro no es todo lo que tenemos, y no todo lo que podemos usar para el propósito de representar el mundo está dentro de nuestro cerebro. Tenemos nuestro cuerpo así como recursos en el entorno, y está lejos de ser obvio que cualquier proceso corporal o recurso ambiental usado en representar el mundo necesite ser representado dentro del cerebro. Cada uno de nosotros no es precisamente un cerebro en una cubeta sino más bien un sujeto corporal. El cuerpo no es una cubeta, y cualquier llamada cubeta que pudiera duplicar o sustituir al cuerpo muy probablemente tendría que ser un cuerpo sustituto. El cerebro es un órgano, no un organismo, y es el organismo, animal o persona el que tiene acceso consciente al mundo. Como sujetos conscientes no somos cerebros en cubetas craneales; somos seres neuralmente vivificados en el mundo.
+                            </p>
+
+                            <p>
+                                Aunque para cada cambio subjetivo y fenoménico en la experiencia consciente de uno hay presumiblemente un cambio correspondiente en el cerebro de uno, sigue siendo una pregunta abierta en qué medida estos cambios son explicables independientemente de los contextos sensoriomotores y ambientales de la actividad cerebral.<InteractiveFootnote id={12} onActivate={handleNote} /> La hipótesis del enfoque enactivo es que la relación entre la experiencia y el cerebro permanecerá opaca a menos que estos contextos figuren explícitamente en nuestras explicaciones. Este asunto es central para el próximo capítulo.
+                            </p>
+
+                            {/* FIGURES GALLERY */}
+                            <SectionHeader id="figures-gallery" number="06" title="Galería de Figuras" />
+                            
+                            <div className="grid grid-cols-1 gap-12">
+                                {FIGURES_DATA.map(figure => (
+                                    <Figure key={figure.id} data={figure} />
+                                ))}
+                            </div>
+
+                        </article>
+                        
+                        {/* --- CONTENT END --- */}
+
+                        <footer className="mt-20 pt-10 border-t border-slate-800 text-center text-slate-500 text-sm mb-10">
+                            <p>© 2007 Harvard University Press. Edición Digital Inmersiva para propósitos académicos.</p>
+                        </footer>
+                    </main>
+
+                    <TooltipModal activeNote={activeNote} onClose={() => setActiveNote(null)} />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
