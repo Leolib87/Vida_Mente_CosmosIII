@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Mente en la Vida | Evan Thompson - Cap. 12</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        amber: {
+                            450: '#F59E0B',
+                        },
+                        cyan: {
+                            450: '#22D3EE',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    maxWidth: {
+                        'reading': '65ch',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #020617; /* bg-slate-950 */
+            color: #cbd5e1; /* text-slate-300 */
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+
+        .serif { font-family: 'Playfair Display', serif; }
+        
+        /* LaTeX adjustments */
+        .katex { font-size: 1.1em; color: #e2e8f0; }
+        
+        h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, useScroll, useSpring, AnimatePresence } = window.Motion;
+        
+        // --- NATIVE ICONS (Zero Dependency) ---
+        // Replacing external library with inline SVGs to prevent UMD/CJS errors
+        
+        const IconBase = ({ children, size = 24, className = "" }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const Menu = (props) => (
+            <IconBase {...props}>
+                <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+            </IconBase>
+        );
+        
+        const X = (props) => (
+            <IconBase {...props}>
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </IconBase>
+        );
+
+        const ChevronRight = (props) => (
+            <IconBase {...props}>
+                <path d="m9 18 6-6-6-6"/>
+            </IconBase>
+        );
+
+        const User = (props) => (
+            <IconBase {...props}>
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </IconBase>
+        );
+
+        const Quote = (props) => (
+            <IconBase {...props}>
+                <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+            </IconBase>
+        );
+
+        // --- DATA ---
+        
+        const BOOK_DATA = {
+            title: "La Mente en la Vida",
+            author: "Evan Thompson",
+            toc: [
+                { title: "Inicio", id: "hero" },
+                { separator: "CAPÍTULO DOCE" },
+                { title: "Dinamismo Primordial", id: "intro" },
+                { title: "Protención", id: "protention" },
+                { title: "Emoción Enactiva", id: "enactive-emotion" },
+                { title: "Un Modelo Neurodinámico", id: "neurodynamical-model" },
+                { title: "Auto-organización Emocional", id: "emotional-self-org" }
+            ]
+        };
+
+        const FOOTNOTES = {
+            1: "Varela describe la protención como un parámetro de orden global que da forma a la dinámica de integración a gran escala en el cerebro. Mientras que la retención corresponde a las trayectorias dinámicas realizadas por el estado actual del sistema, la protención corresponde a los parámetros de orden global para la anticipación que condicionan las direcciones subsiguientes de las trayectorias.",
+            2: "Aunque desde un punto de vista biológico la emoción comprende principalmente estados cerebrales y corporales no conscientes, desde un punto de vista psicológico y fenomenológico incluye formas de experiencia ricas y multifacéticas."
+        };
+
+        // --- COMPONENTS ---
+
+        const Concept = ({ children }) => (
+            <span className="text-amber-500 font-medium hover:text-amber-400 transition-colors cursor-help border-b border-amber-500/20 pb-0.5">
+                {children}
+            </span>
+        );
+
+        const Entity = ({ children }) => (
+            <span className="text-cyan-400 font-medium hover:text-cyan-300 transition-colors border-b border-cyan-400/20 pb-0.5">
+                {children}
+            </span>
+        );
+
+        const BookTitle = ({ children }) => (
+            <span className="text-white italic font-serif tracking-wide">
+                {children}
+            </span>
+        );
+
+        const BlockQuote = ({ children, author }) => (
+            <div className="my-10 relative group">
+                <div className="absolute -left-4 top-0 text-slate-700 opacity-50">
+                    <Quote size={40} />
+                </div>
+                <blockquote className="border-l-4 border-cyan-500/30 pl-8 pr-4 py-2 italic text-slate-400 text-lg leading-relaxed font-serif relative z-10 group-hover:border-cyan-500 transition-colors duration-500">
+                    {children}
+                </blockquote>
+                {author && <div className="mt-2 text-right text-sm text-cyan-500/80 font-mono">— {author}</div>}
+            </div>
+        );
+
+        const SectionHeader = ({ id, number, title }) => (
+            <div id={id} className="pt-24 pb-8 mb-8 border-b border-slate-800">
+                <div className="text-cyan-500 text-sm tracking-[0.2em] uppercase mb-2 font-semibold">
+                    {number}
+                </div>
+                <h2 className="text-4xl md:text-5xl text-white font-serif leading-tight">
+                    {title}
+                </h2>
+            </div>
+        );
+
+        const InteractiveFootnote = ({ id, setActiveNote }) => (
+            <sup 
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveNote(id);
+                }}
+                className="text-cyan-400 cursor-pointer font-bold ml-0.5 hover:text-white hover:underline transition-all"
+            >
+                [{id}]
+            </sup>
+        );
+
+        const Figure = ({ caption, children }) => (
+            <figure className="my-12 p-6 border border-dashed border-slate-700 rounded-lg bg-slate-900/50">
+                <div className="flex justify-center items-center mb-6 min-h-[200px] text-slate-500">
+                    {children}
+                </div>
+                <figcaption className="text-center text-sm text-slate-400 font-mono border-t border-slate-800 pt-4 mt-4">
+                    <span className="text-cyan-500 font-bold uppercase mr-2">Figura 12.1</span>
+                    {caption}
+                </figcaption>
+            </figure>
+        );
+
+        // --- LAYOUT COMPONENTS ---
+
+        const ScrollProgress = () => {
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+            return (
+                <motion.div
+                    className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50"
+                    style={{ scaleX }}
+                />
+            );
+        };
+
+        const Navigation = ({ toggleMenu }) => (
+            <nav className="fixed top-0 w-full bg-slate-950/80 backdrop-blur-md border-b border-slate-800/50 z-40 h-16 flex items-center justify-between px-6 transition-all duration-300">
+                <div className="flex items-center gap-4">
+                    <div className="w-8 h-8 bg-cyan-900/20 rounded-full flex items-center justify-center border border-cyan-500/30">
+                        <span className="text-cyan-500 font-serif font-bold">ET</span>
+                    </div>
+                    <div className="hidden md:block">
+                        <h1 className="text-sm text-slate-200 font-semibold tracking-wide">LA MENTE EN LA VIDA</h1>
+                        <p className="text-xs text-slate-500">Capítulo 12: Dinamismo Primordial</p>
+                    </div>
+                </div>
+                <button 
+                    onClick={toggleMenu}
+                    className="flex items-center gap-2 text-slate-400 hover:text-cyan-400 transition-colors group"
+                >
+                    <span className="text-xs uppercase tracking-widest font-semibold hidden sm:block group-hover:mr-1 transition-all">Índice</span>
+                    <Menu size={20} />
+                </button>
+            </nav>
+        );
+
+        const Sidebar = ({ isOpen, toggleMenu, activeSection }) => (
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={toggleMenu}
+                            className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
+                        />
+                        <motion.aside 
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed right-0 top-0 h-full w-80 bg-slate-900 border-l border-slate-800 z-50 p-8 shadow-2xl overflow-y-auto"
+                        >
+                            <div className="flex justify-between items-center mb-10">
+                                <h3 className="text-amber-500 font-serif italic text-xl">Contenidos</h3>
+                                <button onClick={toggleMenu} className="text-slate-400 hover:text-white transition-colors">
+                                    <X size={24} />
+                                </button>
+                            </div>
+                            <ul className="space-y-4">
+                                {BOOK_DATA.toc.map((item, idx) => (
+                                    item.separator ? (
+                                        <li key={idx} className="pt-6 pb-2 border-b border-slate-800 text-xs text-slate-500 uppercase tracking-widest font-bold">
+                                            {item.separator}
+                                        </li>
+                                    ) : (
+                                        <li key={idx}>
+                                            <a 
+                                                href={`#${item.id}`} 
+                                                onClick={toggleMenu}
+                                                className="flex items-center gap-3 text-slate-300 hover:text-cyan-400 transition-colors group"
+                                            >
+                                                <ChevronRight size={14} className="text-slate-600 group-hover:text-cyan-500 transition-colors" />
+                                                <span className="text-sm font-medium leading-relaxed">{item.title}</span>
+                                            </a>
+                                        </li>
+                                    )
+                                ))}
+                            </ul>
+                        </motion.aside>
+                    </>
+                )}
+            </AnimatePresence>
+        );
+
+        const TooltipModal = ({ activeNote, setActiveNote }) => (
+            <AnimatePresence>
+                {activeNote && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        className="fixed bottom-8 left-1/2 -translate-x-1/2 w-11/12 max-w-2xl z-50"
+                    >
+                        <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700 p-6 rounded-xl shadow-2xl relative">
+                            <button 
+                                onClick={() => setActiveNote(null)}
+                                className="absolute top-2 right-2 text-slate-500 hover:text-white"
+                            >
+                                <X size={16} />
+                            </button>
+                            <div className="flex gap-4">
+                                <span className="text-cyan-500 font-bold font-serif text-xl leading-none pt-1">
+                                    {activeNote}
+                                </span>
+                                <p className="text-sm text-slate-300 leading-relaxed">
+                                    {FOOTNOTES[activeNote]}
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        );
+
+        const Hero = () => (
+            <section id="hero" className="min-h-screen flex flex-col justify-center items-center text-center px-6 relative overflow-hidden">
+                {/* Background Atmosphere */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/10 via-slate-950 to-slate-950" />
+                
+                <motion.div 
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1, delay: 0.2 }}
+                    className="relative z-10"
+                >
+                    <span className="text-amber-500 tracking-[0.3em] text-xs font-bold uppercase mb-4 block">
+                        Capítulo Doce
+                    </span>
+                    <h1 className="text-5xl md:text-7xl font-serif text-white mb-6 leading-tight">
+                        Dinamismo <br/> <span className="text-slate-400 italic">Primordial</span>
+                    </h1>
+                    <div className="w-24 h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mx-auto mb-8" />
+                    <p className="text-xl text-slate-300 font-light tracking-wide">
+                        Emoción y Valencia
+                    </p>
+                </motion.div>
+                
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.5, duration: 1 }}
+                    className="absolute bottom-12"
+                >
+                   <div className="animate-bounce text-slate-600">
+                        <User size={20} className="mx-auto mb-2 text-cyan-900" />
+                        <span className="text-xs uppercase tracking-widest text-slate-600">Desliza para leer</span>
+                   </div>
+                </motion.div>
+            </section>
+        );
+
+        // --- MAIN CONTENT COMPONENT ---
+
+        const ChapterContent = ({ setActiveNote }) => (
+            <main className="max-w-5xl mx-auto px-6 md:px-12 pb-32 text-lg md:text-xl leading-relaxed text-justify hyphens-auto text-slate-300">
+                
+                {/* INTRO */}
+                <div id="intro" className="pt-24 first-letter:text-6xl first-letter:font-serif first-letter:text-white first-letter:float-left first-letter:mr-3 first-letter:mt-[-8px]">
+                    <p className="mb-8">
+                        COMO MI PUNTO DE PARTIDA en este capítulo, exploro un aspecto de la conciencia del tiempo que fue descuidado en el capítulo anterior: el aspecto orientado al futuro de la <Concept>protención</Concept>. Como veremos, existe un fuerte vínculo entre la protención y la emoción, de modo que el <Concept>afecto</Concept> juega un papel importante en la generación del flujo de la experiencia y la acción.
+                    </p>
+                </div>
+
+                {/* PROTENTION SECTION */}
+                <SectionHeader id="protention" number="Sección 01" title="Protención" />
+                
+                <p className="mb-6">
+                    Al pensar en la estructura de la conciencia del tiempo, es fácil asumir que la <Concept>protención</Concept> es simplemente el reverso o inverso de la <Concept>retención</Concept> y, por lo tanto, que la estructura triple de la temporalidad es simétrica. Pero este no puede ser el caso por varias razones (<Entity>Gallagher</Entity> 1998, p. 68; <Entity>Varela</Entity> 1999, p. 296).
+                </p>
+
+                <p className="mb-6">
+                    Primero, la protención es intencionalmente <Concept>"no cumplida"</Concept>, lo que significa que lo que tiene como objetivo está ausente o no completamente presente. La protención apunta al <Concept>"aún no"</Concept>, y por lo tanto su contenido aún no ha sido llenado de manera determinada. La <Concept>retención</Concept>, en contraste, está <Concept>"cumplida"</Concept>, pues apunta a lo que acaba de estar ahí, y por ende su contenido es determinado. La protención se dirige intencionalmente hacia una fase no actual e inmediatamente inminente de lo que está sucediendo; la retención hacia una fase inmediatamente transcurrida y previamente actual. La retención es así determinada en su contenido de una manera que la protención no puede ser. Aunque la protención intenta el futuro de una manera más o menos definida, es no obstante abierta e indeterminada, pues lo que intenta aún no ha ocurrido.
+                </p>
+
+                <p className="mb-6">
+                    Segundo, se sigue que la protención es un dominio delimitado, aunque no un continuo. La retención siempre implica un continuo, la retención de retenciones previas. Las protenciones no pueden formar un continuo de esta manera, pues las protenciones que serían intentadas por la protención que opera actualmente aún no han ocurrido. En palabras de <Entity>Gallagher</Entity>:
+                </p>
+
+                <BlockQuote author="Shaun Gallagher (1998)">
+                    La protención no puede ser una caída gradual y ordenada en la oscuridad; debe ser un sentido no regulado, relativamente indeterminado y temporalmente ambiguo de lo que está por venir.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    Mientras que las retenciones retroceden continuamente hacia el pasado y se contienen intencionalmente unas a otras, la protención es un <Concept>horizonte abierto</Concept> de anticipación.
+                </p>
+
+                <p className="mb-6">
+                    Finalmente, la <Concept>emoción</Concept> es integral a la protención, pues la protención siempre implica motivación, un <Concept>tono afectivo</Concept>, y una <Concept>tendencia a la acción</Concept> o disposición para la acción. Es este vínculo con la emoción el que pretendo explorar en este capítulo.
+                </p>
+
+                <p className="mb-6">
+                    Comencemos con la idea de que la protención está motivada. Por un lado, la retención motiva la protención, o más precisamente, los contenidos retencionales motivan los contenidos protencionales, pues la anticipación de uno sobre lo que está a punto de suceder en el futuro inmediato se basa en la retención de lo que acaba de suceder. Por ejemplo, mi experiencia actual de ver una bandada de pájaros volar a través del cielo protende continuamente una cierta dirección a su vuelo, basada en mi retención continua de dónde acaban de estar. Por otro lado, las protenciones motivan las retenciones, pues lo que se protende afecta lo que se retiene. Protendo la trayectoria de vuelo de los pájaros, y estas protenciones se retienen como cumplidas (si la trayectoria de vuelo es como anticipo) o no cumplidas (si sucede algo inesperado). La retención incluye así no simplemente la retención de lo que acaba de ocurrir, sino también la retención de <Concept>haber-estado-protendiendo</Concept> de esta o aquella manera. La retención siempre incluye la retención de la protención y de la manera en que la protención se cumple o no (<Entity>Rodemeyer</Entity> 2003).
+                </p>
+
+                <p className="mb-6">
+                    La relación motivacional entre retención y protención es así altamente no lineal. La retención motiva la protención, la cual afecta la retención, la cual motiva la protención, y así sucesivamente, de una manera auto-organizativa que da coherencia temporal a la experiencia. Si abstraemos de los contenidos retencionales y protencionales específicos, y consideramos la retención y la protención a un nivel puramente formal o estructural, entonces podemos decir que, independientemente de sus contenidos, la retención modifica continuamente la protención y la protención modifica continuamente la retención. Esta modificación mutua es recíproca, aunque no simétrica. La retención modifica el "estilo" de la protención, pero la protención no puede influenciar retroactivamente las retenciones que ya han ocurrido. Más bien, <Concept>"la protención actual afectará la retención que aún no ha ocurrido, en el sentido de que retener será siempre un retener de haber-estado-protendiendo, pero no viceversa"</Concept> (<Entity>Gallagher</Entity> 1998, p. 68). De esta manera, el flujo de la experiencia es auto-organizativo, avanza hacia adelante, es irreversible y está estructurado motivacionalmente.
+                </p>
+
+                <p className="mb-6">
+                    En este capítulo, observo el papel del <Concept>afecto</Concept> y las tendencias de acción en la generación de este flujo. Su importancia en relación con la protención puede indicarse ahora señalando que el <Concept>"aún no"</Concept> protencional está siempre impregnado de afecto y condicionado por la disposición emocional (motivación, valoración, tono afectivo y tendencia a la acción) que acompaña al flujo (<Entity>Varela</Entity> 1999, p. 296). Desde una perspectiva neurofenomenológica, estos aspectos emocionales de la protención actúan como condiciones de frontera e iniciales mayores para los eventos neurodinámicos a las escalas de $1/10$ y 1 descritas en el capítulo anterior. Por esta razón, <Entity>Varela</Entity> describe la protención como un <Concept>parámetro de orden global</Concept>.<InteractiveFootnote id={1} setActiveNote={setActiveNote} />
+                </p>
+
+                <p className="mb-6">
+                    Antes de profundizar en estas ideas, permítanme conectarlas con el tema de este libro: la profunda continuidad de la vida y la mente. En el Capítulo 6 vimos que el tiempo biológico está fundamentalmente orientado hacia el futuro y surge de la <Concept>autopoiesis</Concept> y la <Concept>creación de sentido</Concept> (sense-making). La vida está asimétricamente orientada hacia el futuro porque la realización de la organización autopoiética exige una incesante auto-renovación metabólica. Como declara <Entity>Jonas</Entity> (1968), haciendo eco de <Entity>Spinoza</Entity>, la <Concept>"preocupación"</Concept> básica de la vida es seguir adelante. Esta intencionalidad inmanente de la vida se recapitula en la temporalidad e intencionalidad de la conciencia. La conciencia es un flujo auto-constituyente inexorablemente dirigido hacia el futuro y atraído por la valencia afectiva del mundo. Lo que deseo explorar ahora es cómo esta trayectoria hacia adelante de la vida y la mente es fundamentalmente una cuestión de emoción.
+                </p>
+
+                {/* ENACTIVE EMOTION SECTION */}
+                <SectionHeader id="enactive-emotion" number="Sección 02" title="Emoción Enactiva" />
+
+                <p className="mb-6">
+                    En un artículo innovador sobre emoción y conciencia, el neuropsicólogo <Entity>Douglas Watt</Entity> (1998) describe la emoción como un <Concept>"evento prototípico de todo el cerebro"</Concept>, un estado global del cerebro que recluta y mantiene unidas actividades en muchas regiones, y por lo tanto no puede tener correlatos neurales simples. Podemos llevar este punto un paso más allá diciendo que la emoción es un <Concept>evento prototípico de todo el organismo</Concept>, pues moviliza y coordina virtualmente cada aspecto del organismo. La emoción involucra todo el eje neural del tronco encefálico, áreas límbicas y corteza superior, así como procesos viscerales y motores del cuerpo. Abarca redes psicosomáticas de comunicación molecular entre el sistema nervioso, el sistema inmune y el sistema endocrino. En un nivel psicológico, la emoción involucra atención y evaluación o valoración, así como sentimiento afectivo. La emoción se manifiesta conductualmente en expresiones faciales distintivas y tendencias de acción. Aunque desde un punto de vista biológico la emoción comprende mayormente estados cerebrales y corporales no conscientes, desde un punto de vista psicológico y fenomenológico incluye formas de experiencia ricas y multifacéticas.<InteractiveFootnote id={2} setActiveNote={setActiveNote} />
+                </p>
+
+                <p className="mb-6">
+                    Frente a esta complejidad, algunos científicos (<Entity>LeDoux</Entity> 1996) y filósofos (<Entity>Griffiths</Entity> 1997) han argumentado que aunque hay emociones, no existe tal cosa como "la emoción". La razón que citan es la ausencia de una categoría unificada de fenómenos a la cual la palabra "emoción" se refiera. Aunque uno puede señalar emociones particulares, notablemente las llamadas emociones básicas de miedo, sorpresa, ira, disgusto, tristeza y alegría (según una lista), y a sistemas neurales que las median, no hay una <Concept>"clase natural"</Concept> de emoción a la que pertenezcan. Sin embargo, estos teóricos continúan usando la palabra "emoción" para describir su tema y para relacionar niveles biológicos y psicológicos de explicación, mostrando así la utilidad teórica o al menos expositiva del término.
+                </p>
+
+                <p className="mb-6">
+                    Todavía es una pregunta abierta, sin embargo, qué marco teórico puede dar cuenta mejor de los diversos aspectos de la emoción —desde lo biológico a lo psicológico a lo fenomenológico— de maneras conceptual y empíricamente provechosas. Los enfoques de sistemas dinámicos a la emoción parecen especialmente prometedores bajo esta luz (<Entity>Lewis</Entity> 2000, 2005; <Entity>Lewis y Granic</Entity> 2000). Además de la afinidad entre estos enfoques y el enfoque enactivo, hay puntos importantes de convergencia entre los enfoques de sistemas dinámicos a la emoción y los fenomenológicos, como veremos más adelante en este capítulo.
+                </p>
+
+                <p className="mb-6">
+                    La etimología nos dice que la palabra "emoción" (del verbo latino <Concept><em>emovere</em></Concept>) significa literalmente un movimiento hacia afuera. La emoción es el surgimiento de un impulso interior que tiende hacia la expresión externa y la acción. Hay así una estrecha semejanza entre el sentido etimológico de emoción —un impulso moviéndose hacia afuera— y el sentido etimológico de intencionalidad —una flecha dirigida a un objetivo, y por extensión el apuntar de la mente hacia afuera o más allá de sí misma hacia el mundo. Ambas ideas connotan movimiento dirigido. Esta imagen de movimiento permanece discernible en la caracterización abstracta y cognitiva de la intencionalidad en la fenomenología. Como se discutió en el Capítulo 2, la intencionalidad no es una mera relación estática de "tratar sobre", sino más bien es un esfuerzo dinámico por el cumplimiento intencional. En la fenomenología genética, este esfuerzo intencional se rastrea hasta sus raíces en <Concept>"preferencias originalmente instintivas, relacionadas con impulsos"</Concept> del cuerpo vivido (<Entity>Husserl</Entity> 2001, p. 198). <Entity>Husserl</Entity> llama a este tipo de intencionalidad <Concept>"intencionalidad de impulso"</Concept> (<em>Triebintentionalität</em>). <Entity>Patočka</Entity> lo llama <Concept>"e-moción"</Concept>. Este término connota movimiento, su instigación por "afectividad impresional", y la dinámica de <Concept>"atracción y repulsión constante"</Concept> (<Entity>Patočka</Entity>, 1998, p. 139). <Entity>Walter Freeman</Entity> reconoce este vínculo entre emoción e intencionalidad, haciéndolo el punto de partida para su enfoque enactivo o "activista-pragmatista" de la emoción:
+                </p>
+
+                <BlockQuote author="Walter Freeman (2000)">
+                    Una manera de dar sentido a la emoción es identificarla con la intención de actuar en el futuro cercano, y luego notar niveles crecientes de complejidad de contextualización. Más básicamente, la emoción es movimiento hacia afuera. Es el "estirarse" de la intencionalidad, que se ve en animales primitivos preparándose para atacar con el fin de obtener comida, territorio o recursos para reproducirse, para encontrar refugio o escapar de un daño inminente... La característica clave es que la acción brota desde dentro del organismo. No es un reflejo. Está dirigida hacia algún estado futuro, el cual está siendo determinado por el organismo en conjunción con sus percepciones de su condición evolutiva y su historia.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    Es iluminador comparar este punto de partida con uno neurocientífico diferente, el de <Entity>Joseph LeDoux</Entity> (1996). Según <Entity>LeDoux</Entity>, <Concept>"la palabra 'emoción' no se refiere a algo que la mente o el cerebro realmente tiene o hace"</Concept>, porque <Concept>"No hay tal cosa como la 'facultad de la emoción' y no hay un sistema cerebral único dedicado a esta función fantasma"</Concept>. En cambio, <Concept>"las varias clases de emociones son mediadas por sistemas neurales separados que han evolucionado por diferentes razones... y los sentimientos que resultan de activar estos sistemas... no tienen un origen común"</Concept> (1996, p. 16). En resumen, aunque hay muchas emociones, no hay tal cosa como la emoción. <Entity>LeDoux</Entity> establece explícitamente la premisa sobre la cual descansa esta línea de razonamiento: <Concept>"el nivel apropiado de análisis de una función psicológica es el nivel en el cual esa función está representada en el cerebro"</Concept> (p. 16).
+                </p>
+
+                <p className="mb-6">
+                    Desde una perspectiva enactiva, sin embargo, esta concepción de una función —un mecanismo que implementa algún mapeo de entrada (estimulación sensorial) a salida (respuesta motora)— presupone que estamos tratando al cerebro como un dispositivo heterónomo, no un sistema autónomo. Como escribe <Entity>Freeman</Entity>, los modelos lineales de entrada-salida no dejan <Concept>"ninguna apertura para la autodeterminación"</Concept> (1999b, p. 147).
+                </p>
+
+                <p className="mb-6">
+                    Los sistemas autodeterminados o autónomos, como hemos visto, se definen por su cierre organizacional y operacional, y por lo tanto no tienen entradas y salidas en el sentido usual. Para estos sistemas, la distinción lineal entrada/salida debe ser reemplazada por la distinción no lineal perturbación/respuesta. Desde una perspectiva enactiva, los procesos cerebrales se entienden en relación con la causalidad circular de los ciclos acción-percepción y los procesos sensoriomotores. Por lo tanto, la emoción no es una función en el sentido entrada-salida, sino más bien una característica del ciclo acción-percepción: a saber, la iniciación endógena y dirección del comportamiento hacia afuera, hacia el mundo. La emoción está encarnada en la dinámica cerrada del bucle sensoriomotor, orquestada endógenamente por procesos a lo largo del eje neural, especialmente el sistema límbico. El enfoque enactivo puede así proporcionar un concepto de emoción teóricamente significativo y superordinado, y puede fundamentar ese concepto en propiedades dinámicas a gran escala de la organización cerebral.
+                </p>
+                
+                <p className="mb-6">
+                    La pregunta guía para un enfoque enactivo de la emoción es bien planteada por <Entity>Freeman</Entity>: <Concept>"¿Cómo emergen los comportamientos intencionales, todos los cuales son emotivos, sean o no conscientes, a través de la auto-organización de la actividad neural incluso en los cerebros más primitivos?"</Concept> (<Entity>Freeman</Entity> 2000, p. 216).
+                </p>
+
+                <p className="mb-6">
+                    La consideración de esta pregunta necesita comenzar con características de la organización cerebral. La organización general del cerebro refleja un principio de reciprocidad: si el área A se conecta al área B, entonces hay conexiones recíprocas de B a A (<Entity>Varela</Entity> 1995; <Entity>Varela et al.</Entity> 2001). Además, si B recibe la mayoría de su influencia entrante de A, entonces envía la mayor proporción de su actividad saliente de vuelta a A y solo una proporción menor hacia adelante (<Entity>Freeman</Entity> 2000, p. 224). Sin embargo, la neurociencia tradicional ha tratado de mapear la organización cerebral en un modelo de procesamiento jerárquico de entrada-salida en el cual el extremo sensorial se toma como el punto de partida. La percepción se describe procediendo a través de una serie de etapas de procesamiento <em>feedforward</em> o de abajo hacia arriba, y las influencias de arriba hacia abajo se equiparan con retroproyecciones o retroalimentación de áreas superiores a inferiores. <Entity>Freeman</Entity> describe acertadamente esta visión como la <Concept>"visión pasivista-cognitivista"</Concept> del cerebro.
+                </p>
+                
+                <p className="mb-6">
+                    Desde un punto de vista enactivo, las cosas se ven bastante diferentes. Los procesos cerebrales son recursivos, reentrantes y auto-activantes, y no comienzan ni terminan en ninguna parte. En lugar de tratar la percepción como una etapa posterior de la sensación y tomar los receptores sensoriales como el punto de partida para el análisis, el enfoque enactivo trata la percepción y la emoción como aspectos dependientes de la acción intencional, y toma la actividad endógena y auto-generada del cerebro como el punto de partida para el análisis neurobiológico. Esta actividad surge lejos de los sensores en los lóbulos frontales, sistema límbico o cortezas temporales y asociativas y refleja el conjunto protencional general del organismo —sus estados de expectativa, preparación, tono afectivo, atención, y así sucesivamente. Estos estados son necesariamente activos al mismo tiempo que el flujo sensorial entrante (<Entity>Engel, Fries, y Singer</Entity> 2001; <Entity>Varela et al.</Entity> 2001).
+                </p>
+
+                 {/* NEURODYNAMICAL MODEL SECTION */}
+                <SectionHeader id="neurodynamical-model" number="Sección 03" title="Un Modelo Neurodinámico" />
+
+                <p className="mb-6">
+                    El trabajo de <Entity>Walter Freeman</Entity> es especialmente relevante aquí. Basándose en su investigación pionera en neurodinámica durante muchos años, ha propuesto un modelo enactivo y neurodinámico de lo que <Entity>Merleau-Ponty</Entity> llama <Concept>"el arco intencional"</Concept> que subyace a la vida de la conciencia (ver Capítulo 9). El modelo de <Entity>Freeman</Entity> contiene cinco bucles causales circulares, comprendiendo cerebro, cuerpo y entorno, pero centrados en el sistema límbico, el área cerebral especialmente asociada con la emoción. Emoción, intención y conciencia emergen de y están encarnadas en la dinámica auto-organizativa de estos bucles anidados.
+                </p>
+
+                <Figure caption="Modelo de Walter Freeman del arco intencional surgiendo de la arquitectura dinámica del sistema límbico.">
+                    <div className="flex flex-col items-center gap-4 w-full">
+                        {/* CSS Diagram Representation */}
+                        <div className="flex justify-between w-full max-w-lg text-xs font-bold uppercase tracking-widest text-center gap-2">
+                            <div className="border border-slate-600 p-2 rounded w-1/3">Receptores</div>
+                            <div className="border-t-2 border-slate-600 flex-1 mt-4 relative">
+                                <span className="absolute -top-6 left-1/2 -translate-x-1/2">Bucle Motor</span>
+                            </div>
+                            <div className="border border-slate-600 p-2 rounded w-1/3">Búsqueda</div>
+                        </div>
+
+                        <div className="flex justify-center items-center w-full h-24 relative">
+                            <div className="absolute inset-0 border border-slate-700 rounded-xl flex items-center justify-center m-4">
+                                <span className="bg-slate-950 px-2 z-10 font-bold text-cyan-500">Cuerpo / Propiocepción</span>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-4 w-full max-w-lg text-center text-xs font-bold">
+                            <div className="bg-slate-800 p-4 rounded text-slate-300">Sistemas Sensoriales</div>
+                            <div className="flex flex-col justify-center gap-2">
+                                <div className="bg-slate-800 p-2 rounded border border-cyan-900 text-cyan-400">Corteza Entorrinal</div>
+                                <div className="h-8 w-0.5 bg-slate-600 mx-auto"></div>
+                                <div className="bg-slate-800 p-2 rounded text-slate-400">Hipocampo</div>
+                            </div>
+                            <div className="bg-slate-800 p-4 rounded text-slate-300">Sistemas Motores</div>
+                        </div>
+                        <div className="text-xs text-slate-500 mt-2 italic">Bucle Espaciotiempo & Control</div>
+                    </div>
+                </Figure>
+
+                <p className="mb-6">
+                    En el nivel más global está el <Concept>"bucle motor"</Concept> entre organismo y entorno. Este bucle consiste en el circuito sensoriomotor que conduce desde la acción motora en y a través del entorno, y de vuelta a la estimulación sensorial resultante del movimiento. La acción motora implica excitación dirigida y búsqueda, y expresa los estados de expectativa del organismo. Los estímulos sensoriales que recibe el organismo dependen directamente de su acción motora, y cómo se mueve el organismo depende directamente de las consecuencias sensoriales de sus acciones previas. <Entity>Merleau-Ponty</Entity>, en <em>La Estructura del Comportamiento</em>, reconoció la importancia de este bucle: <Concept>"dado que todas las estimulaciones que el organismo recibe han sido a su vez posibles solo por sus movimientos precedentes que han culminado en exponer el órgano receptor a las influencias externas, uno podría... decir que el comportamiento es la primera causa de las estimulaciones. Así, la forma del excitante es creada por el organismo mismo, por su propia manera de ofrecerse a las acciones desde afuera"</Concept> (1963, p. 13).
+                </p>
+
+                <p className="mb-6">
+                    Mientras que el bucle motor viaja fuera del cerebro y el cuerpo hacia y a través del entorno, el <Concept>"bucle propioceptivo"</Concept> viaja fuera del cerebro pero se cierra dentro del cuerpo. Este bucle consiste en vías desde los receptores sensoriales en los músculos y articulaciones hacia la médula espinal, cerebelo, tálamo y corteza somatosensorial. <Entity>Freeman</Entity> (2000) también describe este bucle como uno interoceptivo. La interocepción en este contexto se entiende mejor como el sentido de la condición fisiológica de todo el cuerpo, no solo las vísceras, e implica vías neurales distintas en la médula espinal, tronco encefálico, tálamo e ínsula (<Entity>Craig</Entity> 2002).
+                </p>
+
+                <p className="mb-6">
+                    Los tres bucles restantes del modelo están todos dentro del cerebro. Si comenzamos en el lado sensorial, entonces primero necesitamos recordar que los estímulos sensoriales ocurren en un contexto de expectativa y actividad motora. Cuando llega un estímulo, los receptores activados transmiten pulsos a la corteza sensorial, donde inducen la construcción por dinámica no lineal de un patrón de actividad en la forma de un patrón espacial a gran escala de actividad oscilatoria coherente. Este patrón no es una representación del estímulo sino una respuesta generada endógenamente desencadenada por la perturbación sensorial, una respuesta que crea y porta el significado del estímulo para el animal. Este significado refleja la historia del organismo individual, su estado de expectativa y el contexto ambiental.
+                </p>
+
+                <p className="mb-6">
+                    Estos patrones dinámicos significativos construidos en la corteza convergen en el sistema límbico a través de la corteza entorrinal, un área de convergencia multisensorial que recibe y combina actividad de todas las áreas sensoriales primarias de la corteza. Los patrones de actividad dinámica son secuenciados espacial y temporalmente en el hipocampo, un área conocida por estar involucrada en la memoria y la orientación del comportamiento en el espacio y el tiempo. La interacción recíproca entre la corteza entorrinal y el hipocampo (el <Concept>"bucle espaciotiempo"</Concept>) crea una gestalt unificada (en la forma de un patrón oscilatorio coherente a gran escala), que se transmite tanto a los sistemas motores (el <Concept>"bucle de control"</Concept>), movilizando así las actividades viscerales y musculoesqueléticas necesarias para la acción y la expresión emocional, como de vuelta a los sistemas sensoriales a través de descargas corolarias (el <Concept>"bucle de reaferencia"</Concept>), preparándolos así para las consecuencias esperadas de las acciones motoras.
+                </p>
+
+                <p className="mb-6">
+                    <Entity>Freeman</Entity> llama a este proceso de preparación sensorial <Concept>"preaferencia"</Concept> y lo ve como la base neural para lo que subjetivamente experimentamos como atención y expectativa (1999a, p. 34). La expectativa, en el sentido de Freeman, corresponde estrechamente a la noción fenomenológica de <Concept>protención</Concept>: no es un acto cognitivo distinto, sino más bien un aspecto intencional de cada proceso cognitivo. Freeman sostiene que la preaferencia <Concept>"proporciona un parámetro de orden que da forma a los paisajes atractores, haciendo más fácil capturar estímulos esperados o deseados al agrandar o profundizar las cuencas de sus atractores"</Concept> (1999a, p. 112). Esta visión de la preaferencia concuerda con la idea de <Entity>Varela</Entity> de que la protención proporciona un parámetro de orden para la neurodinámica de eventos sensoriomotores y neurales a las escalas de $1/10$ y 1 de duración.
+                </p>
+
+                <p className="mb-6">
+                    La Figura 12.1 muestra el flujo de actividad yendo en ambas direcciones: <em>feedforward</em> (sentido antihorario) y retroalimentación o <em>feedback</em> (sentido horario). <Entity>Freeman</Entity> hipotetiza que la dirección hacia adelante consiste en fluctuaciones de nivel micro en la actividad neuronal que engendran nuevos estados macroscópicos, mientras que la dirección de retroalimentación consiste en parámetros de orden macroscópicos que limitan las actividades de nivel micro de las poblaciones neuronales que transmiten hacia adelante. Estos flujos de <em>feedforward</em> y <em>feedback</em> corresponden así, respectivamente, a los lados local-a-global y global-a-local de la emergencia. Cortar esta causalidad circular en arcos hacia adelante y de retroalimentación es heurístico, pues en cualquier momento solo hay causalidad del sistema, por la cual el sistema se mueve como un todo (ver Apéndice B).
+                </p>
+
+                <p className="mb-6">
+                    <Entity>Freeman</Entity> también relaciona este modelo con la conciencia. Propone que, además de los patrones de actividad a gran escala que emergen a través de la dinámica no lineal del bucle espaciotiempo, hay otro patrón de orden superior en el nivel hemisférico del cerebro, en el cual los patrones de actividad de orden inferior del sistema límbico y las cortezas sensoriales son componentes. Este patrón de orden superior organiza y limita a los de orden inferior. Freeman hipotetiza que este tipo de patrón espaciotemporal de actividad globalmente coherente, que toma del orden de una décima a un cuarto de segundo para surgir (las escalas de $1/10$ y 1 de <Entity>Varela</Entity>), es el correlato cerebral de un estado de <Concept>"darse cuenta"</Concept> (<em>awareness</em>), y que la "conciencia" consiste en una secuencia de tales estados. Mientras que la emoción (el ímpetu interno para la acción) y la acción intencional constituyen el flujo cognitivo en la dirección <em>feedforward</em> (ver Figura 12.1), el darse cuenta y la conciencia constituyen el flujo cognitivo en la dirección de retroalimentación. El darse cuenta, según este modelo, lejos de ser epifenoménico, juega un papel causal importante. Su papel no es como un agente interno u homúnculo que emite comandos, sino como un parámetro de orden que organiza y regula la actividad dinámica. <Entity>Freeman</Entity> y <Entity>Varela</Entity> concuerdan así en que la conciencia está encarnada neuralmente como un patrón de actividad dinámica global que organiza la actividad a través del cerebro. Freeman describe la conciencia como un <Concept>"operador dinámico que media las relaciones entre neuronas"</Concept> y como una <Concept>"variable de estado que limita las actividades caóticas de las partes apagando las fluctuaciones locales"</Concept> (1999a, pp. 132, 143). Lo que la neurophenomenología de la conciencia del tiempo de Varela añade a esta visión es una propuesta sobre cómo la secuencia de tales patrones de actividad transitorios (correspondientes a estados discretos de darse cuenta) puede también constituir un flujo gracias a su estructura retencional-protencional.
+                </p>
+
+                <p className="mb-6">
+                    Volvamos a la emoción. Como indica el modelo de <Entity>Freeman</Entity>, <Concept>"la emoción es esencial para todos los comportamientos intencionales"</Concept> (Freeman 2000). Consideren la percepción. Según el enfoque sensoriomotor dinámico (ver Capítulo 9), al percibir ejercitamos nuestra maestría hábil de las contingencias sensoriomotoras —cómo varía la estimulación sensorial como resultado del movimiento. Este enfoque de la percepción se enfoca en el bucle sensoriomotor global del organismo y el entorno. Podemos apreciar ahora, sin embargo, que este bucle contiene numerosos bucles neurales y somáticos, cuyo corazón latente (en mamíferos) es la dinámica endógena y auto-organizativa de áreas cerebrales corticales y subcorticales. Los procesos sensoriomotores son motivados y orientados intencionalmente gracias a gestalts neurales endógenas que emergen de profundidades lejanas a la superficie sensoriomotora. Por lo tanto, según el enfoque enactivo, los procesos sensoriomotores modulan, pero no determinan, una actividad endógena en curso, la cual a su vez infunde la actividad sensoriomotora con significado emocional y valor para el organismo.
+                </p>
+
+                {/* EMOTIONAL SELF-ORGANIZATION SECTION */}
+                <SectionHeader id="emotional-self-org" number="Sección 04" title="Auto-organización Emocional" />
+
+                <p className="mb-6">
+                    Mi objetivo ahora es esbozar una forma neurofenomenológica de pensar sobre la emoción conectando estas ideas neurodinámicas con la fenomenología de la experiencia emocional. Para enmarcar la discusión, recurriré al modelo de sistemas dinámicos de auto-organización emocional del teórico de la emoción <Entity>Marc Lewis</Entity> (2000, 2005).
+                </p>
+
+                <p className="mb-6">
+                    <Entity>Lewis</Entity> (2000) propone un modelo de desarrollo de auto-organización emocional en tres escalas de tiempo: el microdesarrollo de episodios emocionales en una escala de tiempo de segundos o minutos, el mesodesarrollo de estados de ánimo en una escala de tiempo de horas o días, y el macrodesarrollo de la personalidad en una escala de tiempo de meses y años (ver Tabla 12.1). En cada escala, la auto-organización emocional se modela como una interacción emergente cognición-emoción. La cognición incluye percepción, atención, evaluación, memoria, planificación, reflexión y toma de decisiones, todos los cuales son aspectos de lo que los teóricos de la emoción llaman <Concept>"valoración"</Concept> (appraisal), la evaluación de la importancia de una situación. La emoción incluye excitación, tendencias de acción, expresión corporal, orientación atencional y sentimiento afectivo.
+                </p>
+
+                {/* Table 12.1 Implementation */}
+                <div className="my-12 overflow-x-auto">
+                    <table className="w-full border-collapse border border-slate-700 bg-slate-900/50 text-sm md:text-base">
+                        <caption className="text-cyan-500 font-bold uppercase mb-4 text-left text-xs tracking-widest p-2">
+                            Tabla 12.1: Tres escalas de auto-organización emocional
+                        </caption>
+                        <thead>
+                            <tr className="bg-cyan-900/20 text-cyan-400">
+                                <th className="p-4 border border-slate-700 text-left">Escala</th>
+                                <th className="p-4 border border-slate-700 text-left">Micro</th>
+                                <th className="p-4 border border-slate-700 text-left">Meso</th>
+                                <th className="p-4 border border-slate-700 text-left">Macro</th>
+                            </tr>
+                        </thead>
+                        <tbody className="text-slate-300">
+                            <tr>
+                                <td className="p-4 border border-slate-700 font-bold text-slate-400">Duración</td>
+                                <td className="p-4 border border-slate-700">Segundos-minutos</td>
+                                <td className="p-4 border border-slate-700">Horas-días</td>
+                                <td className="p-4 border border-slate-700">Meses-años</td>
+                            </tr>
+                            <tr>
+                                <td className="p-4 border border-slate-700 font-bold text-slate-400">Descripción</td>
+                                <td className="p-4 border border-slate-700">Convergencia rápida de interpretación cognitiva con estado emocional (IE)</td>
+                                <td className="p-4 border border-slate-700">Arrastre duradero de sesgo interpretativo con rango emocional estrecho (Estado de Ánimo)</td>
+                                <td className="p-4 border border-slate-700">Hábitos interpretativo-emocionales duraderos específicos a clases de situaciones (Personalidad)</td>
+                            </tr>
+                            <tr>
+                                <td className="p-4 border border-slate-700 font-bold text-slate-400">Formalismo sistémico</td>
+                                <td className="p-4 border border-slate-700">Atractor</td>
+                                <td className="p-4 border border-slate-700">Modificación temporal del espacio de estado</td>
+                                <td className="p-4 border border-slate-700">Estructura permanente del espacio de estado</td>
+                            </tr>
+                            <tr>
+                                <td className="p-4 border border-slate-700 font-bold text-slate-400">Forma de orden superior</td>
+                                <td className="p-4 border border-slate-700">Intención, meta</td>
+                                <td className="p-4 border border-slate-700">Orientación intencional</td>
+                                <td className="p-4 border border-slate-700">Sentido del yo</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p className="mb-6">
+                    Sin embargo, cognición y emoción no son sistemas separados, por dos razones (<Entity>Lewis</Entity> 2005). Primero, hay una gran cantidad de solapamiento anatómico entre los sistemas neurales que median la cognición y la emoción, y estos sistemas interactúan entre sí de manera recíproca y circular, arriba y abajo del eje neural. Segundo, los estados globales emergentes a los que dan lugar estas interacciones son <Concept>"amalgamas valoración-emoción"</Concept>, en los cuales los elementos de valoración y los elementos de emoción se modifican mutuamente de manera continua. Tal modificación ocurre en cada escala de tiempo, a través de interacciones recíprocas entre elementos locales de valoración y emoción, e influencias causales circulares entre elementos locales y su forma organizacional global.
+                </p>
+
+                <p className="mb-6">
+                    Para explorar los paralelos entre este modelo y las ideas fenomenológicas, necesitamos mirar las tres escalas de tiempo de auto-organización emocional del modelo con más detalle. En el micronivel, la auto-organización emocional toma la forma de una <Concept>"interpretación emocional"</Concept> (o IE) emergente, una convergencia rápida de una interpretación cognitiva de una situación y un estado emocional (felicidad, ira, miedo, vergüenza, orgullo, simpatía, etc.). Los procesos cognitivos y emocionales se modifican mutuamente de manera continua en una escala de tiempo rápida, mientras son simultáneamente limitados por la forma global producida por su acoplamiento en un proceso de causalidad circular. Esta forma emergente, la interpretación emocional, es un estado global de coherencia emoción-cognición, que comprende una valoración de una situación, un tono afectivo y un plan de acción. Lewis también describe esta forma de orden superior, basándose en las ideas de <Entity>Freeman</Entity>, como una intención global para actuar en el mundo.
+                </p>
+
+                <p className="mb-6">
+                    Según el modelo de <Entity>Lewis</Entity> (2005), la emergencia de una interpretación emocional comienza como una fluctuación en el flujo de la acción intencional, desencadenada por una perturbación (externa o interna), que eventualmente interrumpe el orden de la interpretación emocional actual. Siguen procesos rápidos de auto-amplificación a través de retroalimentación positiva, seguidos por auto-estabilización a través de retroalimentación negativa y arrastre (entrainment), llevando al establecimiento de un nuevo orden en la forma de una nueva interpretación emocional momentánea y una intención global. Esta fase de auto-estabilización es la precondición para el aprendizaje, la consolidación de patrones emoción-valoración a largo plazo.
+                </p>
+
+                <p className="mb-6">
+                    Hay así tres fases principales en la emergencia de una interpretación emocional —una fase de desencadenante, una fase de auto-amplificación, y una fase de auto-estabilización— así como una cuarta fase de aprendizaje adicional que extiende la influencia de la interpretación emocional presente a las futuras. Lewis compara todo el proceso con una bifurcación de un atractor a otro en un espacio de estado emoción-cognición. Él ha presentado recientemente un modelo neuropsicológico de algunas de las áreas cerebrales y procesos de integración neural a gran escala involucrados (<Entity>Lewis</Entity> 2005).
+                </p>
+
+                <p className="mb-6">
+                    Aunque Lewis enfatiza la importancia del sentimiento afectivo como un componente motivacional de la emoción, no explora la fenomenología del afecto en relación con la emergencia de una interpretación emocional. Vale la pena, por tanto, investigar la resonancia entre el modelo de Lewis y la fenomenología genética del afecto.
+                </p>
+
+                <p className="mb-6">
+                    Exploremos ahora la resonancia con la fenomenología genética del afecto. <Concept>Síntesis pasiva</Concept> es el término que Husserl usa para describir cómo la experiencia llega a formarse a medida que uno es afectado precognitivamente. Él traza una distinción entre "pasividad" y "receptividad" (<Entity>Husserl</Entity> 2001, p. 105). Pasividad significa ser afectado involuntariamente mientras se está comprometido en alguna actividad. Receptividad significa responder a una afección involuntaria notándola o volviéndose hacia ella. Toda acción receptiva presupone una afección previa (2001, p. 127). Husserl escribe: <Concept>"Por afección entendemos la seducción dada a la conciencia, el tirón peculiar que un objeto dado a la conciencia ejerce sobre el ego"</Concept> (2001, p. 196). <Concept>"Seducción"</Concept> (<em>allure</em>) no se refiere a una relación causal estímulo-respuesta sino a una <Concept>"relación intencional de motivación"</Concept> (<Entity>Husserl</Entity> 1989, p. 199).
+                </p>
+                
+                <p className="mb-6">
+                    <Entity>Varela</Entity> y <Entity>Depraz</Entity> (2005) presentan una fenomenología del afecto en su artículo "En la Fuente del Tiempo: Valencia y la Dinámica Constitucional del Afecto". Su análisis procede sobre la base de dos ejemplos de experiencia emocional. Uno es una experiencia singular de Varela —una "exaltación musical" mientras escuchaba las primeras notas de una sonata en un concierto. El otro es una experiencia genérica de "desviar la mirada", de proteger u ocultar los ojos (<em>se cacher les yeux</em>), descrita evocativamente por <Entity>Merleau-Ponty</Entity>.
+                </p>
+
+                <p className="mb-6">
+                    Siguiendo a <Entity>Watt</Entity> (1998), <Entity>Varela</Entity> y <Entity>Depraz</Entity> señalan una serie de componentes concurrentes del afecto en tales episodios emocionales momentáneos:
+                </p>
+                
+                <ul className="list-disc pl-8 mb-6 space-y-2 text-slate-400 marker:text-cyan-500">
+                    <li>Un evento precipitante o desencadenante (perceptual o imaginario).</li>
+                    <li>Una emergencia de prominencia afectiva (<em>salience</em>), involucrando un sentido evidente del significado del evento.</li>
+                    <li>Un tono-sentimiento, descrito en psicología como teniendo una valencia a lo largo de una polaridad placentero/desplacentero.</li>
+                    <li>Una encarnación motora, en la forma de cambios faciales y posturales, y tendencias de acción.</li>
+                    <li>Una encarnación visceral-interoceptiva, en forma de cambios autonómicos-fisiológicos complejos.</li>
+                </ul>
+
+                <p className="mb-6">
+                    Cada uno de estos cinco componentes puede discernirse en mis ejemplos de desviar la mirada, especialmente el retroceso ante la cara enojada. Ver inadvertidamente una cara enojada es un evento precipitante o desencadenante. Las caras, especialmente las enojadas, tienen una fuerte seducción afectiva. Ver una cara como una cara enojada es un ejemplo de la rápida emergencia de prominencia afectiva y valoración, una interpretación emocional. La prominencia aumenta con la comprensión de que la ira está dirigida a mí —una elaboración de la interpretación emocional. Un tono-sentimiento complejo de sobresalto, sorpresa, miedo y angustia golpea como una descarga eléctrica. Giro mis ojos y cabeza para mirar hacia otro lado, y rápidamente acelero mi paso (encarnación motora). Mi intención global es alejarme, aunque no hasta el punto de sentir la necesidad de escapar de un peligro físico (otra valoración). Mi intestino se contrae, mi respiración se vuelve más rápida y superficial, mi cara se enrojece y calienta, y mis músculos se tensan mientras me giro y acelero mi caminata (encarnación visceral-interoceptiva). Al mismo tiempo, me veo superado por la comprensión de que la Navidad es un momento doloroso y solitario para muchas personas, mientras sentimientos de tristeza y simpatía por el hombre solitario, vergüenza por mi propia insensibilidad, y defensividad ante su agresión —todas interpretaciones emocionales complejas con sus propios desencadenantes, prominencias, valoraciones, tonos-sentimiento y encarnaciones motoras y viscerales asociadas— se alternan rápidamente, reverberan, y aparentemente se refuerzan unas a otras, en cuestión de segundos. A medida que la distancia del episodio en el espacio y el tiempo aumenta durante los siguientes minutos y horas, un estado de ánimo melancólico se establece, el cual me afecta por el resto del día, junto con un sentimiento de resistencia y un intento de empujar la experiencia, ahora en la forma de memoria, fuera de mi mente. Estos patrones emoción-valoración a más largo plazo surgen a la mesoescala del estado de ánimo, y condicionan y modulan mis emociones por algún tiempo venidero.
+                </p>
+
+                <p className="mb-6">
+                    Podemos ver ahora que el microdesarrollo de una interpretación emocional contiene dentro de sí un complejo microdesarrollo del afecto. Las descripciones fenomenológicas detalladas de <Entity>Husserl</Entity> de este microdesarrollo son altamente sugestivas de un proceso dinámico auto-organizativo. Él describe la experiencia como sujeta a <Concept>"fuerza afectiva"</Concept>. La fuerza afectiva se manifiesta como una transformación rápida y dinámica de la experiencia, movilizando todo el cuerpo vivido de uno.
+                </p>
+
+                <p className="mb-6">
+                    <Entity>Varela</Entity> y <Entity>Depraz</Entity> sostienen que esta dinámica del afecto tiene su "germen" o "fuente" en una <Concept>"fluctuación primordial"</Concept> de las tendencias de sentimiento y movimiento del cuerpo. Esta fluctuación se manifiesta en cualquier instancia dada como una tendencia de movimiento particular o disposición de movimiento habitada por una fuerza afectiva particular. <Entity>Patočka</Entity> la llama una <Concept>"e-moción"</Concept> y la describe como una manifestación del "dinamismo primordial" del cuerpo vivido (<Entity>Patočka</Entity> 1998, pp. 40-42, 139). Estas fluctuaciones son valenciadas en el siguiente sentido. Como tendencias de movimiento, exhiben valencias de movimiento y postura hacia/lejos, aproximación/retirada, involucrarse/evitar, receptivo/defensivo. Como tendencias de sentimiento, exhiben valencias afectivas y hedónicas —atracción/repulsión, gustar/disgustar, placentero/desplacentero, y positivo/negativo. Como situadas socialmente, exhiben valencias sociales de dominancia/sumisión, crianza/rechazo. Y como situadas culturalmente, exhiben valencias normativas y culturales, es decir, valores —bueno/malo, virtuoso/no virtuoso, saludable/no saludable, digno/indigno, loable/censurable.
+                </p>
+
+                <p className="mb-6">
+                    En resumen, la dinámica del afecto en una interpretación emocional puede rastrearse hasta fluctuaciones en la valencia, pero la valencia necesita ser entendida no como un simple signo más/menos conductual o afectivo, sino más bien como un espacio complejo de polaridades y combinaciones posibles (como en el sentido químico de valencia) (ver <Entity>Colombetti</Entity> 2005).
+                </p>
+
+                <p className="mb-6">
+                    Habiendo explorado el afecto a la microescala, podemos volvernos ahora a la mesoescala de los <Concept>estados de ánimo</Concept>. En el modelo de <Entity>Lewis</Entity>, los estados de ánimo comprenden continuidad emocional junto con patrones de valoración prolongados. Mientras que el movimiento de una interpretación emocional a otra corresponde a una bifurcación de un atractor a otro, el inicio de un estado de ánimo corresponde a una modificación temporal de todo el espacio de estado cognición-emoción.
+                </p>
+
+                <p className="mb-6">
+                    Esta visión del estado de ánimo como una orientación intencional de fondo y duradera recuerda a la descripción de <Entity>Heidegger</Entity> del estado de ánimo como la conciencia más fundamental que uno tiene de estar en un mundo (1996, pp. 126-131). Sin embargo, también hay diferencias. Para <Entity>Heidegger</Entity>, el estado de ánimo no es una forma de experiencia dirigida a objetos, sino una <Concept>"sintonía"</Concept> (<em>Stimmung</em>) o "afectación" no dirigida a objetos. El estado de ánimo es omnipresente y primordial.
+                </p>
+
+                <p className="mb-6">
+                    Desde un punto de vista neurofenomenológico, la cuenta de <Entity>Heidegger</Entity> es insatisfactoria. Por un lado, es extrañamente desencarnada, pues el cuerpo no juega ningún papel en su cuenta del estado de ánimo y la sintonía. Segundo, al descuidar completamente la microtemporalidad del afecto en favor de un análisis macroscópico, Heidegger no proporciona enlaces de una escala a la otra. Tercero, como señala <Entity>Patočka</Entity>, debido a que el estado de ánimo para Heidegger implica entender nuestro lugar en el mundo en el tiempo, su cuenta excluye a animales, infantes y niños pequeños (1998, pp. 132-133). <Entity>Gallagher</Entity> hace una observación similar:
+                </p>
+
+                <BlockQuote author="Shaun Gallagher (1998)">
+                    en la descripción de Heidegger, es difícil clasificar al neonato como una instancia de Dasein, ontológica o experiencialmente. Si Dasein es das Man ["el uno" o "la gente"], el infante aún no ha tenido la oportunidad de convertirse en das Man ya que está solo al comienzo de un proceso de socialización. Si Dasein tiene la posibilidad de autenticidad como una alternativa a la inautenticidad, el infante no tiene tal posibilidad. Difícilmente puede ser auténtico o inautentico dado que la posibilidad de su propia muerte aún no es un problema para él. Quizás el Dasein muy joven no es Dasein en absoluto.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    Hay dos puntos críticos aquí. Primero, como una "estructura existencial", el estado de ánimo heideggeriano es grandemente estático, pues tiene poca si alguna profundidad fenomenológica genética. Segundo, si la sintonía o afectación se supone que es la manera más básica de estar en el mundo, entonces parecería que Heidegger está dejando fuera algo aún más primordial, a saber, la sensibilidad sensoriomotora y afectiva de nuestra subjetividad corporal (<Entity>Patočka</Entity> 1998, pp. 133-135). En resumen, la cuenta de Heidegger descuida el cuerpo vivido.
+                </p>
+
+                <p className="mb-6">
+                    Queda la macroescala de la formación de la <Concept>personalidad</Concept> en el modelo de <Entity>Lewis</Entity>. La auto-organización emocional a este nivel es la formación de hábitos interpretativo-emocionales duraderos específicos a clases de situaciones. Su forma de orden superior, que, debido a la causalidad circular, emerge de y limita los estados de ánimo y las interpretaciones emocionales, es un sentido del ser personal —<Concept>"un empuje subjetivo e intencional hacia el mundo— esta vez durando meses y años"</Concept> (<Entity>Lewis</Entity> 2000, p. 57).
+                </p>
+
+                <p className="mb-6">
+                    En la fenomenología, este sentido de un yo personal corresponde a lo que <Entity>Husserl</Entity> llama el <Concept>"ego concreto"</Concept>. Por esto quiere decir el "Yo" que está constituido por <Concept>"habitualidades"</Concept> —tendencias disposicionales a experimentar las cosas de una manera en lugar de otra como resultado de capacidades generales y experiencias sedimentadas formadas a través del esfuerzo activo. Sin embargo, aunque esta concepción del yo es de gran importancia para Husserl, y aunque su fenomenología es rica en análisis del afecto y la asociación, la empatía y la intersubjetividad, el "ego concreto" husserliano carece extrañamente de personalidad. En general, ha habido lamentablemente poco análisis de la emoción al nivel de la personalidad en la fenomenología (a diferencia de la tradición freudiana o psicodinámica).
+                </p>
+
+                <p className="mb-6">
+                    Al explorar los paralelos y convergencias entre los enfoques de sistemas dinámicos a la emoción y los enfoques fenomenológicos, he estado tratando de esbozar de manera preliminar cómo podría verse una neurofenomenología de la emoción. El modelo de <Entity>Lewis</Entity> es útil a este respecto porque describe la emoción a un nivel estructural o formal que está abierto a la interpretación fenomenológica y biológica. Confiando en la noción morfodinámica de forma o estructura, podemos explorar las cuentas fenomenológicas de la estructura de la experiencia emocional, mientras relacionamos estas cuentas con procesos psicológicos descritos por la teoría de la emoción y con procesos neurobiológicos descritos por la neurodinámica. Tejer juntas estas múltiples hebras de esta manera mutuamente esclarecedora proporciona otro ejemplo del enfoque neurofenomenológico a la estructura de la experiencia.
+                </p>
+
+            </main>
+        );
+
+        // --- APP ---
+
+        const App = () => {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [activeNote, setActiveNote] = useState(null);
+
+            const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
+            return (
+                <div className="bg-slate-950 min-h-screen text-slate-300 selection:bg-cyan-500/30 selection:text-cyan-100">
+                    <ScrollProgress />
+                    <Navigation toggleMenu={toggleMenu} />
+                    <Sidebar isOpen={isMenuOpen} toggleMenu={toggleMenu} />
+                    
+                    <Hero />
+                    <ChapterContent setActiveNote={setActiveNote} />
+                    
+                    <TooltipModal activeNote={activeNote} setActiveNote={setActiveNote} />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
