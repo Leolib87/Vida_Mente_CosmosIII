@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Mente en la Vida | Evan Thompson - Apéndice B</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        amber: {
+                            450: '#F59E0B',
+                        },
+                        cyan: {
+                            450: '#22D3EE',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #020617; /* bg-slate-950 */
+            color: #cbd5e1; /* text-slate-300 */
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+
+        .serif { font-family: 'Playfair Display', serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, useScroll, useSpring, AnimatePresence } = window.Motion;
+        
+        // --- NATIVE ICONS (Zero Dependency) ---
+        const IconBase = ({ children, size = 24, className = "" }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const Menu = (props) => (
+            <IconBase {...props}>
+                <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+            </IconBase>
+        );
+        
+        const X = (props) => (
+            <IconBase {...props}>
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </IconBase>
+        );
+
+        const ChevronRight = (props) => (
+            <IconBase {...props}>
+                <path d="m9 18 6-6-6-6"/>
+            </IconBase>
+        );
+
+        const User = (props) => (
+            <IconBase {...props}>
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </IconBase>
+        );
+
+        const Quote = (props) => (
+            <IconBase {...props}>
+                <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+            </IconBase>
+        );
+
+        // --- DATA ---
+        
+        const BOOK_DATA = {
+            title: "La Mente en la Vida",
+            author: "Evan Thompson",
+            toc: [
+                { title: "Inicio", id: "hero" },
+                { separator: "APÉNDICE B" },
+                { title: "Emergencia y Causación Descendente", id: "appendix-b-intro" },
+                { title: "Terminología", id: "terminology" },
+                { title: "Proposición 1: Dinámica No Lineal", id: "prop-1" },
+                { title: "Proposición 2: Influencia Global-Local", id: "prop-2" },
+                { title: "Proposición 3: Holismo Relacional", id: "prop-3" },
+                { title: "Resumen: Co-emergencia Dinámica", id: "resume" },
+                { title: "Objeciones", id: "objections" }
+            ]
+        };
+
+        // --- COMPONENTS ---
+
+        const Concept = ({ children }) => (
+            <span className="text-amber-500 font-medium hover:text-amber-400 transition-colors cursor-help border-b border-amber-500/20 pb-0.5">
+                {children}
+            </span>
+        );
+
+        const Entity = ({ children }) => (
+            <span className="text-cyan-400 font-medium hover:text-cyan-300 transition-colors border-b border-cyan-400/20 pb-0.5">
+                {children}
+            </span>
+        );
+
+        const BookTitle = ({ children }) => (
+            <span className="text-white italic font-serif tracking-wide">
+                {children}
+            </span>
+        );
+
+        const BlockQuote = ({ children, author }) => (
+            <div className="my-10 relative group">
+                <div className="absolute -left-4 top-0 text-slate-700 opacity-50">
+                    <Quote size={40} />
+                </div>
+                <blockquote className="border-l-4 border-cyan-500/30 pl-8 pr-4 py-2 italic text-amber-500 text-lg leading-relaxed font-serif relative z-10 group-hover:border-cyan-500 transition-colors duration-500">
+                    {children}
+                </blockquote>
+                {author && <div className="mt-2 text-right text-sm text-cyan-500/80 font-mono">— {author}</div>}
+            </div>
+        );
+
+        const SectionHeader = ({ id, number, title }) => (
+            <div id={id} className="pt-24 pb-8 mb-8 border-b border-slate-800">
+                <div className="text-cyan-500 text-sm tracking-[0.2em] uppercase mb-2 font-semibold">
+                    {number}
+                </div>
+                <h2 className="text-4xl md:text-5xl text-white font-serif leading-tight">
+                    {title}
+                </h2>
+            </div>
+        );
+
+        // --- LAYOUT COMPONENTS ---
+
+        const ScrollProgress = () => {
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+            return (
+                <motion.div
+                    className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50"
+                    style={{ scaleX }}
+                />
+            );
+        };
+
+        const Navigation = ({ toggleMenu }) => (
+            <nav className="fixed top-0 w-full bg-slate-950/80 backdrop-blur-md border-b border-slate-800/50 z-40 h-16 flex items-center justify-between px-6 transition-all duration-300">
+                <div className="flex items-center gap-4">
+                    <div className="w-8 h-8 bg-cyan-900/20 rounded-full flex items-center justify-center border border-cyan-500/30">
+                        <span className="text-cyan-500 font-serif font-bold">ET</span>
+                    </div>
+                    <div className="hidden md:block">
+                        <h1 className="text-sm text-slate-200 font-semibold tracking-wide">LA MENTE EN LA VIDA</h1>
+                        <p className="text-xs text-slate-500">Apéndice B: Emergencia y Causación Descendente</p>
+                    </div>
+                </div>
+                <button 
+                    onClick={toggleMenu}
+                    className="flex items-center gap-2 text-slate-400 hover:text-cyan-400 transition-colors group"
+                >
+                    <span className="text-xs uppercase tracking-widest font-semibold hidden sm:block group-hover:mr-1 transition-all">Índice</span>
+                    <Menu size={20} />
+                </button>
+            </nav>
+        );
+
+        const Sidebar = ({ isOpen, toggleMenu, activeSection }) => (
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={toggleMenu}
+                            className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
+                        />
+                        <motion.aside 
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed right-0 top-0 h-full w-80 bg-slate-900 border-l border-slate-800 z-50 p-8 shadow-2xl overflow-y-auto"
+                        >
+                            <div className="flex justify-between items-center mb-10">
+                                <h3 className="text-amber-500 font-serif italic text-xl">Contenidos</h3>
+                                <button onClick={toggleMenu} className="text-slate-400 hover:text-white transition-colors">
+                                    <X size={24} />
+                                </button>
+                            </div>
+                            <ul className="space-y-4">
+                                {BOOK_DATA.toc.map((item, idx) => (
+                                    item.separator ? (
+                                        <li key={idx} className="pt-6 pb-2 border-b border-slate-800 text-xs text-slate-500 uppercase tracking-widest font-bold">
+                                            {item.separator}
+                                        </li>
+                                    ) : (
+                                        <li key={idx}>
+                                            <a 
+                                                href={`#${item.id}`} 
+                                                onClick={toggleMenu}
+                                                className="flex items-center gap-3 text-slate-300 hover:text-cyan-400 transition-colors group"
+                                            >
+                                                <ChevronRight size={14} className="text-slate-600 group-hover:text-cyan-500 transition-colors" />
+                                                <span className="text-sm font-medium leading-relaxed">{item.title}</span>
+                                            </a>
+                                        </li>
+                                    )
+                                ))}
+                            </ul>
+                        </motion.aside>
+                    </>
+                )}
+            </AnimatePresence>
+        );
+
+        const Hero = () => (
+            <section id="hero" className="min-h-screen flex flex-col justify-center items-center text-center px-6 relative overflow-hidden">
+                {/* Background Atmosphere */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/10 via-slate-950 to-slate-950" />
+                
+                <motion.div 
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1, delay: 0.2 }}
+                    className="relative z-10"
+                >
+                    <span className="text-amber-500 tracking-[0.3em] text-xs font-bold uppercase mb-4 block">
+                        Apéndice B
+                    </span>
+                    <h1 className="text-5xl md:text-7xl font-serif text-white mb-6 leading-tight">
+                        Emergencia y <br/> <span className="text-slate-400 italic">Causación Descendente</span>
+                    </h1>
+                    <div className="w-24 h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mx-auto mb-8" />
+                    <p className="text-xl text-slate-300 font-light tracking-wide">
+                        Sistemas Complejos y Autonomía
+                    </p>
+                </motion.div>
+                
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.5, duration: 1 }}
+                    className="absolute bottom-12"
+                >
+                   <div className="animate-bounce text-slate-600">
+                        <User size={20} className="mx-auto mb-2 text-cyan-900" />
+                        <span className="text-xs uppercase tracking-widest text-slate-600">Desliza para leer</span>
+                   </div>
+                </motion.div>
+            </section>
+        );
+
+        // --- MAIN CONTENT COMPONENT ---
+
+        const ChapterContent = () => (
+            <main className="w-full px-6 md:px-12 pb-32 text-lg md:text-xl leading-relaxed text-justify hyphens-auto text-slate-300">
+                
+                {/* INTRO */}
+                <div id="appendix-b-intro" className="pt-24 first-letter:text-6xl first-letter:font-serif first-letter:text-white first-letter:float-left first-letter:mr-3 first-letter:mt-[-8px]">
+                    <p className="mb-8">
+                        SE PUEDEN PLANTEAR UNA SERIE DE PREGUNTAS sobre la relación entre la concepción de emergencia presentada en el Capítulo 3 y otras concepciones de emergencia. Mi propósito en este apéndice es revisar estos temas, afinar mi cuenta de la emergencia, y refutar algunas objeciones bien conocidas e influyentes a la emergencia que han aparecido en la literatura filosófica.
+                    </p>
+                </div>
+
+                <p className="mb-6">
+                    Las discusiones sobre emergencia están estructuradas por la oposición clásica entre <Concept>reduccionismo</Concept> y <Concept>emergentismo</Concept> (<Entity>Silberstein</Entity> 2002). Estas posiciones tienen componentes epistemológicos y ontológicos. El reduccionismo epistemológico declara que la mejor comprensión de un sistema se encuentra al nivel de la estructura, comportamiento y leyes de sus partes componentes y sus relaciones; el reduccionismo ontológico declara que las relaciones entre las partes del sistema están todas determinadas sin resto por las propiedades intrínsecas de las partes más básicas. El emergentismo epistemológico declara que la mejor comprensión de un sistema se encuentra al nivel de la estructura, comportamiento y leyes de todo el sistema, y el emergentismo ontológico que un todo es más que la suma de sus partes y sus propiedades intrínsecas.
+                </p>
+
+                <p className="mb-6">
+                    Como uno podría deducir de mi discusión sobre la emergencia en el Capítulo 3, esta oposición entre partes versus todo, o entre características básicas (concebidas como propiedades intrínsecas de particulares microscópicos) versus características emergentes, es parte del problema, no parte de la solución. Más allá de la oposición clásica entre reduccionismo y emergentismo, surgen cuestiones complicadas porque ahora hay tantos sentidos diferentes de "reducción" y "emergencia" en la literatura científica y filosófica. Muchos tipos diferentes de fenómenos han sido considerados emergentes, y diferentes criterios epistemológicos y/o ontológicos de emergencia han sido usados para clasificarlos como emergentes. Parece no haber ninguna buena razón, por lo tanto, para buscar un concepto único y claramente analizable de emergencia independiente de contextos explicativos particulares. El enfoque aquí estará, en consecuencia, en la noción de emergencia implícita en la teoría de sistemas autónomos y en la aplicación de esta noción a fenómenos biológicos y cognitivos por el enfoque enactivo.
+                </p>
+
+                <p className="mb-6">
+                    Permítanme comenzar estableciendo un marco en la forma de la siguiente definición provisional de emergencia en el caso de sistemas complejos (<Entity>Thompson</Entity> y <Entity>Varela</Entity> 2001). Esta definición pretende capturar las características principales de la emergencia que los investigadores en teoría de sistemas complejos parecen tener en mente cuando hablan de emergencia.
+                </p>
+
+                <div className="bg-slate-900/50 p-6 border-l-4 border-cyan-500 my-8">
+                    <p className="mb-4 text-white font-serif italic text-lg">Definición:</p>
+                    <p className="text-slate-300">Una red, N, de componentes interrelacionados exhibe un proceso emergente, E, con propiedades emergentes, P, si y solo si:</p>
+                    <ol className="list-decimal pl-8 my-4 space-y-2 text-slate-400 marker:text-amber-500">
+                        <li>E es un proceso global que instancia P, y surge del acoplamiento de los componentes de N y la dinámica no lineal, D, de sus interacciones locales.</li>
+                        <li>E y P tienen una influencia determinativa global-a-local ("descendente") en la dinámica D de los componentes de N.</li>
+                    </ol>
+                    <p className="mt-4 text-slate-300">Y posiblemente:</p>
+                    <ol start="3" className="list-decimal pl-8 my-4 space-y-2 text-slate-400 marker:text-amber-500">
+                        <li>E y P no están exhaustivamente determinados por las propiedades intrínsecas de los componentes de N, es decir, exhiben "holismo relacional".</li>
+                    </ol>
+                </div>
+
+                <SectionHeader id="terminology" number="Sección 01" title="Terminología: Procesos y Propiedades Emergentes" />
+
+                <p className="mb-6">
+                    Aunque el término <Concept>propiedad emergente</Concept> está muy extendido, prefiero <Concept>proceso emergente</Concept>. Estrictamente hablando, no tiene sentido decir que una propiedad emerge, sino solo que llega a ser realizada, instanciada o ejemplificada en un proceso o entidad que emerge en el tiempo. La emergencia es un proceso temporal, pero las propiedades (ya sean consideradas como universales o como abstracciones lingüísticas) son atemporales. Por ejemplo, la propiedad de estar vivo no emergió cuando la vida se originó en la Tierra; más bien, llegó a ser instanciada como resultado del proceso emergente de autopoiesis que constituye a las células vivas. Este ejemplo también apunta a la importancia de las características causales de los procesos emergentes: la red emergente de autopoiesis constituye un individuo biológico (una célula) que provoca cambios en el entorno externo. También crea un contexto estructurado en el cual nuevos tipos de eventos pueden tener lugar, tales como la síntesis de proteínas y la replicación de ARN/ADN, que no pueden ocurrir aparte de o fuera del entorno intracelular protegido.
+                </p>
+
+                <SectionHeader id="prop-1" number="Sección 02" title="Proposición 1: Dinámica No Lineal" />
+
+                <p className="mb-6">
+                    Los procesos emergentes cubiertos por esta definición ocurren en redes cuyos elementos acoplados tienen interacciones no lineales. La distinción entre interacciones no lineales y lineales proporciona una manera de distinguir entre sistemas que tienen procesos emergentes y sistemas que no (<Entity>Campbell</Entity> y <Entity>Bickhard</Entity> 2002). Las interacciones lineales son aditivas o proporcionales. Típicamente dan lugar (excepto en el dominio cuántico) a sistemas que son "agregativos" (<Entity>Wimsatt</Entity> 1986)—sistemas cuyas características causales derivan de agregar las propiedades de los componentes. Las interacciones no lineales son no aditivas o no proporcionales. Dan lugar (por definición) a sistemas cuyas actividades no pueden derivarse agregativamente de las propiedades de sus componentes. Es por lo tanto tentador decir, tomando prestada la terminología de los emergentistas británicos clásicos (<Entity>Samuel Alexander</Entity>, <Entity>C. Lloyd Morgan</Entity>, y <Entity>C. D. Broad</Entity>), que los procesos no lineales generan <Concept>"emergentes"</Concept>, mientras que los procesos lineales producen solo <Concept>"resultantes"</Concept>.
+                </p>
+
+                <p className="mb-6">
+                    La no linealidad resulta de relaciones de retroalimentación positiva y negativa. Estas relaciones provocan patrones de comportamiento, que pueden describirse como alternativas restringidas en el espacio de todos los estados globales posibles del sistema (como atractores en el espacio de fase). Para entender tales patrones de actividad necesitamos modelarlos en el lenguaje de variables colectivas y parámetros de orden, mientras al mismo tiempo mostramos cómo estas variables colectivas y parámetros de orden son realizados biofísicamente en fenómenos naturales.
+                </p>
+
+                <p className="mb-6">
+                    Los procesos emergentes de interés para el enfoque enactivo ocurren en sistemas complejos que necesitan ser vistos como autónomos, tales como organismos unicelulares y multicelulares, el sistema inmune y el cerebro. Un sistema autónomo tiene <Concept>cierre operacional</Concept> y en consecuencia mantiene dinámicamente su propia organización como el invariante crucial. El <Concept>"cierre organizacional-operacional"</Concept> caracteriza la forma invariante del sistema a través del cambio estructural y material, y por lo tanto es una noción topológica y morfodinámica (<Entity>Deffuant</Entity> et al. 1995; <Entity>Petitot</Entity> 1992). Sin embargo, debido a que esta forma invariante es precisamente el patrón dinámico de una red circular cuyos procesos constituyentes operan bajo cierre (todo producto de la red permanece dentro de la red), la morfodinámica en este caso define no meramente una identidad formal a través del tiempo sino una auto-identidad formal. Este tipo de morfodinámica marca una diferencia importante entre la emergencia en sistemas autónomos y otros ejemplos citados a menudo de emergencia (tales como los rodillos de convección). En el caso de la autonomía (cierre organizacional-operacional), lo que emerge es simultáneamente un "yo" o "individuo" y un nicho correlativo (el dominio o conjunto de interacciones posibles para tal sistema dada su organización y realización estructural concreta). El ejemplar y caso mínimo de este tipo de emergencia es la célula viva (ver Capítulos 5 y 6).
+                </p>
+
+                <p className="mb-6">
+                    Otra manera de caracterizar los sistemas autónomos es en relación con el contraste entre sistemas <Concept>"descomponibles"</Concept> y <Concept>"no descomponibles"</Concept> (<Entity>Bechtel</Entity> y <Entity>Richardson</Entity> 1993; <Entity>Simon</Entity> 1969). Los sistemas descomponibles tienen una organización jerárquica clara. Cada componente o subsistema opera de acuerdo con sus propios principios intrínsecos independientemente de los otros, haciendo al sistema fuertemente modular. En un sistema "casi descomponible", los niveles superiores interactúan con los niveles inferiores a través de relaciones de arriba-abajo o retroalimentación. La naturaleza de estas interacciones determina la medida en que el sistema es casi descomponible: <Concept>"Un sistema será casi descomponible en la medida en que las interacciones causales dentro de los subsistemas sean más importantes para determinar las propiedades de los componentes que las interacciones causales entre subsistemas"</Concept> (<Entity>Bechtel</Entity> y <Entity>Richardson</Entity> 1993, p. 27). A medida que los componentes del sistema se vuelven menos gobernados por factores intrínsecos y más por la organización del sistema, entonces el sistema es "mínimamente descomponible". Un sistema no descomponible es uno en el que la conectividad e interrelación de los componentes dan lugar a procesos globales que subsumen a los componentes de modo que ya no son claramente separables. En tal sistema, la distinción entre partes preexistentes y todo superveniente se vuelve problemática. No solo el todo emerge de los componentes, sino que también los componentes emergen del todo.
+                </p>
+
+                <p className="mb-6">
+                    Un sistema autónomo es al menos mínimamente descomponible, si no no-descomponible. Más precisamente, cuando uno adopta una perspectiva de autonomía, uno <em>ipso facto</em> caracteriza el sistema como al menos mínimamente descomponible. La razón es que un sistema autónomo es una red cerrada organizacional y operacionalmente; por ende es la conectividad de sus procesos constituyentes la que determina su operación como una red.
+                </p>
+
+                <p className="mb-6">
+                    Las asambleas neuronales pueden usarse para ilustrar estas ideas. Con solo unas pocas excepciones, el cerebro está organizado sobre la base de un principio de reciprocidad: si el área A se conecta con el área B, entonces hay conexiones recíprocas de B a A (<Entity>Varela</Entity> 1995; <Entity>Varela</Entity> et al. 2001). La práctica tradicional en neurociencia es mapear estas áreas cerebrales recíprocamente interconectadas en una jerarquía de niveles de procesamiento desde áreas periféricas (inferiores) a centrales (superiores) (medidas en términos de distancia sináptica desde la estimulación sensorial). El extremo sensorial se toma como el punto de partida, y la percepción se describe procediendo a través de una serie de etapas de procesamiento <em>feedforward</em> o de abajo-arriba. Las influencias de arriba-abajo se equiparan con retro-proyecciones y retroalimentación desde áreas superiores a inferiores. Este esquema trata al cerebro como un sistema casi descomponible o mínimamente descomponible (dependiendo de la medida en que se enfatizen las influencias de arriba-abajo).
+                </p>
+
+                <p className="mb-6">
+                    Desde un punto de vista dinamicista, sin embargo, la imagen se ve diferente. Primero, el dinamicista no representa el cerebro como una jerarquía de procesamiento que comienza en el extremo sensorial. Estrictamente hablando, los procesos cerebrales siempre están en curso y no comienzan ni se detienen en ninguna parte. Un mejor punto de entrada para muchos propósitos de análisis puede encontrarse en la propia actividad endógena del cerebro, como se refleja en los estados de preparación, expectativa, tono emocional y atención del organismo, que están necesariamente activos al mismo tiempo que el flujo sensorial entrante (<Entity>Varela</Entity> et al. 2001, p. 230; ver también <Entity>Engel</Entity>, <Entity>Fries</Entity>, y <Entity>Singer</Entity> 2001; <Entity>Freeman</Entity> 1999a, 1999b, 2000; <Entity>Lutz</Entity> et al. 2002). Tal actividad surge lejos de los sensores—desde los lóbulos frontales o sistema límbico, o en el medio de toda la red desde cortezas temporales y asociativas. Hay considerable evidencia de que este tipo de actividad endógena participa incluso en las etapas tempranas de la percepción sensorial. Aunque este tipo de actividad se describe usualmente como de arriba-abajo o retroalimentación, "arriba-abajo" y "abajo-arriba" son términos heurísticos para lo que en realidad es una red a gran escala que integra tanto actividad entrante como endógena. Es precisamente a este nivel de red que la dinámica de variables colectivas y los parámetros de orden se vuelven importantes para caracterizar la integración a gran escala de actividades neuronales ampliamente distribuidas.
+                </p>
+
+                <p className="mb-6">
+                    Segundo (y para anticipar la discusión de la Proposición 2), esta dinámica a gran escala puede modular la actividad neuronal local arrastrando o "tirando" del comportamiento de neuronas individuales hacia un patrón particular de actividad global (ver la discusión de la neurodinámica de la epilepsia en el Capítulo 3). Esta forma de influencia global-a-local de sistemas dinámicos ni requiere ni es equivalente al control de arriba-abajo en una jerarquía secuencial de etapas de procesamiento (<Entity>Engel</Entity>, <Entity>Fries</Entity>, y <Entity>Singer</Entity> 2001; <Entity>Thompson</Entity> y <Entity>Varela</Entity> 2001).
+                </p>
+
+                <p className="mb-6">
+                    Mirar al cerebro de esta manera es caracterizarlo como al menos un sistema mínimamente descomponible—un sistema en el que el comportamiento de los componentes está determinado en gran medida por la organización del sistema. Sin embargo, también es importante considerar que el cerebro—en su operación dinámica como una red a gran escala—podría necesitar ser caracterizado como un sistema no descomponible. Sin duda es útil para ciertos propósitos explicativos caracterizar el cerebro como un sistema (casi o mínimamente) descomponible. Sin embargo, pueden surgir problemas cuando uno asume que las estrategias explicativas de descomposición y localización (diferenciar un sistema en componentes separables y asignar responsabilidad por tareas específicas a esos componentes) son adecuadas para caracterizar la actividad cerebral (<Entity>Bechtel</Entity> y <Entity>Richardson</Entity> 1993; <Entity>Uttal</Entity> 2001). En particular, la descomposición y localización son insuficientes para caracterizar el cierre operacional del cerebro como una red neuronal dinámica. En palabras de <Entity>Maturana</Entity> y <Entity>Varela</Entity>:
+                </p>
+
+                <BlockQuote author="Maturana y Varela (1980)">
+                    Dado que, debido a su constitución como una red de interacciones laterales, paralelas, secuenciales y recursivas, el sistema nervioso se cierra sobre sí mismo en todos los niveles, las mutilaciones que pueda sufrir generalmente dejan una red neuronal cerrada con una estructura cambiada. En consecuencia, la organización del sistema nervioso es esencialmente invariante bajo mutilaciones, mientras que su dominio de estados posibles, que depende de su estructura, y, por ende, de su arquitectura, no lo es. Sin embargo, debido a su organización cerrada, lo que sea que quede de la red neuronal después de una ablación parcial necesariamente opera como un todo diferente con propiedades diferentes a las del original, pero no como un sistema del cual algunas propiedades han sido selectivamente sustraídas... No hay intrínsecamente ninguna posibilidad de localización operacional en el sistema nervioso en el sentido de que ninguna parte de él pueda considerarse responsable de su operación como una red cerrada, o de las propiedades que un observador puede detectar en su operación como una unidad. Sin embargo, dado que cada sistema nervioso tiene una arquitectura definida, cada lesión localizada en él necesariamente produce una desconexión específica entre sus partes y, por ende, un cambio específico en su dominio de estados posibles.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    Esta caracterización implica que el cerebro—entendido operacionalmente como una red dinámica de procesos o "brainweb" (<Entity>Varela</Entity> et al. 2001) es un sistema no descomponible. Aún carecemos de un lenguaje teórico para expresar los comportamientos complejos de tales sistemas en términos de sistemas dinámicos (ver <Entity>Le Van Quyen</Entity> 2003). En el caso del cerebro, la no-descomponibilidad significaría que la red cerebral genera procesos globales que subsumen a sus componentes de modo que ya no son claramente separables como componentes. A este nivel dinámico, la distinción entre partes preexistentes y todo superveniente no tiene aplicación clara: Uno bien podría decir que los componentes (actividades neuronales locales) emergen del todo tanto como el todo (patrones dinámicos de integración a gran escala) emerge de los componentes.
+                </p>
+
+                <p className="mb-6">
+                    "No-descomponibilidad" y "descomponibilidad" son categorías heurísticas, epistemológicas, no ontológicas. No es mi intención argumentar a favor de una tesis metafísica de holismo ontológico sobre la base de la no-descomponibilidad (lo cual no quiere decir que la no-descomponibilidad sea meramente epistemológica en el sentido que un reduccionista ontológico afirmaría). Por el momento mi punto es más bien llamar la atención sobre la perspectiva de la no-descomponibilidad para corregir un fuerte sesgo en gran parte de la neurociencia clásica y contemporánea hacia una visión modular (localizacionista) del cerebro (ver también <Entity>Uttal</Entity> 2001). En última instancia, es el juego entre estas categorías heurísticas dentro y a través de varios contextos explicativos lo que es importante, no una heurística versus la otra. Como declara <Entity>Le Van Quyen</Entity>:
+                </p>
+
+                <BlockQuote author="Le Van Quyen (2003)">
+                    Siguiendo a Simon (1973), es importante considerar este juego como un "acoplamiento vertical suelto," permitiendo la distinción entre niveles, y un "acoplamiento horizontal suelto," permitiendo la separación entre subsistemas en cada nivel. Mientras que la palabra "suelto" sugiere "descomponible," la palabra "acoplamiento" implica resistencia a la descomposición. En mi opinión, la caracterización de este "acoplamiento suelto" representa uno de los desafíos esenciales para desarrollos futuros.
+                </BlockQuote>
+
+                <SectionHeader id="prop-2" number="Sección 03" title="Proposición 2: Influencia Global-a-Local" />
+
+                <p className="mb-6">
+                    Los teóricos de sistemas complejos, como hemos visto, apelan a la idea de causalidad circular o recíproca, con lo cual quieren decir que los patrones globales surgen de interacciones locales y gobiernan o restringen esas interacciones. En la sinergética, una rama de la teoría de sistemas complejos, se usa una metáfora vívida pero poco atractiva para describir esta influencia global-a-local. Se dice que la dinámica global de variables colectivas influencia el comportamiento local "esclavizando" los elementos de la red en un régimen dinámico particular (<Entity>Haken</Entity> 1983).
+                </p>
+
+                <p className="mb-6">
+                    El término <Concept>causación descendente</Concept> también se usa a menudo para describir este tipo de influencia global-a-local. Uno de los usos más tempranos del término en un contexto científico fue en un artículo de <Entity>Donald Campbell</Entity> (1974), llamado "'Causación Descendente' en Sistemas Biológicos Organizados Jerárquicamente". La visión de Campbell era que en sistemas biológicos organizados jerárquicamente, la causación descendente desde niveles superiores a inferiores de organización ocurre en la forma de selección natural: <Concept>"Donde la selección natural opera a través de la vida y la muerte en un nivel superior de organización, las leyes del sistema selectivo de nivel superior determinan en parte la distribución de eventos y sustancias de nivel inferior... todos los procesos en los niveles inferiores de una jerarquía están restringidos por y actúan en conformidad con las leyes de los niveles superiores"</Concept> (p. 180). Esta idea de que los procesos de nivel superior "restringen" los procesos de nivel inferior de modo que "actúan en conformidad" a ellos corresponde a la idea de que los procesos globales (dinámica de variables colectivas) restringen o gobiernan las interacciones locales.
+                </p>
+
+                <p className="mb-6">
+                    ¿Qué significa exactamente "restricción" en este contexto? En la teoría de sistemas complejos, las restricciones pueden entenderse como propiedades relacionales que las partes poseen en virtud de estar integradas o unificadas (no agregadas) en una red sistémica. "Restricción" es por lo tanto una noción formal o topológica (<Entity>Deacon</Entity> 2003). La forma, configuración o topología de un sistema limita o previene ciertos comportamientos posibles que las partes podrían tener por sí mismas, mientras simultáneamente abre nuevas posibilidades para ellas en virtud de los estados a los que el sistema como un todo puede acceder (<Entity>Juarrero</Entity> 1999, pp. 132-133).
+                </p>
+
+                <p className="mb-6">
+                    Examinemos esta noción de restricciones en más detalle, comenzando con la diferencia entre <Concept>"restricciones libres de contexto"</Concept> y <Concept>"restricciones sensibles al contexto"</Concept> (<Entity>Gatlin</Entity> 1972, citado por <Entity>Juarrero</Entity> 1999, pp. 6-7, 131-140). Una restricción libre de contexto es una que se impone externamente y altera las probabilidades de las alternativas de comportamiento disponibles de los componentes del sistema. Por ejemplo, un contenedor lleno de moléculas de gas difusas uniformemente a temperatura ambiente está en equilibrio termodinámico, pero insertar un pistón (una restricción libre de contexto) en el contenedor y mover el pistón de modo que las moléculas se compriman a un lado impone un arreglo ordenado en ellas. Si se elimina la presión sobre el pistón, el sistema se moverá de nuevo hacia el equilibrio de acuerdo con la segunda ley de la termodinámica. Una restricción sensible al contexto, por otro lado, es una que sincroniza y correlaciona partes previamente independientes en un todo sistémico. La catálisis es un buen ejemplo (<Entity>Juarrero</Entity> 1999, pp. 139-141). Imagina una sopa primigenia con varios tipos de moléculas (A, B y C) flotando aleatoriamente en ella. Como resultado de restricciones libres de contexto impuestas externamente (e.g., el clima), habrá más de algunas moléculas en ciertas áreas que en otras. Ahora imagina que A cataliza la formación de B. Esta relación entre A y B impone una restricción sensible al contexto en ambas:
+                </p>
+
+                <BlockQuote author="Alicia Juarrero (1999)">
+                    Una vez que la probabilidad de que algo suceda depende de y es alterada por la presencia de algo más, las dos se han relacionado sistemáticamente y por lo tanto internamente. Como resultado de las operaciones de restricciones sensibles al contexto y las probabilidades condicionales que imponen, A es ahora parte de la estructura externa de B. Debido a que A ya no está "ahí fuera" independiente de B, con la que solo está relacionada externamente, la interdependencia ha creado un todo más grande, el sistema AB. En la medida en que es parte del nuevo contexto o estructura externa de B, A ha sido importada dentro de B.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    <Entity>Juarrero</Entity> llama a este tipo de restricción sensible al contexto una "restricción contextual de primer orden" porque opera al mismo nivel de organización que los componentes individuales (A y B). Una "restricción contextual de segundo orden" se establece cuando la organización de todo el sistema emerge como una restricción sobre los componentes del sistema. Así, en una red autocatalítica simplificada e idealizada, A cataliza la formación de B, B cataliza la formación de C, C de D, y D cierra el bucle y cataliza la formación de A. La relación entre cada par de moléculas catalizadoras y catalizadas es una restricción contextual de primer orden. Una vez que ocurre el cierre autocatalítico, sin embargo, estas relaciones de primer orden se vuelven sujetas a la restricción contextual de segundo orden de la organización como un todo.
+                </p>
+
+                <p className="mb-6">
+                    Un ejemplo aún más llamativo es la autopoiesis. Un sistema autopoiético mínimo corresponde no simplemente a una red autocatalítica, sino a una red autocatalítica alojada dentro de y vinculada interdependientemente a un límite de membrana semipermeable. Las redes autocatalíticas no califican como sistemas autopoiéticos porque no auto-producen sus propios límites topológicos (ver Capítulo 5). Las redes autocatalíticas o no tienen límites o sus límites son establecidos por una restricción libre de contexto impuesta externamente (tal como las paredes de un contenedor experimental). En un sistema autopoiético, sin embargo, la membrana forma parte de la restricción contextual de segundo orden de la organización del sistema. En este tipo de sistema, toda la organización auto-productora de membrana-más-red-autocatalítica-interna opera como una restricción contextual de segundo orden del todo a las partes. Además, en organismos multicelulares, la autopoiesis de las células individuales se vuelve sujeta a las restricciones contextuales de orden superior de la organización multicelular (autopoiesis de segundo orden). En otras palabras, la autopoiesis de las células individuales se subordina al mantenimiento de la autopoiesis de orden superior o autonomía del organismo multicelular (<Entity>Maturana</Entity> y <Entity>Varela</Entity> 1980, pp. 107-111; 1987, pp. 73-89).
+                </p>
+
+                <p className="mb-6">
+                    Ahora tenemos a mano una respuesta a la pregunta de qué significa la causación descendente en el contexto de la teoría de sistemas complejos. Según la línea de pensamiento recién esbozada, la causación descendente corresponde a la restricción contextual de segundo orden de la organización de un sistema restringiendo o limitando los grados de libertad de los componentes del sistema. La causación descendente corresponde a la influencia que la relación de los componentes del sistema tiene sobre el comportamiento de esos componentes. Más precisamente, corresponde a la influencia de la organización topológica del sistema en sus procesos constituyentes (<Entity>Varela</Entity> 1979; ver también <Entity>Deacon</Entity> 2003). "Descendente" es así una metáfora para la influencia formal o topológica de un todo con respecto a sus partes.
+                </p>
+
+                <p className="mb-6">
+                    Es cuestionable si esta metáfora es buena. Aunque hay claramente diferencias empíricas en escala y diferencias lógicas en orden entre la topología de un sistema y sus procesos y elementos constituyentes, los dos niveles no se mueven en paralelo, con uno actuando hacia arriba y el otro actuando hacia abajo, porque todo el sistema se mueve a la vez. <Entity>John Searle</Entity> hace este punto en una discusión relacionada: <Concept>"La manera correcta de pensar en esto no es tanto 'de arriba abajo' sino como causación del sistema. El sistema, como un sistema, tiene efectos causales en cada elemento, aunque el sistema está hecho de los elementos"</Concept> (<Entity>Searle</Entity> 2000b, p. 17). Desde esta perspectiva, el término causación descendente es sintomático de un reconocimiento parcial de la causación del sistema junto con una incapacidad para cambiar completamente a una perspectiva de causación del sistema.
+                </p>
+
+                <p className="mb-6">
+                    Algunos filósofos podrían preguntarse si la influencia topológica de un sistema en sus elementos debería ser considerada una influencia causal. Este asunto es inseparable de cuestiones conceptuales más amplias sobre la causación. Los debates filosóficos sobre emergencia y causación descendente tienden a estar estructurados no solo por una fuerte ontología de parte y todo (o características básicas versus características emergentes), sino también por una fuerte ontología de "poderes causales"—los poderes causales de las características básicas versus los poderes causales (o falta de ellos) de las características emergentes. En lugar de quedar atrapado en los debates filosóficos sobre visiones de poder causal de la causación, me contento con explicar lo que los teóricos de sistemas dinámicos tienen en mente cuando hablan de influencia todo-a-parte en sistemas complejos. Como hemos visto, esta influencia corresponde a la restricción organizacional de un sistema con respecto a sus componentes. Tal influencia es topológica. Por lo tanto, no es una fuerza externa que actúa sobre algo, sino una interconexión o relación entre procesos. Esta interrelación estructura el contexto y trasfondo de las interacciones locales, de tal manera que ciertos tipos de eventos pueden tener lugar que de otra manera no ocurrirían. Algunos autores describen la restricción de la organización de un sistema como una causa permanente o en curso, "estructurante", por contraste con una causa episódica "desencadenante" (ver <Entity>Dretske</Entity> 1995b para esta distinción), y asemejan las restricciones organizacionales así entendidas a la causa formal de Aristóteles (<Entity>Emmeche</Entity>, <Entity>Køppe</Entity>, y <Entity>Stjernfelt</Entity> 2000; <Entity>Juarrero</Entity> 1999, pp. 125-128). Esta recuperación de la causación formal gana apoyo del análisis fenomenológico y morfodinámico de la forma presentado en el Capítulo 4.
+                </p>
+
+                <SectionHeader id="prop-3" number="Sección 04" title="Proposición 3: Holismo Relacional" />
+
+                <p className="mb-6">
+                    Según la tesis ontológica del reduccionismo parte/todo ("superveniencia mereológica"), todas las propiedades de un todo están determinadas por las propiedades intrínsecas (no relacionales) de sus partes más fundamentales. (Por ende se dice que el todo superviene en las propiedades intrínsecas de sus partes.) En contraste, según el holismo ("emergencia mereológica") ciertos todos poseen características emergentes que no están determinadas por las propiedades intrínsecas de sus partes más básicas.
+                </p>
+
+                <p className="mb-6">
+                    Tales características emergentes son irreductiblemente relacionales. Están constituidas por relaciones que no están exhaustivamente determinadas por o reducibles a las propiedades intrínsecas de los elementos así relacionados. Estas relaciones holísticas no simplemente influencian a las partes, sino que reemplazan o subsumen su existencia independiente en una estructura irreductiblemente relacional.
+                </p>
+
+                <p className="mb-6">
+                    Uno podría pensar que el holismo relacional podría ser invocado para legitimar la noción de causación descendente. Se supone que la causación descendente es la influencia determinativa que la relación de los componentes del sistema tiene sobre su comportamiento. Si esta relación fuera holística, entonces este hecho presumiblemente explicaría la influencia determinativa del sistema como un todo sobre sus partes. El problema con esta línea de pensamiento es que el holismo relacional implica que la relación es la unidad más básica y por lo tanto que los términos de la relación no tienen estatus independiente (no relacional). Por lo tanto, los componentes no podrían constituir un nivel inferior independiente sujeto a influencia "descendente" de nivel superior, como el término causación descendente no puede evitar sugerir. En otras palabras, dado el holismo relacional, la causación descendente parece un nombre inapropiado. La presencia de holismo relacional proporcionaría así otra razón para dudar de que el concepto de causación descendente sea apropiado para describir la influencia de un todo sobre sus partes.
+                </p>
+
+                <p className="mb-6">
+                    El concepto de holismo relacional se introdujo en gran medida en conexión con la no-separabilidad o entrelazamiento en mecánica cuántica, en la cual el estado del sistema no está constituido por los estados de sus partes y solo se puede decir que el sistema completo está en un estado definido (<Entity>Teller</Entity> 1986; ver también <Entity>Belousek</Entity> 2003). Sobre la base de la no-separabilidad, un número de filósofos han argumentado que los sistemas mecánicos cuánticos son holísticos o mereológicamente emergentes. <Entity>Silberstein</Entity> y <Entity>McGeever</Entity> (1999) han propuesto que la no-separabilidad es un paradigma de <Concept>"emergencia ontológica"</Concept>. Con esto quieren decir (i) que es un tipo de emergencia que pertenece a un sistema o todo en sí mismo, en oposición a ser un artefacto de nuestras teorías o modelos; y (ii) que viola la doctrina metafísica de la superveniencia mereológica (atomista), que declara que cada propiedad del todo está exhaustivamente determinada por las propiedades intrínsecas de sus partes más fundamentales. La pregunta de <Entity>Silberstein</Entity> y <Entity>McGeever</Entity> con respecto a los sistemas dinámicos complejos es si ellos, también, exhiben emergencia ontológica o solo emergencia epistemológica.
+                </p>
+
+                <p className="mb-6">
+                    La razón principal usualmente dada para pensar que los sistemas dinámicos no lineales no son holísticos u ontológicamente emergentes es que son sistemas deterministas clásicos. En un sistema dinámico no lineal determinista, en todo momento (i) cada variable tiene un valor definido, y (ii) cualquier cambio en el valor de cualquier variable es no estocástico. Como declara <Entity>Silberstein</Entity>: <Concept>"Es difícil imaginar cómo cualquier sistema que es 'determinista' en ambas formas podría exhibir emergencia mereológica"</Concept> (Silberstein 2001, p. 83). Sin embargo, debido a que es imposible para nosotros deducir matemáticamente el comportamiento o propiedades dinámicas globales (atractores) del sistema, estos comportamientos y propiedades pueden describirse como epistemológicamente emergentes. Por ejemplo, los sistemas caóticos son deterministas, pero pueden aparecer aleatorios y son impredecibles a largo plazo. Son altamente sensibles a las condiciones iniciales (pequeñas diferencias en perturbaciones producen efectos exponencialmente divergentes), y somos capaces de especificar los valores de sus variables solo hasta un grado finito de precisión. <Entity>Stephen Kellert</Entity> expresa esta noción de emergencia epistemológica: <Concept>"la teoría del caos argumenta contra la aplicabilidad universal del método del micro-reduccionismo, pero no contra la doctrina filosófica del reduccionismo. Esa doctrina declara que todas las propiedades de un sistema son reducibles a propiedades de sus partes. La teoría del caos no da ejemplos de propiedades 'holísticas' que podrían servir como contraejemplos a tal afirmación"</Concept> (Kellert 1993, p. 90).
+                </p>
+
+                <p className="mb-6">
+                    Discusiones más recientes pueden arrojar dudas sobre esta declaración. <Entity>Frederick Kronz</Entity> (1998) propone que la clave del caos en sistemas clásicos es la no-separabilidad de la función de energía Hamiltoniana (ver también <Entity>Kronz</Entity> y <Entity>Tiehen</Entity> 2002, pp. 332-333). Mientras que la formulación Newtoniana de la mecánica clásica toma las fuerzas como fundamentales, la formulación Hamiltoniana toma las energías como fundamentales. El Hamiltoniano de un sistema corresponde a la energía total del sistema (energía cinética más energía potencial). En mecánica clásica, el Hamiltoniano que describe un sistema lineal es separable en una suma de Hamiltonianos, con un elemento en la suma para cada constituyente del sistema. Si hay términos no lineales en las ecuaciones de movimiento, sin embargo, entonces el Hamiltoniano es no separable. Construyendo sobre la discusión de Kronz, <Entity>Robert Bishop</Entity> (2002) propone que la no-separabilidad del Hamiltoniano es crucial para entender la coherencia global emergente de un sistema complejo:
+                </p>
+
+                <BlockQuote author="Robert Bishop (2002)">
+                    [L]as propiedades de integridad, integración y estabilidad exhibidas por las células de Bénard son propiedades globales e involucran la relación no local de todos los elementos fluidos entre sí. Este comportamiento global difiere del entrelazamiento holístico en mecánica cuántica en el sentido de que los elementos fluidos pueden distinguirse unos de otros mientras son simultáneamente identificados como miembros de células de Bénard particulares y participan en interacción con elementos fluidos a través del sistema. En este contexto enfocarse en la no-separabilidad del Hamiltoniano puede ser más apropiado porque, en contraste con el caso cuántico, los estados clásicos son siempre separables incluso cuando el Hamiltoniano es no separable.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    Según esta proposición, hay un tipo de holismo propio de los sistemas complejos que no parece compatible con la doctrina filosófica del reduccionismo. Al mismo tiempo, esta forma de holismo (no-separabilidad del Hamiltoniano) no es incompatible con el determinismo.
+                </p>
+
+                <p className="mb-6">
+                    Qué significa el determinismo, sin embargo, es otro asunto completamente diferente (ver <Entity>Atmanspacher</Entity> y <Entity>Bishop</Entity> 2002). No pretendo entrar en este matorral aquí, pero vale la pena hacer dos puntos básicos. Primero, es importante distinguir entre determinismo como una característica de un modelo científico y determinismo como una tesis metafísica sobre la naturaleza. Según la tesis metafísica, todas las propiedades físicas en la naturaleza son definidas y determinadas, y la evolución del mundo natural está fijada de manera única. (El estado completo e instantáneo del mundo fija su pasado y futuro sin alternativas). Esta tesis difícilmente se sigue del hecho de que podemos construir modelos de sistemas dinámicos no estocásticos de fenómenos observables. Segundo, también es importante distinguir entre sistemas dinámicos no lineales como modelos matemáticos abstractos y como sistemas biofísicos observables. Cualquier sistema empírico concreto implicará algún grado de aleatoriedad en la forma de fluctuaciones estocásticas (<Entity>Kelso</Entity> 1995). Para cualquier sistema empírico dado, las técnicas analíticas más apropiadas para caracterizar el comportamiento del sistema dependen de las hipótesis que uno haga sobre su grado de no linealidad y su grado de estocasticidad (<Entity>Le Van Quyen</Entity> 2003; <Entity>Schreiber</Entity> 1999). Los sistemas dinámicos metaestables muestran diferentes mezclas de no linealidad y estocasticidad a diferentes escalas espaciales y temporales (<Entity>Friston</Entity> 2000b; <Entity>Kelso</Entity> 1995; <Entity>Le Van Quyen</Entity> 2003).
+                </p>
+
+                <p className="mb-6">
+                    La ciencia apenas ha comenzado a trazar este vasto mar de no linealidad y estocasticidad. Dentro de este contexto, "determinista" parece entenderse mejor como describiendo ciertas técnicas de análisis no lineal (aquellas en las que no hay términos de ruido), no como una característica ontológica de la naturaleza (en un sentido clásico trascendente al observador).
+                </p>
+
+                <SectionHeader id="resume" number="Sección 05" title="Resumen: Co-emergencia Dinámica" />
+
+                <p className="mb-6">
+                    La discusión hasta este punto proporciona más apoyo para una concepción de emergencia como co-emergencia dinámica. Co-emergencia dinámica significa que parte y todo co-emergen y se especifican mutuamente. <Entity>Kronz</Entity> y <Entity>Tiehen</Entity> (2002), en su discusión de emergencia y mecánica cuántica (con referencia también a sistemas dinámicos no lineales), abogan por la misma idea, a la que llaman emergencia dinámica:
+                </p>
+
+                <BlockQuote author="Kronz y Tiehen (2002)">
+                    Los todos emergentes tienen partes contemporáneas, pero estas partes no pueden caracterizarse independientemente de sus respectivos todos. Los todos emergentes son producidos por una interacción esencial, continua, de sus partes. Estas son las características centrales de la nueva visión esbozada aquí; el Hamiltoniano no separable constituye una interacción continua esencial... Al adoptar [esta] visión, podemos decir que no tiene sentido hablar de reducir un todo emergente a sus partes, ya que las partes son en cierto sentido constructos de nuestra caracterización del todo.
+                </BlockQuote>
+
+                <SectionHeader id="objections" number="Sección 06" title="Objeciones a la Emergencia y Causación Descendente" />
+
+                <p className="mb-6">
+                    Mi última tarea en este apéndice es examinar algunas objeciones recientes y bien conocidas a la emergencia y la causación descendente planteadas por el filósofo <Entity>Jaegwon Kim</Entity> (1993, 1998, 1999). Kim argumenta que la "causación descendente reflexiva"—la influencia causal de un todo sobre sus propios microconstituyentes—es incoherente cuando se entiende que sucede simultánea o sincrónicamente, y es ociosa o viola el "cierre causal de lo físico" cuando se entiende que sucede diacrónicamente (Kim 1999, pp. 28-33). Si Kim tiene razón, entonces la emergencia y la causación descendente resultan ser meramente epistemológicas en el sentido del reduccionista ontológico. Por esta razón, será instructivo considerar sus argumentos.
+                </p>
+
+                <p className="mb-6">
+                    Aquí está la descripción de Kim del primer caso de causación descendente reflexiva sincrónica:
+                </p>
+
+                <BlockQuote author="Jaegwon Kim (1999)">
+                    En un cierto tiempo t, un todo W tiene la propiedad emergente M, donde M emerge de la siguiente configuración de condiciones: W tiene una descomposición completa en partes {"$a_{1},...,a_{n}$"}; cada {"$a_{i}$"} tiene la propiedad {"$P_{i}$"}; y la relación R se cumple para la secuencia {"$a_{1},...,a_{n}$"}. Para algún {"$a_{j}$"}, el tener M de W en t causa que {"$a_{j}$"} tenga P en t.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    Lo que Kim encuentra problemático y en última instancia incoherente sobre este caso es la manera sincrónica en que combina determinación ascendente y causación descendente. La determinación ascendente de W teniendo M en t como un efecto de {"$a_{i}$"} teniendo {"$P_{i}$"} en t es simultánea con la causación descendente de {"$a_{j}$"} teniendo {"$P_{j}$"} en t como un efecto de W teniendo M en t.
+                </p>
+
+                <p className="mb-6">
+                    Sin embargo, no hay incoherencia obvia en este caso todavía. La causación simultánea, aunque contraintuitiva para el sentido común, no es obviamente incoherente. Por ejemplo, ciertas teorías en física postulan acción instantánea a distancia; si tales influencias existen, y si deberían calificar como causales, son cuestiones empíricas y conceptuales difíciles. Además, simplemente pronunciar la circularidad causal en general "inaceptable", como hace Kim (p. 28), es demasiado fácil, dado que la noción de causalidad circular juega un papel central en la teoría de sistemas complejos. Si la causalidad circular de la teoría de sistemas complejos se ve mejor como sincrónica y/o diacrónica, o simplemente como una abreviatura para la explicación causal recíproca, es una pregunta abierta y difícil, que no puede decidirse simplemente por pronunciamientos de sillón.
+                </p>
+
+                <p className="mb-6">
+                    Por ende, no sorprende que Kim tenga que derivar la incoherencia que discierne introduciendo un principio metafísico adicional sobre la causación—el "principio de actualidad de poder causal"—al cual él piensa que "nosotros suscribimos tácitamente" (aunque no nos dice si "nosotros" significa metafísicos, científicos, o la persona común en la calle):
+                </p>
+
+                <BlockQuote author="Jaegwon Kim (1999)">
+                    Para que un objeto x ejerza, en el tiempo t, los poderes causales/determinativos que tiene en virtud de tener la propiedad P, x debe poseer ya P en t. Cuando x es causado a adquirir P en t, no posee ya P en t y no es capaz de ejercer los poderes causales/determinativos inherentes en P.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    Con este principio aplicado al caso, la causación descendente reflexiva sincrónica es incoherente. Se supone que el tener M de W en t es un efecto de {"$a_{j}$"} teniendo {"$P_{j}$"} en t, lo cual implica (por el principio de actualidad de poder causal) que {"$a_{j}$"} debe poseer ya {"$P_{j}$"} en t, pero se supone que {"$a_{j}$"} teniendo {"$P_{j}$"} en t es un efecto de W teniendo M en t, lo cual implica que {"$a_{j}$"} no tiene ya {"$P_{j}$"} en t.
+                </p>
+
+                <p className="mb-6">
+                    La noción de causación descendente como influencia estructurante global-a-local arroja dudas sobre la generalidad del principio de Kim. El problema con el principio puede verse en el caso de los rodillos de convección de Rayleigh-Bénard. Los movimientos de rodillo ordenados (que en un contenedor cerrado forman cilindros paralelos llamados "células de Bénard") emergen de la dinámica local de las moléculas de fluido y al mismo tiempo restringen los estados de movimiento disponibles para esas moléculas. Como declara <Entity>Robert Bishop</Entity>:
+                </p>
+
+                <BlockQuote author="Robert Bishop (2002)">
+                    Cuando las células se establecen en t, esta propiedad gobernante se establece en t: no existía antes de t. Asimismo, antes de t, las trayectorias de los elementos fluidos tenían la propiedad de acceder a varios estados de movimiento, una propiedad que pierden en t debido a los efectos gobernantes globales de las células de Bénard. Las restricciones/modificaciones causales sobre el movimiento de los elementos fluidos en este caso son sincrónicas: La emergencia del patrón global autorregulado es simultánea con las modificaciones de los estados accesibles del sistema. Si no fuera sincrónico, el patrón no surgiría.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    Contrario a Kim, por lo tanto, la causación descendente reflexiva sincrónica parece perfectamente coherente, siempre y cuando no se conceptualice como causación eficiente (en la cual causa y efecto son externos uno al otro), sino más bien como influencia estructurante global-a-local.
+                </p>
+
+                <p className="mb-6">
+                    Volvamos al argumento de Kim contra la causación descendente diacrónica. Aquí los asuntos requieren aún más desenredo. Kim distingue entre dos tipos de causación descendente—uno en su opinión ordinario y no problemático, el otro altamente problemático—pero ninguno de los dos tipos se ajusta al tipo de causación descendente encontrado en la teoría de sistemas complejos. El primer tipo es simplemente causación de las propiedades de un todo a propiedades de sus partes—donde Kim deja las nociones de "todo" y "parte" sin analizar. Un todo causa que uno de sus microconstituyentes cambie de cierta manera, y hay un retardo de tiempo entre causa y efecto. Kim interpreta la analogía de <Entity>Roger Sperry</Entity> (1969) de una rueda rodante restringiendo el movimiento de sus propias moléculas como un caso de este tipo de causación descendente diacrónica. Las propiedades estructurales de la rueda restringen los movimientos de las moléculas que la componen, de modo que las moléculas son causadas a moverse de una manera particular a medida que la rueda rueda cuesta abajo. Aquí están los otros ejemplos de Kim y su veredicto sobre este tipo de causación descendente diacrónica:
+                </p>
+
+                <BlockQuote author="Jaegwon Kim (1999)">
+                    Me caigo de la escalera y me rompo el brazo. Camino a la cocina por un trago de agua y diez segundos después, todas mis extremidades y órganos han sido desplazados de mi estudio a la cocina. El pájaro de Sperry vuela hacia el azul allá, y todas las células y moléculas del pájaro, también, han ido allá. No me parece que estos casos nos presenten ningún misterio especial enraizado en la autorreflexividad, o que muestren que la causación emergente sea algo especial y único.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    Kim concluye que <Concept>"la causación descendente emergente no debería identificarse simplemente con la causación de propiedades del todo a propiedades de sus propias partes, es decir, causación descendente reflexiva"</Concept> (1999, p. 31). Lo que la causación descendente emergente requiere no es simplemente influencia todo-a-parte, sino una diferencia de tipo entre los eventos de macro nivel y micro nivel. En otras palabras, las relaciones causales entre los dos niveles deben implicar diferentes propiedades—a diferencia de la rueda rodante o el pájaro volador, en los cuales la propiedad de movimiento es común al todo y sus partes constituyentes.
+                </p>
+
+                <p className="mb-6">
+                    Kim parece tener razón sobre estos casos. Pero hay una deficiencia en su análisis: ninguno de los ejemplos que da en el pasaje anterior contiene el tipo de influencia global-a-local encontrada en sistemas complejos. En ninguna parte en estos ejemplos hay el tipo de acoplamiento no lineal de componentes del sistema típico de un sistema auto-organizado. Esta ausencia es particularmente evidente en el caso de la rueda de Sperry, que es un sistema agregativo, no uno auto-organizado. En ninguna parte hay formación de patrón global dinámico (como en rodillos de convección y células de Bénard). Tampoco hay ninguna autorreflexividad porque no hay sistema complejo con cierre operacional y restricciones contextuales de segundo orden (como en la autopoiesis). Kim descuida los casos más importantes y relevantes para la emergencia y la causación descendente. Saca la conclusión general correcta, pero no por la razón correcta. Es cierto que la causación descendente emergente no debería identificarse simplemente con la causación todo-a-parte, pero eso es porque la causación descendente emergente (al menos en el contexto de sistemas complejos) no está destinada a describir cualquier tipo de influencia todo-a-parte. Más bien, debería describir el tipo específico de influencia global-a-local reflexiva que ocurre en un sistema que tiene coherencia global dinámica en y a través de la auto-organización colectiva.
+                </p>
+
+                <p className="mb-6">
+                    El siguiente paso de Kim es examinar el tipo de causación descendente en el cual los eventos de macro nivel y micro nivel tienen diferentes propiedades características. Su modelo es la causación mental-a-física, pero la forma de su argumento no tiene nada que ver con lo mental y lo físico como tales; podría aplicarse igual de fácilmente a la relación entre eventos biológicos y físicos. El argumento que avanza descansa en tres principios (ver <Entity>Kim</Entity> 1993, pp. 336-357):
+                </p>
+
+                <ol className="list-decimal pl-8 my-6 space-y-2 text-slate-400 marker:text-amber-500">
+                    <li><strong className="text-amber-500">El Principio de Realización Física:</strong> Todo evento o propiedad emergente M debe ser realizado por (o determinado por, o superveniente en) algún evento o propiedad física P (su "base de emergencia").</li>
+                    <li><strong className="text-amber-500">El Principio de Herencia Causal:</strong> Si M es instanciado en una ocasión dada al ser realizado por P, entonces los poderes causales de esta instancia de M son idénticos con (o un subconjunto de) los poderes causales de P.</li>
+                    <li><strong className="text-amber-500">El Principio del Cierre Causal del Dominio Físico:</strong> Cualquier evento físico que tiene una causa en el tiempo t tiene una causa física en t. Por ende, <Concept>"si rastreamos la ascendencia causal de un evento físico, nunca necesitamos salir del dominio físico"</Concept> (1993, p. 280).</li>
+                </ol>
+
+                <p className="mb-6">
+                    La pregunta crítica que Kim hace entonces es por qué la base de emergencia física del emergente no puede desplazar al emergente como una causa de cualquiera de sus supuestos efectos. Aquí está la forma básica de su argumento. Supongamos que el emergente M causa {"$M^{*}$"} (que puede o no ser un emergente). {"$M^{*}$"} tiene su propia base de emergencia física {"$P^{*}$"}. Por lo tanto la causación de M de {"$M^{*}$"} presupone la causación de M de {"$P^{*}$"}. En otras palabras, la única manera para que M provoque {"$M^{*}$"} es provocando su base de emergencia física {"$P^{*}$"} (un caso de causación descendente). Ahora, M tiene su propia base de emergencia física P. La presencia de P es suficiente para la presencia de M. (Note que se supone que P no causa M, sino que realiza sincrónicamente M.) Pero M es causalmente suficiente para {"$P^{*}$"} y por ello {"$M^{*}$"}. Se sigue que P es causalmente suficiente para tanto {"$P^{*}$"} como {"$M^{*}$"}. Pero entonces el estatus de M como una causa es desplazado por P, haciendo así a M "ocioso y prescindible" como una causa de {"$P^{*}$"} y {"$M^{*}$"}. El resultado de este argumento es un dilema para el emergentista que cree en la causación descendente: o bien la causación descendente es ociosa, porque el supuesto poder causal del emergente es desplazado por el poder causal de los elementos físicos en los que se basa el emergente, o bien la causación descendente viola el principio de que el dominio físico es causalmente cerrado.
+                </p>
+
+                <p className="mb-6">
+                    Este argumento, cuando se aplica al caso de la causación descendente emergente en sistemas auto-organizados, es equivalente a negar que la organización del sistema ejerza influencia alguna sobre los componentes del sistema. El pensamiento parece ser que todo lo que llamamos causación emergente y de macro nivel realmente sucede al micro nivel (por el Principio de Herencia Causal). Hablar de la organización del sistema teniendo una influencia causal emergente es simplemente una descripción de macro nivel de los eventos causales de micro nivel. Tal descripción puede ser epistemológicamente útil para nosotros, aunque ontológicamente hablando toda la acción causal real sucede al micro nivel de la base de emergencia (<Entity>Kim</Entity> 1999, p. 33). En esta visión, la organización del sistema es de hecho epifenoménica—un efecto de transacciones causales de nivel inferior sin estatus causal significativo propio—aunque todavía puede ser útil para nosotros hablar sobre el sistema como si su organización jugara un papel causal en provocar ciertos eventos (ver <Entity>Kim</Entity> 1993, pp. 92-108).
+                </p>
+
+                <p className="mb-6">
+                    El problema con esta forma de pensar es su rechazo a considerar la importancia causal de la organización de un sistema (las relaciones que lo definen como un sistema). No reconoce que las interacciones de micro nivel suceden como lo hacen debido a la manera en que los procesos locales están organizados, lo cual es una característica relacional, de macro nivel, del sistema. Que la organización de macro nivel de un sistema complejo no es simplemente epifenoménica es evidente en al menos dos aspectos.
+                </p>
+
+                <p className="mb-6">
+                    Primero, es realizable múltiplemente: la misma organización puede obtenerse, aunque los constituyentes que la realizan puedan variar. De hecho, en el caso de cualquier sistema auto-organizado disipativo (energéticamente abierto), no solo pueden variar los constituyentes particulares, sino que también deben variar, porque tienen que ser incesantemente renovados a medida que el sistema disipa energía en su entorno. Este tipo de renovación material es especialmente llamativo en la autopoiesis. Hay y debe haber un recambio constante de constituyentes materiales en la célula mientras que la organización autopoiética permanece invariante (de lo contrario la célula muere). Este aspecto de un sistema complejo es parte de su robustez o estabilidad dinámica, lo que significa que la organización del sistema es resiliente a pequeños cambios o perturbaciones al micro nivel, y adaptativa a grandes cambios.
+                </p>
+
+                <p className="mb-6">
+                    Segundo, la estabilidad dinámica de un sistema complejo se refleja en el hecho de que diferentes declaraciones contrafácticas son verdaderas para la organización de macro nivel y para los procesos de micro nivel. La organización es necesaria para ciertos eventos subsecuentes, pero los constituyentes particulares no lo son. Si la organización hubiera sido diferente y esos constituyentes los mismos, los eventos no habrían ocurrido; pero si los constituyentes hubieran sido diferentes (dentro de ciertos límites) y la organización la misma, los eventos todavía habrían ocurrido (debido a la manera en que los constituyentes estaban organizados). Dado que diferentes declaraciones contrafácticas son verdaderas de los constituyentes de micro nivel y la organización de macro nivel, los dos no pueden ser identificados.
+                </p>
+
+                <p className="mb-6">
+                    Kim reconoce algunos de estos puntos, pero pasa por contorsiones para lidiar con ellos. En una nota al pie al final de su artículo, "Dando Sentido a la Emergencia", admite que <Concept>"los sistemas complejos obviamente traen nuevos poderes causales al mundo, poderes que no pueden ser identificados con poderes causales de los sistemas más simples más básicos. Entre ellos están los poderes causales de propiedades microestructurales, o basadas en lo micro, de un sistema complejo"</Concept> (1999, p. 36). Por una propiedad microestructural o basada en lo micro, quiere decir una propiedad de macro nivel que es completamente descomponible en una colección de microconstituyentes más las propiedades y relaciones de micro nivel que los caracterizan (<Entity>Kim</Entity> 1998, p. 84). (Dada esta caracterización, parecería que Kim simplemente asume que el micro nivel no incluye relaciones holísticas, tales como el entrelazamiento cuántico o la no-separabilidad del Hamiltoniano en sistemas dinámicos no lineales, pero esto se deja poco claro.) En esta nota al pie (y el correspondiente tratamiento más largo en su libro <em>Mind in a Physical World</em>), Kim regala muchos de los temas en juego en el debate sobre la emergencia sin reconocer nunca que lo ha hecho (<Entity>Campbell</Entity> y <Entity>Bickhard</Entity> 2002). Así admite que <Concept>"las macropropiedades pueden, y en general lo hacen, tener sus propios poderes causales, poderes que van más allá de los poderes causales de sus microconstituyentes"</Concept> (1998, p. 85, énfasis omitido). Sin embargo, declara, <Concept>"estas propiedades no son ellas mismas propiedades emergentes; más bien, forman las condiciones basales desde las cuales emergen propiedades adicionales (por ejemplo la conciencia no es ella misma una propiedad microestructural de un organismo, aunque puede emerger de una)"</Concept> (1999, p. 36).
+                </p>
+
+                <p className="mb-6">
+                    Las razones por las que Kim niega la emergencia a estas macropropiedades son complicadas y problemáticas. Primero, su concepción de propiedades emergentes se deriva de los emergentistas británicos, quienes sostenían que es simplemente un hecho bruto inexplicable de la naturaleza—para ser aceptado en una "actitud de piedad natural" en la frase de <Entity>Samuel Alexander</Entity>—que una cierta organización de elementos de nivel inferior da lugar a alguna cualidad emergente. Según esta forma de pensar, una propiedad emergente no debe ser identificada con la organización de macro nivel misma, sino con una propiedad cualitativamente distinta que superviene en y tiene como su base de emergencia esa organización (ver <Entity>Kim</Entity> 1998, pp. 85-86). No hay razón convincente hoy para respaldar esta peculiar concepción de emergencia. Los emergentistas británicos acertadamente llamaron la atención sobre la importancia de la organización y la estructura relacional, pero no tenían las herramientas científicas para estudiarlas que ahora tenemos. No es el emergentismo británico clásico sino la ciencia contemporánea la que debería guiar nuestro pensamiento sobre la emergencia.
+                </p>
+
+                <p className="mb-6">
+                    Segundo, Kim aparentemente acepta el reduccionismo parte/todo. Por ende para él todas las propiedades de macro nivel, basadas en lo micro, son descomponibles en las propiedades intrínsecas de entidades de micro nivel (aunque, como mencioné antes, esto se deja poco claro). Pero el reduccionismo parte/todo como una tesis ontológica sobre la naturaleza es inaceptable porque (entre otras cosas) presupone un marco conceptual (de particulares preexistentes con propiedades intrínsecas) que aparentemente no tiene formulación coherente en el lenguaje de la teoría microfísica (que es, después de todo, supuesta para ser el piso base sobre el cual descansa todo lo demás, según el reduccionista). Las características de macro nivel pueden ser micro-dependientes y micro-involucradas, sin ser basadas en lo micro en el sentido de Kim (analíticamente descomponibles en entidades de micro nivel preexistentes y sus propiedades intrínsecas).
+                </p>
+
+                <p className="mb-6">
+                    Tercero, el enfoque de Kim a la emergencia está enteramente dominado por el problema mente-cuerpo Cartesiano y su marco de lecho de Procusto de lo mental versus lo físico. Dado el reduccionismo parte/todo sobre el dominio físico (una concepción básicamente Cartesiana de la naturaleza), y una concepción muy amplia y problemática de lo "físico" que incluye toda la biología y psicología salvo la conciencia fenoménica (que es excluida no como algo inmaterial sino como algo que resiste el análisis reductivo fisicalista), los únicos candidatos que quedan para la emergencia son los "qualia", las propiedades cualitativas o fenoménicas de la experiencia consciente. Por contraste, el enfoque a la emergencia presentado en este libro está orientado no por el problema mente-cuerpo Cartesiano sino por el problema Kantiano de la auto-organización (ver Capítulo 6) y su relación con el triple orden de materia, vida y mente.
+                </p>
+
+                <p className="mb-6">
+                    Permítanme cerrar esta discusión haciendo algunos comentarios sobre los tres principios en la base del argumento de Kim. Su argumento es tan fuerte como estos principios, y aunque tienen fuerza contra el emergentismo británico clásico, cada uno es dudoso cuando se aplica a la emergencia en el contexto de la ciencia contemporánea.
+                </p>
+
+                <p className="mb-6">
+                    Según el primer principio, todo emergente está determinado por su base de realización física o base de emergencia; según el segundo, todo emergente hereda sus poderes causales de su base de emergencia. Estos principios son simplemente una expresión del reduccionismo ontológico fisicalista. Esta posición reclama a la ciencia para su apoyo, pero es metafísica en el sentido de ir más allá de cualquier cosa que la ciencia misma nos diga. No veo ninguna buena razón para creer en tal cosa como una "base de emergencia", donde esto significa una configuración de entidades microfísicas preexistentes con propiedades intrínsecas y poderes causales que fundamentan el nivel macrofísico. Esta imagen de la naturaleza como una jerarquía ordenada mereológicamente fundamentada en un nivel base de particulares es una imagen metafísica proyectada sobre la ciencia, mientras que la imagen que la ciencia proyecta es de redes de procesos a varias escalas espaciotemporales, sin particulares de nivel base que determinen "hacia arriba" todo lo demás (<Entity>Bickhard</Entity> y <Entity>Campbell</Entity> 2002; <Entity>Hattiangadi</Entity> 2005).
+                </p>
+
+                <p className="mb-6">
+                    ¿Qué hay del tercer principio de Kim, el cierre causal de lo físico? El significado preciso y estatus de este principio no son claros. El problema principal es que está lejos de ser claro qué significa "físico"—qué incluye y excluye—y es difícil ver cómo uno podría proceder a responder esta pregunta salvo teniendo una física completa y verdadera (lo que sea que eso signifique y asumiendo que incluso tenga sentido suponer tal cosa). Supongamos que en algún punto en el futuro los físicos se sintieran obligados a incluir propiedades mentales (qua mentales) como propiedades fundamentales de la teoría física (<Entity>Montero</Entity> 1999, 2001). Dado que no podemos predecir con precisión el curso futuro de la física, tenemos que al menos permitir esta posibilidad. De hecho, algunos físicos y filósofos ya creen que tal inclusión es necesaria para dar cuenta tanto de fenómenos mentales como físicos (<Entity>Shimony</Entity> 1997). Pero en ese caso, el cierre de la física incluiría lo mental qua mental (en oposición a lo mental qua reducido a lo físico). Esta posibilidad ilustra que la distinción Cartesiana mental/físico se ha vuelto inútil.
+                </p>
+
+                <p className="mb-6">
+                    En cuanto a Kim, él abraza un sentido muy amplio de "físico" que incluye cada ejemplo clásico de una propiedad emergente de la física, química, biología y psicología, salvo qualia. En ninguna parte en mi discusión de emergencia y causación descendente he apelado a nada fuera del dominio físico tan ampliamente concebido. Si el principio del cierre causal de lo físico se interpreta en cambio más estrechamente para significar el cierre causal de lo microfísico, entonces el principio no es obviamente verdadero y puede incluso ser falso o incoherente (<Entity>Dupré</Entity> 1993; <Entity>Hattiangadi</Entity> 2005). Por ejemplo, según la interpretación de Bohr de la mecánica cuántica, los conceptos macrofísicos son tan indispensables para caracterizar fenómenos microfísicos como los fenómenos microfísicos son para explicar ciertos macrofenómenos (<Entity>Hattiangadi</Entity> 2005). Además, el cierre causal de la física ha sido tradicionalmente vinculado al ideal de la unidad de la ciencia vía reducción interteórica—que la biología es en principio reducible a la química, y la química a la física. Pero tal unidad vía reducción interteórica no parece estar a la vista en ninguna parte (<Entity>Dupré</Entity> 1993; <Entity>Garfinkel</Entity> 1981). Como dice <Entity>Nancy Cartwright</Entity> sobre el caso clásico de la supuesta reducción interteórica de la química física a la mecánica cuántica: <Concept>"Notoriamente no tenemos nada como una reducción real de los bits relevantes de la química física a la física—ya sea cuántica o clásica. La mecánica cuántica es importante para explicar aspectos de fenómenos químicos pero siempre los conceptos cuánticos se usan junto con conceptos sui generis—es decir, no reducidos—de otros campos. No explican los fenómenos por sí mismos"</Concept> (<Entity>Cartwright</Entity> 1997, p. 163).
+                </p>
+
+                <p className="mb-6">
+                    Una observación final sobre la concepción de Kim de lo "físico" está en orden aquí. El reduccionismo parte/todo va de la mano con una metafísica atomista de particulares físicos básicos y sus configuraciones mereológicas, una metafísica a la que Kim aparentemente suscribe (1993, pp. 77, 96-97, 337). Al mismo tiempo, él también aparentemente cree que nada en la disputa filosófica sobre la emergencia depende de definiciones generales precisas de "físico" (1993, p. 340). Pero esto parece incorrecto en ambos aspectos. En el contexto de la ciencia contemporánea, como hemos visto, la "naturaleza" no consiste en particulares básicos, sino campos y procesos, y esta diferencia entre un punto de vista de proceso y una versión de partícula elemental de la metafísica de sustancia Cartesiana sí hace una diferencia para los asuntos filosóficos sobre la emergencia (<Entity>Campbell</Entity> y <Entity>Bickhard</Entity> 2002; <Entity>Hattiangadi</Entity> 2005). En la primera visión, no hay nivel inferior de particulares básicos con propiedades intrínsecas que determine hacia arriba todo lo demás. Todo es proceso todo el camino "hacia abajo" y todo el camino "hacia arriba", y los procesos son irreductiblemente relacionales—existen solo en patrones, redes, organizaciones, configuraciones o webs. Para el reduccionista parte/todo, "abajo" y "arriba" describen niveles más y menos fundamentales de realidad. Los niveles superiores son realizados por y determinados por niveles inferiores (el "modelo estratificado de realidad"; ver <Entity>Kim</Entity> 1993, pp. 337-339). En la visión de proceso, "arriba" y "abajo" son términos relativos al contexto usados para describir fenómenos de varias escalas y complejidad. No hay nivel base de entidades elementales para servir como la "base de emergencia" última sobre la cual fundamentar todo. Los fenómenos a todas las escalas no son entidades o sustancias sino procesos relativamente estables, y dado que los procesos logran estabilidad a diferentes niveles de complejidad, mientras aún interactúan con procesos a otros niveles, todos son igualmente reales y ninguno tiene primacía ontológica absoluta.
+                </p>
+
+            </main>
+        );
+
+        // --- APP ---
+
+        const App = () => {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [activeNote, setActiveNote] = useState(null);
+
+            const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
+            return (
+                <div className="bg-slate-950 min-h-screen text-slate-300 selection:bg-cyan-500/30 selection:text-cyan-100">
+                    <ScrollProgress />
+                    <Navigation toggleMenu={toggleMenu} />
+                    <Sidebar isOpen={isMenuOpen} toggleMenu={toggleMenu} />
+                    
+                    <Hero />
+                    <ChapterContent setActiveNote={setActiveNote} />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
