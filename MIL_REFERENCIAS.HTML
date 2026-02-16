@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Mente en la Vida | Evan Thompson - Referencias</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        amber: {
+                            450: '#F59E0B',
+                        },
+                        cyan: {
+                            450: '#22D3EE',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #020617; /* bg-slate-950 */
+            color: #cbd5e1; /* text-slate-300 */
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+
+        .serif { font-family: 'Playfair Display', serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, useScroll, useSpring, AnimatePresence } = window.Motion;
+        
+        // --- NATIVE ICONS (Zero Dependency) ---
+        const IconBase = ({ children, size = 24, className = "" }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const Menu = (props) => (
+            <IconBase {...props}>
+                <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+            </IconBase>
+        );
+        
+        const X = (props) => (
+            <IconBase {...props}>
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </IconBase>
+        );
+
+        const ChevronRight = (props) => (
+            <IconBase {...props}>
+                <path d="m9 18 6-6-6-6"/>
+            </IconBase>
+        );
+
+        const Book = (props) => (
+            <IconBase {...props}>
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </IconBase>
+        );
+
+        // --- DATA ---
+        
+        const DATA = {
+            title: "La Mente en la Vida",
+            author: "Evan Thompson",
+            toc: [
+                { title: "Inicio", id: "hero" },
+                { title: "Referencias A-C", id: "ref-a" },
+                { title: "Referencias D-F", id: "ref-d" },
+                { title: "Referencias G-I", id: "ref-g" },
+                { title: "Referencias J-L", id: "ref-j" },
+                { title: "Referencias M-O", id: "ref-m" },
+                { title: "Referencias P-R", id: "ref-p" },
+                { title: "Referencias S-U", id: "ref-s" },
+                { title: "Referencias V-Z", id: "ref-v" }
+            ]
+        };
+
+        // --- COMPONENTS ---
+
+        const Entity = ({ children }) => (
+            <span className="text-cyan-400 font-medium hover:text-cyan-300 transition-colors">
+                {children}
+            </span>
+        );
+
+        const BookTitle = ({ children }) => (
+            <span className="text-white italic font-serif tracking-wide">
+                {children}
+            </span>
+        );
+
+        const ReferenceItem = ({ children }) => (
+            <div className="mb-4 pl-8 -indent-8 text-slate-300 leading-relaxed text-lg text-justify hyphens-auto border-b border-slate-900/50 pb-2 last:border-0 hover:bg-slate-900/30 transition-colors p-2 rounded">
+                {children}
+            </div>
+        );
+
+        const SectionHeader = ({ id, title }) => (
+            <div id={id} className="pt-24 pb-8 mb-8 border-b border-slate-800">
+                <h2 className="text-4xl text-amber-500 font-serif">{title}</h2>
+            </div>
+        );
+
+        // --- LAYOUT COMPONENTS ---
+
+        const ScrollProgress = () => {
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+            return (
+                <motion.div
+                    className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50"
+                    style={{ scaleX }}
+                />
+            );
+        };
+
+        const Navigation = ({ toggleMenu }) => (
+            <nav className="fixed top-0 w-full bg-slate-950/80 backdrop-blur-md border-b border-slate-800/50 z-40 h-16 flex items-center justify-between px-6 transition-all duration-300">
+                <div className="flex items-center gap-4">
+                    <div className="w-8 h-8 bg-cyan-900/20 rounded-full flex items-center justify-center border border-cyan-500/30">
+                        <span className="text-cyan-500 font-serif font-bold">ET</span>
+                    </div>
+                    <div className="hidden md:block">
+                        <h1 className="text-sm text-slate-200 font-semibold tracking-wide">LA MENTE EN LA VIDA</h1>
+                        <p className="text-xs text-slate-500">Bibliografía Completa</p>
+                    </div>
+                </div>
+                <button 
+                    onClick={toggleMenu}
+                    className="flex items-center gap-2 text-slate-400 hover:text-cyan-400 transition-colors group"
+                >
+                    <span className="text-xs uppercase tracking-widest font-semibold hidden sm:block group-hover:mr-1 transition-all">Índice</span>
+                    <Menu size={20} />
+                </button>
+            </nav>
+        );
+
+        const Sidebar = ({ isOpen, toggleMenu }) => (
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={toggleMenu}
+                            className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
+                        />
+                        <motion.aside 
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed right-0 top-0 h-full w-80 bg-slate-900 border-l border-slate-800 z-50 p-8 shadow-2xl overflow-y-auto"
+                        >
+                            <div className="flex justify-between items-center mb-10">
+                                <h3 className="text-amber-500 font-serif italic text-xl">Navegación</h3>
+                                <button onClick={toggleMenu} className="text-slate-400 hover:text-white transition-colors">
+                                    <X size={24} />
+                                </button>
+                            </div>
+                            <ul className="space-y-4">
+                                {DATA.toc.map((item, idx) => (
+                                    <li key={idx}>
+                                        <a 
+                                            href={`#${item.id}`} 
+                                            onClick={toggleMenu}
+                                            className="flex items-center gap-3 text-slate-300 hover:text-cyan-400 transition-colors group"
+                                        >
+                                            <ChevronRight size={14} className="text-slate-600 group-hover:text-cyan-500 transition-colors" />
+                                            <span className="text-sm font-medium leading-relaxed">{item.title}</span>
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </motion.aside>
+                    </>
+                )}
+            </AnimatePresence>
+        );
+
+        const Hero = () => (
+            <section id="hero" className="min-h-screen flex flex-col justify-center items-center text-center px-6 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/10 via-slate-950 to-slate-950" />
+                <motion.div 
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1, delay: 0.2 }}
+                    className="relative z-10"
+                >
+                    <span className="text-amber-500 tracking-[0.3em] text-xs font-bold uppercase mb-4 block">
+                        Apéndice Bibliográfico
+                    </span>
+                    <h1 className="text-5xl md:text-7xl font-serif text-white mb-6 leading-tight">
+                        Referencias <br/> <span className="text-slate-400 italic">Bibliográficas</span>
+                    </h1>
+                    <div className="w-24 h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mx-auto mb-8" />
+                </motion.div>
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.5, duration: 1 }}
+                    className="absolute bottom-12"
+                >
+                   <div className="animate-bounce text-slate-600">
+                        <Book size={20} className="mx-auto mb-2 text-cyan-900" />
+                        <span className="text-xs uppercase tracking-widest text-slate-600">Desliza para explorar</span>
+                   </div>
+                </motion.div>
+            </section>
+        );
+
+        // --- REFERENCES CONTENT ---
+
+        const ReferencesContent = () => (
+            <main className="w-full px-6 md:px-12 pb-32">
+                
+                <SectionHeader id="ref-a" title="A - C" />
+                
+                <ReferenceItem><Entity>Abraham, R., y Shaw, C.</Entity> (1982-1988). <BookTitle>Dynamics: A Visual Introduction</BookTitle>. Santa Cruz, CA: Ariel Press.</ReferenceItem>
+                <ReferenceItem><Entity>Adolphs, R.</Entity> (2003). Cognitive neuroscience of human social behavior. <BookTitle>Nature Reviews Neuroscience</BookTitle> 4: 165-178.</ReferenceItem>
+                <ReferenceItem><Entity>Agre, P. E.</Entity> (1995). Computational research on interaction and agency. <BookTitle>Artificial Intelligence</BookTitle> 72: 1-52.</ReferenceItem>
+                <ReferenceItem><Entity>Allman, J. M.</Entity> (1999). <BookTitle>Evolving Brains</BookTitle>. New York: Scientific American Library.</ReferenceItem>
+                <ReferenceItem><Entity>Andersen, P. B., Emmeche, C., Finnemann, N. O., y Christiansen, P. V.</Entity>, eds. (2000). <BookTitle>Downward Causation. Minds, Bodies and Matter</BookTitle>. Aarhus, Denmark: Aarhus University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Arendt, D., y Jung, K. N.</Entity> (1994). Inversion of dorso ventral axis? <BookTitle>Nature</BookTitle> 371: 26.</ReferenceItem>
+                <ReferenceItem><Entity>Aristóteles.</Entity> (1941). <BookTitle>The Basic Works of Aristotle</BookTitle>. Ed. R. McKeon. New York: Random House.</ReferenceItem>
+                <ReferenceItem><Entity>Arthur, W.</Entity> (2002). The emerging conceptual framework of evolutionary developmental biology. <BookTitle>Nature</BookTitle> 415: 757-764.</ReferenceItem>
+                <ReferenceItem><Entity>Atmanspacher, H., y Bishop, R.</Entity>, eds. (2002). <BookTitle>Between Chance and Choice: Interdisciplinary Perspectives on Determinism</BookTitle>. Thorverton, UK: Imprint Academic.</ReferenceItem>
+                <ReferenceItem><Entity>Austin, J. H.</Entity> (1998). <BookTitle>Zen and the Brain</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Bachman, P. A., Luisi, P. L., y Lang, J.</Entity> (1992). Autocatalytic self-replicating micelles as models for prebiotic structures. <BookTitle>Nature</BookTitle> 357: 57-59.</ReferenceItem>
+                <ReferenceItem><Entity>Bach-y-Rita, P.</Entity> (2002). Sensory substitution and qualia. In A. Noë y E. Thompson, eds., <BookTitle>Vision and Mind: Selected Readings in the Philosophy of Perception</BookTitle>, pp. 497-514. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Baressi, J., y Moore, C.</Entity> (1996). Intentional relations and social understanding. <BookTitle>Behavioral and Brain Sciences</BookTitle> 19: 107-154.</ReferenceItem>
+                <ReferenceItem><Entity>Bateson, G.</Entity> (1972). <BookTitle>Steps toward an Ecology of Mind</BookTitle>. New York: Ballantine Books.</ReferenceItem>
+                <ReferenceItem><Entity>Bayne, T.</Entity> (2004). Closing the gap? Some questions for neurophenomenology. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle> 3: 349-364.</ReferenceItem>
+                <ReferenceItem><Entity>Bechtel, W., y Richardson, R.</Entity> (1993). <BookTitle>Discovering Complexity: Decomposition and Localization as Strategies in Scientific Research</BookTitle>. Princeton: Princeton University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Beer, R. D.</Entity> (2000). Dynamical approaches to cognitive science. <BookTitle>Trends in Cognitive Sciences</BookTitle> 4: 91-98.</ReferenceItem>
+                <ReferenceItem><Entity>Belousek, D. W.</Entity> (2003). Schrödineger's cat and the problem of downward causation. <BookTitle>Foundations of Physics</BookTitle> 33: 1621-1663.</ReferenceItem>
+                <ReferenceItem><Entity>Bermúdez, J. L.</Entity> (1998). <BookTitle>The Paradox of Self-Consciousness</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Bernet, R.</Entity> (2002). Unconscious consciousness in Husserl and Freud. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle> 1: 327-351.</ReferenceItem>
+                <ReferenceItem><Entity>Bernet, R., Kern, I., y Marbach, E.</Entity> (1993). <BookTitle>An Introduction to Husserlian Phenomenology</BookTitle>. Evanston, IL: Northwestern University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Bishop, R.</Entity> (2002). Determinism and chaos: from a quantum perspective. In H. Atmanspacher y R. Bishop, eds., <BookTitle>Between Chance and Choice</BookTitle>, pp. 263-280.</ReferenceItem>
+                <ReferenceItem><Entity>Bitbol, M.</Entity> (2003). A cure for metaphysical illusions: Kant, quantum mechanics, and the madhyamaka. In B. A. Wallace, ed., <BookTitle>Buddhism and Science: Breaking New Ground</BookTitle>, pp. 325-361. New York: Columbia University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Bitbol, M.</Entity> (en prensa). Ontology, matter and emergence. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Bitbol, M., y Luisi, P. L.</Entity> (2005). Autopoiesis with or without cognition: defining life at its edge. <BookTitle>Journal of the Royal Society Interface</BookTitle> 1: 99-107.</ReferenceItem>
+                <ReferenceItem><Entity>Blackmore, S.</Entity> (2002). There is no stream of consciousness. <BookTitle>Journal of Consciousness Studies</BookTitle> 9 (5-6): 17-28.</ReferenceItem>
+                <ReferenceItem><Entity>Blackmore, S.</Entity> (2003). <BookTitle>Consciousness: An Introduction</BookTitle>. Oxon: Hodder & Stoughton.</ReferenceItem>
+                <ReferenceItem><Entity>Blackmore, S. J., Brelstaff, G., Nelson, K., y Troscianko, T.</Entity> (1995). Is the richness of our visual world an illusion? Transaccadic memory for complex scenes. <BookTitle>Perception</BookTitle> 24: 1075-1081.</ReferenceItem>
+                <ReferenceItem><Entity>Blake, R.</Entity> (2001). A primer on binocular rivalry, including current controversies. <BookTitle>Brain and Mind</BookTitle> 2: 5-38.</ReferenceItem>
+                <ReferenceItem><Entity>Blake, R., y Logothetis, N.</Entity> (2002). Visual competition. <BookTitle>Nature Reviews Neuroscience</BookTitle> 3: 1-11.</ReferenceItem>
+                <ReferenceItem><Entity>Block, N.</Entity> (1995). On a confusion about a function of consciousness. <BookTitle>Behavioral and Brain Sciences</BookTitle> 18: 227-247.</ReferenceItem>
+                <ReferenceItem><Entity>Block, N.</Entity>, ed. (1981a). <BookTitle>Imagery</BookTitle>. Cambridge, MA: MIT Press/A Bradford Book.</ReferenceItem>
+                <ReferenceItem><Entity>Block, N.</Entity>, ed. (1981b). <BookTitle>Readings in the Philosophy of Psychology</BookTitle>, vol. 2. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Block, N.</Entity> (1983). Mental pictures and cognitive science. <BookTitle>Philosophical Review</BookTitle> 93: 499-542.</ReferenceItem>
+                <ReferenceItem><Entity>Block, N.</Entity> (1997). On a confusion about a function of consciousness. In N. Block, O. Flanagan, y G. Güzeldere, eds., <BookTitle>The Nature of Consciousness: Philosophical Debates</BookTitle>, pp. 375-416. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Boden, M.</Entity> (2000). Autopoiesis and life. <BookTitle>Cognitive Science Quarterly</BookTitle> 1: 115-143.</ReferenceItem>
+                <ReferenceItem><Entity>Bonner, J. T.</Entity> (1980). <BookTitle>The Evolution of Culture in Animal Societies</BookTitle>. Princeton, NJ: Princeton University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Botero, J. J.</Entity> (1999). The immediately given as ground and background. In J. Petitot et al., eds., <BookTitle>Naturalizing Phenomenology</BookTitle>, pp. 440-463.</ReferenceItem>
+                <ReferenceItem><Entity>Bourgine, P., y Stewart, J.</Entity> (2004). Autopoiesis and cognition. <BookTitle>Artificial Life</BookTitle> 20: 327-345.</ReferenceItem>
+                <ReferenceItem><Entity>Bressler, S., y Kelso, J. A. S.</Entity> (2001). Cortical coordination dynamics and cognition. <BookTitle>Trends in Cognitive Sciences</BookTitle> 5: 26-36.</ReferenceItem>
+                <ReferenceItem><Entity>Brockman, J.</Entity> (1995). <BookTitle>The Third Culture</BookTitle>. New York: Simon & Schuster.</ReferenceItem>
+                <ReferenceItem><Entity>Brough, J. B.</Entity> (1972). The emergence of an absolute consciousness in Husserl's early writings on time-consciousness. <BookTitle>Man and World</BookTitle> 5: 298-326.</ReferenceItem>
+                <ReferenceItem><Entity>Brough, J. B.</Entity> (1989). Husserl's phenomenology of time-consciousness. In J. N. Mohanty y W. R. McKenna, eds., <BookTitle>Husserl's Phenomenology: A Textbook</BookTitle>, pp. 249-289.</ReferenceItem>
+                <ReferenceItem><Entity>Bruner, J.</Entity> (1990). <BookTitle>Acts of Meaning</BookTitle>. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Bruzina, R.</Entity> (2001). Naturalizing Phenomenology (Review). <BookTitle>Husserl Studies</BookTitle> 17: 245-256.</ReferenceItem>
+                <ReferenceItem><Entity>Bruzina, R.</Entity> (2004). Phenomenology and cognitive science: moving beyond the paradigms. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle> 20: 43-48.</ReferenceItem>
+                <ReferenceItem><Entity>Buccino, G., Binkofski, F., Fink, G. R., Fadiga, L., Fogassi, L., Gallese, V., Seitz, R. J., Zilles, K., Rizzolatti, G., y Freund, H. J.</Entity> (2001). Action observation activates premotor and parietal areas in a somatotopic manner: an fMRI study. <BookTitle>European Journal of Neuroscience</BookTitle> 13: 400-404.</ReferenceItem>
+                <ReferenceItem><Entity>Burian, R. M., y Richardson, R. C.</Entity> (1996). Form and order in evolutionary biology. In M. Boden, ed., <BookTitle>The Philosophy of Artificial Life</BookTitle>, pp. 146-172. Oxford: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Buss, L. W.</Entity> (1987). <BookTitle>The Evolution of Individuality</BookTitle>. Princeton, NJ: Princeton University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Campbell, D. T.</Entity> (1974). 'Downward causation' in hierarchically organized biological systems. In F. Ayala y T. Dobzhansky, eds., <BookTitle>Studies in the Philosophy of Biology</BookTitle>, pp. 179-186. Berkeley: University of California Press.</ReferenceItem>
+                <ReferenceItem><Entity>Campbell, R. J., y Bickhard, M. H.</Entity> (2002). Physicalism, emergence and downward causation. <BookTitle>Principia</BookTitle> 6: 229-255.</ReferenceItem>
+                <ReferenceItem><Entity>Carr, L., Iacoboni, M., Dubeau, M. C., Mazziotta, J. C., y Lenzi, G. L.</Entity> (2003). Neural mechanisms of empathy in humans: a relay from neural systems for imitation to limbic areas. <BookTitle>Proceedings of the National Academy of Sciences USA</BookTitle> 100: 5497-5502.</ReferenceItem>
+                <ReferenceItem><Entity>Cartwright, N.</Entity> (1997). Where do laws of nature come from? <BookTitle>Dialectica</BookTitle> 51: 65-78.</ReferenceItem>
+                <ReferenceItem><Entity>Casey, E.</Entity> (2000). <BookTitle>Imagining: A Phenomenological Study</BookTitle>, 2d ed. Bloomington: Indiana University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Chalmers, D.</Entity> (1996). <BookTitle>The Conscious Mind: In Search of a Fundamental Theory</BookTitle>. New York: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Chalmers, D.</Entity> (1997). Moving forward on the problem of consciousness. <BookTitle>Journal of Consciousness Studies</BookTitle> 4: 3-46.</ReferenceItem>
+                <ReferenceItem><Entity>Chalmers, D.</Entity> (2000). What is a neural correlate of consciousness? In T. Metzinger, ed., <BookTitle>Neural Correlates of Consciousness</BookTitle>, pp. 17-39. Cambridge, MA: MIT Press/A Bradford Book.</ReferenceItem>
+                <ReferenceItem><Entity>Chalmers, D. J.</Entity> (2002). Consciousness and its place in nature. In D. J. Chalmers, ed., <BookTitle>Philosophy of Mind: Classical and Contemporary Readings</BookTitle>, pp. 247-272. New York: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Charland, L.</Entity> (2001). The natural kind status of emotion. <BookTitle>British Journal for the Philosophy of Science</BookTitle> 53: 511-537.</ReferenceItem>
+                <ReferenceItem><Entity>Chiel, H., y Beer, R.</Entity> (1997). The brain has a body: adaptive behavior emerges from interactions of nervous system, body and environment. <BookTitle>Trends in Neurosciences</BookTitle> 20: 553-557.</ReferenceItem>
+                <ReferenceItem><Entity>Church, J.</Entity> (1997). Ownership and the body. In N. Eilan, R. McCarthy, y B. Brewer, eds., <BookTitle>Spatial Representation</BookTitle>. Oxford: Blackwell.</ReferenceItem>
+                <ReferenceItem><Entity>Clark, A.</Entity> (1997). <BookTitle>Being There: Putting Brain, Body, and World Together Again</BookTitle>. Cambridge, MA: MIT Press/A Bradford Book.</ReferenceItem>
+                <ReferenceItem><Entity>Clark, A.</Entity> (2001). <BookTitle>Mindware: An Introduction to the Philosophy of Cognitive Science</BookTitle>. New York: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Clark, A., y Chalmers, D.</Entity> (1998). The extended mind. <BookTitle>Analysis</BookTitle> 58: 7-19.</ReferenceItem>
+                <ReferenceItem><Entity>Coen, E.</Entity> (1999). <BookTitle>The Art of Genes: How Organisms Make Themselves</BookTitle>. Oxford: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Coen, E.</Entity> (2002). <BookTitle>The Art of Genes</BookTitle>. New York: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Cole, J.</Entity> (1997). On "being faceless": neural basis of visual processing of face and emotional expression. <BookTitle>Journal of Consciousness Studies</BookTitle> 4: 528-542.</ReferenceItem>
+                <ReferenceItem><Entity>Cole, J., Depraz, N., y Gallagher, S.</Entity> (2000). Unity and disunity in bodily awareness: phenomenology and neuroscience. Association for the Scientific Study of Consciousness IV. Workshop, Brussels.</ReferenceItem>
+                <ReferenceItem><Entity>Colombetti, G.</Entity> (2005). Appraising valence. In G. Colombetti y E. Thompson, eds., <BookTitle>Emotion Experience</BookTitle>, pp. 103-126.</ReferenceItem>
+                <ReferenceItem><Entity>Colombetti, G.</Entity> (en prensa). Enactive appraisal. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Colombetti, G., y Thompson, E.</Entity>, eds. (2005a). <BookTitle>Emotion Experience</BookTitle>. Thorverton, UK: Imprint Academic.</ReferenceItem>
+                <ReferenceItem><Entity>Colombetti, G., y Thompson, E.</Entity> (2005b). Enacting emotional interpretations with feeling. <BookTitle>Behavioral and Brain Sciences</BookTitle> 28: 200-201.</ReferenceItem>
+                <ReferenceItem><Entity>Colombetti, G., y Thompson, E.</Entity> (2006). The feeling body: Toward an enactive approach to emotion. In W. Overton, U. Mueller, y J. Newman, eds., <BookTitle>Body in Mind, Mind in Body</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Conway Morris, S.</Entity> (1998). <BookTitle>The Crucible of Creation</BookTitle>. New York: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Cornell, J. F.</Entity> (1986). A Newton of the grassblade? Darwin and the problem of organic teleology. <BookTitle>Isis</BookTitle> 77: 405-421.</ReferenceItem>
+                <ReferenceItem><Entity>Cosmelli, D., David, O., Lachaux, J.-P., Martinerie, J., Garnero, L., Renault, B., y Varela, F. J.</Entity> (2004). Waves of consciousness: ongoing cortical patterns during binocular rivalry. <BookTitle>Neuroimage</BookTitle> 23: 128-140.</ReferenceItem>
+                <ReferenceItem><Entity>Cosmelli, D., Lachaux, J.-P., y Thompson, E.</Entity> (2007). Neurodynamical approaches to consciousness. In P. D. Zelazo, M. Moscovitch, y E. Thompson, eds., <BookTitle>The Cambridge Handbook of Consciousness</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Cottrell, A.</Entity> (1999). Sniffing the camembert: on the conceivability of zombies. <BookTitle>Journal of Consciousness Studies</BookTitle> 6: 4-12.</ReferenceItem>
+                <ReferenceItem><Entity>Coutinho, A.</Entity> (2003). A walk with Francisco Varela from first- to second-generation networks. <BookTitle>Biological Research</BookTitle> 36: 17-26.</ReferenceItem>
+                <ReferenceItem><Entity>Craig, A. D.</Entity> (2002). How do you feel? Interoception: the sense of the physiological condition of the body. <BookTitle>Nature Reviews Neuroscience</BookTitle> 3: 655-666.</ReferenceItem>
+                <ReferenceItem><Entity>Crick, F.</Entity> (1958). On protein synthesis. <BookTitle>Symposium of the Society for Experimental Biology</BookTitle> 12: 138-163.</ReferenceItem>
+                <ReferenceItem><Entity>Crick, F.</Entity> (1994). <BookTitle>The Astonishing Hypothesis: The Scientific Search for the Soul</BookTitle>. New York: Scribner's.</ReferenceItem>
+                <ReferenceItem><Entity>Crowell, S.</Entity> (en prensa). Phenomenological immanence and semantic externalism: a rapprochement. <BookTitle>Synthese</BookTitle>.</ReferenceItem>
+
+                <SectionHeader id="ref-d" title="D - F" />
+                
+                <ReferenceItem><Entity>Dainton, B.</Entity> (2000). <BookTitle>Stream of Consciousness</BookTitle>. London: Routledge.</ReferenceItem>
+                <ReferenceItem><Entity>Dainton, B.</Entity> (2002). Basic intentionality. <BookTitle>Journal of Consciousness Studies</BookTitle> 9 (8): 83-91.</ReferenceItem>
+                <ReferenceItem><Entity>Damasio, A. R.</Entity> (1990). Synchronous activation in multiple cortical regions: a mechanism for recall. <BookTitle>Seminars in the Neurosciences</BookTitle> 2: 287-297.</ReferenceItem>
+                <ReferenceItem><Entity>Damasio, A. R.</Entity> (1999). <BookTitle>The Feeling of What Happens</BookTitle>. New York: Harcourt Brace.</ReferenceItem>
+                <ReferenceItem><Entity>Damasio, A.</Entity> (2003). <BookTitle>Looking for Spinoza: Joy, Sorrow, and the Feeling Brain</BookTitle>. New York: Harcourt.</ReferenceItem>
+                <ReferenceItem><Entity>Darwin, C.</Entity> (1872). <BookTitle>The Expression of the Emotions in Man and Animals</BookTitle>. New York: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Darwin, C.</Entity> (1996). <BookTitle>On Evolution: The Development of the Theory of Natural Selection</BookTitle>. Indianapolis, IN: Hackett.</ReferenceItem>
+                <ReferenceItem><Entity>David, O., Cosmelli, D., Hasboun, D., y Garnero, L.</Entity> (2003). A multitrial analysis for revealing significant corticocortical networks. <BookTitle>Neuroimage</BookTitle> 20: 186-201.</ReferenceItem>
+                <ReferenceItem><Entity>David, O., Cosmelli, D., Lachaux, J.-P., Baillet, S., Garnero, L., y Martinerie, J.</Entity> (2003). A theoretical and experimental introduction to the non-invasive study of large-scale neural phase-synchronization. <BookTitle>International Journal of Computational Cognition</BookTitle> 1: 53-77.</ReferenceItem>
+                <ReferenceItem><Entity>David, O., Garnero, L., Cosmelli, D., y Varela, F. J.</Entity> (2002). Estimation of neural dynamics from MEG/EEG cortical current density maps. <BookTitle>IEEE Transactions on Biomedical Engineering</BookTitle> 49: 975-987.</ReferenceItem>
+                <ReferenceItem><Entity>Davidson, R. J., Scherer, K. R., y Goldsmith, H. H.</Entity>, eds. (2003). <BookTitle>Handbook of Affective Science</BookTitle>. Oxford: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Dawkins, R.</Entity> (1982). <BookTitle>The Extended Phenotype</BookTitle>. Oxford: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Dawkins, R.</Entity> (1986). <BookTitle>The Blind Watchmaker</BookTitle>. New York: Norton.</ReferenceItem>
+                <ReferenceItem><Entity>Dawkins, R.</Entity> (1989). <BookTitle>The Selfish Gene</BookTitle>, new ed. Oxford: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Dawkins, R.</Entity> (1995). <BookTitle>River out of Eden: A Darwinian View of Life</BookTitle>. New York: Basic Books.</ReferenceItem>
+                <ReferenceItem><Entity>Deacon, T.</Entity> (1997). <BookTitle>The Symbolic Species</BookTitle>. New York: W. W. Norton.</ReferenceItem>
+                <ReferenceItem><Entity>Deacon, T.</Entity> (2003). The hierarchic logic of emergence. En B. H. Weber y D. J. Depew, eds., <BookTitle>Evolution and Learning</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Decety, J.</Entity> (en prensa). A neurocognitive perspective on the mechanisms of empathy. In J. P. Forgas et al., eds., <BookTitle>The Social Mind</BookTitle>. New York: Guilford Press.</ReferenceItem>
+                <ReferenceItem><Entity>Decety, J., y Sommerville, J. A.</Entity> (2003). Shared representations between self and other. <BookTitle>Trends in Cognitive Sciences</BookTitle> 7: 527-533.</ReferenceItem>
+                <ReferenceItem><Entity>Deffuant, G., Farnaud, T., Bourgine, P., y Varela, F. J.</Entity> (1995). Towards an evolutionary theory of self-observation. In F. Moran et al., eds., <BookTitle>Advances in Artificial Life</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Deffuant, G., Fuhs, T., Monnert, E., Bourgine, P., y Varela, F. J.</Entity> (1995). Semi-algebraic networks. <BookTitle>Artificial Life</BookTitle> 2: 157-177.</ReferenceItem>
+                <ReferenceItem><Entity>Dehaene, S., y Naccache, L.</Entity> (2001). Towards a cognitive neuroscience of consciousness. <BookTitle>Cognition</BookTitle> 79: 1-37.</ReferenceItem>
+                <ReferenceItem><Entity>Dennett, D.</Entity> (1978). <BookTitle>Brainstorms</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Dennett, D.</Entity> (1982). How to study consciousness empirically. <BookTitle>Synthese</BookTitle> 59: 159-180.</ReferenceItem>
+                <ReferenceItem><Entity>Dennett, D.</Entity> (1991a). <BookTitle>Consciousness Explained</BookTitle>. Boston: Little Brown.</ReferenceItem>
+                <ReferenceItem><Entity>Dennett, D.</Entity> (1991b). Real patterns. <BookTitle>Journal of Philosophy</BookTitle> 87: 27-51.</ReferenceItem>
+                <ReferenceItem><Entity>Dennett, D.</Entity> (1995a). <BookTitle>Darwin's Dangerous Idea</BookTitle>. New York: Simon & Schuster.</ReferenceItem>
+                <ReferenceItem><Entity>Dennett, D.</Entity> (1995b). The unimagined preposterousness of zombies. <BookTitle>Journal of Consciousness Studies</BookTitle> 2: 322-326.</ReferenceItem>
+                <ReferenceItem><Entity>Dennett, D.</Entity> (1998). No bridge over the stream of consciousness. <BookTitle>Behavioral and Brain Sciences</BookTitle> 21: 753-756.</ReferenceItem>
+                <ReferenceItem><Entity>Dennett, D.</Entity> (2002a). Does your brain use the images in it, and if so, how? <BookTitle>Behavioral and Brain Sciences</BookTitle> 25: 189-190.</ReferenceItem>
+                <ReferenceItem><Entity>Dennett, D.</Entity> (2002b). How could I be wrong? <BookTitle>Journal of Consciousness Studies</BookTitle> 9: 13-16.</ReferenceItem>
+                <ReferenceItem><Entity>Dennett, D.</Entity> (2003). Who's on first? Heterophenomenology explained. In A. Jack y A. Roepstorff, eds., <BookTitle>Trusting the Subject?</BookTitle>. Thorverton, UK: Imprint Academic.</ReferenceItem>
+                <ReferenceItem><Entity>Dennett, D.</Entity> (2005). <BookTitle>Sweet Dreams: Philosophical Obstacles to a Science of Consciousness</BookTitle>. Cambridge, MA: MIT Press/A Bradford Book.</ReferenceItem>
+                <ReferenceItem><Entity>Dennett, D., y Kinsbourne, M.</Entity> (1992). Time and the observer. <BookTitle>Behavioral and Brain Sciences</BookTitle> 15: 183-247.</ReferenceItem>
+                <ReferenceItem><Entity>Depraz, N.</Entity> (1995). <BookTitle>Transcendance et incarnation</BookTitle>. Paris: J. Vrin.</ReferenceItem>
+                <ReferenceItem><Entity>Depraz, N.</Entity> (1997). La traduction de Leib. <BookTitle>Etudes Phénoménologiques</BookTitle> 3.</ReferenceItem>
+                <ReferenceItem><Entity>Depraz, N.</Entity> (1999a). Review of Ichiro Yamaguchi. <BookTitle>Alter</BookTitle> 7: 63-68.</ReferenceItem>
+                <ReferenceItem><Entity>Depraz, N.</Entity> (1999b). The phenomenological reduction as praxis. <BookTitle>Journal of Consciousness Studies</BookTitle> 6: 95-110.</ReferenceItem>
+                <ReferenceItem><Entity>Depraz, N.</Entity> (1999c). When transcendental genesis encounters the naturalization project. In J. Petitot et al., eds., <BookTitle>Naturalizing Phenomenology</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Depraz, N.</Entity> (2001a). <BookTitle>Lucidité du corps</BookTitle>. Dordrecht: Kluwer Academic Publishers.</ReferenceItem>
+                <ReferenceItem><Entity>Depraz, N.</Entity> (2001b). The Husserlian theory of intersubjectivity as alterology. <BookTitle>Journal of Consciousness Studies</BookTitle> 8 (5-7): 169-178.</ReferenceItem>
+                <ReferenceItem><Entity>Depraz, N., Varela, F. J., y Vermersch, P.</Entity> (2000). The gesture of awareness. In M. Velmans, ed., <BookTitle>Investigating Phenomenal Consciousness</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Depraz, N., Varela, F. J., y Vermersch, P.</Entity> (2003). <BookTitle>On Becoming Aware: A Pragmatics of Experiencing</BookTitle>. Amsterdam: John Benjamins.</ReferenceItem>
+                <ReferenceItem><Entity>De Preester, H.</Entity> (2003). Meaning: what's the matter? <BookTitle>Theoria et Historia Scientiarum</BookTitle> 7: 195-205.</ReferenceItem>
+                <ReferenceItem><Entity>DeRobertis, E. M., y Sasai, Y.</Entity> (1996). A common plan for dorsoventral patterning in bilateria. <BookTitle>Nature</BookTitle> 380: 37-40.</ReferenceItem>
+                <ReferenceItem><Entity>Derryberry, D., y Tucker, D. M.</Entity> (1994). Motivating the focus of attention. In P. M. Niedenthal y S. Kitayama, eds., <BookTitle>The Heart's Eye</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Descartes, R.</Entity> (1986). <BookTitle>Meditations on First Philosophy</BookTitle>. Trans. J. Cottingham. Cambridge: Cambridge University Press.</ReferenceItem>
+                <ReferenceItem><Entity>de Waal, F.</Entity> (1996). <BookTitle>Good Natured: The Origins of Right and Wrong in Humans and Other Animals</BookTitle>. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>de Waal, F.</Entity> (2002). Evolutionary psychology: the wheat and the chaff. <BookTitle>Current Directions in Psychological Science</BookTitle> 11: 187-191.</ReferenceItem>
+                <ReferenceItem><Entity>di Pellegrino, G., Fadiga, L., Fogassi, L., Gallese, V., y Rizzolatti, G.</Entity> (1992). Understanding motor events: a neurophysiological study. <BookTitle>Experimental Brain Research</BookTitle> 91: 176-180.</ReferenceItem>
+                <ReferenceItem><Entity>Di Paolo, E.</Entity> (2005). Autopoiesis, adaptivity, teleology, agency. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle> 4: 429-452.</ReferenceItem>
+                <ReferenceItem><Entity>Donald, M.</Entity> (1991). <BookTitle>Origins of the Modern Mind</BookTitle>. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Donald, M.</Entity> (2001). <BookTitle>A Mind So Rare</BookTitle>. New York: Norton.</ReferenceItem>
+                <ReferenceItem><Entity>Doolittle, W. F.</Entity> (1981). Is nature really motherly? <BookTitle>CoEvolution Quarterly</BookTitle> 29: 58-63.</ReferenceItem>
+                <ReferenceItem><Entity>Doolittle, W. F.</Entity> (1987). From selfish DNA to Gaia. In J. M. Robson, ed., <BookTitle>Origin and Evolution of the Universe</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Dretske, F.</Entity> (1995a). <BookTitle>Naturalizing the Mind</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Dretske, F.</Entity> (1995b). Mental events as structuring causes of behavior. In J. Heil y A. Mele, eds., <BookTitle>Mental Causation</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Dreyfus, G., y Thompson, E.</Entity> (2007). Asian perspectives. In P. D. Zelazo et al., eds., <BookTitle>The Cambridge Handbook of Consciousness</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Dreyfus, H. L.</Entity> (1972). <BookTitle>What Computers Can't Do</BookTitle>. New York: Harper and Row.</ReferenceItem>
+                <ReferenceItem><Entity>Dreyfus, H. L.</Entity> (1982). Husserl's perceptual noema. In H. L. Dreyfus, ed., <BookTitle>Husserl, Intentionality and Cognitive Science</BookTitle>, pp. 97-124. Cambridge, MA: MIT Press/A Bradford Book.</ReferenceItem>
+                <ReferenceItem><Entity>Dreyfus, H. L.</Entity> (1988). The perceptual noema. In L. Embree, ed., <BookTitle>Lester Embree: Collected Works</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Dreyfus, H. L.</Entity> (1991). <BookTitle>Being-In-The-World</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Dreyfus, H. L.</Entity> (1992). <BookTitle>What Computers Still Can't Do: A Critique of Artificial Reason</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Dreyfus, H. L.</Entity> (2000). Responses. In M. Wrathall y J. Malpas, eds., <BookTitle>Heidegger, Coping, and Cognitive Science</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Dreyfus, H. L.</Entity> (2002). Intelligence without representation: Merleau-Ponty's critique of mental representation. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle> 1: 367-383.</ReferenceItem>
+                <ReferenceItem><Entity>Dreyfus, H. L.</Entity> (2005). Merleau-Ponty and recent cognitive science. In T. Carman y M. B. N. Hansen, eds., <BookTitle>The Cambridge Companion to Merleau-Ponty</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Dreyfus, H. L., y Dreyfus, S.</Entity> (1986). <BookTitle>Mind Over Machine</BookTitle>. New York: The Free Press.</ReferenceItem>
+                <ReferenceItem><Entity>Drummond, J.</Entity> (2003). The structure of intentionality. In D. Welton, ed., <BookTitle>The New Husserl</BookTitle>, pp. 65-92. Bloomington: Indiana University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Dupré, J.</Entity> (1993). <BookTitle>The Disorder of Things: Metaphysical Foundations of the Disunity of Science</BookTitle>. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Dupuy, J-P.</Entity> (2000). <BookTitle>The Mechanization of the Mind: On the Origins of Cognitive Science</BookTitle>. Trans. M. B. DeBevoise. Princeton: Princeton University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Dyson, F.</Entity> (1985). <BookTitle>Origins of Life</BookTitle>. Cambridge: Cambridge University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Eisenberg, N.</Entity> (2000). Emotion, regulation, and moral development. <BookTitle>Annual Review of Psychology</BookTitle> 51: 665-697.</ReferenceItem>
+                <ReferenceItem><Entity>Eisenberg, N., y Strayer, J.</Entity> (1987). <BookTitle>Empathy and Its Development</BookTitle>. Cambridge: Cambridge University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Ekman, P., y Davidson, R. J.</Entity>, eds. (1994). <BookTitle>The Nature of Emotion</BookTitle>. Oxford: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Elman, J.</Entity> (1991). Representation and structure in connectionist models. In G. Altman, ed., <BookTitle>Cognitive Models of Speech Processing</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Emmeche, C., Køppe, S., y Stjernfelt, F.</Entity> (2000). Levels, emergence, and three versions of downward causation. In P. B. Andersen et al., eds., <BookTitle>Downward Causation</BookTitle>, pp. 13-34. Aarhus: Aarhus University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Engel, A. K., Fries, P., y Singer, W.</Entity> (2001). Dynamic predictions: oscillations and synchrony in top-down processing. <BookTitle>Nature Reviews Neuroscience</BookTitle> 2: 704-716.</ReferenceItem>
+                <ReferenceItem><Entity>Engel, A. K., y Singer, W.</Entity> (2001). Temporal binding and the neural correlates of sensory awareness. <BookTitle>Trends in Cognitive Sciences</BookTitle> 5: 16-25.</ReferenceItem>
+                <ReferenceItem><Entity>Epstein, M.</Entity> (1996). <BookTitle>Thoughts without a Thinker</BookTitle>. New York: Basic Books.</ReferenceItem>
+                <ReferenceItem><Entity>Faure, P., y Korn, H.</Entity> (2001). Is there chaos in the brain? <BookTitle>Comptes Rendus de l'Académie des Sciences</BookTitle> 324: 773-793.</ReferenceItem>
+                <ReferenceItem><Entity>Fleischaker, G. R.</Entity> (1988). Autopoiesis: the status of its system logic. <BookTitle>BioSystems</BookTitle> 22: 37-49.</ReferenceItem>
+                <ReferenceItem><Entity>Fleischaker, G. R.</Entity> (1990a). Origins of life. <BookTitle>Origins of Life</BookTitle> 20: 127-137.</ReferenceItem>
+                <ReferenceItem><Entity>Fleischaker, G. R.</Entity> (1990b). Symbols and dynamics. <BookTitle>PAW Review</BookTitle> 5: 30-32.</ReferenceItem>
+                <ReferenceItem><Entity>Fleischaker, G. R.</Entity> (1994). The autopoeisis of the cell. In W. I. Thompson, ed., <BookTitle>Gaia 2</BookTitle>, pp. 15-37.</ReferenceItem>
+                <ReferenceItem><Entity>Fleischaker, G. R.</Entity> (1994). A few precautionary words concerning terminology. In G. R. Fleischaker et al., eds., <BookTitle>Self-Production of Supramolecular Structures</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Fodor, J.</Entity> (1975). <BookTitle>The Language of Thought</BookTitle>. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Fodor, J.</Entity> (1981). <BookTitle>Representations</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Fontana, W., y Buss, L. W.</Entity> (1994). What would be conserved if "the tape were played twice"? <BookTitle>Proceedings of the National Academy of Sciences USA</BookTitle> 91: 757-761.</ReferenceItem>
+                <ReferenceItem><Entity>Fontana, W., Wagner, G., y Buss, L. W.</Entity> (1994). Beyond digital naturalism. <BookTitle>Artificial Life</BookTitle> 1: 211-227.</ReferenceItem>
+                <ReferenceItem><Entity>Forman, R. K. C.</Entity>, ed. (1990). <BookTitle>The Problem of Pure Consciousness</BookTitle>. New York: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Franklin, S.</Entity> (1995). <BookTitle>Artificial Minds</BookTitle>. Cambridge, MA: MIT Press/A Bradford Book.</ReferenceItem>
+                <ReferenceItem><Entity>Freeman, W. J.</Entity> (1995). <BookTitle>Societies of Brains</BookTitle>. Hillsdale, NJ: Lawrence Erlbaum.</ReferenceItem>
+                <ReferenceItem><Entity>Freeman, W. J.</Entity> (1999a). <BookTitle>How Brains Make Up Their Minds</BookTitle>. London: Weidenfeld & Nicolson.</ReferenceItem>
+                <ReferenceItem><Entity>Freeman, W. J.</Entity> (1999b). Consciousness, intentionality, and causality. <BookTitle>Journal of Consciousness Studies</BookTitle> 6 (11-12): 143-172.</ReferenceItem>
+                <ReferenceItem><Entity>Freeman, W. J.</Entity> (2000). Emotion is essential to all intentional behaviors. In M. D. Lewis y I. Granic, eds., <BookTitle>Emotion, Development, and Self-Organization</BookTitle>, pp. 209-235. Cambridge: Cambridge University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Freeman, W. J.</Entity> (2003). Neurodynamic models of brain in psychiatry. <BookTitle>Neuropsychopharmacology</BookTitle> 28: S54-S63.</ReferenceItem>
+                <ReferenceItem><Entity>Freeman, W. J.</Entity> (2003). The wave packet. <BookTitle>Journal of Integrative Neuroscience</BookTitle> 2: 3-30.</ReferenceItem>
+                <ReferenceItem><Entity>Freud, S.</Entity> (1915/1984). The unconscious. In S. Freud, <BookTitle>On Metapsychology</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Freud, S.</Entity> (1923/1984). The Ego and the Id. In S. Freud, <BookTitle>On Metapsychology</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Fries, P., Reynolds, J. H., Rorie, A. E., y Desimone, R.</Entity> (2001). Modulation of oscillatory neuronal synchronization by selective visual attention. <BookTitle>Science</BookTitle> 291: 1560-1563.</ReferenceItem>
+                <ReferenceItem><Entity>Friston, K.</Entity> (2000a). The labile brain. I. Neuronal transients and nonlinear coupling. <BookTitle>Philosophical Transactions of the Royal Society of London B</BookTitle> 355: 215-236.</ReferenceItem>
+                <ReferenceItem><Entity>Friston, K.</Entity> (2000b). The labile brain. II. Transients, complexity and metastability. <BookTitle>Philosophical Transactions of the Royal Society of London B</BookTitle> 355: 237-252.</ReferenceItem>
+
+                <SectionHeader id="ref-g" title="G - I" />
+                
+                <ReferenceItem><Entity>Gallagher, S.</Entity> (1986a). Body image and body schema. <BookTitle>The Journal of Mind and Behavior</BookTitle> 7: 541-554.</ReferenceItem>
+                <ReferenceItem><Entity>Gallagher, S.</Entity> (1986b). Lived body and environment. <BookTitle>Research in Phenomenology</BookTitle> 16:139-170.</ReferenceItem>
+                <ReferenceItem><Entity>Gallagher, S.</Entity> (1995). Body schema and intentionality. In J. L. Bermúdez et al., eds., <BookTitle>The Body and the Self</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Gallagher, S.</Entity> (1997). Mutual enlightenment. <BookTitle>Journal of Consciousness Studies</BookTitle> 4: 195-214.</ReferenceItem>
+                <ReferenceItem><Entity>Gallagher, S.</Entity> (1998). <BookTitle>The Inordinance of Time</BookTitle>. Evanston, IL: Northwestern University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Gallagher, S.</Entity> (2003). Bodily self-awareness and object perception. <BookTitle>Theoria et Historia Scientarium</BookTitle> 7: 53-68.</ReferenceItem>
+                <ReferenceItem><Entity>Gallagher, S., y Varela, F. J.</Entity> (2003). Redrawing the map and resetting the time. In E. Thompson, ed., <BookTitle>The Problem of Consciousness</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Gallese, V.</Entity> (2001). The "shared manifold" hypothesis: from mirror neurons to empathy. <BookTitle>Journal of Consciousness Studies</BookTitle> 8 (5-7): 33-50.</ReferenceItem>
+                <ReferenceItem><Entity>Gallese, V., Keysers, C., y Rizzolatti, G.</Entity> (2004). A unifying view of the basis of social cognition. <BookTitle>Trends in Cognitive Sciences</BookTitle> 8: 396-403.</ReferenceItem>
+                <ReferenceItem><Entity>Gallup, G. G.</Entity> (1998). Can animals empathize? <BookTitle>Scientific American Presents</BookTitle> 9 (4): 66-71.</ReferenceItem>
+                <ReferenceItem><Entity>Gardner, H.</Entity> (1985). <BookTitle>The Mind's New Science</BookTitle>. New York: Basic Books.</ReferenceItem>
+                <ReferenceItem><Entity>Garfinkel, A.</Entity> (1981). <BookTitle>Forms of Explanation: Rethinking the Questions in Social Theory</BookTitle>. New Haven: Yale University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Garrett, B.</Entity> (en prensa). What the history of vitalism teaches us about consciousness. <BookTitle>Philosophy and Phenomenological Research</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Gatlin, L.</Entity> (1972). <BookTitle>Information Theory and the Living System</BookTitle>. New York: Columbia University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Gendlin, E. T.</Entity> (1981). <BookTitle>Focusing</BookTitle>. New York: Bantam.</ReferenceItem>
+                <ReferenceItem><Entity>Gendlin, E. T.</Entity> (1997). <BookTitle>Experiencing and the Creation of Meaning</BookTitle>. Evanston, IL: Northwestern University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Gerhart, J., y Kirschner, M.</Entity> (1997). <BookTitle>Cells, Embryos, and Evolution</BookTitle>. Malden, MA: Blackwell Science Publications.</ReferenceItem>
+                <ReferenceItem><Entity>Gibson, J. J.</Entity> (1979). <BookTitle>The Ecological Approach to Visual Perception</BookTitle>. Boston: Houghton Mifflin.</ReferenceItem>
+                <ReferenceItem><Entity>Gilbert, S. F., Opitz, J. M., y Raff, R. A.</Entity> (1996). Resynthesizing evolutionary and developmental biology. <BookTitle>Developmental Biology</BookTitle> 173: 357-372.</ReferenceItem>
+                <ReferenceItem><Entity>Godfrey-Smith, P.</Entity> (1996). Spencer and Dewey on life and mind. In M. Boden, ed., <BookTitle>The Philosophy of Artificial Life</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Godfrey-Smith, P.</Entity> (2000a). Information, arbitrariness, and selection. <BookTitle>Philosophy of Science</BookTitle> 67: 202-207.</ReferenceItem>
+                <ReferenceItem><Entity>Godfrey-Smith, P.</Entity> (2000b). On the theoretical role of "genetic coding." <BookTitle>Philosophy of Science</BookTitle> 67: 26-44.</ReferenceItem>
+                <ReferenceItem><Entity>Gold, I.</Entity> (2002). Interpreting the neuroscience of imagery. <BookTitle>Behavioral and Brain Sciences</BookTitle> 25: 190-191.</ReferenceItem>
+                <ReferenceItem><Entity>Goldman, A. I.</Entity> (1997). Science, publicity, and consciousness. <BookTitle>Philosophy of Science</BookTitle> 64: 525-545.</ReferenceItem>
+                <ReferenceItem><Entity>Goldman, A. I.</Entity> (2000). Can science know when you're conscious? <BookTitle>Journal of Consciousness Studies</BookTitle> 7: 3-22.</ReferenceItem>
+                <ReferenceItem><Entity>Goldman, A. I.</Entity> (2004). Epistemology and the evidential status of introspective reports. In A. Jack y A. Roepstorff, eds., <BookTitle>Trusting the Subject?</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Goldstein, K.</Entity> (1995). <BookTitle>The Organism</BookTitle>. New York: Zone Books.</ReferenceItem>
+                <ReferenceItem><Entity>Goodwin, B.</Entity> (1994). <BookTitle>How the Leopard Changed Its Spots: The Evolution of Complexity</BookTitle>. New York: Scribners.</ReferenceItem>
+                <ReferenceItem><Entity>Gould, S. J.</Entity> (1989). <BookTitle>Wonderful Life: The Burgess Shale and the Nature of History</BookTitle>. New York: Norton.</ReferenceItem>
+                <ReferenceItem><Entity>Gould, S. J., y Lewontin, R. C.</Entity> (1978). The spandrels of San Marco. <BookTitle>Proceedings of the Royal Society of London</BookTitle> 205: 581-598.</ReferenceItem>
+                <ReferenceItem><Entity>Gray, R. D.</Entity> (1992). Death of the gene. In P. E. Griffiths, ed., <BookTitle>Trees of Life</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Grice, H. P.</Entity> (2002). Some remarks about the senses. In A. Noë y E. Thompson, eds., <BookTitle>Vision and Mind</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Griffiths, P. E.</Entity> (1997). <BookTitle>What Emotions Really Are</BookTitle>. Chicago: University of Chicago Press.</ReferenceItem>
+                <ReferenceItem><Entity>Griffiths, P. E., y Gray, R. D.</Entity> (1994). Developmental systems and evolutionary explanation. <BookTitle>Journal of Philosophy</BookTitle> 91: 277-304.</ReferenceItem>
+                <ReferenceItem><Entity>Griffiths, P. E., y Knight, R. D.</Entity> (1998). What is the developmentalist challenge? <BookTitle>Philosophy of Science</BookTitle> 65: 253-258.</ReferenceItem>
+                <ReferenceItem><Entity>Griffiths, P. E., y Stotz, K.</Entity> (2000). How the mind grows. <BookTitle>Synthese</BookTitle> 122: 29-51.</ReferenceItem>
+                <ReferenceItem><Entity>Grush, R.</Entity> (2004). The emulation theory of representation. <BookTitle>Behavioral and Brain Sciences</BookTitle> 27: 377-396.</ReferenceItem>
+                <ReferenceItem><Entity>Gupta, B.</Entity> (1998). <BookTitle>The Disinterested Witness: A Fragment of Advaita Vedanta Phenomenology</BookTitle>. Evanston, IL: Northwestern University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Gupta, B.</Entity> (2003). <BookTitle>Cit: Consciousness</BookTitle>. New Delhi: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Gupta, B.</Entity> (2004). <BookTitle>Thinking in English, Speaking in Hindi</BookTitle>. New Delhi: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Gurwitsch, A.</Entity> (1964). <BookTitle>The Field of Consciousness</BookTitle>. Pittsburgh: Duquesne University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Güzeldere, G.</Entity> (1997). The many faces of consciousness. In N. Block et al., eds., <BookTitle>The Nature of Consciousness</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Haken, H.</Entity> (1983). <BookTitle>Synergetics: An Introduction</BookTitle>. Berlin: Springer-Verlag.</ReferenceItem>
+                <ReferenceItem><Entity>Haken, H., Kelso, J. A. S., y Bunz, H.</Entity> (1985). A theoretical model of phase transitions in human hand movements. <BookTitle>Biological Cybernetics</BookTitle> 51: 347-356.</ReferenceItem>
+                <ReferenceItem><Entity>Hall, B. K., y Olson, W. M.</Entity> (2003). <BookTitle>Keywords and Concepts in Evolutionary Developmental Biology</BookTitle>. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Hanna, R., y Thompson, E.</Entity> (2003). The mind-body-body problem. <BookTitle>Theoria et Historia Scientiarum</BookTitle> 7: 24-44.</ReferenceItem>
+                <ReferenceItem><Entity>Harman, G.</Entity> (1990). The intrinsic quality of experience. <BookTitle>Philosophical Perspectives</BookTitle> 4: 31-52.</ReferenceItem>
+                <ReferenceItem><Entity>Harman, G.</Entity> (1997). The intrinsic quality of experience. In N. Block et al., eds., <BookTitle>The Nature of Consciousness</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Hattiangadi, J.</Entity> (2005). The emergence of minds in space and time. In D. M. Johnson y C. Ernelling, eds., <BookTitle>The Mind as a Scientific Object</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Hawthorne, J., y Silberstein, M.</Entity> (1995). For whom the bell arguments toll: a proof of non-locality. <BookTitle>Synthese</BookTitle> 103: 169-217.</ReferenceItem>
+                <ReferenceItem><Entity>Healey, R.</Entity> (1991). Holism and nonseparability. <BookTitle>Journal of Philosophy</BookTitle> 88: 393-421.</ReferenceItem>
+                <ReferenceItem><Entity>Hebb, D.</Entity> (1949). <BookTitle>The Organization of Behavior</BookTitle>. New York: Wiley.</ReferenceItem>
+                <ReferenceItem><Entity>Heidegger, M.</Entity> (1982). <BookTitle>The Basic Problems of Phenomenology</BookTitle>. Trans. A. Hofstadter. Bloomington: Indiana University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Heidegger, M.</Entity> (1985). <BookTitle>History of the Concept of Time: Prolegomena</BookTitle>. Trans. T. Kisiel. Bloomington: Indiana University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Heidegger, M.</Entity> (1995). <BookTitle>The Fundamental Concepts of Metaphysics: World, Finitude, Solitude</BookTitle>. Trans. W. McNeill y N. Walker. Bloomington: Indiana University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Heidegger, M.</Entity> (1996). <BookTitle>Being and Time</BookTitle>. Trans. J. Stambaugh. Albany: SUNY Press.</ReferenceItem>
+                <ReferenceItem><Entity>Held, K.</Entity> (2003). Husserl's phenomenological method. In D. Welton, ed., <BookTitle>The New Husserl</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Hendriks-Jansen, H.</Entity> (1995). <BookTitle>Catching Ourselves in the Act: Situated Activity, Interactive Emergence, Evolution, and Human Thought</BookTitle>. Cambridge, MA: MIT Press/A Bradford Book.</ReferenceItem>
+                <ReferenceItem><Entity>Hendriks-Jansen, H.</Entity> (1996). <BookTitle>Catching Ourselves in the Act</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Hering, E.</Entity> (1964). <BookTitle>Outlines of a Theory of the Light Sense</BookTitle>. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Ho, M.-W., y Saunders, P.</Entity> (1984). <BookTitle>Beyond Neo-Darwinism</BookTitle>. New York: Academic Press.</ReferenceItem>
+                <ReferenceItem><Entity>Holland, P. W. H.</Entity> (1999). The future of evolutionary developmental biology. <BookTitle>Nature</BookTitle> 402: Supplement: C41-C44.</ReferenceItem>
+                <ReferenceItem><Entity>Hopkins, R.</Entity> (1998). <BookTitle>Picture, Image, and Experience</BookTitle>. New York: Cambridge University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Humphrey, N.</Entity> (1992). <BookTitle>A History of the Mind</BookTitle>. New York: Simon & Schuster.</ReferenceItem>
+                <ReferenceItem><Entity>Humphrey, N.</Entity> (2000). How to solve the mind-body problem. <BookTitle>Journal of Consciousness Studies</BookTitle> 4: 5-20.</ReferenceItem>
+                <ReferenceItem><Entity>Humphrey, N.</Entity> (2001). Seeing it my way. <BookTitle>Behavioral and Brain Sciences</BookTitle> 24: 997.</ReferenceItem>
+                <ReferenceItem><Entity>Humphreys, P.</Entity> (1996). Aspects of emergence. <BookTitle>Philosophical Topics</BookTitle> 24: 53-70.</ReferenceItem>
+                <ReferenceItem><Entity>Humphreys, P.</Entity> (1997a). Emergence, not supervenience. <BookTitle>Philosophy of Science</BookTitle> 64.</ReferenceItem>
+                <ReferenceItem><Entity>Humphreys, P.</Entity> (1997b). How properties emerge. <BookTitle>Philosophy of Science</BookTitle> 64: 1-17.</ReferenceItem>
+                <ReferenceItem><Entity>Hurley, S.</Entity> (1998). <BookTitle>Consciousness in Action</BookTitle>. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Hurley, S., y Noë, A.</Entity> (2003). Neural plasticity and consciousness. <BookTitle>Biology and Philosophy</BookTitle> 18: 131-168.</ReferenceItem>
+                <ReferenceItem><Entity>Husserl, E.</Entity> (1960). <BookTitle>Cartesian Meditations</BookTitle>. Dordrecht: Kluwer.</ReferenceItem>
+                <ReferenceItem><Entity>Husserl, E.</Entity> (1970). <BookTitle>The Crisis of European Sciences and Transcendental Phenomenology</BookTitle>. Trans. D. Carr. Evanston, IL: Northwestern University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Husserl, E.</Entity> (1973). <BookTitle>Zur Phänomenologie der Intersubjektivität. Texte aus dem Nachlass. Dritter Teil: 1929-1935</BookTitle>. Ed. I. Kern. Husserliana, vol. XV. The Hague: Martinus Nijhoff.</ReferenceItem>
+                <ReferenceItem><Entity>Husserl, E.</Entity> (1975). <BookTitle>Experience and Judgment</BookTitle>. Evanston, IL: Northwestern University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Husserl, E.</Entity> (1977). <BookTitle>Philosophical Psychology</BookTitle>. The Hague: Martinus Nijhoff.</ReferenceItem>
+                <ReferenceItem><Entity>Husserl, E.</Entity> (1980). <BookTitle>Phenomenology and the Foundations of the Sciences</BookTitle>. The Hague: Martinus Nijhoff.</ReferenceItem>
+                <ReferenceItem><Entity>Husserl, E.</Entity> (1983). <BookTitle>Ideas Pertaining to a Pure Phenomenology and to a Phenomenological Philosophy. First Book</BookTitle>. Trans. F. Kersten. The Hague: Martinus Nijhoff.</ReferenceItem>
+                <ReferenceItem><Entity>Husserl, E.</Entity> (1989). <BookTitle>Ideas Pertaining to a Pure Phenomenology and to a Phenomenological Philosophy. Second Book</BookTitle>. Trans. R. Rojcewicz y A. Schuwer. Dordrecht: Kluwer Academic Publishers.</ReferenceItem>
+                <ReferenceItem><Entity>Husserl, E.</Entity> (1991). <BookTitle>On the Phenomenology of the Consciousness of Internal Time (1893-1917)</BookTitle>. Trans. J. B. Brough. Dordrecht: Kluwer Academic Publishers.</ReferenceItem>
+                <ReferenceItem><Entity>Husserl, E.</Entity> (1997). <BookTitle>Thing and Space: Lectures of 1907</BookTitle>. Dordrecht: Kluwer.</ReferenceItem>
+                <ReferenceItem><Entity>Husserl, E.</Entity> (2000). <BookTitle>Logical Investigations</BookTitle>. New York: Humanity Books.</ReferenceItem>
+                <ReferenceItem><Entity>Husserl, E.</Entity> (2001). <BookTitle>Analyses Concerning Passive and Active Synthesis: Lectures on Transcendental Logic</BookTitle>. Trans. A. J. Steinbock. Dordrecht: Kluwer Academic Publishers.</ReferenceItem>
+                <ReferenceItem><Entity>Husserl, E.</Entity> (2006). <BookTitle>Phantasy Image Consciousness, and Memory</BookTitle>. Berlin: Springer.</ReferenceItem>
+                <ReferenceItem><Entity>Hutchins, E.</Entity> (1995). <BookTitle>Cognition in the Wild</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Hutchinson, W. D., Davis, K. D., Lozano, A. M., Tasker, R. R., y Dostrovsky, J. O.</Entity> (1999). Pain-related neurons in the human cingulate cortex. <BookTitle>Nature Neuroscience</BookTitle> 2: 403-405.</ReferenceItem>
+                <ReferenceItem><Entity>Iacoboni, M., Woods, R. P., Brass, M., Bekkering, H., Mazziotta, J. C., y Rizzolatti, G.</Entity> (1999). Cortical mechanisms of human imitation. <BookTitle>Science</BookTitle> 286: 2526-2528.</ReferenceItem>
+                <ReferenceItem><Entity>Isles, A. R., y Wilkinson, L. S.</Entity> (2000). Imprinted genes, cognition and behavior. <BookTitle>Trends in Cognitive Sciences</BookTitle> 4: 309-318.</ReferenceItem>
+
+                <SectionHeader id="ref-j" title="J - L" />
+
+                <ReferenceItem><Entity>Jablonka, E.</Entity> (2001). The systems of inheritance. In S. Oyama et al., eds., <BookTitle>Cycles of Contingency</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Jablonka, E., y Szathmáry, E.</Entity> (1995). The evolution of information storage and heredity. <BookTitle>Trends in Ecology and Evolution</BookTitle> 10: 206-211.</ReferenceItem>
+                <ReferenceItem><Entity>Jack, A. I., y Roepstorff, A.</Entity> (2002). Introspection and cognitive brain mapping. <BookTitle>Trends in Cognitive Sciences</BookTitle> 6: 333-339.</ReferenceItem>
+                <ReferenceItem><Entity>Jack, A. I., y Roepstorff, A.</Entity>, eds. (2003). <BookTitle>Trusting the Subject? Volume 1</BookTitle>. Thorverton, UK: Imprint Academic.</ReferenceItem>
+                <ReferenceItem><Entity>Jack, A. I., y Roepstorff, A.</Entity> (2004). <BookTitle>Trusting the Subject? Vol. 2</BookTitle>. Thorverton, UK: Imprint Academic.</ReferenceItem>
+                <ReferenceItem><Entity>Jackendoff, R.</Entity> (1987). <BookTitle>Consciousness and the Computational Mind</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>James, W.</Entity> (1981). <BookTitle>The Principles of Psychology</BookTitle>. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>James, W.</Entity> (1985). <BookTitle>Psychology: The Briefer Course</BookTitle>. Notre Dame, IN: University of Notre Dame Press.</ReferenceItem>
+                <ReferenceItem><Entity>Jantsch, E.</Entity> (1980). <BookTitle>The Self-Organizing Universe</BookTitle>. Oxford: Pergamon Press.</ReferenceItem>
+                <ReferenceItem><Entity>Johnson, M.</Entity> (1987). <BookTitle>The Body in the Mind: The Bodily Basis of Meaning, Imagination, and Reason</BookTitle>. Chicago: University of Chicago Press.</ReferenceItem>
+                <ReferenceItem><Entity>Johnson, M.</Entity> (1993). <BookTitle>Moral Imagination: Implications of Cognitive Science for Ethics</BookTitle>. Chicago: University of Chicago Press.</ReferenceItem>
+                <ReferenceItem><Entity>Jonas, H.</Entity> (1966). <BookTitle>The Phenomenon of Life: Toward a Philosophical Biology</BookTitle>. New York: Harper and Row.</ReferenceItem>
+                <ReferenceItem><Entity>Jonas, H.</Entity> (1968). Biological foundations of individuality. <BookTitle>International Philosophical Quarterly</BookTitle> 8: 231-251.</ReferenceItem>
+                <ReferenceItem><Entity>Jonas, H.</Entity> (1996). <BookTitle>Mortality and Morality</BookTitle>. Evanston, IL: Northwestern University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Juarrero, A.</Entity> (1999). <BookTitle>Dynamics in Action: Intentional Behavior as a Complex System</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Juarrero-Roqué, A.</Entity> (1985). Self-organization: Kant's concept of teleology and modern chemistry. <BookTitle>The Review of Metaphysics</BookTitle> 39: 107-135.</ReferenceItem>
+                <ReferenceItem><Entity>Kabat-Zinn J.</Entity> (1990). <BookTitle>Full Catastrophe Living</BookTitle>. New York: Dell.</ReferenceItem>
+                <ReferenceItem><Entity>Kahana, M. J., Seelig, D., y Madsen, J. R.</Entity> (2001). Theta returns. <BookTitle>Current Opinion in Neurobiology</BookTitle> 11: 739-744.</ReferenceItem>
+                <ReferenceItem><Entity>Kant, I.</Entity> (1987). <BookTitle>Critique of Judgment</BookTitle>. Trans. W. S. Pluhar. Indianapolis, IN: Hacket.</ReferenceItem>
+                <ReferenceItem><Entity>Kauffman, S. A.</Entity> (1991). Antichaos and adaptation. <BookTitle>Scientific American</BookTitle> 265: 78-84.</ReferenceItem>
+                <ReferenceItem><Entity>Kauffman, S. A.</Entity> (1993). <BookTitle>The Origins of Order: Self-Organization and Selection in Evolution</BookTitle>. New York: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Kauffman, S. A.</Entity> (1995). <BookTitle>At Home in the Universe</BookTitle>. New York: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Kauffman, S. A.</Entity> (2000). <BookTitle>Investigations</BookTitle>. New York: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Keller, E. F.</Entity> (1984). <BookTitle>A Feeling for the Organism</BookTitle>. New York: W. H. Freeman.</ReferenceItem>
+                <ReferenceItem><Entity>Keller, E. F.</Entity> (1995). <BookTitle>Refiguring Life: Metaphors of Twentieth-Century Biology</BookTitle>. New York: Columbia University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Keller, E. F.</Entity> (2000). <BookTitle>The Century of the Gene</BookTitle>. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Kellert, S.</Entity> (1993). <BookTitle>In the Wake of Chaos</BookTitle>. Chicago: University of Chicago Press.</ReferenceItem>
+                <ReferenceItem><Entity>Kelso, J. A. S.</Entity> (1995). <BookTitle>Dynamic Patterns: The Self-Organization of Brain and Behavior</BookTitle>. Cambridge, MA: MIT Press/A Bradford Book.</ReferenceItem>
+                <ReferenceItem><Entity>Kelso, J. A. S., Fuchs, A., Lancaster, R., Holroyd, T., Cheyne, D., y Weinberg, H.</Entity> (1998). Dynamic cortical activity in the human brain reveals motor equivalence. <BookTitle>Nature</BookTitle> 392: 814-818.</ReferenceItem>
+                <ReferenceItem><Entity>Kelso, J. A. S., y Kay, B. A.</Entity> (1987). Information and control. In H. Heuer y A. F. Sanders, eds., <BookTitle>Perspectives on Perception and Action</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Kim, J.</Entity> (1993). <BookTitle>Supervenience and Mind</BookTitle>. Cambridge: Cambridge University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Kim, J.</Entity> (1998). <BookTitle>Mind in a Physical World</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Kim, J.</Entity> (1999). Making sense of emergence. <BookTitle>Philosophical Studies</BookTitle> 95: 3-36.</ReferenceItem>
+                <ReferenceItem><Entity>Kind, A.</Entity> (2003). What's so transparent about transparency? <BookTitle>Philosophical Studies</BookTitle> 115: 225-244.</ReferenceItem>
+                <ReferenceItem><Entity>Köhler, W.</Entity> (1947). <BookTitle>Gestalt Psychology</BookTitle>. New York: Liveright.</ReferenceItem>
+                <ReferenceItem><Entity>Korn, H., y Faure, P.</Entity> (2003). Is there chaos in the brain? II. <BookTitle>Comptes Rendus Biologie</BookTitle> 326: 787-840.</ReferenceItem>
+                <ReferenceItem><Entity>Koshland, D. E., Jr.</Entity> (1977). A response regulator model in a simple sensory system. <BookTitle>Science</BookTitle> 196: 1055-1063.</ReferenceItem>
+                <ReferenceItem><Entity>Kosslyn, S. M.</Entity> (1980). <BookTitle>Image and Mind</BookTitle>. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Kosslyn, S. M.</Entity> (1994). <BookTitle>Image and Brain</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Kosslyn, S. M., Ganis, G., y Thompson, W. L.</Entity> (2003). Mental imagery: against the nihilistic hypothesis. <BookTitle>Trends in Cognitive Sciences</BookTitle> 7: 109-111.</ReferenceItem>
+                <ReferenceItem><Entity>Kosslyn, S. M., Pinker, S., Smith, G. E., y Schwartz, S. P.</Entity> (1981). On the demystification of mental imagery. In N. Block, ed., <BookTitle>Imagery</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Kosslyn, S. M., y Pomerantz, J. R.</Entity> (1981). Imagery, propositions, and the form of internal representations. In N. Block, ed., <BookTitle>Readings in the Philosophy of Psychology</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Kosslyn, S. M., Thompson, W. L., y Ganis, G.</Entity> (2006). <BookTitle>The Case for Mental Imagery</BookTitle>. New York: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Kriegel, U.</Entity> (2003a). Consciousness as intransitive self-consciousness. <BookTitle>Canadian Journal of Philosophy</BookTitle> 33: 103-132.</ReferenceItem>
+                <ReferenceItem><Entity>Kriegel, U.</Entity> (2003b). Consciousness as sensory quality and as implicit self-awareness. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle> 2: 1-26.</ReferenceItem>
+                <ReferenceItem><Entity>Kriegel, U.</Entity> (2004). The functional role of consciousness. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle> 3: 171-193.</ReferenceItem>
+                <ReferenceItem><Entity>Kriegel, U.</Entity> (2005). Naturalizing subjective character. <BookTitle>Philosophy and Phenomenological Research</BookTitle> 71: 23-57.</ReferenceItem>
+                <ReferenceItem><Entity>Kronz, F. M.</Entity> (1998). Nonseparability and quantum chaos. <BookTitle>Philosophy of Science</BookTitle> 65: 50-75.</ReferenceItem>
+                <ReferenceItem><Entity>Kronz, F. M., y Tiehen, J. T.</Entity> (2002). Emergence and quantum mechanics. <BookTitle>Philosophy of Science</BookTitle> 69: 324-347.</ReferenceItem>
+                <ReferenceItem><Entity>Kuhn, T.</Entity> (1970). <BookTitle>The Stucture of Scientific Revolutions</BookTitle>. Chicago: University of Chicago Press.</ReferenceItem>
+                <ReferenceItem><Entity>Lachaux, J. P., Rodriguez, E., Martinerie, J., y Varela, F. J.</Entity> (1999). Measuring phase-synchrony in brain signals. <BookTitle>Human Brain Mapping</BookTitle> 8: 194-208.</ReferenceItem>
+                <ReferenceItem><Entity>Lakoff, G.</Entity> (1987). <BookTitle>Women, Fire and Dangerous Things</BookTitle>. Chicago: University of Chicago Press.</ReferenceItem>
+                <ReferenceItem><Entity>Lakoff, G., y Johnson, M.</Entity> (1980). <BookTitle>Metaphors We Live By</BookTitle>. Chicago: University of Chicago Press.</ReferenceItem>
+                <ReferenceItem><Entity>Lambert, D. M., y Hughes, A. J.</Entity> (1988). Keywords and concepts in structuralist and functionalist biology. <BookTitle>Journal of Theoretical Biology</BookTitle> 133: 133-145.</ReferenceItem>
+                <ReferenceItem><Entity>Lambie, J. A., y Marcel, A. J.</Entity> (2002). Consciousness and the varieties of emotion experience. <BookTitle>Psychological Review</BookTitle> 109: 219-259.</ReferenceItem>
+                <ReferenceItem><Entity>Lane, R. D., y Nadel, L.</Entity>, eds. (2000). <BookTitle>Cognitive Neuroscience of Emotion</BookTitle>. Oxford: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Langsdorf, L.</Entity> (1985). Review of Dreyfus 1982. <BookTitle>Husserl Studies</BookTitle> 3: 303-311.</ReferenceItem>
+                <ReferenceItem><Entity>Langton, C. G.</Entity>, ed. (1989). <BookTitle>Artificial Life</BookTitle>. Redwood City, CA: Addison-Welsey.</ReferenceItem>
+                <ReferenceItem><Entity>Latour, B.</Entity> (1993). <BookTitle>We Have Never Been Modern</BookTitle>. Trans. C. Porter. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Laycock, S. W.</Entity> (1994). <BookTitle>Mind as Mirror and the Mirroring of Mind</BookTitle>. Albany: SUNY Press.</ReferenceItem>
+                <ReferenceItem><Entity>Leask, I.</Entity> (2002). Edith Stein and others. <BookTitle>Journal of the British Society for Phenomenology</BookTitle> 33: 286-298.</ReferenceItem>
+                <ReferenceItem><Entity>LeDoux, J.</Entity> (1996). <BookTitle>The Emotional Brain</BookTitle>. New York: Simon Schuster.</ReferenceItem>
+                <ReferenceItem><Entity>LeDoux, J.</Entity> (2002). <BookTitle>Synaptic Self</BookTitle>. London: Penguin Books.</ReferenceItem>
+                <ReferenceItem><Entity>Legrand, D.</Entity> (2003). How not to find the neural signature of self-consciousness. <BookTitle>Consciousness and Cognition</BookTitle> 12: 544-546.</ReferenceItem>
+                <ReferenceItem><Entity>Legrand, D.</Entity> (2005). Transparently oneself. <BookTitle>Psyche</BookTitle> 11 (5).</ReferenceItem>
+                <ReferenceItem><Entity>Legrand, D.</Entity> (2006). The bodily self: the sensori-motor roots of pre-reflexive self-consciousness. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle> 5: 89-118.</ReferenceItem>
+                <ReferenceItem><Entity>Lennox, J. G.</Entity> (1992). Teleology. In E. F. Keller y E. Lloyd, eds., <BookTitle>Keywords in Evolutionary Biology</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Letelier, J. C., Marín, G., y Mpodozis, J.</Entity> (2003). Autopoietic and (M,R) systems. <BookTitle>Journal of Theoretical Biology</BookTitle> 222: 261-272.</ReferenceItem>
+                <ReferenceItem><Entity>Le Van Quyen, M.</Entity> (2003). Disentangling the dynamic core. <BookTitle>Biological Research</BookTitle> 36: 67-88.</ReferenceItem>
+                <ReferenceItem><Entity>Le Van Quyen, M., Adam, C., Lachaux, J.-P., Martinerie, J., Baulac, M., Renault, B., y Varela, F. J.</Entity> (1997). Temporal patterns in human epileptic activity. <BookTitle>Neuroreport</BookTitle> 8: 1703-1710.</ReferenceItem>
+                <ReferenceItem><Entity>Le Van Quyen, M., Martinerie, J., Adam, C., y Varela, F. J.</Entity> (1997). Unstable periodic orbits in human epileptic activity. <BookTitle>Physical Review E</BookTitle> 56: 3401-3411.</ReferenceItem>
+                <ReferenceItem><Entity>Le Van Quyen, M., y Petitmengin, C.</Entity> (2002). Neuronal dynamics and conscious experience. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle> 1: 169-180.</ReferenceItem>
+                <ReferenceItem><Entity>Le Van Quyen, M., Schuster, H., y Varela, F. J.</Entity> (1996). Fast rhythms can emerge from slow neuronal oscillators. <BookTitle>International Journal of Bifurcation and Chaos</BookTitle> 6: 1807-1816.</ReferenceItem>
+                <ReferenceItem><Entity>Levenson, R., y Reuf, A. M.</Entity> (1992). Empathy: a physiological substrate. <BookTitle>Journal of Personality and Social Psychology</BookTitle> 63: 234-246.</ReferenceItem>
+                <ReferenceItem><Entity>Levine, J.</Entity> (1983). Materialism and qualia: the explanatory gap. <BookTitle>Pacific Philosophical Quarterly</BookTitle> 64: 354-361.</ReferenceItem>
+                <ReferenceItem><Entity>Levins, R., y Lewontin, R.</Entity> (1985). <BookTitle>The Dialectical Biologist</BookTitle>. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Levinson, J.</Entity> (1998). Wolheim on pictorial representation. <BookTitle>Journal of Aesthetics and Art Criticism</BookTitle> 56: 227-233.</ReferenceItem>
+                <ReferenceItem><Entity>Lewis, M. D.</Entity> (2000). Emotional self-organization at three time scales. In M. D. Lewis y I. Granic, eds., <BookTitle>Emotion, Development, and Self-Organization</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Lewis, M. D.</Entity> (2005). Bridging emotion theory and neurobiology through dynamic systems modeling. <BookTitle>Behavioral and Brain Sciences</BookTitle> 28: 169-194.</ReferenceItem>
+                <ReferenceItem><Entity>Lewis, M. D., y Granic, I.</Entity>, eds. (2000). <BookTitle>Emotion, Development, and Self-Organization</BookTitle>. Cambridge: Cambridge University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Lewis, M. L., y Haviland-Jones, J. M.</Entity>, eds. (2000). <BookTitle>Handbook of Emotions</BookTitle>, 2d ed. New York: Guilford Press.</ReferenceItem>
+                <ReferenceItem><Entity>Lewontin, R.</Entity> (1978). Adaptation. <BookTitle>Scientific American</BookTitle> 239: 212-230.</ReferenceItem>
+                <ReferenceItem><Entity>Lewontin, R.</Entity> (1993). <BookTitle>Biology as Ideology: The Doctrine of DNA</BookTitle>. New York: Harper-Collins.</ReferenceItem>
+                <ReferenceItem><Entity>Llinas, R., Ribary, U., Contreras, D., y Pedroarena, C.</Entity> (1998). The neuronal basis for consciousness. <BookTitle>Philosophical Transactions of the Royal Society of London Series B</BookTitle> 353: 1801-1818.</ReferenceItem>
+                <ReferenceItem><Entity>Lloyd, D.</Entity> (2002). Functional MRI and the study of human consciousness. <BookTitle>Journal of Cognitive Neuroscience</BookTitle>, 14: 818-831.</ReferenceItem>
+                <ReferenceItem><Entity>Lloyd, D.</Entity> (2003). <BookTitle>Radiant Cool: A Novel Theory of Consciousness</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Lopes, D.</Entity> (1996). <BookTitle>Understanding Pictures</BookTitle>. Clarendon: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Lovelock, J. E.</Entity> (1979). <BookTitle>Gaia: A New Look at Life on Earth</BookTitle>. New York: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Lovelock, J. E.</Entity> (1987). The ecopoiesis of daisy world. In J. M. Robson, ed., <BookTitle>Origin and Evolution of the Universe</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Lovelock, J. E.</Entity> (1988). <BookTitle>The Ages of Gaia</BookTitle>. New York: W. W. Norton.</ReferenceItem>
+                <ReferenceItem><Entity>Lovelock, J. E.</Entity> (1991). Gaia: a planetary emergent phenomenon. In W. I. Thompson, ed., <BookTitle>Gaia 2: Emergence</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Lovelock, J. E., y Margulis, L.</Entity> (1974). Biological modulation of the Earth's atmosphere. <BookTitle>Icarus</BookTitle> 21: 471-489.</ReferenceItem>
+                <ReferenceItem><Entity>Luisi, P. L.</Entity> (1993). Defining the transition to life. In W. D. Stein y F. J. Varela, eds., <BookTitle>Thinking about Biology</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Luisi, P. L.</Entity> (1998). About various definitions of life. <BookTitle>Origins of Life and Evolution of the Biosphere</BookTitle> 28: 613-622.</ReferenceItem>
+                <ReferenceItem><Entity>Luisi, P. L.</Entity> (2003). Autopoiesis: a review and a reappraisal. <BookTitle>Naturwissenschaften</BookTitle> 90: 49-59.</ReferenceItem>
+                <ReferenceItem><Entity>Luisi, P. L., Lazcano, A., y Varela, F. J.</Entity> (1996). What is life? Defining life and the transition to life. In M. Rizzotti, ed., <BookTitle>Defining Life</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Luisi, P. L., y Varela, F. J.</Entity> (1989). Self-replicating micelles. <BookTitle>Origins of Life and Evolution of the Biosphere</BookTitle> 19: 663-643.</ReferenceItem>
+                <ReferenceItem><Entity>Lusthaus, D.</Entity> (2002). <BookTitle>Buddhist Phenomenology</BookTitle>. London: Routledge.</ReferenceItem>
+                <ReferenceItem><Entity>Lutz, A.</Entity> (2002). Toward a neurophenomenology as an account of generative passages. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle> 1: 133-167.</ReferenceItem>
+                <ReferenceItem><Entity>Lutz, A., Dunne, J. D., y Davidson, R. J.</Entity> (2007). Meditation and the neuroscience of consciousness. In P. D. Zelazo et al., eds., <BookTitle>The Cambridge Handbook of Consciousness</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Lutz, A., Lachaux, J.-P., Martinerie, J., y Varela, F. J.</Entity> (2002). Guiding the study of brain dynamics by using first-person data. <BookTitle>Proceedings of the National Academy of Sciences USA</BookTitle> 99: 1586-1591.</ReferenceItem>
+                <ReferenceItem><Entity>Lutz, A., y Thompson, E.</Entity> (2003). Neurophenomenology. <BookTitle>Journal of Consciousness Studies</BookTitle> 10: 31-52.</ReferenceItem>
+
+                <SectionHeader id="ref-m" title="M - O" />
+
+                <ReferenceItem><Entity>Mach, E.</Entity> (1959). <BookTitle>The Analysis of Sensations</BookTitle>. New York: Dover Publications.</ReferenceItem>
+                <ReferenceItem><Entity>Mack, A., y Rock, I.</Entity> (1998). <BookTitle>Inattentional Blindness</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Maes, P.</Entity>, ed. (1990). <BookTitle>Designing Autonomous Agents</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Maier, S. F., y Watkins, L. R.</Entity> (1998). Cytokines for psychologists. <BookTitle>Psychological Review</BookTitle> 105: 83-107.</ReferenceItem>
+                <ReferenceItem><Entity>Marbach, E.</Entity> (1993). <BookTitle>Mental Representation and Consciousness</BookTitle>. Dordrecht: Kluwer Academic Publishers.</ReferenceItem>
+                <ReferenceItem><Entity>Margulis, L.</Entity> (1984). <BookTitle>Early Life</BookTitle>. Boston: Jones and Bartlett.</ReferenceItem>
+                <ReferenceItem><Entity>Margulis, L.</Entity> (1991). Biologists can't define life. In C. Barlow, ed., <BookTitle>From Gaia to Selfish Genes</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Margulis, L.</Entity> (1993). <BookTitle>Symbiosis in Cell Evolution</BookTitle>, 2d ed. San Francisco: W. H. Freeman.</ReferenceItem>
+                <ReferenceItem><Entity>Margulis, L.</Entity> (1998). <BookTitle>Symbiotic Planet: A New Look at Evolution</BookTitle>. New York: Basic Books.</ReferenceItem>
+                <ReferenceItem><Entity>Margulis, L.</Entity> (2001). The conscious cell. In P. C. Marijúan, ed., <BookTitle>Cajal and Consciousness</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Margulis, L., y Lovelock, J. E.</Entity> (1974). Biological modulation of the Earth's atmosphere. <BookTitle>Icarus</BookTitle> 21: 471-489.</ReferenceItem>
+                <ReferenceItem><Entity>Margulis, L., y Sagan, D.</Entity> (1986). <BookTitle>Microcosmos</BookTitle>. New York: Summit Books.</ReferenceItem>
+                <ReferenceItem><Entity>Margulis, L., y Sagan, D.</Entity> (1995). <BookTitle>What Is Life?</BookTitle> New York: Simon & Schuster.</ReferenceItem>
+                <ReferenceItem><Entity>Margulis, L., y Sagan, D.</Entity> (2002). <BookTitle>Acquiring Genomes</BookTitle>. New York: Basic Books.</ReferenceItem>
+                <ReferenceItem><Entity>Margulis, L., y Schwartz, K. V.</Entity> (1988). <BookTitle>Five Kingdoms</BookTitle>, 2d ed. San Francisco: W. H. Freeman.</ReferenceItem>
+                <ReferenceItem><Entity>Martin, M. G. F.</Entity> (2002). The transparency of experience. <BookTitle>Mind and Language</BookTitle> 17: 376-425.</ReferenceItem>
+                <ReferenceItem><Entity>Matthews, G. B.</Entity> (1991). Consciousness and life. In D. M. Rosenthal, ed., <BookTitle>The Nature of Mind</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Maturana, H. R.</Entity> (1969). The neurophysiology of cognition. In P. Garvin, ed., <BookTitle>Cognition: A Multiple View</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Maturana, H.</Entity> (1970). <BookTitle>Biology of Cognition</BookTitle>. Report BCL 9.0. University of Illinois.</ReferenceItem>
+                <ReferenceItem><Entity>Maturana, H.</Entity> (1975). The organization of the living. <BookTitle>International Journal of Man-Machine Studies</BookTitle> 7: 313-332.</ReferenceItem>
+                <ReferenceItem><Entity>Maturana, H.</Entity> (1980a). Autopoiesis: reproduction, heredity and evolution. In M. Zeleny, ed., <BookTitle>Autopoiesis, Dissipative Structures, and Spontaneous Social Orders</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Maturana, H.</Entity> (1980b). Man and society. In F. Benseler et al., eds., <BookTitle>Autopoiesis, Communication, and Society</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Maturana, H. R., y Varela, F. J.</Entity> (1973). <BookTitle>De Máquinas y Seres Vivos</BookTitle>. Santiago, Chile: Editorial Universitaria.</ReferenceItem>
+                <ReferenceItem><Entity>Maturana, H., y Varela, F. J.</Entity> (1980). <BookTitle>Autopoiesis and Cognition</BookTitle>. Dordrecht: D. Reidel.</ReferenceItem>
+                <ReferenceItem><Entity>Maturana, H., y Varela, F. J.</Entity> (1987). <BookTitle>The Tree of Knowledge</BookTitle>. Boston: Shambala.</ReferenceItem>
+                <ReferenceItem><Entity>Maudlin, T.</Entity> (1998). Part and whole in quantum mechanics. In E. Castellani, ed., <BookTitle>Interpreting Bodies</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Maynard Smith, J.</Entity> (1986). <BookTitle>The Problems of Biology</BookTitle>. Oxford: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Maynard Smith, J.</Entity> (1993). <BookTitle>The Theory of Evolution</BookTitle>, 2d ed. Cambridge: Cambridge University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Maynard Smith, J.</Entity> (1998). <BookTitle>Shaping Life</BookTitle>. London: Weidenfeld and Nicholson.</ReferenceItem>
+                <ReferenceItem><Entity>Maynard Smith, J.</Entity> (2000a). The concept of information in biology. <BookTitle>Philosophy of Science</BookTitle> 67: 177-194.</ReferenceItem>
+                <ReferenceItem><Entity>Maynard Smith, J.</Entity> (2000b). Reply to commentaries. <BookTitle>Philosophy of Science</BookTitle> 67: 214-218.</ReferenceItem>
+                <ReferenceItem><Entity>Maynard Smith, J., Burian, R., Kauffman, S., Alberch, P., Campbell, J., Goodwin, B., Lande, R., Raup, D., y Wolpert, L.</Entity> (1985). Developmental constraints and evolution. <BookTitle>Quarterly Review of Biology</BookTitle> 60: 265-287.</ReferenceItem>
+                <ReferenceItem><Entity>McClelland, J., Rummelhart, D., y PDP Research Group.</Entity> (1986). <BookTitle>Parallel Distributed Processing</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>McCulloch, G.</Entity> (1994). <BookTitle>Using Sartre</BookTitle>. London: Routledge Press.</ReferenceItem>
+                <ReferenceItem><Entity>McGinn, C.</Entity> (1991). <BookTitle>The Problem of Consciousness</BookTitle>. Oxford: Basil Blackwell.</ReferenceItem>
+                <ReferenceItem><Entity>McGinn, C.</Entity> (2004). <BookTitle>Mindsight</BookTitle>. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>McMullin, B.</Entity> (1997a). Computational autopoiesis: the original algorithm. <BookTitle>Working Paper</BookTitle> 97-01-001, Santa Fe Institute.</ReferenceItem>
+                <ReferenceItem><Entity>McMullin, B.</Entity> (1997b). SCL: An Artificial Chemistry in Swarm. <BookTitle>Working Paper</BookTitle> 97-01-002, Santa Fe Institute.</ReferenceItem>
+                <ReferenceItem><Entity>McMullin, B.</Entity> (1999). Some remarks on autocatalysis and autopoiesis. Workshop <BookTitle>Closure</BookTitle>, University of Ghent.</ReferenceItem>
+                <ReferenceItem><Entity>McMullin, B.</Entity> (2001). An intriguing journey. <BookTitle>Complexity</BookTitle> 6: 22-23.</ReferenceItem>
+                <ReferenceItem><Entity>McMullin, B., y Varela, F. J.</Entity> (1997). Rediscovering computational autopoiesis. In P. Husbands y I. Harvey, eds., <BookTitle>Fourth European Conference on Artificial Life</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Melloni, L., y Rodriguez, E.</Entity> (2005). Phase synchronization but not gamma oscillations correlates with conscious perception. <BookTitle>Journal of Neuroscience</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Meltzoff, A. N., y Moore, M. K.</Entity> (1998). Infant intersubjectivity. In S. Braten, ed., <BookTitle>Intersubjective Communication and Emotion in Early Ontogeny</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Mensch, J. R.</Entity> (1996). <BookTitle>After Modernity</BookTitle>. Albany: SUNY Press.</ReferenceItem>
+                <ReferenceItem><Entity>Mensch, J.</Entity> (1998). Instincts-a Husserlian account. <BookTitle>Husserl Studies</BookTitle> 14: 219-237.</ReferenceItem>
+                <ReferenceItem><Entity>Merleau-Ponty, M.</Entity> (1962). <BookTitle>Phenomenology of Perception</BookTitle>. Trans. C. Smith. London: Routledge.</ReferenceItem>
+                <ReferenceItem><Entity>Merleau-Ponty, M.</Entity> (1963). <BookTitle>The Structure of Behavior</BookTitle>. Trans. A. Fisher. Pittsburgh, PA: Dusquene University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Merleau-Ponty, M.</Entity> (1964). <BookTitle>Signs</BookTitle>. Evanston, IL: Northwestern University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Merleau-Ponty, M.</Entity> (1968). <BookTitle>The Visible and the Invisible</BookTitle>. Evanston, IL: Northwestern University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Merleau-Ponty, M.</Entity> (2001). <BookTitle>The Incarnate Subject</BookTitle>. Amherst, NY: Humanity Books.</ReferenceItem>
+                <ReferenceItem><Entity>Merleau-Ponty, M.</Entity> (2003). <BookTitle>Nature: Course Notes from the Collège de France</BookTitle>. Evanston, IL: Northwestern University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Metzinger, T.</Entity>, ed. (2000). <BookTitle>Neural Correlates of Consciousness</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Metzinger, T.</Entity> (2003). <BookTitle>Being No One</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Mikulecky, D. C.</Entity> (2000). Robert Rosen: the well-posed question. <BookTitle>System Research and Behavioral Science</BookTitle> 17: 419-432.</ReferenceItem>
+                <ReferenceItem><Entity>Mingers, J.</Entity> (1995). <BookTitle>Self-Producing Systems</BookTitle>. New York: Plenum Press.</ReferenceItem>
+                <ReferenceItem><Entity>Mohanty, J. N.</Entity> (1989). <BookTitle>Transcendental Phenomenology</BookTitle>. Oxford: Basil Blackwell.</ReferenceItem>
+                <ReferenceItem><Entity>Monod, J.</Entity> (1971). <BookTitle>Chance and Necessity</BookTitle>. New York: Vintage Books.</ReferenceItem>
+                <ReferenceItem><Entity>Montero, B.</Entity> (1999). The body problem. <BookTitle>Nous</BookTitle> 33: 183-200.</ReferenceItem>
+                <ReferenceItem><Entity>Montero, B.</Entity> (2001). Post-physicalism. <BookTitle>Journal of Consciousness Studies</BookTitle> 8 (2): 61-80.</ReferenceItem>
+                <ReferenceItem><Entity>Moody, T.</Entity> (1994). Conversations with zombies. <BookTitle>Journal of Consciousness Studies</BookTitle> 1: 196-200.</ReferenceItem>
+                <ReferenceItem><Entity>Moore, G. E.</Entity> (1993). The refutation of idealism. In <BookTitle>Selected Writings</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Moran, D.</Entity> (2000). <BookTitle>Introduction to Phenomenology</BookTitle>. London: Routledge.</ReferenceItem>
+                <ReferenceItem><Entity>Moreno, A., y Barandiaran, X.</Entity> (2004). A naturalized account of the inside-outside dichotomy. <BookTitle>Philosophica</BookTitle> 73: 11-26.</ReferenceItem>
+                <ReferenceItem><Entity>Morowitz, H. J.</Entity> (1992). <BookTitle>Beginnings of Cellular Life</BookTitle>. New Haven, CT: Yale University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Morowitz, H. J.</Entity> (2001). The epistemic paradox of mind and matter. In P. C. Marijúan, ed., <BookTitle>Cajal and Consciousness</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Morowitz, H. J., Heinz, B., y Deamer, D. W.</Entity> (1988). The chemical logic of a minimum protocell. <BookTitle>Origins of Life and Evolution of the Biosphere</BookTitle> 18: 281-287.</ReferenceItem>
+                <ReferenceItem><Entity>Moss, L.</Entity> (1992). A kernel of truth? <BookTitle>PSA</BookTitle> 1992, Volume 1: 335-348.</ReferenceItem>
+                <ReferenceItem><Entity>Moss, L.</Entity> (2003). <BookTitle>What Genes Can't Do</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Moustakas, C.</Entity> (1994). <BookTitle>Phenomenological Research Methods</BookTitle>. Thousand Oaks, CA: Sage.</ReferenceItem>
+                <ReferenceItem><Entity>Murphy, M. P., y O'Neil, L. A. J.</Entity>, eds. (1995). <BookTitle>What Is Life?</BookTitle>. Cambridge: Cambridge University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Myin, E., y O'Regan, J. K.</Entity> (2002). Perceptual consciousness, access to modality, and skill theories. <BookTitle>Journal of Consciousness Studies</BookTitle> 9: 27-46.</ReferenceItem>
+                
+                <SectionHeader id="ref-p" title="P - R" />
+
+                <ReferenceItem><Entity>Pacherie, E.</Entity> (1999). Leibhaftigkeit and representational theories of perception. In J. Petitot et al., eds., <BookTitle>Naturalizing Phenomenology</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Paley, W.</Entity> (1996). Natural theology. In M. Ruse, ed., <BookTitle>But Is It Science?</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Panksepp, J.</Entity> (1998a). <BookTitle>Affective Neuroscience</BookTitle>. Oxford: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Panksepp, J.</Entity> (1998b). The periconscious substrates of consciousness. <BookTitle>Journal of Consciousness Studies</BookTitle> 5: 566-582.</ReferenceItem>
+                <ReferenceItem><Entity>Panksepp, J.</Entity> (2002). The MacLean legacy. In G. A. Cory y R. Gardner, eds., <BookTitle>The Evolutionary Neuroethology of Paul MacLean</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Parvizi, J., y Damasio, A.</Entity> (2001). Consciousness and the brainstem. <BookTitle>Cognition</BookTitle> 79: 135-159.</ReferenceItem>
+                <ReferenceItem><Entity>Patočka, J.</Entity> (1998). <BookTitle>Body, Community, Language, World</BookTitle>. Chicago: Open Court.</ReferenceItem>
+                <ReferenceItem><Entity>Pattee, H. H.</Entity> (1977). Dynamic and linguistic modes of complex systems. <BookTitle>International Journal of General Systems Theory</BookTitle> 3: 259-266.</ReferenceItem>
+                <ReferenceItem><Entity>Penfield, W.</Entity> (1938). The cerebral cortex in man. I. <BookTitle>Archives of Neurology and Psychiatry</BookTitle> 40: 417-442.</ReferenceItem>
+                <ReferenceItem><Entity>Penfield, W., y Jasper, H.</Entity> (1954). <BookTitle>Epilepsy and the Functional Anatomy of the Human Brain</BookTitle>. Boston: Little, Brown.</ReferenceItem>
+                <ReferenceItem><Entity>Pert, C. B.</Entity> (1997). <BookTitle>Molecules of Emotion</BookTitle>. New York: Simon & Schuster.</ReferenceItem>
+                <ReferenceItem><Entity>Pert, C. B., Ruff, M. R., Weber, R. J., y Herkenham, M.</Entity> (1985). Neuropeptides and their receptors. <BookTitle>Journal of Immunology</BookTitle> 135: 820s-826s.</ReferenceItem>
+                <ReferenceItem><Entity>Pessoa, L., y de Weerd, P.</Entity>, eds. (2003). <BookTitle>Filling-In</BookTitle>. Oxford: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Pessoa, L., Thompson, E., y Noë, A.</Entity> (1998). Finding out about filling-in. <BookTitle>Behavioral and Brain Sciences</BookTitle> 21: 723-802.</ReferenceItem>
+                <ReferenceItem><Entity>Petitmengin, C.</Entity> (2001). <BookTitle>L'expérience intuitive</BookTitle>. Paris: L'Harmattan.</ReferenceItem>
+                <ReferenceItem><Entity>Petitmengin, C.</Entity> (2005). Un exemple de recerche neuro-phénoménologique. <BookTitle>Intellectica</BookTitle> 40: 63-89.</ReferenceItem>
+                <ReferenceItem><Entity>Petitmengin, C.</Entity> (en prensa). Describing one's subjective experience in the second person. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Petitmengin-Peugeot, C.</Entity> (1999). The intuitive experience. In F. J. Varela y J. Shear, eds., <BookTitle>The View from Within</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Petitot, J.</Entity> (1992). <BookTitle>Physique du sens</BookTitle>. Paris: Editions du CNRS.</ReferenceItem>
+                <ReferenceItem><Entity>Petitot, J.</Entity> (1994). Phenomenology of perception, qualitative physics, and sheaf mereology. In R. Casati et al., eds., <BookTitle>Philosophy and the Cognitive Sciences</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Petitot, J.</Entity> (1995). Morphodynamics and attractor syntax. In R. F. Port y T. van Gelder, eds., <BookTitle>Mind as Motion</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Petitot, J.</Entity> (1999). Morphological eidetics for a phenomenology of perception. In J. Petitot et al., eds., <BookTitle>Naturalizing Phenomenology</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Petitot, J., y Smith, B.</Entity> (1996). Physics and the phenomenal world. In R. Poli y P. Simons, eds., <BookTitle>Formal Ontology</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Petitot, J., Varela, F. J., Pachoud, B., y Roy, J.-M.</Entity>, eds. (1999). <BookTitle>Naturalizing Phenomenology</BookTitle>. Stanford, CA: Stanford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Piaget, J.</Entity> (1932). <BookTitle>The Moral Judgment of the Child</BookTitle>. London: Routledge.</ReferenceItem>
+                <ReferenceItem><Entity>Poellner, P.</Entity> (2003). Nonconceptual content, experience, and the self. <BookTitle>Journal of Consciousness Studies</BookTitle> 10: 32-57.</ReferenceItem>
+                <ReferenceItem><Entity>Pöppel, E.</Entity> (1988). <BookTitle>Mindworks</BookTitle>. Boston: Harcourt, Brace Jovanovich.</ReferenceItem>
+                <ReferenceItem><Entity>Port, R. F., y van Gelder, T.</Entity>, eds. (1995). <BookTitle>Mind as Motion</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Povinelli, D. J.</Entity> (1998). Can animals empathize? <BookTitle>Scientific American Presents</BookTitle> 9: 67-75.</ReferenceItem>
+                <ReferenceItem><Entity>Povinelli, D. J., y Preuss, T. M.</Entity> (1995). Theory of mind. <BookTitle>Trends in Neurosciences</BookTitle> 18: 418-424.</ReferenceItem>
+                <ReferenceItem><Entity>Preston, S. D., y de Waal, F. B. M.</Entity> (2002). Empathy: its ultimate and proximate bases. <BookTitle>Behavioral and Brain Sciences</BookTitle> 25: 1-20.</ReferenceItem>
+                <ReferenceItem><Entity>Price, D., y Barrell, J.</Entity> (1980). An experiential approach with quantitative methods. <BookTitle>Journal of Humanistic Psychology</BookTitle> 20: 75-95.</ReferenceItem>
+                <ReferenceItem><Entity>Price, D., Barrell, J., y Rainville, P.</Entity> (2002). Integrating experiential-phenomenological methods and neuroscience. <BookTitle>Consciousness and Cognition</BookTitle> 11: 593-608.</ReferenceItem>
+                <ReferenceItem><Entity>Priest, S.</Entity> (1998). <BookTitle>Merleau-Ponty</BookTitle>. London: Routledge Press.</ReferenceItem>
+                <ReferenceItem><Entity>Prigogine, I., y Stengers, I.</Entity> (1984). <BookTitle>Order out of Chaos</BookTitle>. New York: Bantam.</ReferenceItem>
+                <ReferenceItem><Entity>Prinz, W.</Entity> (1997). Perception and action planning. <BookTitle>European Journal of Cognitive Psychology</BookTitle> 9: 129-154.</ReferenceItem>
+                <ReferenceItem><Entity>Pylyshyn, Z. W.</Entity> (1973). What the mind's eye tells the mind's brain. <BookTitle>Psychological Bulletin</BookTitle> 80: 1-24.</ReferenceItem>
+                <ReferenceItem><Entity>Pylyshyn, Z. W.</Entity> (1984). <BookTitle>Computation and Cognition</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Pylyshyn, Z. W.</Entity> (2002). Mental imagery: in search of a theory. <BookTitle>Behavioral and Brain Sciences</BookTitle> 25: 157-238.</ReferenceItem>
+                <ReferenceItem><Entity>Pylyshyn, Z. W.</Entity> (2003a). <BookTitle>Seeing and Visualizing</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Pylyshyn, Z. W.</Entity> (2003b). Explaining mental imagery. <BookTitle>Trends in Cognitive Sciences</BookTitle> 7: 111-112.</ReferenceItem>
+                <ReferenceItem><Entity>Pylyshyn, Z. W.</Entity> (2003c). Return of the mental image. <BookTitle>Trends in Cognitive Sciences</BookTitle> 7: 113-118.</ReferenceItem>
+                <ReferenceItem><Entity>Quartz, S.</Entity> (1999). The constructivist brain. <BookTitle>Trends in Cognitive Sciences</BookTitle> 3: 48-57.</ReferenceItem>
+                <ReferenceItem><Entity>Quartz, S., y Sejnowski, T. J.</Entity> (1997). The neural basis of cognitive development. <BookTitle>Behavioral and Brain Sciences</BookTitle> 20: 537-596.</ReferenceItem>
+                <ReferenceItem><Entity>Raff, R. A.</Entity> (1996). <BookTitle>The Shape of Life</BookTitle>. Chicago: University of Chicago Press.</ReferenceItem>
+                <ReferenceItem><Entity>Rainville, P.</Entity> (2005). Neurophénoménologie des états et des contenus de conscience. <BookTitle>Théologique</BookTitle> 12: 15-38.</ReferenceItem>
+                <ReferenceItem><Entity>Ramachandran, V. S., y Blakeslee, S.</Entity> (1998). <BookTitle>Phantoms in the Brain</BookTitle>. New York: William Morrow.</ReferenceItem>
+                <ReferenceItem><Entity>Ramachandran, V. S., y Hirstein, W.</Entity> (1998). The perception of phantom limbs. <BookTitle>Brain</BookTitle> 121: 1603-1630.</ReferenceItem>
+                <ReferenceItem><Entity>Rees, G., Krieman, G., y Koch, C.</Entity> (2002). Neural correlates of consciousness in humans. <BookTitle>Nature Reviews Neuroscience</BookTitle> 3: 261-270.</ReferenceItem>
+                <ReferenceItem><Entity>Rey, G.</Entity> (1981). Introduction: what are mental images? In N. Block, ed., <BookTitle>Readings in Philosophical Psychology</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Rietveld, E.</Entity> (2004). The nature of everyday coping. Presented at the ASSC-8 Conference, Antwerp.</ReferenceItem>
+                <ReferenceItem><Entity>Rodemeyer, L.</Entity> (2003). Developments in the theory of time-consciousness. In D. Welton, ed., <BookTitle>The New Husserl</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Rodriguez, E., George, N., Lachaux, J. P., Martinerie, J., Renault, B., y Varela, F. J.</Entity> (1999). Perception's shadow. <BookTitle>Nature</BookTitle> 397: 430-433.</ReferenceItem>
+                <ReferenceItem><Entity>Roe, A. W., Pallas, S. L., Kwon, Y. H. y Sur, M.</Entity> (1990). A map of visual space induced in primary auditory cortex. <BookTitle>Science</BookTitle> 250: 818-820.</ReferenceItem>
+                <ReferenceItem><Entity>Roe, A. W. et al.</Entity> (1992). Visual projections routed to the auditory pathway in ferrets. <BookTitle>Journal of Neuroscience</BookTitle> 12: 3651-3664.</ReferenceItem>
+                <ReferenceItem><Entity>Roepstorff, A.</Entity> (2001). Brains in scanners. <BookTitle>Semiotica</BookTitle> 134: 747-765.</ReferenceItem>
+                <ReferenceItem><Entity>Rollins, M.</Entity> (1989). <BookTitle>Mental Imagery</BookTitle>. New Haven, CT: Yale University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Rose, S.</Entity> (1997). <BookTitle>Lifelines: Biology Beyond Determinism</BookTitle>. Oxford: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Rosen, R.</Entity> (1991). <BookTitle>Life Itself</BookTitle>. New York: Columbia University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Rosen, R.</Entity> (2000). <BookTitle>Essays on Life Itself</BookTitle>. New York: Columbia University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Rosenthal, D.</Entity> (1997). A theory of consciousness. In N. Block et al., eds., <BookTitle>The Nature of Consciousness</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Rowlands, M.</Entity> (2003). Consciousness: the transcendentalist manifesto. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle> 2 205-221.</ReferenceItem>
+                <ReferenceItem><Entity>Roy, J.-M.</Entity> (1995). Le "Dreyfus Bridge". <BookTitle>Archives de Philosophie</BookTitle> 58: 533-548.</ReferenceItem>
+                <ReferenceItem><Entity>Roy, J.-M.</Entity> (2003). The problem of the given. In E. Thompson, ed., <BookTitle>The Problem of Consciousness</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Roy, J.-M., Petitot, J., Pachoud, B., y Varela, F. J.</Entity> (1999). Beyond the gap. In J. Peitot et al., eds., <BookTitle>Naturalizing Phenomenology</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Rudrauf, D., y Damasio, A.</Entity> (2005). A conjecture regarding the biological mechanism of subjectivity. <BookTitle>Journal of Consciousness Studies</BookTitle> 12: 236-262.</ReferenceItem>
+                <ReferenceItem><Entity>Rudrauf, D., Lutz, A., Cosmelli, D., Lachaux, J.-P., y Le Van Quyen, M.</Entity> (2003). From autopoiesis to neurophenomenology. <BookTitle>Biological Research</BookTitle> 36: 27-66.</ReferenceItem>
+                <ReferenceItem><Entity>Ruiz-Mirazo, K., y Moreno, A.</Entity> (2004). Basic autonomy as a fundamental step in the synthesis of life. <BookTitle>Artificial Life</BookTitle> 10: 235-259.</ReferenceItem>
+                <ReferenceItem><Entity>Rummelhart, D., Smolensky, P., McClelland, J., y Hinton, G.</Entity> (1986). Schemata and sequential thought processes. In J. McClelland et al., <BookTitle>Parallel Distributed Processing</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Ruse, M.</Entity> (1996). The relationship between science and religion in Britain. In M. Ruse, ed., <BookTitle>But Is It Science?</BookTitle>.</ReferenceItem>
+
+                <SectionHeader id="ref-s" title="S - U" />
+
+                <ReferenceItem><Entity>Sadato, N. et al.</Entity> (1996). Activation of the primary visual cortex by braille reading. <BookTitle>Nature</BookTitle> 380: 526-528.</ReferenceItem>
+                <ReferenceItem><Entity>Sarkar, S.</Entity> (1996). Biological information. In S. Sarkar, ed., <BookTitle>The Philosophy and History of Molecular Biology</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Sarkar, S.</Entity> (2000). Information in genetics and developmental biology. <BookTitle>Philosophy of Science</BookTitle> 67: 208-213.</ReferenceItem>
+                <ReferenceItem><Entity>Sartre, J.-P.</Entity> (1956). <BookTitle>Being and Nothingness</BookTitle>. New York: Philosophical Library.</ReferenceItem>
+                <ReferenceItem><Entity>Sartre, J.-P.</Entity> (1960). <BookTitle>The Transcendence of the Ego</BookTitle>. New York: Noonday Press.</ReferenceItem>
+                <ReferenceItem><Entity>Sartre, J.-P.</Entity> (2004). <BookTitle>The Imaginary</BookTitle>. London: Routledge Press.</ReferenceItem>
+                <ReferenceItem><Entity>Savage-Rumbaugh, S., Fields, W. M., y Taglialatela, J. P.</Entity> (2001). Language, speech, tools and writing. In E. Thompson, ed., <BookTitle>Between Ourselves</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Savage-Rumbaugh, S., y Lewin, R.</Entity> (1994). <BookTitle>Kanzi: The Ape at the Brink of the Human Mind</BookTitle>. New York: John Wiley.</ReferenceItem>
+                <ReferenceItem><Entity>Scheerer, E.</Entity> (1994). Psychoneural isomorphism. <BookTitle>Philosophical Psychology</BookTitle> 7: 183-210.</ReferenceItem>
+                <ReferenceItem><Entity>Schiff, S. J., So, P., Chang, T., Burke, R. E., y Sauer, T.</Entity> (1996). Detecting dynamical interdependence. <BookTitle>Physical Reviews E</BookTitle> 54: 6708-6724.</ReferenceItem>
+                <ReferenceItem><Entity>Schmid-Schonbein, C.</Entity> (1998). Improvements of seizure control by psychological methods. <BookTitle>Seizure</BookTitle> 7: 261-270.</ReferenceItem>
+                <ReferenceItem><Entity>Scholz, B. C.</Entity> (2002). Innateness. <BookTitle>Nature</BookTitle> 415: 739.</ReferenceItem>
+                <ReferenceItem><Entity>Schreiber, T.</Entity> (1999). Interdisciplinary application of nonlinear time series methods. <BookTitle>Physics Reports</BookTitle> 308: 1-40.</ReferenceItem>
+                <ReferenceItem><Entity>Schröder, J.</Entity> (1998). Emergence: non-deducibility or downwards causation? <BookTitle>Philosophical Quarterly</BookTitle> 48: 432-452.</ReferenceItem>
+                <ReferenceItem><Entity>Searle, J. R.</Entity> (1983). <BookTitle>Intentionality</BookTitle>. Cambridge: Cambridge University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Searle, J. R.</Entity> (1992). <BookTitle>The Rediscovery of the Mind</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Searle, J. R.</Entity> (2000a). Consciousness. <BookTitle>Annual Review of Neuroscience</BookTitle> 23: 557-578.</ReferenceItem>
+                <ReferenceItem><Entity>Searle, J. R.</Entity> (2000b). Consciousness, free action and the brain. <BookTitle>Journal of Consciousness Studies</BookTitle> 7: 3-22.</ReferenceItem>
+                <ReferenceItem><Entity>Searle, J. R.</Entity> (2004). <BookTitle>Mind: A Brief Introduction</BookTitle>. New York: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Sejnowski, T., y Rosenberg, C.</Entity> (1986). <BookTitle>NETtalk</BookTitle>. Baltimore, MD: Johns Hopkins University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Sellars, W.</Entity> (1956). Empiricism and the philosophy of mind. In H. Feigl y M. Scriven, eds., <BookTitle>Minnesota Studies in the Philosophy of Science</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Sheets-Johnstone, M.</Entity> (1999a). <BookTitle>The Primacy of Movement</BookTitle>. Amsterdam: John Benjamins Press.</ReferenceItem>
+                <ReferenceItem><Entity>Sheets-Johnstone, M.</Entity> (1999b). Emotion and movement. <BookTitle>Journal of Consciousness Studies</BookTitle> 6: 259-277.</ReferenceItem>
+                <ReferenceItem><Entity>Shepard, R., y Metzler, J.</Entity> (1971). Mental rotation of three-dimensional objects. <BookTitle>Science</BookTitle> 171: 701-703.</ReferenceItem>
+                <ReferenceItem><Entity>Shimony, A.</Entity> (1997). On mentality, quantum mechanics, and the actualization of potentialities. In R. Penrose et al., <BookTitle>The Large, the Small, and the Human Mind</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Shoemaker, S.</Entity> (1968). Self-reference and self-awareness. <BookTitle>Journal of Philosophy</BookTitle> 65: 555-567.</ReferenceItem>
+                <ReferenceItem><Entity>Shoemaker, S.</Entity> (1984). <BookTitle>Identity, Cause and Mind</BookTitle>. Cambridge: Cambridge University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Siewert, C.</Entity> (2004). Is experience transparent? <BookTitle>Philosophical Studies</BookTitle> 117: 15-41.</ReferenceItem>
+                <ReferenceItem><Entity>Silberstein, M.</Entity> (2001). Converging on emergence. <BookTitle>Journal of Consciousness Studies</BookTitle> 8: 61-98.</ReferenceItem>
+                <ReferenceItem><Entity>Silberstein, M.</Entity> (2002). Reduction, emergence, and explanation. In P. Machamer y M. Silberstein, eds., <BookTitle>The Blackwell Guide to the Philosophy of Science</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Silberstein, M., y McGeever, J.</Entity> (1999). The search for ontological emergence. <BookTitle>Philosophical Quarterly</BookTitle> 49: 182-200.</ReferenceItem>
+                <ReferenceItem><Entity>Simon, H.</Entity> (1955). A behavioral model of rational choice. <BookTitle>Quarterly Journal of Economics</BookTitle> 59: 99-118.</ReferenceItem>
+                <ReferenceItem><Entity>Simon, H.</Entity> (1969). <BookTitle>The Sciences of the Artificial</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Simon, H.</Entity> (1973). The organization of complex systems. In H. H. Pattee, ed., <BookTitle>Hierarchy Theory</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Simons, D. J., y Chabris, C. R.</Entity> (1999). Gorillas in our midst. <BookTitle>Perception</BookTitle> 28: 1059-1074.</ReferenceItem>
+                <ReferenceItem><Entity>Simons, D. J., y Levin, D. T.</Entity> (1997). Change blindness. <BookTitle>Trends in Cognitive Sciences</BookTitle> 1: 261-267.</ReferenceItem>
+                <ReferenceItem><Entity>Simons, D. J., y Wang, R. F.</Entity> (1998). Perceiving real-world viewpoint changes. <BookTitle>Psychological Science</BookTitle> 9: 315-320.</ReferenceItem>
+                <ReferenceItem><Entity>Simons, D. J., Wang, R. F., y Roddenberry, D.</Entity> (2002). Object recognition is mediated by extraretinal information. <BookTitle>Perception and Psychophysics</BookTitle> 64: 521-530.</ReferenceItem>
+                <ReferenceItem><Entity>Skarda, C., y Freeman, W. J.</Entity> (1987). How brains make chaos in order to make sense of the world. <BookTitle>Behavioral and Brain Sciences</BookTitle> 10: 161-195.</ReferenceItem>
+                <ReferenceItem><Entity>Skuse, D. H. et al.</Entity> (1997). Evidence from Turner's Syndrome of an imprinted X-linked locus. <BookTitle>Nature</BookTitle> 387: 705-708.</ReferenceItem>
+                <ReferenceItem><Entity>Slack, J. M., Holland, P. W. H., y Graham, C. F.</Entity> (1993). The zootype and the phylotypic stage. <BookTitle>Nature</BookTitle> 361: 490-492.</ReferenceItem>
+                <ReferenceItem><Entity>Smith, A. D.</Entity> (2003). <BookTitle>Husserl and the Cartesian Meditations</BookTitle>. London: Routledge Press.</ReferenceItem>
+                <ReferenceItem><Entity>Smith, B.</Entity> (1999). Truth and the visual field. In J. Petitot et al., eds., <BookTitle>Naturalizing Phenomenology</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Smith, B. C.</Entity> (1996). <BookTitle>On the Origin of Objects</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Smith, K. C.</Entity> (1994). <BookTitle>The Emperor's New Genes</BookTitle>. Doctoral Dissertation, Duke University.</ReferenceItem>
+                <ReferenceItem><Entity>Smolensky, P.</Entity> (1988). On the proper treatment of connectionism. <BookTitle>Behavioral and Brain Sciences</BookTitle> 11: 1-74.</ReferenceItem>
+                <ReferenceItem><Entity>So, P. et al.</Entity> (1998). Periodic orbits: a new language for neuronal dynamics. <BookTitle>Biophysical Journal</BookTitle> 74: 2776-2785.</ReferenceItem>
+                <ReferenceItem><Entity>Sober, E.</Entity> (1993). <BookTitle>Philosophy of Biology</BookTitle>. Boulder, CO: Westview Press.</ReferenceItem>
+                <ReferenceItem><Entity>Sober, E., y Wilson, D. S.</Entity> (1998). <BookTitle>Unto Others</BookTitle>. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Sokolowski, R.</Entity> (2000). <BookTitle>An Introduction to Phenomenology</BookTitle>. Cambridge: Cambridge University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Solé, R., y Goodwin, B.</Entity> (2000). <BookTitle>Signs of Life</BookTitle>. New York: Basic Books.</ReferenceItem>
+                <ReferenceItem><Entity>Sonea, S., y Panisset, M.</Entity> (1983). <BookTitle>A New Bacteriology</BookTitle>. Boston: Jones and Bartlett.</ReferenceItem>
+                <ReferenceItem><Entity>Spiegelberg, H.</Entity> (1994). <BookTitle>The Phenomenological Movement</BookTitle>. Dordrecht: Kluwer Academic Publishers.</ReferenceItem>
+                <ReferenceItem><Entity>Sperry, R.</Entity> (1969). A modified concept of consciousness. <BookTitle>Psychological Review</BookTitle> 76: 532-536.</ReferenceItem>
+                <ReferenceItem><Entity>Stawarska, B.</Entity> (2001). Pictorial representation or subjective scenario? <BookTitle>Sartre Studies International</BookTitle> 7: 87-111.</ReferenceItem>
+                <ReferenceItem><Entity>Stawarska, B.</Entity> (2002). Memory and subjectivity. <BookTitle>Sartre Studies International</BookTitle> 8: 94-111.</ReferenceItem>
+                <ReferenceItem><Entity>Stearns, S. C.</Entity> (1982). On fitness. In D. Mossakowski y G. Roth, eds., <BookTitle>Environmental Adaptation and Evolution</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Stearns, S. C.</Entity> (1986). Natural selection and fitness. In D. M. Raup y D. Jablonski, eds., <BookTitle>Patterns and Processes in the History of Life</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Stearns, S. C.</Entity> (1992). <BookTitle>The Evolution of Life Histories</BookTitle>. Oxford: Oxford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Stein, E.</Entity> (1989). <BookTitle>On the Problem of Empathy</BookTitle>. Washington, DC: ICS Publications.</ReferenceItem>
+                <ReferenceItem><Entity>Steinbock, A. J.</Entity> (1995). <BookTitle>Home and Beyond</BookTitle>. Evanston, IL: Northwestern University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Steinbock, A. J.</Entity> (1999). Phenomenology and Mysticism. In Donn Welton, ed., <BookTitle>The Body</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Steinbock, A. J.</Entity> (2004). On the phenomenology of becoming aware. <BookTitle>Continental Philosophy Review</BookTitle> 37: 21-43.</ReferenceItem>
+                <ReferenceItem><Entity>Sterelny, K.</Entity> (1990). The imagery debate. In W. Lycan, ed., <BookTitle>Mind and Cognition</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Sterelny, K.</Entity> (2000). The "genetic program" program. <BookTitle>Philosophy of Science</BookTitle> 67: 195-201.</ReferenceItem>
+                <ReferenceItem><Entity>Sterelny, K., y Griffiths, P. E.</Entity> (1999). <BookTitle>Sex and Death</BookTitle>. Chicago: University of Chicago Press.</ReferenceItem>
+                <ReferenceItem><Entity>Sterelny, K., y Kitcher, P.</Entity> (1988). The return of the gene. <BookTitle>Journal of Philosophy</BookTitle> 85: 339-360.</ReferenceItem>
+                <ReferenceItem><Entity>Stern, D. N.</Entity> (2000). <BookTitle>The Interpersonal World of the Infant</BookTitle>, 2d ed. New York: Basic Books.</ReferenceItem>
+                <ReferenceItem><Entity>Stern, D. N.</Entity> (2004). <BookTitle>The Present Moment in Psychotherapy and Everyday Life</BookTitle>. New York: W. W. Norton.</ReferenceItem>
+                <ReferenceItem><Entity>Stoljar, D.</Entity> (2004). The argument from diaphanousness. In M. Ezcurdia et al., eds., <BookTitle>New Essays in the Philosophy of Language and Mind</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Sur, M., Angelecci, A., y Sharma, J.</Entity> (1999). Rewiring cortex. <BookTitle>Journal of Neurobiology</BookTitle> 41: 33-43.</ReferenceItem>
+                <ReferenceItem><Entity>Swanson, L. W.</Entity> (2000). What is the brain? <BookTitle>Trends in Neurosciences</BookTitle> 23:519-527.</ReferenceItem>
+                <ReferenceItem><Entity>Szostak, J. W., Bartel, D. P., y Luisi, P. L.</Entity> (2001). Synthesizing life. <BookTitle>Nature</BookTitle> 409:387-390.</ReferenceItem>
+                <ReferenceItem><Entity>Teller, P.</Entity> (1986). Relational holism and quantum mechanics. <BookTitle>British Journal for the Philosophy of Science</BookTitle> 37: 71-81.</ReferenceItem>
+                <ReferenceItem><Entity>Thelen, E., Schöner, G., Scheler, C., y Smith, L. B.</Entity> (2001). The dynamics of embodiment. <BookTitle>Behavioral and Brain Sciences</BookTitle> 24: 1-86.</ReferenceItem>
+                <ReferenceItem><Entity>Thelen, E., y Smith, L. B.</Entity> (1994). <BookTitle>A Dynamic Systems Approach to the Development of Cognition and Action</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Thom, R.</Entity> (1975). <BookTitle>Structural Stability and Morphogenesis</BookTitle>. Reading, MA: W. A. Benjamin.</ReferenceItem>
+                <ReferenceItem><Entity>Thomas, L.</Entity> (1974). <BookTitle>The Lives of a Cell</BookTitle>. New York: Viking Press.</ReferenceItem>
+                <ReferenceItem><Entity>Thomas, N. J. T.</Entity> (1999). Are theories of imagery theories of imagination? <BookTitle>Cognitive Science</BookTitle> 23: 207-245.</ReferenceItem>
+                <ReferenceItem><Entity>Thomas, N. J. T.</Entity> (2002). The false dichotomy of imagery. <BookTitle>Behavioral and Brain Sciences</BookTitle> 25: 211.</ReferenceItem>
+                <ReferenceItem><Entity>Thompson, E.</Entity> (1997). Symbol grounding. <BookTitle>Brain and Cognition</BookTitle> 34: 48-71.</ReferenceItem>
+                <ReferenceItem><Entity>Thompson, E.</Entity> (2001). Empathy and consciousness. <BookTitle>Journal of Consciousness Studies</BookTitle> 8 (5-7): 1-32.</ReferenceItem>
+                <ReferenceItem><Entity>Thompson, E.</Entity> (2004). Life and mind. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle> 3: 381-398.</ReferenceItem>
+                <ReferenceItem><Entity>Thompson, E.</Entity> (2005). Empathy and human experience. In J. D. Proctor, ed., <BookTitle>Science, Religion, and the Human Experience</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Thompson, E., y Varela, F. J.</Entity> (2001). Radical embodiment. <BookTitle>Trends in Cognitive Sciences</BookTitle> 5: 418-425.</ReferenceItem>
+                <ReferenceItem><Entity>Thompson, E., Lutz, A., y Cosmelli, D.</Entity> (2005). Neurophenomenology. In A. Brook y K. Akins, eds., <BookTitle>Cognition and the Brain</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Thompson, E., Noë, A., y Pessoa, L.</Entity> (1999). Perceptual completion. In J. Petitot et al., eds., <BookTitle>Naturalizing Phenomenology</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Thompson, E., Palacios, A., y Varela, F. J.</Entity> (1992). Ways of coloring. <BookTitle>Behavioral and Brain Sciences</BookTitle> 15: 1-74.</ReferenceItem>
+                <ReferenceItem><Entity>Thompson, W. I.</Entity> (1987a). The cultural implications of the new biology. In W. I. Thompson, ed., <BookTitle>Gaia: A Way of Knowing</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Thompson, W. I.</Entity>, ed. (1987b). <BookTitle>Gaia: A Way of Knowing</BookTitle>. Hudson, NY: Lindisfarne Press.</ReferenceItem>
+                <ReferenceItem><Entity>Thompson, W. I.</Entity> (1987c). Gaia and the politics of life. In W. I. Thompson, ed., <BookTitle>Gaia: A Way of Knowing</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Thompson, W. I.</Entity> (1989). <BookTitle>Imaginary Landscape</BookTitle>. New York: St. Martin's Press.</ReferenceItem>
+                <ReferenceItem><Entity>Thompson, W. I.</Entity>, ed. (1991a). <BookTitle>Gaia 2: Emergence</BookTitle>. Hudson, NY: Lindisfarne Press.</ReferenceItem>
+                <ReferenceItem><Entity>Thompson, W. I.</Entity> (1991b). The imagination of a new science. In W. I. Thompson, ed., <BookTitle>Gaia 2: Emergence</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Thompson, W. I.</Entity> (1991c). Politics becoming planet. In W. I. Thompson, ed., <BookTitle>Gaia 2: Emergence</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Tomasello, M.</Entity> (1999). <BookTitle>The Cultural Origins of Human Cognition</BookTitle>. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Tononi, G., y Edelman, G. M.</Entity> (1998). Consciousness and complexity. <BookTitle>Science</BookTitle> 282: 1846-1851.</ReferenceItem>
+                <ReferenceItem><Entity>Trevarthen, C., y Aitken, K. J.</Entity> (2001). Infant intersubjectivity. <BookTitle>Journal of Child Psychology and Psychiatry</BookTitle> 42: 3-48.</ReferenceItem>
+                <ReferenceItem><Entity>Tsuda, I.</Entity> (2001). Toward an interpretation of dynamic neural activity. <BookTitle>Behavioral and Brain Sciences</BookTitle> 24: 793-847.</ReferenceItem>
+                <ReferenceItem><Entity>Turvey, M. T., y Shaw, R. E.</Entity> (1999). Ecological foundations of cognition I. <BookTitle>Journal of Consciousness Studies</BookTitle> 6: 95-110.</ReferenceItem>
+                <ReferenceItem><Entity>Tye, M.</Entity> (1991). <BookTitle>The Imagery Debate</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Tye, M.</Entity> (1995). <BookTitle>Ten Problems of Consciousness</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Tye, M.</Entity> (2000). <BookTitle>Color, Content, and Consciousness</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Uttal, W. R.</Entity> (2001). <BookTitle>The New Phrenology</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+
+                <SectionHeader id="ref-v" title="V - Z" />
+
+                <ReferenceItem><Entity>van Gelder, T.</Entity> (1998). The dynamical hypothesis in cognitive science. <BookTitle>Behavioral and Brain Sciences</BookTitle> 21: 615-665.</ReferenceItem>
+                <ReferenceItem><Entity>van Gelder, T.</Entity> (1999a). Dynamic approaches to cognition. In R. Wilson y F. Keil, eds., <BookTitle>The MIT Encyclopedia of Cognitive Sciences</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>van Gelder, T.</Entity> (1999b). Wooden iron. In J. Petitot et al., eds., <BookTitle>Naturalizing Phenomenology</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Van Gulick, R.</Entity> (2001). Reduction, emergence and other recent options on the mind/body problem. <BookTitle>Journal of Consciousness Studies</BookTitle> 8 (9-10): 1-34.</ReferenceItem>
+                <ReferenceItem><Entity>VanRullen, R., y Koch, C.</Entity> (2003). Is perception discrete or continuous? <BookTitle>Trends in Cognitive Sciences</BookTitle> 7: 207-213.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J.</Entity> (1979). <BookTitle>Principles of Biological Autonomy</BookTitle>. New York: Elsevier North Holland.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J.</Entity> (1984). Two principles of self-organization. In H. Ulrich y G. J. Probst, eds., <BookTitle>Self-Organization and Management of Social Systems</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J.</Entity> (1987). Laying down a path in walking. In W. I. Thompson, ed., <BookTitle>Gaia: A Way of Knowing</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J.</Entity> (1989). Reflections on the circulation of concepts. <BookTitle>Family Process</BookTitle> 28: 15-24.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J.</Entity> (1991). Organism: a meshwork of selfless selves. In A. Tauber, ed., <BookTitle>Organism and the Origin of Self</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J.</Entity> (1995). Resonant cell assemblies. <BookTitle>Biological Research</BookTitle> 28: 81-95.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J.</Entity> (1996). Neurophenomenology. <BookTitle>Journal of Consciousness Studies</BookTitle> 3: 330-350.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J.</Entity> (1997a). Patterns of life. <BookTitle>Brain and Cognition</BookTitle> 34: 72-87.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J.</Entity> (1997b). The naturalization of phenomenology as the transcendence of nature. <BookTitle>Alter</BookTitle> 5: 355-381.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J.</Entity> (1999). The specious present. In J. Petitot et al., eds., <BookTitle>Naturalizing Phenomenology</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J.</Entity> (2000a). <BookTitle>El fénomena de la vida</BookTitle>. Santiago, Chile: Dolmen Essayo.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J.</Entity> (2000b). Pour une phénoménologie de la shunyata I. In N. Depraz y J.-F. Marquet, eds., <BookTitle>La gnose: une question philosophique</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J., y Bourgine, P.</Entity>, eds. (1991). <BookTitle>Toward a Practice of Autonomous Systems</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J., y Cohen, A.</Entity> (1989). Le corps evocateur. <BookTitle>Nouvelle Revue de Psychanalyse</BookTitle> 40: 193-213.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J., y Coutinho, A.</Entity> (1991). Second generation immune networks. <BookTitle>Immunology Today</BookTitle> 12: 159-166.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J., y Depraz, N.</Entity> (2003). Imagining. In B. A. Wallace, ed., <BookTitle>Buddhism and Science</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J., y Depraz, N.</Entity> (2005). At the source of time. In G. Colombetti y E. Thompson, eds., <BookTitle>Emotion Experience</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J., y Goguen, J.</Entity> (1978). The arithmetic of closure. <BookTitle>Journal of Cybernetics</BookTitle> 8: 291-324.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J., Lachaux, J.-P., Rodriguez, E., y Martinerie, J.</Entity> (2001). The brainweb. <BookTitle>Nature Reviews Neuroscience</BookTitle> 2: 229-239.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J., Maturana, H. R., y Uribe, R.</Entity> (1974). Autopoiesis. <BookTitle>Biosystems</BookTitle> 5: 187-196.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J., y Shear, J.</Entity> (1999a). First-person accounts. In F. J. Varela y J. Shear, eds., <BookTitle>The View from Within</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J., y Shear, J.</Entity>, eds. (1999b). <BookTitle>The View from Within</BookTitle>. Thorverton, UK: Imprint Academic.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J., y Thompson, E.</Entity> (2003). Neural synchrony and the unity of mind. In A. Cleeremans, ed., <BookTitle>The Unity of Consciousness</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Varela, F. J., Thompson, E., y Rosch, E.</Entity> (1991). <BookTitle>The Embodied Mind</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Vetlesen, A. J.</Entity> (1994). <BookTitle>Perception, Empathy, and Judgment</BookTitle>. University Park: Pennsylvania State University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Virchow, R.</Entity> (1967). The cell doctrine. In E. A. Carlson, ed., <BookTitle>Modern Biology</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>von Stein, A., Chiang, C., y König, P.</Entity> (2000). Top-down processing mediated by interareal synchronization. <BookTitle>Proceedings of the National Academy of Sciences USA</BookTitle> 97: 14748-14753.</ReferenceItem>
+                <ReferenceItem><Entity>von Stein, A., y Sarntheim, J.</Entity> (2000). Different frequencies for different scales of cortical intergration. <BookTitle>International Journal of Psychophysiology</BookTitle> 38: 301-313.</ReferenceItem>
+                <ReferenceItem><Entity>von Uexküll, J.</Entity> (1957). A stroll through the worlds of animals and men. In K. S. Lashley, ed., <BookTitle>Instinctive Behavior</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Vygotsky, L.</Entity> (1978). <BookTitle>Mind in Society</BookTitle>. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Wake, D. B., Roth, G., y Wake, M. H.</Entity> (1983). On the problem of stasis in organismal evolution. <BookTitle>Journal of Theoretical Biology</BookTitle> 101: 211-224.</ReferenceItem>
+                <ReferenceItem><Entity>Wallace, A. B.</Entity> (1998). <BookTitle>The Bridge of Quiescence</BookTitle>. La Salle, IL: Open Court.</ReferenceItem>
+                <ReferenceItem><Entity>Wallace, B. A.</Entity> (1999). The Buddhist tradition of shamatha. In F. J. Varela y J. Shear, eds., <BookTitle>The View from Within</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Walton, K. L.</Entity> (1990). <BookTitle>Mimesis as Make-Believe</BookTitle>. Cambridge, MA: Harvard University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Watt, D. F.</Entity> (1998). Emotion and consciousness. Target Article, ASSC Electronic Seminar.</ReferenceItem>
+                <ReferenceItem><Entity>Weber, A., y Varela, F. J.</Entity> (2002). Life after Kant. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle> 1: 97-125.</ReferenceItem>
+                <ReferenceItem><Entity>Weber, B. H., y Depew, D. J.</Entity> (1995). <BookTitle>Darwinism Evolving</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Weber, B. H., y Depew, D. J.</Entity> (1996). Natural selection and self-organization. <BookTitle>Biology and Philosophy</BookTitle> 11: 33-65.</ReferenceItem>
+                <ReferenceItem><Entity>Webster, G., y Goodwin, B.</Entity> (1996). <BookTitle>Form and Transformation</BookTitle>. Cambridge: Cambridge University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Weiss, P.</Entity> (1969). The living system. In A. Koestler y J. R. Smythies, eds., <BookTitle>Beyond Reductionism</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Welton, D.</Entity> (1999). Soft, smooth hands. In D. Welton, ed., <BookTitle>The Body</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Welton, D.</Entity> (2000). <BookTitle>The Other Husserl</BookTitle>. Bloomington: Indiana University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Welton, D.</Entity>, ed. (2003). <BookTitle>The New Husserl</BookTitle>. Bloomington: Indiana University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Wexler, M. y Klam, F.</Entity> (2001). Movement prediction and movement production. <BookTitle>Journal of Experimental Psychology</BookTitle> 27: 48-64.</ReferenceItem>
+                <ReferenceItem><Entity>Wexler, M., Kosslyn, S. M., y Berthoz, A.</Entity> (1998). Motor processes in mental rotation. <BookTitle>Cognition</BookTitle> 68: 77-94.</ReferenceItem>
+                <ReferenceItem><Entity>Wheeler, M.</Entity> (1997). Cognition's coming home. In P. Husbands y I. Harvey, eds., <BookTitle>Proceedings of the 4th European Conference on Artificial Life</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Williams, G. C.</Entity> (1966). <BookTitle>Adaptation and Natural Selection</BookTitle>. Princeton, NJ: Princeton University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Wilson, R. A.</Entity> (1994). Wide computationalism. <BookTitle>Mind</BookTitle> 103: 351-372.</ReferenceItem>
+                <ReferenceItem><Entity>Wimsatt, W. C.</Entity> (1985). Developmental constraints. In W. Bechtel, ed., <BookTitle>Integrating Scientific Disciplines</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Wimsatt, W. C.</Entity> (1986). Forms of aggregativity. In A. Donagan et al., eds., <BookTitle>Human Nature and Human Knowledge</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Winograd, T., y Flores, F.</Entity> (1987). <BookTitle>Understanding Computers and Cognition</BookTitle>. NJ: Ablex Press.</ReferenceItem>
+                <ReferenceItem><Entity>Wohlshläger, A., y Wohlschläger, A.</Entity> (1998). Mental and manual rotation. <BookTitle>Journal of Experimental Psychology</BookTitle> 24: 397-412.</ReferenceItem>
+                <ReferenceItem><Entity>Wolheim, R.</Entity> (1980). <BookTitle>Art and Its Objects</BookTitle>, 2d ed. New York: Cambridge University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Wolheim, R.</Entity> (1987). <BookTitle>Painting as an Art</BookTitle>. Princeton, NJ: Princeton University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Wolheim, R.</Entity> (1998). On pictorial representation. <BookTitle>Journal of Aesthetics and Art Criticism</BookTitle> 56: 217-226.</ReferenceItem>
+                <ReferenceItem><Entity>Yamaguchi, I.</Entity> (1997). <BookTitle>Ki als leibhaftige Vernunft</BookTitle>. Munich: W. Fink Verlag.</ReferenceItem>
+                <ReferenceItem><Entity>Zahavi, D.</Entity> (1997). Horizontal intentionality and transcendental intersubjectivity. <BookTitle>Tijdschrift Voor Filosofie</BookTitle> 59: 304-321.</ReferenceItem>
+                <ReferenceItem><Entity>Zahavi, D.</Entity> (1999). <BookTitle>Self-Awareness and Alterity</BookTitle>. Evanston, IL: Northwestern University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Zahavi, D.</Entity> (2001a). <BookTitle>Husserl and Transcendental Intersubjectivity</BookTitle>. Trans. E. A. Benke. Athens, OH: Ohio University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Zahavi, D.</Entity> (2001b). Beyond empathy. In E. Thompson, ed., <BookTitle>Between Ourselves</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Zahavi, D.</Entity> (2002a). First-person thoughts and embodied self-awareness. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle> 1: 7-26.</ReferenceItem>
+                <ReferenceItem><Entity>Zahavi, D.</Entity> (2002b). Merleau-Ponty on Husserl. In T. Toadvine y L. Embree, eds., <BookTitle>Merleau-Ponty's Reading of Husserl</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Zahavi, D.</Entity> (2003a). <BookTitle>Husserl's Phenomenology</BookTitle>. Stanford, CA: Stanford University Press.</ReferenceItem>
+                <ReferenceItem><Entity>Zahavi, D.</Entity> (2003b). Inner time-consciousness and pre-reflective self-awareness. In D. Welton, ed., <BookTitle>The New Husserl</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Zahavi, D.</Entity> (2003c). Intentionality and phenomenality. In E. Thompson (ed.), <BookTitle>The Problem of Consciousness</BookTitle>.</ReferenceItem>
+                <ReferenceItem><Entity>Zahavi, D.</Entity> (2004a). Husserl's noema and the internalism-externalism debate. <BookTitle>Inquiry</BookTitle> 47: 42-66.</ReferenceItem>
+                <ReferenceItem><Entity>Zahavi, D.</Entity> (2004b). Phenomenology and the project of naturalization. <BookTitle>Phenomenology and the Cognitive Sciences</BookTitle> 3: 331-347.</ReferenceItem>
+                <ReferenceItem><Entity>Zahavi, D.</Entity> (2005a). <BookTitle>Subjectivity and Selfhood</BookTitle>. Cambridge, MA: MIT Press.</ReferenceItem>
+                <ReferenceItem><Entity>Zahavi, D.</Entity> (2005b). Being someone. <BookTitle>Psyche</BookTitle> 11 (5).</ReferenceItem>
+                <ReferenceItem><Entity>Zahavi, D., y Parnas, J.</Entity> (1998). Phenomenal consciousness and self-awareness. <BookTitle>Journal of Consciousness Studies</BookTitle> 5: 687-705.</ReferenceItem>
+                <ReferenceItem><Entity>Zaretzky, A. N., y Letelier, J. C.</Entity> (2002). Metabolic networks from (M,R) systems and autopoiesis perspective. <BookTitle>Journal of Biological Systems</BookTitle> 10: 265-284.</ReferenceItem>
+
+            </main>
+        );
+
+        // --- APP ---
+
+        const App = () => {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+            const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
+            return (
+                <div className="bg-slate-950 min-h-screen text-slate-300 selection:bg-cyan-500/30 selection:text-cyan-100">
+                    <ScrollProgress />
+                    <Navigation toggleMenu={toggleMenu} />
+                    <Sidebar isOpen={isMenuOpen} toggleMenu={toggleMenu} />
+                    
+                    <Hero />
+                    <ReferencesContent />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
