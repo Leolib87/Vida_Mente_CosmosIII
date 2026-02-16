@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Mente en la Vida | Evan Thompson - Notas</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        amber: {
+                            450: '#F59E0B',
+                        },
+                        cyan: {
+                            450: '#22D3EE',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #020617; /* bg-slate-950 */
+            color: #cbd5e1; /* text-slate-300 */
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+
+        .serif { font-family: 'Playfair Display', serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, useScroll, useSpring, AnimatePresence } = window.Motion;
+        
+        // --- NATIVE ICONS (Zero Dependency) ---
+        const IconBase = ({ children, size = 24, className = "" }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const Menu = (props) => (
+            <IconBase {...props}>
+                <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+            </IconBase>
+        );
+        
+        const X = (props) => (
+            <IconBase {...props}>
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </IconBase>
+        );
+
+        const ChevronRight = (props) => (
+            <IconBase {...props}>
+                <path d="m9 18 6-6-6-6"/>
+            </IconBase>
+        );
+
+        const User = (props) => (
+            <IconBase {...props}>
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </IconBase>
+        );
+
+        // --- DATA ---
+        
+        const BOOK_DATA = {
+            title: "La Mente en la Vida",
+            author: "Evan Thompson",
+            toc: [
+                { title: "Inicio", id: "hero" },
+                { separator: "NOTAS AL FINAL" },
+                { title: "1. Ciencia Cognitiva", id: "notes-ch1" },
+                { title: "2. La Conexión Fenomenológica", id: "notes-ch2" },
+                { title: "3. Autonomía y Emergencia", id: "notes-ch3" },
+                { title: "4. La Estructura del Comportamiento", id: "notes-ch4" },
+                { title: "5. Autopoiesis", id: "notes-ch5" },
+                { title: "6. Vida y Mente", id: "notes-ch6" },
+                { title: "7. Trazando un Camino", id: "notes-ch7" },
+                { title: "8. Vida más allá de la Brecha", id: "notes-ch8" },
+                { title: "9. Subjetividad Sensoriomotora", id: "notes-ch9" },
+                { title: "10. Mira de Nuevo", id: "notes-ch10" },
+                { title: "11. Temporalidad", id: "notes-ch11" },
+                { title: "12. Dinamismo Primordial", id: "notes-ch12" },
+                { title: "13. Empatía y Enculturación", id: "notes-ch13" },
+                { title: "Apéndice A", id: "notes-appa" },
+                { title: "Apéndice B", id: "notes-appb" }
+            ]
+        };
+
+        // --- COMPONENTS ---
+
+        const Concept = ({ children }) => (
+            <span className="text-amber-500 font-medium border-b border-amber-500/20 pb-0.5">
+                {children}
+            </span>
+        );
+
+        const Entity = ({ children }) => (
+            <span className="text-cyan-400 font-medium hover:text-cyan-300 transition-colors border-b border-cyan-400/20 pb-0.5">
+                {children}
+            </span>
+        );
+
+        const BookTitle = ({ children }) => (
+            <span className="text-white italic font-serif tracking-wide">
+                {children}
+            </span>
+        );
+
+        const NoteItem = ({ number, children }) => (
+            <div className="flex gap-4 mb-6">
+                <div className="flex-none w-8 text-right text-cyan-500 font-bold font-mono pt-1">{number}.</div>
+                <div className="flex-1 text-slate-300 leading-relaxed text-lg">
+                    {children}
+                </div>
+            </div>
+        );
+
+        const ChapterNotesHeader = ({ id, title }) => (
+            <div id={id} className="pt-16 pb-8 mb-8 border-b border-slate-800">
+                <h2 className="text-3xl text-white font-serif">{title}</h2>
+            </div>
+        );
+
+        // --- LAYOUT COMPONENTS ---
+
+        const ScrollProgress = () => {
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+            return (
+                <motion.div
+                    className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50"
+                    style={{ scaleX }}
+                />
+            );
+        };
+
+        const Navigation = ({ toggleMenu }) => (
+            <nav className="fixed top-0 w-full bg-slate-950/80 backdrop-blur-md border-b border-slate-800/50 z-40 h-16 flex items-center justify-between px-6 transition-all duration-300">
+                <div className="flex items-center gap-4">
+                    <div className="w-8 h-8 bg-cyan-900/20 rounded-full flex items-center justify-center border border-cyan-500/30">
+                        <span className="text-cyan-500 font-serif font-bold">ET</span>
+                    </div>
+                    <div className="hidden md:block">
+                        <h1 className="text-sm text-slate-200 font-semibold tracking-wide">LA MENTE EN LA VIDA</h1>
+                        <p className="text-xs text-slate-500">Notas</p>
+                    </div>
+                </div>
+                <button 
+                    onClick={toggleMenu}
+                    className="flex items-center gap-2 text-slate-400 hover:text-cyan-400 transition-colors group"
+                >
+                    <span className="text-xs uppercase tracking-widest font-semibold hidden sm:block group-hover:mr-1 transition-all">Índice</span>
+                    <Menu size={20} />
+                </button>
+            </nav>
+        );
+
+        const Sidebar = ({ isOpen, toggleMenu, activeSection }) => (
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={toggleMenu}
+                            className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
+                        />
+                        <motion.aside 
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed right-0 top-0 h-full w-80 bg-slate-900 border-l border-slate-800 z-50 p-8 shadow-2xl overflow-y-auto"
+                        >
+                            <div className="flex justify-between items-center mb-10">
+                                <h3 className="text-amber-500 font-serif italic text-xl">Contenidos</h3>
+                                <button onClick={toggleMenu} className="text-slate-400 hover:text-white transition-colors">
+                                    <X size={24} />
+                                </button>
+                            </div>
+                            <ul className="space-y-4">
+                                {BOOK_DATA.toc.map((item, idx) => (
+                                    item.separator ? (
+                                        <li key={idx} className="pt-6 pb-2 border-b border-slate-800 text-xs text-slate-500 uppercase tracking-widest font-bold">
+                                            {item.separator}
+                                        </li>
+                                    ) : (
+                                        <li key={idx}>
+                                            <a 
+                                                href={`#${item.id}`} 
+                                                onClick={toggleMenu}
+                                                className="flex items-center gap-3 text-slate-300 hover:text-cyan-400 transition-colors group"
+                                            >
+                                                <ChevronRight size={14} className="text-slate-600 group-hover:text-cyan-500 transition-colors" />
+                                                <span className="text-sm font-medium leading-relaxed">{item.title}</span>
+                                            </a>
+                                        </li>
+                                    )
+                                ))}
+                            </ul>
+                        </motion.aside>
+                    </>
+                )}
+            </AnimatePresence>
+        );
+
+        const Hero = () => (
+            <section id="hero" className="min-h-screen flex flex-col justify-center items-center text-center px-6 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/10 via-slate-950 to-slate-950" />
+                <motion.div 
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1, delay: 0.2 }}
+                    className="relative z-10"
+                >
+                    <span className="text-amber-500 tracking-[0.3em] text-xs font-bold uppercase mb-4 block">
+                        Evan Thompson
+                    </span>
+                    <h1 className="text-5xl md:text-7xl font-serif text-white mb-6 leading-tight">
+                        Notas del <br/> <span className="text-slate-400 italic">Libro</span>
+                    </h1>
+                    <div className="w-24 h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mx-auto mb-8" />
+                </motion.div>
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.5, duration: 1 }}
+                    className="absolute bottom-12"
+                >
+                   <div className="animate-bounce text-slate-600">
+                        <User size={20} className="mx-auto mb-2 text-cyan-900" />
+                        <span className="text-xs uppercase tracking-widest text-slate-600">Desliza para leer</span>
+                   </div>
+                </motion.div>
+            </section>
+        );
+
+        // --- NOTES CONTENT COMPONENT ---
+
+        const NotesContent = () => (
+            <main className="w-full px-6 md:px-12 pb-32 text-slate-300 text-justify hyphens-auto">
+                
+                <ChapterNotesHeader id="notes-ch1" title="1. Ciencia Cognitiva y Experiencia Humana" />
+                <NoteItem number="1">
+                    Para resúmenes, ver <Entity>Clark</Entity> (1997, 2001); <Entity>Franklin</Entity> (1995); y <Entity>Varela</Entity>, <Entity>Thompson</Entity> y <Entity>Rosch</Entity> (1991).
+                </NoteItem>
+                <NoteItem number="2">
+                    Qué cuenta como computación es en realidad una pregunta conceptual y empírica difícil. Lo que resumo aquí es la visión recibida o formalista de la computación en la ciencia cognitiva clásica y la filosofía de la mente. Sin embargo, si <Entity>Brian Cantwell Smith</Entity> (1996) tiene razón, entonces esta visión recibida es seriamente defectuosa. Se refiere a los lectores al libro de <Entity>Smith</Entity> para una reconceptualización importante de la computación desde una perspectiva encarnada y situada.
+                </NoteItem>
+                <NoteItem number="3">
+                    El término <Concept>brecha explicativa</Concept> (<em>explanatory gap</em>) fue introducido originalmente por <Entity>Levine</Entity> (1983) para describir la brecha conceptual y epistemológica entre las características cualitativas de los estados conscientes (qualia) y los estados cerebrales. Ver <Entity>Roy</Entity> et al. (1999) para una discusión más amplia de la brecha explicativa en la ciencia cognitiva.
+                </NoteItem>
+                <NoteItem number="4">
+                    Sin embargo, no todos los teóricos cognitivos con fuertes lazos con la tradición cognitivista comparten esta visión. <Entity>Jerome Bruner</Entity>, por ejemplo, un padre fundador de la revolución cognitiva, ha argumentado durante mucho tiempo que la ciencia cognitiva debe incluir la cultura, la encarnación, la subjetividad y la experiencia del significado (<Entity>Bruner</Entity> 1990). Además, en la década de 1990, varios teóricos computacionales comenzaron a abogar por enfoques encarnados y situados de la computación que se apartaban de la visión clásica de varias maneras (ver <Entity>Agre</Entity> 1995; <Entity>Smith</Entity> 1996; <Entity>Wilson</Entity> 1994).
+                </NoteItem>
+                <NoteItem number="5">
+                    Ver <Entity>Dupuy</Entity> (2000) para una cuenta de la cibernética y su influencia en la ciencia cognitiva.
+                </NoteItem>
+                <NoteItem number="6">
+                    Ver <Entity>Freeman</Entity> (1995, 1999a); <Entity>Kelso</Entity> (1995); <Entity>Port</Entity> y <Entity>van Gelder</Entity> (1995); <Entity>Thelen</Entity> y <Entity>Smith</Entity> (1994); y <Entity>Varela</Entity>, <Entity>Thompson</Entity> y <Entity>Rosch</Entity> (1991).
+                </NoteItem>
+                <NoteItem number="7">
+                    Ver <Entity>Dreyfus</Entity> y <Entity>Dreyfus</Entity> (1986); <Entity>Johnson</Entity> (1987); <Entity>Lakoff</Entity> (1987); <Entity>Varela</Entity>, <Entity>Thompson</Entity> y <Entity>Rosch</Entity> (1991); y <Entity>Winograd</Entity> y <Entity>Flores</Entity> (1986). <Entity>Dreyfus</Entity> (1972) fue un antecedente pionero para gran parte de este trabajo.
+                </NoteItem>
+                <NoteItem number="8">
+                    Ver <Entity>Freeman</Entity> (1995, 1999a) y <Entity>Varela</Entity>, <Entity>Thompson</Entity> y <Entity>Rosch</Entity> (1991).
+                </NoteItem>
+                <NoteItem number="9">
+                    <Entity>Varela</Entity> pensó por primera vez en el nombre "el enfoque enactivo" en el verano de 1986 en París cuando él y <Entity>Thompson</Entity> comenzaron a escribir <BookTitle>De cuerpo presente</BookTitle>. En un momento antes de introducir el término enactivo, <Entity>Varela</Entity> había estado usando "el enfoque hermenéutico" para enfatizar la afiliación de sus ideas a la escuela filosófica de la hermenéutica—una afiliación también enfatizada por otros teóricos de la cognición encarnada en ese momento (<Entity>Johnson</Entity> 1987; <Entity>Varela</Entity>, <Entity>Thompson</Entity> y <Entity>Rosch</Entity> 1991, pp. 149-150; <Entity>Winograd</Entity> y <Entity>Flores</Entity> 1986). La primera y segunda ideas resumidas anteriormente se presentaron en el libro de <Entity>Varela</Entity> de 1979, <BookTitle>Principios de Autonomía Biológica</BookTitle>. Se desarrollaron con <Entity>Humberto Maturana</Entity> y surgieron del trabajo anterior de <Entity>Maturana</Entity> sobre la biología de la cognición (<Entity>Maturana</Entity> 1969, 1970; <Entity>Maturana</Entity> y <Entity>Varela</Entity> 1980, 1987). La tercera, cuarta y quinta ideas fueron presentadas por <Entity>Varela</Entity>, <Entity>Thompson</Entity> y <Entity>Rosch</Entity> (1991) y por <Entity>Thompson</Entity>, <Entity>Palacios</Entity> y <Entity>Varela</Entity> (1992), y fueron elaboradas por <Entity>Varela</Entity> y <Entity>Thompson</Entity> en varios artículos posteriores (<Entity>Thompson</Entity> 2001; <Entity>Thompson</Entity> y <Entity>Varela</Entity> 2001; <Entity>Varela</Entity> 1991, 1997a; <Entity>Varela</Entity> y <Entity>Thompson</Entity> 2003).
+                </NoteItem>
+                <NoteItem number="10">
+                    <BookTitle>De cuerpo presente</BookTitle> discutió brevemente y criticó la fenomenología husserliana (<Entity>Varela</Entity>, <Entity>Thompson</Entity> y <Entity>Rosch</Entity> 1991, pp. 15-21). Aunque todavía mantengo algunos de esos puntos críticos, también creo que nuestro tratamiento fue demasiado apresurado. En ese momento carecíamos de un conocimiento suficiente de la profundidad y amplitud de los escritos de <Entity>Husserl</Entity>. También fuimos influenciados por la interpretación de <Entity>Hubert Dreyfus</Entity> (1982) de <Entity>Husserl</Entity> como un cognitivista y protocuputacionalista, una interpretación que ya no acepto y que <Entity>Varela</Entity> también rechazó en su trabajo posterior sobre la naturalización de la fenomenología (ver <Entity>Petitot</Entity> et al. 1999). Para una discusión más detallada de este asunto, ver Apéndice A.
+                </NoteItem>
+
+                <ChapterNotesHeader id="notes-ch2" title="2. La Conexión Fenomenológica" />
+                <NoteItem number="1">
+                    ¿Sucumbe <Entity>Husserl</Entity> por ello a la idea de que hay un "dado" no interpretado y neutral teóricamente en la experiencia, el llamado <Concept>mito filosófico de lo dado</Concept>? Esta es una pregunta difícil y complicada. La filosofía nos ofrece no una sino varias nociones diferentes de lo "dado", y el pensamiento de <Entity>Husserl</Entity> se desarrolló considerablemente a lo largo de su vida. De hecho, sostuvo diferentes puntos de vista en diferentes momentos con respecto a lo que podría significar lo dado. Baste decir que es un error etiquetar a <Entity>Husserl</Entity> como un filósofo de lo dado en el sentido originalmente atacado por <Entity>Wilfrid Sellars</Entity> (1956) o por críticos de la noción de observación neutral teóricamente, como <Entity>Thomas Kuhn</Entity> (1970), por al menos cuatro razones. Primero, lo dado en el sentido fenomenológico no son datos de los sentidos no intencionales sino el mundo tal como se nos aparece. Segundo, la fenomenalidad del mundo no es comprensible aparte de la relación constitutiva que la subjetividad y la conciencia guardan con él. Tercero, como se discute en este capítulo, lo que cuenta como dado tiene que verse como dinámicamente emergente en relación con lo predado, y la transición de lo predado a lo dado depende de las motivaciones, intereses y capacidades atencionales del sujeto. Finalmente, lo dado comprende no simplemente la presencia fenoménica en un sentido estrecho (lo que me está enfrentando ahora mismo), sino también la ausencia y la posibilidad (los lados de la botella que no puedo ver pero que están disponibles para que yo los vea a través del movimiento). Para discusiones recientes de algunos de estos temas, ver <Entity>Botero</Entity> (1999); <Entity>Roy</Entity> (2003); y <Entity>Steinbock</Entity> (1999).
+                </NoteItem>
+                <NoteItem number="2">
+                    Estas características de la <Concept>epoché</Concept> son muy paralelas a las habilidades mentales básicas cultivadas en la meditación budista de atención plena (<em>shamatha-vipashyana</em>) (ver <Entity>Wallace</Entity> 1998, 1999; ver también <Entity>Depraz</Entity>, <Entity>Varela</Entity> y <Entity>Vermersch</Entity> 2003).
+                </NoteItem>
+                <NoteItem number="3">
+                    Este sentido de la epoché es bien expresado por el destacado fenomenólogo <Entity>J. N. Mohanty</Entity> (1989, pp. 12-13): <Concept>"No necesito enfatizar cuán relevante y, de hecho, necesario es el método de la epoché fenomenológica para la posibilidad misma de una descripción genuina en filosofía. Fue el genio de Husserl el que revitalizó el método descriptivo para la filosofía y trajo al primer plano el método de la epoché, sin el cual uno realmente no puede ponerse a trabajar. Las preconcepciones tienen que ser puestas entre paréntesis, las creencias suspendidas, antes de que la filosofía pueda comenzar a confrontar los fenómenos como fenómenos. Esto, de nuevo, no es un acto instantáneo de suspender la creencia en el mundo o de dirigir la mirada hacia los fenómenos como fenómenos, sino que implica un esfuerzo extenuante de reconocer las preconcepciones como preconcepciones, de desenmarañar interpretaciones sedimentadas, de llegar a presuposiciones que pueden pretender ser verdades evidentes, y a través de tales procesos apuntar asintóticamente a la experiencia prereflectiva."</Concept>
+                </NoteItem>
+                <NoteItem number="4">
+                    Ver <Entity>Depraz</Entity> (1995, 2001a); <Entity>Steinbock</Entity> (1995); <Entity>Welton</Entity> (2000, 2003); y <Entity>Zahavi</Entity> (2003a).
+                </NoteItem>
+                <NoteItem number="5">
+                    Algunos estudiosos han argumentado que el pensamiento filosófico maduro de <Entity>Husserl</Entity> sobre la historia y el mundo de la vida deriva de la influencia de <Entity>Heidegger</Entity>. Es posible, sin embargo, que la influencia sustancial (pero no reconocida) vaya precisamente en la dirección opuesta (<Entity>Smith</Entity> 2003, pp. 10, 14). El mismo <Entity>Merleau-Ponty</Entity> declara en la primera página de su <BookTitle>Fenomenología de la Percepción</BookTitle> (1962, p. vii) que todo <BookTitle>Ser y Tiempo</BookTitle> de <Entity>Heidegger</Entity> <Concept>"surge de una indicación dada por Husserl"</Concept> y equivale a nada más que una explicación de la noción de mundo de la vida de <Entity>Husserl</Entity>. Unas páginas más tarde, <Entity>Merleau-Ponty</Entity> afirma: <Concept>"Lejos de ser, como se ha pensado, un procedimiento de filosofía idealista, la reducción fenomenológica pertenece a la filosofía existencial: el 'ser-en-el-mundo' de Heidegger aparece solo contra el trasfondo de la reducción fenomenológica"</Concept> (p. xiv). Se ha dicho durante mucho tiempo que la interpretación de <Entity>Merleau-Ponty</Entity> de <Entity>Husserl</Entity> como anticipando no simplemente el espíritu sino gran parte de la sustancia de su propia <BookTitle>Fenomenología de la Percepción</BookTitle> no es más que una lectura inexacta de sus propios puntos de vista en <Entity>Husserl</Entity>. Estudios recientes, sin embargo, indican que la interpretación de <Entity>Merleau-Ponty</Entity> de <Entity>Husserl</Entity> es en su mayor parte correcta (<Entity>Zahavi</Entity> 2002b).
+                </NoteItem>
+                <NoteItem number="6">
+                    Este párrafo y los tres siguientes están en deuda con <Entity>Zahavi</Entity> (2003a, 2003c).
+                </NoteItem>
+                <NoteItem number="7">
+                    Otra categoría importante de experiencias que no tienen una estructura sujeto-objeto son varios tipos de estados contemplativos o meditativos (ver <Entity>Austin</Entity> 1998; <Entity>Lutz</Entity>, <Entity>Dunne</Entity> y <Entity>Davidson</Entity> 2007; y <Entity>Forman</Entity> 1990). En un trabajo futuro, planeo explorar la relación entre la fenomenología occidental y las cuentas epistemológicas y fenomenológicas de estados contemplativos encontradas en las tradiciones filosóficas asiáticas.
+                </NoteItem>
+                <NoteItem number="8">
+                    Mi uso de este ejemplo se debe a <Entity>Gallagher</Entity> (1986b) y <Entity>Zahavi</Entity> (2003c).
+                </NoteItem>
+                <NoteItem number="9">
+                    Una gran cantidad de discusión académica se ha dedicado a la forma adecuada de interpretar la noción husserliana del <Concept>noema</Concept>. La discusión concierne a la relación entre el objeto-como-intentado (el noema) y el objeto-que-es-intentado (el objeto mismo)—la botella de vino-como-percibida (como sentida y vista) y la botella misma. Según la interpretación representacionalista, el noema es un tipo de entidad representacional, un sentido o significado ideal, que media la relación intencional entre el acto mental y el objeto. En esta visión, la conciencia está dirigida hacia el objeto solo por medio del noema y así logra su apertura al mundo solo en virtud del noema representacional. Según la interpretación rival no representacionalista, el noema no es ninguna entidad intermedia, representacional; el noema es el objeto mismo, pero el objeto considerado fenomenológicamente, es decir, precisamente en su dación. En otras palabras, el objeto-como-intentado es el objeto-que-es-intentado, pero considerado bajo la operación de suspender el posicionamiento realista de la actitud natural. El noema puede así ser captado solo en una actitud fenomenológica o trascendental. Esta visión rechaza el representacionalismo de la visión anterior. La conciencia es intrínsecamente auto-trascendente. En consecuencia, no logra referencia al mundo en virtud de entidades intermedias que le otorgan intencionalidad. Me llevaría demasiado lejos revisar los giros y vueltas de este debate. Por lo tanto, simplemente declararé que por una variedad de razones creo que la interpretación representacionalista es errónea y la interpretación no representacionalista es correcta, tanto como una interpretación de <Entity>Husserl</Entity> y como una cuenta filosófica de la intencionalidad (dirigida a objetos) (ver <Entity>Drummond</Entity> 2003; <Entity>Zahavi</Entity> 2003a, pp. 53-68, 2004a).
+                </NoteItem>
+                <NoteItem number="10">
+                    Cf. <Entity>Susan Hurley</Entity> (1998), quien propone una "visión de interdependencia de dos niveles" de animales y personas como "singularidades dinámicas" al nivel subpersonal y como agentes intencionales entendidos normativamente al nivel personal.
+                </NoteItem>
+                <NoteItem number="11">
+                    Para simplificar la exposición, estoy dejando de lado aquí a los fenomenólogos, más notablemente <Entity>Sartre</Entity> (1960), que mantienen una concepción no egológica de la conciencia intencional. Según esta concepción, el ego es un objeto constituido de una conciencia sin ego y por lo tanto pertenece al lado noemático y no al lado noético de la estructura correlacional. Para una discusión importante que muestra cómo <Entity>Husserl</Entity> ya reconoció las ideas de <Entity>Sartre</Entity>, ver <Entity>Stawarska</Entity> (2002).
+                </NoteItem>
+                <NoteItem number="12">
+                    En 1949, el psicólogo <Entity>Donald Hebb</Entity> propuso lo que ahora se conoce como la <Concept>Regla de Hebb</Concept> (<Entity>Hebb</Entity> 1949). Sugirió que el aprendizaje podría basarse en cambios en el cerebro que provienen del grado de actividad correlacionada entre neuronas: si dos neuronas tienden a estar activas juntas, su conexión se fortalece; de lo contrario, disminuye. Por lo tanto, la arquitectura de conexión del sistema se vuelve inseparable de su historia de transformación. En 1890 <Entity>James</Entity> ya había escrito en sus <BookTitle>Principios de Psicología</BookTitle>: <Concept>"Cuando dos procesos cerebrales elementales han estado activos juntos o en sucesión inmediata, uno de ellos, al reaparecer, tiende a propagar su excitación al otro"</Concept> (1981, p. 534; énfasis omitido).
+                </NoteItem>
+                <NoteItem number="13">
+                    A menudo se asume que <Entity>Heidegger</Entity> fue la fuente de la idea de <Entity>Husserl</Entity> del mundo de la vida predado que no puede hacerse explícito como un objeto. Sin embargo, <Entity>Husserl</Entity> ya había estado trabajando en la noción del mundo de la vida a principios de la década de 1920 (<BookTitle>Ser y Tiempo</BookTitle> de <Entity>Heidegger</Entity> se publicó en 1927), y su trabajo en la década de 1930 no muestra ninguna influencia directa de la noción de mundo de <Entity>Heidegger</Entity>. Ver <Entity>Welton</Entity> (2000, pp. 120, 339).
+                </NoteItem>
+                <NoteItem number="14">
+                    Para una reflexión contemporánea importante sobre este punto en relación con la metafísica de la intencionalidad, ver <Entity>Brian Cantwell Smith</Entity> (1996, pp. 103-104).
+                </NoteItem>
+
+                <ChapterNotesHeader id="notes-ch3" title="3. Autonomía y Emergencia" />
+                <NoteItem number="1">
+                    Para una breve introducción a la teoría de sistemas dinámicos, ver <Entity>Norton</Entity> (1995). Una exposición ahora clásica desde una perspectiva visual y geométrica es <Entity>Abraham</Entity> y <Entity>Shaw</Entity> (1982-1988). Ver también <Entity>Kellert</Entity> (1993) para un tratamiento filosófico útil.
+                </NoteItem>
+                <NoteItem number="2">
+                    Ver <Entity>Freeman</Entity> (1999a); <Entity>Friston</Entity> (2000a, 2000b); <Entity>Kauffman</Entity> (1993); <Entity>Kelso</Entity> (1995); <Entity>Le Van Quyen</Entity> (2003); <Entity>So</Entity> et al. (1998); y <Entity>Solé</Entity> y <Entity>Goodwin</Entity> (2000).
+                </NoteItem>
+                <NoteItem number="3">
+                    Este libro contiene la reelaboración de <Entity>Varela</Entity> de su trabajo colaborativo con <Entity>Maturana</Entity>, así como sus primeros intentos de formalizar la noción de autonomía.
+                </NoteItem>
+                <NoteItem number="4">
+                    "Cierre" se usa aquí en su sentido algebraico: una operación K exhibe cierre en un dominio D si cada resultado de su operación produce resultados dentro de D. Así, la operación de un sistema tiene cierre operacional si los resultados de su actividad permanecen dentro del propio sistema. Esta noción de cierre operacional no tiene nada que ver con la idea de un sistema materialmente cerrado—un sistema que está cerrado a interacciones con lo que yace más allá de él. Los sistemas autónomos son y deben estar acoplados a sus entornos; el asunto es la naturaleza de la dinámica que los define y determina cómo interactúan con lo que yace más allá de ellos (<Entity>Varela</Entity> 1979, 1997a; <Entity>Varela</Entity> y <Entity>Bourgine</Entity> 1991). <Entity>Varela</Entity> en sus escritos no distingue entre cierre organizacional y operacional; usa los dos términos más o menos indistintamente. Mi uso sigue a <Entity>Rudrauf</Entity> et al. (2003, p. 34).
+                </NoteItem>
+                <NoteItem number="5">
+                    La cita al final es del trabajo de 1934 de <Entity>Goldstein</Entity>, <BookTitle>El Organismo</BookTitle> (<Entity>Goldstein</Entity> 1995, p. 85).
+                </NoteItem>
+                <NoteItem number="6">
+                    <Entity>Varela</Entity> (1979) indica que esta tesis pretende ser análoga a la Tesis de Church de que cualquier cálculo es formalmente equivalente a una función recursiva. "Función recursiva" es una noción técnica usada para definir la noción imprecisa de un cálculo. Similarmente, "cierre organizacional" es una noción técnica usada para definir la noción imprecisa de autonomía. En cualquier caso, la tesis no está sujeta a prueba (por ende no es un teorema), pero puede tomarse como un desafío para encontrar un contraejemplo (algo que intuitivamente cuenta como un cálculo pero no es formalmente equivalente a una función recursiva; algo que intuitivamente cuenta como autónomo pero no tiene cierre organizacional).
+                </NoteItem>
+                <NoteItem number="7">
+                    "Yo" (Self) en este entorno significa identidad a través del cambio en la forma de una forma topológica invariante que es producida recursivamente por el sistema y que define un dominio de interacciones. Por ende, esta noción de yo no implica conciencia. Estos puntos se discuten con mayor extensión en las Partes II y III.
+                </NoteItem>
+                <NoteItem number="8">
+                    Ver <Entity>Varela</Entity> (1979, p. 12): <Concept>"Si uno dice que hay una máquina M en la cual hay un bucle de retroalimentación a través del entorno, de modo que los efectos de su salida afectan su entrada, uno está de hecho hablando de una máquina más grande M' que incluye el entorno y el bucle de retroalimentación en su organización definitoria."</Concept>
+                </NoteItem>
+                <NoteItem number="9">
+                    La siguiente discusión combina una serie de puntos hechos por <Entity>Freeman</Entity> (1995, 1999a, 1999b, 2003); <Entity>Maturana</Entity> y <Entity>Varela</Entity> (1980, 1987); <Entity>Skarda</Entity> y <Entity>Freeman</Entity> (1987); y <Entity>Varela</Entity> (1979, 1984).
+                </NoteItem>
+                <NoteItem number="10">
+                    Ver <Entity>Freeman</Entity> (1999a); <Entity>Friston</Entity> (2000b); <Entity>Kelso</Entity> (1995); <Entity>Le Van Quyen</Entity> (2003); <Entity>Tononi</Entity> y <Entity>Edelman</Entity> (1998); y <Entity>Varela</Entity> et al. (2001). El artículo de <Entity>Le Van Quyen</Entity> proporciona una visión general muy útil.
+                </NoteItem>
+                <NoteItem number="11">
+                    Ver <Entity>Le Van Quyen</Entity>, <Entity>Adam</Entity> et al. (1997); y <Entity>Le Van Quyen</Entity>, <Entity>Martinerie</Entity> et al. (1997). Para discusión, ver <Entity>Le Van Quyen</Entity> y <Entity>Petitmengin</Entity> (2002) y <Entity>Thompson</Entity> y <Entity>Varela</Entity> (2001).
+                </NoteItem>
+                <NoteItem number="12">
+                    Cf. <Entity>Varela</Entity> y <Entity>Goguen</Entity> (1978): <Concept>"La totalidad de un sistema está encarnada en su cierre organizacional. El todo no es la suma de sus partes; es el cierre organizacional de sus partes."</Concept>
+                </NoteItem>
+
+                <ChapterNotesHeader id="notes-ch4" title="4. La Estructura del Comportamiento" />
+                <NoteItem number="1">
+                    Mi discusión aquí está en deuda con <Entity>Priest</Entity> (1998, pp. 162-163).
+                </NoteItem>
+                <NoteItem number="2">
+                    <Entity>Merleau-Ponty</Entity> toma el comportamiento simbólico humano como paradigmático de la mente—de ahí su alineación de materia, vida y mente con los órdenes físico, vital y humano. Falta en esta tipología cualquier orden animal. Aunque <Entity>Merleau-Ponty</Entity> no señala un orden animal explícitamente en <BookTitle>La Estructura del Comportamiento</BookTitle> (mientras que lo hace más tarde en su curso de conferencias <BookTitle>Naturaleza</BookTitle>), sí reconoce uno dentro de los órdenes vital y humano. Al principio del libro clasifica el comportamiento según el grado en que su estructura (y por ende el organismo) está sumergida en o es emergente de la situación concreta del organismo (1963, p. 103). Cuanto más emergente es la estructura del comportamiento con respecto al medio, más efectivamente puede el organismo dominar situaciones y aprender. Cuanto más efectivamente puede el organismo retirarse de y ejercer control sobre su inmersión en el medio, más triunfa sobre la inmediatez y logra individualidad.
+                </NoteItem>
+                <NoteItem number="3">
+                    Sería fructífero comparar la tipología de <Entity>Merleau-Ponty</Entity>, en particular su concepción del orden humano, con el tratamiento de <Entity>Heidegger</Entity> de la diferencia fundamental entre la vida animal y humana, en su curso de conferencias <BookTitle>Los Conceptos Fundamentales de la Metafísica</BookTitle> (<Entity>Heidegger</Entity> 1995). <Entity>Heidegger</Entity> distingue entre piedras como "sin mundo", animales como "pobres en mundo", y humanos como "formadores de mundo". Mientras que los humanos tienen un "comportamiento" (<em>Verhalten</em>) hacia un "mundo", los animales simplemente muestran "conducta" (<em>Benehmen</em>) en relación con un "anillo circundante" de deseos e impulsos animales.
+                </NoteItem>
+                <NoteItem number="4">
+                    He discutido este tema extensamente en otro lugar. Ver <Entity>Pessoa</Entity>, <Entity>Thompson</Entity> y <Entity>Noë</Entity> (1998); <Entity>Thompson</Entity>, <Entity>Noë</Entity> y <Entity>Pessoa</Entity> (1999); y <Entity>Noë</Entity> y <Entity>Thompson</Entity> (2004a, 2004b).
+                </NoteItem>
+
+                <ChapterNotesHeader id="notes-ch5" title="5. Autopoiesis" />
+                <NoteItem number="1">
+                    La teoría de la autopoiesis fue presentada por primera vez en español en <Entity>Maturana</Entity> y <Entity>Varela</Entity> (1973). <Entity>Maturana</Entity> y <Entity>Varela</Entity> (1980) contiene una traducción de este texto, así como un importante artículo anterior de <Entity>Maturana</Entity> (<Entity>Maturana</Entity> 1970, que es una revisión de <Entity>Maturana</Entity> 1969). La primera presentación en inglés de la autopoiesis apareció en <Entity>Varela</Entity>, <Entity>Maturana</Entity> y <Entity>Uribe</Entity> (1974). Para discusiones y elaboraciones útiles de la autopoiesis ver <Entity>Fleischaker</Entity> (1988), <Entity>Luisi</Entity> (2003) y <Entity>Mingers</Entity> (1995).
+                </NoteItem>
+                <NoteItem number="2">
+                    Comparar <Entity>Maturana</Entity> (1980a, pp. 52-53): <Concept>"Un sistema dinámico que se define como una unidad compuesta como una red de producciones de componentes que, a) a través de sus interacciones regeneran recursivamente la red de producciones que los produjo, y b) realizan esta red como una unidad al constituir y especificar sus límites en el espacio en el que existen, es un sistema autopoiético."</Concept>
+                </NoteItem>
+                <NoteItem number="3">
+                    Por ejemplo, algunos teóricos sociales han argumentado que los sistemas sociales humanos como la familia son autopoiéticos. En este caso no está del todo claro que "límite" y "red interna" tengan un sentido claro. Para las diferentes opiniones de <Entity>Maturana</Entity> y <Entity>Varela</Entity> sobre la autopoiesis y las relaciones sociales, ver <Entity>Maturana</Entity> (1980b) y <Entity>Varela</Entity> (1989). Para discusión ver <Entity>Luisi</Entity> (2003) y <Entity>Mingers</Entity> (1995).
+                </NoteItem>
+                <NoteItem number="4">
+                    La historia del modelo original y su reimplementación es una historia interesante por sí misma. Ver <Entity>McMullin</Entity> (1997a, 1997b).
+                </NoteItem>
+                <NoteItem number="5">
+                    Como señalan <Entity>McMullin</Entity> y <Entity>Varela</Entity> (1997), la formación espontánea de una red autopoiética no puede ocurrir a menos que la química artificial realmente soporte la realización de la organización autopoiética. Así, el fenómeno de la formación espontánea es lógicamente secundario (aunque cronológicamente anterior) al de la realización de la organización autopoiética.
+                </NoteItem>
+                <NoteItem number="6">
+                    <Entity>Letelier</Entity>, <Entity>Marín</Entity> y <Entity>Mpodozis</Entity> (2003) interpretan la necesidad de la interacción de inhibición de enlace basada en cadena como implicando que <Concept>"el cierre exhibido por los autómatas de teselación no es una consecuencia de la 'red' de procesos simulados, sino más bien un artefacto de los procedimientos de codificación"</Concept> (p. 270). Pero en el modelo revisado de <Entity>McMullin</Entity> y <Entity>Varela</Entity> (1997), la inhibición de enlace basada en cadena es una regla puramente local de la química cualitativa. No está claro, por lo tanto, por qué se supone que el cierre de la red es un artefacto de los procedimientos de codificación.
+                </NoteItem>
+                <NoteItem number="7">
+                    Para el trasfondo de este trabajo ver <Entity>Luisi</Entity> y <Entity>Varela</Entity> (1989). Para resúmenes recientes ver <Entity>Luisi</Entity> (1993, 2003).
+                </NoteItem>
+                <NoteItem number="8">
+                    Es interesante notar que <Entity>Mikulecky</Entity> (2000) llega a las mismas conclusiones aplicando la teoría de sistemas vivos de <Entity>Robert Rosen</Entity> (1991, 2000) a la hipótesis de Gaia. Para una discusión importante de la relación entre los sistemas de reparación-metabólica (M,R) de Rosen y la autopoiesis, ver <Entity>Letelier</Entity>, <Entity>Marín</Entity> y <Entity>Mpodozis</Entity> (2003). Discuto las ideas de <Entity>Rosen</Entity> en el Capítulo 6.
+                </NoteItem>
+                <NoteItem number="9">
+                    Para una reflexión literaria y filosófica de amplio alcance que reúne el trabajo de <Entity>Lovelock</Entity>, <Entity>Margulis</Entity>, <Entity>Varela</Entity> y el matemático <Entity>Ralph Abraham</Entity>, ver <Entity>W. I. Thompson</Entity> (1989). Ver también los ensayos recopilados en <Entity>W. I. Thompson</Entity> (1987b, 1991a).
+                </NoteItem>
+                <NoteItem number="10">
+                    Esta invocación de normas va más allá de la caracterización de <Entity>Maturana</Entity> (1970), citada anteriormente, de lo que hace que un sistema vivo sea un sistema cognitivo. Ver Capítulo 6 para una discusión más detallada de este punto.
+                </NoteItem>
+
+                <ChapterNotesHeader id="notes-ch6" title="6. Vida y Mente" />
+                <NoteItem number="1">
+                    Esta línea de razonamiento es similar a la que está detrás de las formulaciones contemporáneas de la brecha explicativa o problema difícil de la conciencia. Se argumenta que las leyes de la naturaleza no bastan para explicar la presencia de la conciencia en un mundo físico porque la conciencia es contingente con respecto a esas leyes. Por ende, se requieren nuevos principios psicofísicos (ver <Entity>Chalmers</Entity> 1996, 1997).
+                </NoteItem>
+                <NoteItem number="2">
+                    Hasta donde sé, <Entity>Kant</Entity> fue el primero en introducir el término auto-organización y aplicarlo a los organismos. Es sorprendente que haya habido tan poca reconsideración de la <BookTitle>Crítica del Juicio</BookTitle> de <Entity>Kant</Entity> en relación con las teorías científicas contemporáneas de sistemas biológicos auto-organizados. Excepciones notables son <Entity>Juarrero-Roqué</Entity> (1985) y <Entity>Weber</Entity> y <Entity>Varela</Entity> (2002).
+                </NoteItem>
+                <NoteItem number="3">
+                    Ver <Entity>Jantsch</Entity> (1980); <Entity>Kauffman</Entity> (1993); <Entity>Kelso</Entity> (1995); <Entity>Prigogine</Entity> y <Entity>Stengers</Entity> (1984); y <Entity>Solé</Entity> y <Entity>Goodwin</Entity> (2000).
+                </NoteItem>
+                <NoteItem number="4">
+                    Recordar las palabras de <Entity>Bitbol</Entity>, citadas en el Capítulo 4: <Concept>"Aquí no se supone que la ciencia revele nada de una realidad absoluta subyacente preexistente, ni es un agregado más o menos aleatorio de recetas eficientes. La ciencia es más bien el subproducto estabilizado de una relación recíproca dinámica entre la realidad como un todo y una fracción especial de ella. Definir esta fracción especial de realidad qua sujeto es el reverso de su extracción activa de grupos invariantes de fenómenos similares a objetos"</Concept> (<Entity>Bitbol</Entity> 2003, p. 337).
+                </NoteItem>
+                <NoteItem number="5">
+                    <Entity>Varela</Entity> escribe: <Concept>"En este libro 'máquinas' y 'sistemas' se usan indistintamente. Obviamente conllevan diferentes connotaciones, pero las diferencias son inesenciales, para mi propósito, excepto al ver la relación entre la historia del mecanismo biológico y la tendencia moderna al análisis sistémico. Máquinas y sistemas apuntan a la caracterización de una clase de unidades en términos de su organización"</Concept> (1979, p. 7, nota 4).
+                </NoteItem>
+                <NoteItem number="6">
+                    En un contexto darwiniano, se piensa que tales funciones están determinadas por la selección natural. Una estructura tiene la función que tiene porque su desempeño de ese papel aumentó el éxito reproductivo de los organismos ancestrales que la poseían. Discuto esta idea en el próximo capítulo.
+                </NoteItem>
+                <NoteItem number="7">
+                    Los filósofos a menudo confunden estos dos sentidos de intrínseco. El punto es que algo puede ser intrínseco en el sentido de constitutivo mientras que también es relacional. Por ejemplo, el naranja es intrínsecamente (constitutivamente) una mezcla de rojo y amarillo, y el rojo es intrínsecamente (constitutivamente) opuesto al verde. Estas propiedades constitutivas de los colores son también relacionales.
+                </NoteItem>
+                <NoteItem number="8">
+                    <Entity>Varela</Entity> y yo discutimos estos temas en intercambios de correo electrónico durante un período de varios meses en 1999. Nuestra discusión comenzó porque le señalé que su compromiso con el papel explicativo que la fenomenología podría jugar en relación con la biología parecía inconsistente con su posición anterior sobre la teleología con <Entity>Maturana</Entity>. Ambos habíamos estado leyendo independientemente a <Entity>Kant</Entity> y <Entity>Jonas</Entity>, y le pregunté si todavía mantendría su postura antiteleológica anterior a la luz del argumento de <Entity>Jonas</Entity> (discutido abajo) de que uno no puede reconocer algo como un ser vivo a menos que lo reconozca como intencionado (purposive) y que uno no puede reconocer algo como intencionado a menos que sea un agente encarnado que experimenta la intencionalidad en su propio caso. <Entity>Varela</Entity> respondió que todavía estaba "bastante sospechoso" sobre esta apelación a la teleología, y por ende sobre esta forma de vincular fenomenología y biología, y que prefería "cambiar el acento" de la teleología a la intencionalidad original, entendida como la capacidad de creación de sentido propia de las unidades autopoiéticas.
+                </NoteItem>
+                <NoteItem number="9">
+                    <Entity>Di Paolo</Entity> (2005, p. 438) define la adaptabilidad como <Concept>"la capacidad de un sistema, en algunas circunstancias, de regular sus estados en relación con su límite de viabilidad con el resultado de que, si los estados están suficientemente cerca del límite, (1) se distinguen tendencias y se actúa sobre ellas dependiendo de si los estados se acercan o se alejan del límite en alguna medida invariante a la escala y, como consecuencia, (2) las tendencias del primer tipo se mueven más cerca o se transforman en tendencias del segundo y así se previene que los estados futuros alcancen el límite con velocidad hacia afuera."</Concept>
+                </NoteItem>
+                <NoteItem number="10">
+                    Por supuesto, desde una perspectiva fenomenológica trascendental esta declaración necesita matices. Los fenómenos fisicoquímicos, considerados desde el punto de vista de primer orden de la física y la química, no implican un punto de vista de la manera en que lo hacen los fenómenos biológicos. Sin embargo, cuando se ven desde una perspectiva de segundo orden, trascendental, los fenómenos físicos y químicos también tienen que entenderse en términos de las condiciones de posibilidad para su revelación a la ciencia, y así sí implican un punto de vista, a saber, el de la tradición científica misma.
+                </NoteItem>
+                <NoteItem number="11">
+                    <Entity>Heidegger</Entity>, por su parte, distingue agudamente entre cosas no vivas y vivas, y caracteriza a las cosas vivas de una manera que sirve para elucidar el significado fenomenológico de ser-en-el-mundo: <Concept>"Una piedra nunca se encuentra a sí misma sino que simplemente está a la mano. Una forma de vida unicelular muy primitiva, por el contrario, ya se encontrará a sí misma, donde esta disposición puede ser la mayor y más oscura opacidad, pero a pesar de todo es en su estructura de ser esencialmente distinta de simplemente estar a la mano como una cosa"</Concept> (<Entity>Heidegger</Entity> 1985, p. 255).
+                </NoteItem>
+                <NoteItem number="12">
+                    <Entity>Merleau-Ponty</Entity>, al discutir a <Entity>von Uexküll</Entity>, escribe que las <Concept>"reacciones del animal en el medio... comportamientos... depositan un excedente de significación en las superficies de los objetos"</Concept> (<Entity>Merleau-Ponty</Entity> 2003, pp. 172-173).
+                </NoteItem>
+                <NoteItem number="13">
+                    <Entity>Boden</Entity> aparentemente encuentra este uso objetable. Ella escribe: <Concept>"las adscripciones de conocimiento y cognición normalmente presuponen la posesión de capacidades perceptuales y motoras, integradas de maneras adaptativas"</Concept> (2000, p. 137). No hay necesidad de disputar esta afirmación. En cambio, podemos señalar que lo que cuenta como posesión de capacidades perceptuales y motoras no es obvio y parece ser una cuestión gradual. Considere de nuevo la humilde bacteria. Como hemos visto, las bacterias móviles se involucran en comportamientos complejos de estilo sensoriomotor.
+                </NoteItem>
+                <NoteItem number="14">
+                    Uno podría apelar aquí a <Entity>Heidegger</Entity> para apoyo (ver nota 11 arriba): el ser vivo, incluso en su forma unicelular más simple, implica un tipo de ser-en-el-mundo, a diferencia del ser "sin mundo" de las cosas no vivas.
+                </NoteItem>
+                <NoteItem number="15">
+                    Así estoy de acuerdo con <Entity>Damasio</Entity> cuando describe la idea de conatus de <Entity>Spinoza</Entity> como conteniendo el pensamiento <Concept>"de que por necesidad, todos los organismos vivos se esfuerzan por preservarse a sí mismos sin conocimiento consciente del emprendimiento y sin haber decidido, como individuos, emprender nada. En resumen, no conocen el problema que están tratando de resolver. Cuando las consecuencias de tal sabiduría natural se mapean de vuelta en el sistema nervioso central, subcortical y corticalmente, el resultado son sentimientos, el componente fundacional de nuestras mentes"</Concept> (<Entity>Damasio</Entity> 2003, p. 79).
+                </NoteItem>
+                <NoteItem number="16">
+                    Uno podría pensar que esta situación no es diferente a los modelos de autómatas celulares de la autopoiesis (ver Capítulo 5), en los que cada unidad es local y discreta, y el patrón global puede estar simplemente en el ojo del espectador. El estatus de tales modelos es un asunto difícil. Podríamos seguir a <Entity>Dennett</Entity> (1991b) y ver los patrones globales como "patrones reales". Si <Entity>Rosen</Entity> (1991, 2000) tiene razón, sin embargo, en que la organización autorreferencial de los seres vivos los hace no computables, entonces estos modelos no pueden capturar la organización viva.
+                </NoteItem>
+                <NoteItem number="17">
+                    Por supuesto, uno siempre puede argumentar que la experiencia de primera mano de cómo le parecen las cosas a uno no cuenta necesariamente como conocimiento válido de cómo son las cosas. Pero el punto anterior es más bien que la experiencia misma necesita ser explicada. Negar la experiencia de primera mano rotundamente sería, en el contexto presente, equivalente a <Concept>"sacrificar una evidencia (intencionalidad) a un teorema (exclusividad de la causa efficiens) que se derivó por generalización de otra evidencia"</Concept> (<Entity>Jonas</Entity> 1966, p. 90).
+                </NoteItem>
+
+                <ChapterNotesHeader id="notes-ch7" title="7. Trazando un Camino al Caminar" />
+                <NoteItem number="1">
+                    La siguiente discusión se basa en <Entity>Maturana</Entity> y <Entity>Varela</Entity> (1987). Ver también <Entity>Fleischaker</Entity> (1994).
+                </NoteItem>
+                <NoteItem number="2">
+                    Las proteínas se producen a partir de sus aminoácidos constituyentes de acuerdo con la secuencia de tripletes de nucleótidos de ADN en los cromosomas (el llamado código genético). De esta secuencia de ADN se "transcribe" una secuencia complementaria en ARN mensajero (ARNm). Esta secuencia de ARN es luego "traducida" en una cadena de aminoácidos a través de la acción de ribosomas y moléculas de ARN de transferencia (ARNt).
+                </NoteItem>
+                <NoteItem number="3">
+                    En la replicación del ADN, los enlaces de hidrógeno entre las bases complementarias en las dos hebras de la molécula de ADN padre se rompen y las hebras de la doble hélice se desenrollan, con cada hebra sirviendo como plantilla para la síntesis de una nueva hebra complementaria a sí misma.
+                </NoteItem>
+                <NoteItem number="4">
+                    Estrictamente hablando, el proceso de selección natural tiene un cuarto requisito, a saber, que el mecanismo que produce variaciones fenotípicas sea independiente de los requisitos (2) y (3), de modo que (2) y (3) no puedan tener efecto direccional en el mecanismo que produce variaciones.
+                </NoteItem>
+                <NoteItem number="5">
+                    La cromatina es la sustancia de la que están hechos los cromosomas eucariotas; consiste principalmente en un tipo de proteína llamada histona. La metilación del ADN es la unión de grupos químicos metilo a la secuencia de ADN, lo que bloquea la transcripción de los genes a los que están unidos, y por lo tanto regula la actividad genética.
+                </NoteItem>
+                <NoteItem number="6">
+                    Este punto no es nuevo, habiendo sido hecho muchas veces por biólogos a lo largo de los años. Una de las primeras críticas a la metáfora del programa genético vino del embriólogo <Entity>Paul Weiss</Entity> (1969; ver <Entity>Dupuy</Entity> 2000, pp. 132-133). Otra crítica temprana fue hecha por <Entity>Maturana</Entity> y <Entity>Varela</Entity> (1980, pp. 90, 102). Para discusiones críticas recientes ver <Entity>Goodwin</Entity> (1994); <Entity>Keller</Entity> (1995, 2000); <Entity>Lewontin</Entity> (1993); <Entity>Moss</Entity> (1992, 2003); <Entity>Oyama</Entity> (2000b); <Entity>Rose</Entity> (1997); y <Entity>Sarkar</Entity> (1996).
+                </NoteItem>
+                <NoteItem number="7">
+                    Para un debate reciente sobre la noción de información en este contexto, ver <Entity>Maynard Smith</Entity> (2000a) y las respuestas de <Entity>Godfrey-Smith</Entity> (2000a); <Entity>Sarkar</Entity> (2000); <Entity>Sterelny</Entity> (2000); más la réplica de <Entity>Maynard Smith</Entity> (2000b).
+                </NoteItem>
+                <NoteItem number="8">
+                    <Entity>Dennett</Entity> se basa aquí en un argumento desarrollado por los filósofos <Entity>Sterelny</Entity> y <Entity>Kitcher</Entity> (1988).
+                </NoteItem>
+                <NoteItem number="9">
+                    <Entity>Jonas</Entity> hizo este punto hace mucho tiempo en <BookTitle>El Fenómeno de la Vida</BookTitle> (1966, pp. 52-53).
+                </NoteItem>
+                <NoteItem number="10">
+                    Compare la concesión de <Entity>Dawkins</Entity> de que "mil millones de caracteres digitales discretos tallados en tablas de cristal" es una metáfora, mientras que en el pasaje citado anteriormente confiesa que "está lloviendo instrucciones allá afuera; está lloviendo programas" no es una metáfora. Ambas son metáforas, y ambas expresan dualismo informacional.
+                </NoteItem>
+                <NoteItem number="11">
+                    El texto clásico de la teoría de sistemas del desarrollo es <Entity>Oyama</Entity> (2000b). Ver también <Entity>Griffiths</Entity> y <Entity>Gray</Entity> (1994); <Entity>Oyama</Entity> (2000a, 2000c); <Entity>Oyama</Entity>, <Entity>Griffiths</Entity> y <Entity>Gray</Entity> (2001); y <Entity>Sterelny</Entity> y <Entity>Griffiths</Entity> (1999, Capítulo 5).
+                </NoteItem>
+                <NoteItem number="12">
+                    He omitido las referencias de <Entity>Oyama</Entity> (muchas de las cuales ya he citado).
+                </NoteItem>
+                <NoteItem number="13">
+                    La distinción aquí es entre evolución biológica, concebida como impulsada por selección natural, y evolución cultural, concebida como operando según la adquisición de rasgos por aprendizaje.
+                </NoteItem>
+                <NoteItem number="14">
+                    Este punto sobre la inseparabilidad de naturaleza y cultura vincula la teoría de sistemas del desarrollo a discusiones en las ciencias sociales y humanidades, en particular a aquellos teóricos culturales que han criticado el proyecto "modernista" de tratar de separar cultura y naturaleza (ver <Entity>Latour</Entity> 1993; <Entity>W. I. Thompson</Entity> 1987a, 1987b, 1991a, 1991b).
+                </NoteItem>
+                <NoteItem number="15">
+                    <Entity>Oyama</Entity> (1999) ha expresado insatisfacción con la "predilección internalista" que discierne en formulaciones anteriores de la perspectiva autopoiética.
+                </NoteItem>
+                <NoteItem number="16">
+                    La terminología común de "genes reguladores" "controlando" el desarrollo es engañosa. Primero, los genes no controlan el tipo particular de estructura que se desarrolla: el pax-6 de ratón transferido a la mosca de la fruta lleva al desarrollo del ojo de la mosca de la fruta en ese sitio; así el contexto celular circundante es esencial. Segundo, los genes actúan no solos sino como participantes de una red o sistema.
+                </NoteItem>
+                <NoteItem number="17">
+                    "Genes selectores" son genes que especifican las llamadas proteínas selectoras, que son factores de transcripción que juegan un papel crucial en la formación y patrón de partes del cuerpo. El término gen selector desafortunadamente sugiere que estos genes mismos seleccionan un resultado particular, mientras que el resultado es más bien el de la red o sistema.
+                </NoteItem>
+                <NoteItem number="18">
+                    Uno podría preguntarse: ¿cómo podrían consideraciones esqueléticas servir como base para la propuesta de que artrópodos y vertebrados tienen un diseño corporal común, dado que los artrópodos no tienen huesos? La respuesta, según <Entity>Coen</Entity>, es que <Entity>Geoffroy</Entity> propuso que estos tipos aparentemente diferentes de organización eran realmente dos caras de la misma moneda.
+                </NoteItem>
+                <NoteItem number="19">
+                    En <Entity>Maturana</Entity> y <Entity>Varela</Entity> (1987) y <Entity>Varela</Entity>, <Entity>Thompson</Entity> y <Entity>Rosch</Entity> (1991), esta visión de la evolución fue llamada evolución por deriva natural. Evolución enactiva hace explícita la homología con la cognición enactiva.
+                </NoteItem>
+                <NoteItem number="20">
+                    Un campo morfogenético es una región en el organismo en desarrollo que se organiza a sí misma espaciotemporalmente de acuerdo con varios procesos bioquímicos precisos.
+                </NoteItem>
+                <NoteItem number="21">
+                    La noción de persistencia ha sido definida técnicamente como una medida de aptitud en términos de minimización de riesgo (<Entity>Stearns</Entity> 1986, p. 30).
+                </NoteItem>
+                <NoteItem number="22">
+                    Un buen caso de ingeniería inversa es los intentos de <Entity>Simon Conway Morris</Entity> de descifrar la anatomía y modo de vida de <em>Hallucigenia sparsa</em>. Ver <Entity>Conway Morris</Entity> (1998, pp. 54-56) y <Entity>Gould</Entity> (1989, pp. 153-157).
+                </NoteItem>
+                <NoteItem number="23">
+                    El Argumento del Diseño tiene una larga historia filosófica. La versión del argumento presentada anteriormente es la que influyó directamente en <Entity>Darwin</Entity>; apareció en el trabajo de 1805 de <Entity>William Paley</Entity>, <BookTitle>Teología Natural</BookTitle>.
+                </NoteItem>
+                <NoteItem number="24">
+                    De hecho, el mismo término Espacio de Diseño, que <Entity>Dennett</Entity> usa para referirse al espacio lógico de formas u organizaciones posibles para cosas vivas, no es neutral teóricamente. Está sesgado porque da por sentado la suposición funcionalista de que los organismos son entidades diseñadas. Sería preferible usar el término morfoespacio.
+                </NoteItem>
+                <NoteItem number="25">
+                    Como escribe <Entity>Stearns</Entity>: <Concept>"Uno podría describir toda la biología como la consecuencia de restricciones... El significado de la palabra se desvanecería. Podemos preservarlo en un sentido relativo si reconocemos que solo tiene significado en un contexto local donde uno se concentra en las posibilidades latentes en ciertos procesos y ve las limitaciones sobre esas posibilidades como surgiendo desde fuera de ese contexto"</Concept> (<Entity>Stearns</Entity> 1986, pp. 35-36).
+                </NoteItem>
+
+                <ChapterNotesHeader id="notes-ch8" title="8. Vida más allá de la Brecha" />
+                <NoteItem number="1">
+                    <Entity>Aristóteles</Entity> vaciló sobre si el pensamiento intelectual requiere un cuerpo. Más tarde, los aristotélicos cristianos medievales sostuvieron que mientras la sensación requiere un cuerpo, la cognición intelectual no.
+                </NoteItem>
+                <NoteItem number="2">
+                    No está claro si <Entity>Descartes</Entity> habría permitido que su argumento para una "distinción real" entre mente y cuerpo pudiera invertirse de esta manera. Argumentó en su <BookTitle>Discurso del Método</BookTitle> que la conciencia se requiere para poder razonar y expresar los pensamientos de uno en el lenguaje.
+                </NoteItem>
+                <NoteItem number="3">
+                    Como en la "Segunda Meditación" de <Entity>Descartes</Entity>: <Concept>"si miro por la ventana y veo a los hombres cruzando la plaza... ¿veo algo más que sombreros y abrigos que podrían ocultar autómatas? Juzgo que son hombres"</Concept> (<Entity>Descartes</Entity> 1986, p. 21).
+                </NoteItem>
+                <NoteItem number="4">
+                    La formulación original de <Entity>Nagel</Entity> lee: <Concept>"Si los procesos mentales son procesos físicos, entonces hay algo que es como, intrínsecamente, someterse a ciertos procesos físicos. Qué es para tal cosa ser el caso sigue siendo un misterio"</Concept> (1979, p. 175).
+                </NoteItem>
+                <NoteItem number="5">
+                    En palabras de <Entity>Husserl</Entity>: <Concept>"El cuerpo vivido es uno con el cuerpo físico... y, a través de las cinestesias actuales y potenciales que pertenecen [a él] en su forma especial, [es] precisamente órgano y sistema de órganos"</Concept> (<Entity>Husserl</Entity> 1973, p. 643).
+                </NoteItem>
+                <NoteItem number="6">
+                    Así <Entity>Husserl</Entity> usa los siguientes términos: <em>physischer Körper</em>, <em>physischer Leib</em>, <em>leiblicher Körper</em>, <em>Leibkörper</em>, <em>körperlicher Leib</em>, <em>körperliche Leiblichkeit</em>, y <em>Körperleib</em> (<Entity>Depraz</Entity> 1997, 2001a, p. 3).
+                </NoteItem>
+                <NoteItem number="7">
+                    <Entity>Husserl</Entity> (1970) hace este punto extensamente en su famosa discusión del "estilo galileano" de la ciencia natural moderna.
+                </NoteItem>
+                <NoteItem number="8">
+                    Creo que sería mejor decir que las apariencias existen solo para la conciencia. Decir que la conciencia consiste en las apariencias mismas podría llevar a uno a pensar que las apariencias son contenidos de la conciencia en el sentido de estar contenidas dentro de la conciencia.
+                </NoteItem>
+                <NoteItem number="9">
+                    La posición de <Entity>Searle</Entity> de que la irreductibilidad de la conciencia es una consecuencia trivial de nuestras prácticas definicionales sugiere que podría ser posible cambiar esas prácticas. Sin embargo, aunque las revoluciones intelectuales son ciertamente posibles, cualquier concepción o método de reducción presupondrá la conciencia.
+                </NoteItem>
+                <NoteItem number="10">
+                    Ignoro aquí la complicada cuestión de qué cuenta como partes propias del cerebro o sistema nervioso. Ver <Entity>Swanson</Entity> (2000).
+                </NoteItem>
+                <NoteItem number="11">
+                    Estoy muy en deuda con <Entity>Diego Cosmelli</Entity> por la colaboración y discusión continua sobre estos puntos.
+                </NoteItem>
+                <NoteItem number="12">
+                    Ver <Entity>Hurley</Entity> y <Entity>Noë</Entity> (2003); <Entity>Noë</Entity> (2004); <Entity>Noë</Entity> y <Entity>Thompson</Entity> (2004a, 2004b); y <Entity>Thompson</Entity> y <Entity>Varela</Entity> (2001).
+                </NoteItem>
+
+                <ChapterNotesHeader id="notes-ch9" title="9. Subjetividad Sensoriomotora" />
+                <NoteItem number="1">
+                    He modificado ligeramente la traducción al inglés. El francés lee: "Mais je ne suis pas devant mon corps, je suis dans mon corps, ou plutôt je suis mon corps."
+                </NoteItem>
+                <NoteItem number="2">
+                    La autoconciencia corporal prereflectiva está cerca de la noción de <Entity>Hurley</Entity> de "autoconciencia de perspectiva" (<Entity>Hurley</Entity> 1998, pp. 140-143).
+                </NoteItem>
+                <NoteItem number="3">
+                    La autoconciencia prereflectiva es conciencia del cuerpo-como-sujeto y por lo tanto no es equivalente a la propiocepción, si la propiocepción se entiende como un modo de conciencia perceptual del cuerpo-como-objeto.
+                </NoteItem>
+                <NoteItem number="4">
+                    Uno podría tratar de argumentar que la impresión de uno de que hay tal experiencia no reflejada previa a la reflexión es un tipo de ilusión (esta parece ser la visión de <Entity>Blackmore</Entity> 2002). Pero veo poco para recomendar esta línea de pensamiento.
+                </NoteItem>
+                <NoteItem number="5">
+                    <Entity>Merleau-Ponty</Entity> alude aquí a un pasaje de <BookTitle>Ideas II</BookTitle> de <Entity>Husserl</Entity> (1989, p. 152).
+                </NoteItem>
+                <NoteItem number="6">
+                    Ver <Entity>Noë</Entity> (2004) para discusión crítica de la visión de <Entity>Humphrey</Entity>.
+                </NoteItem>
+                <NoteItem number="7">
+                    <Entity>Noë</Entity> (2004), sin embargo, ya no mantiene esta visión.
+                </NoteItem>
+                <NoteItem number="8">
+                    No quiero implicar que algo se experimente como otro simplemente porque es externo a la membrana biológica de uno. Como escribe <Entity>Merleau-Ponty</Entity>: <Concept>"El bastón del ciego ha dejado de ser un objeto para él, y ya no es percibido por sí mismo"</Concept> (1962, p. 143).
+                </NoteItem>
+                <NoteItem number="9">
+                    Comparar la descripción de <Entity>Husserl</Entity> de este tipo de caso: <Concept>"un ruido suave volviéndose más y más fuerte toma una afectividad creciente en esta transformación materialmente relevante; la vivacidad de ello en la conciencia aumenta"</Concept> (<Entity>Husserl</Entity> 2001, p. 215).
+                </NoteItem>
+                <NoteItem number="10">
+                    <Entity>Jennifer Church</Entity> hace un punto similar (1997, p. 426).
+                </NoteItem>
+
+                <ChapterNotesHeader id="notes-ch10" title="10. Mira de Nuevo" />
+                <NoteItem number="1">
+                    Para este debate, ver los artículos recopilados en <Entity>Block</Entity> (1981a, 1981b). Ver también <Entity>Rollins</Entity> (1989) y <Entity>Tye</Entity> (1991).
+                </NoteItem>
+                <NoteItem number="2">
+                    Cómo especificar precisamente qué hace que una representación sea representativa (depictive) es un asunto difícil. <Entity>Kosslyn</Entity> (1994, p. 5) define una representación representativa como "un tipo de imagen, que especifica las ubicaciones y valores de configuraciones de puntos en un espacio".
+                </NoteItem>
+                <NoteItem number="3">
+                    Este clip se puede ver en: http://viscog.beckman.uiuc.edu/grafs/demos/15.html
+                </NoteItem>
+                <NoteItem number="4">
+                    Mi uso de la imagen de <Entity>Mach</Entity> se basa en <Entity>Noë</Entity> (2004, Capítulo 2) y <Entity>Thompson</Entity>, <Entity>Noë</Entity> y <Entity>Pessoa</Entity> (1998, pp. 194-195).
+                </NoteItem>
+                <NoteItem number="5">
+                    Por supuesto, la visualización de imágenes también implica exploración sensoriomotora y mental de la imagen.
+                </NoteItem>
+                <NoteItem number="6">
+                    <Entity>Wittgenstein</Entity> comenta sobre esta característica del dibujo de <Entity>Mach</Entity> en sus <BookTitle>Observaciones Filosóficas</BookTitle> (267).
+                </NoteItem>
+                <NoteItem number="7">
+                    Esta idea se remonta a <Entity>G. E. Moore</Entity>. Para discusión de la tesis de la transparencia, ver <Entity>Kind</Entity> (2003); <Entity>Martin</Entity> (2002); <Entity>Siewert</Entity> (2004); y <Entity>Stoljar</Entity> (2004).
+                </NoteItem>
+                <NoteItem number="8">
+                    Mi uso de "carácter subjetivo de la experiencia" está cerca del de <Entity>Kriegel</Entity> (2005). Él usa la frase para significar el "para-mí-idad" (for-me-ness) implícito y no reflectivo de la experiencia consciente.
+                </NoteItem>
+                <NoteItem number="9">
+                    Esta declaración necesita calificación. Por "representacionalismo" quiero decir representacionalismo externalista.
+                </NoteItem>
+                <NoteItem number="10">
+                    Así <Entity>Harman</Entity> dice: "Tampoco experimenta ella ninguna característica de nada como características intrínsecas de su experiencia."
+                </NoteItem>
+                <NoteItem number="11">
+                    Ver <Entity>Kind</Entity> (2003, p. 230). Ella distingue entre afirmaciones de transparencia "fuertes" y "débiles".
+                </NoteItem>
+                <NoteItem number="12">
+                    No quiero implicar que todo imaginar sea voluntario y con esfuerzo de esta manera. Soñar despierto, ensoñación y fantasía usualmente no lo son.
+                </NoteItem>
+                <NoteItem number="13">
+                    <Entity>Dainton</Entity> (2000, 2002) ha criticado lo que llama dualismo conciencia-contenido en teorías de la conciencia.
+                </NoteItem>
+                <NoteItem number="14">
+                    <Entity>Kriegel</Entity> (2004) interpreta esta autoconciencia implícita como una forma de conciencia marginal o periférica.
+                </NoteItem>
+                <NoteItem number="15">
+                    Note que digo que la experiencia no es el objeto de otro estado mental consciente de orden superior. La razón es que no deseo pedir la cuestión contra la teoría del pensamiento de orden superior de la conciencia.
+                </NoteItem>
+                <NoteItem number="16">
+                    Hay una gran literatura fenomenológica sobre si esta actividad de hacer explícitas las características de la experiencia es principalmente descriptiva o interpretativa.
+                </NoteItem>
+                <NoteItem number="17">
+                    La afirmación de que la imaginación es un constituyente necesario de la experiencia pictórica es controvertida.
+                </NoteItem>
+                <NoteItem number="18">
+                    Cf. <Entity>Searle</Entity> (1983, pp. 45-46).
+                </NoteItem>
+                <NoteItem number="19">
+                    Para esta noción de la "modificación de neutralidad" aplicada a la creencia, ver <Entity>Husserl</Entity> (1983, §109, pp. 257-259).
+                </NoteItem>
+                <NoteItem number="20">
+                    Ver <Entity>Marbach</Entity> (1993, pp. 76-77).
+                </NoteItem>
+                <NoteItem number="21">
+                    <Entity>Martin</Entity> (2002) hace este punto.
+                </NoteItem>
+                <NoteItem number="22">
+                    El estatus de la ficción en relación con la imaginación es un problema distinto.
+                </NoteItem>
+                <NoteItem number="23">
+                    Más temprano en el texto (2004, p. 20), <Entity>Sartre</Entity> usa las figuras del Caballero y la Muerte en el grabado de <Entity>Durero</Entity> como ejemplo.
+                </NoteItem>
+                <NoteItem number="24">
+                    Sin embargo, <Entity>Sartre</Entity> declara en una nota al pie: "Esta suspensión de creencia sigue siendo un acto posicional" (2004, p. 197, n. 10).
+                </NoteItem>
+                <NoteItem number="25">
+                    Ver <Entity>Sartre</Entity> (2004, p. 57): "La imagen se define por su intención".
+                </NoteItem>
+                <NoteItem number="26">
+                    Debido a estas características de imaginar, <Entity>Sartre</Entity> describe la actitud intencional de imaginar como una de "cuasi-observación".
+                </NoteItem>
+                <NoteItem number="27">
+                    <Entity>Pylyshyn</Entity> rutinariamente combina esta hipótesis con la hipótesis sustantiva de que toda cognición implica el mismo formato proposicional, a saber, un "lenguaje del pensamiento".
+                </NoteItem>
+                <NoteItem number="28">
+                    <Entity>Sartre</Entity> comprometió esta perspicacia, sin embargo, al volver a tratar la conciencia imaginante como una especie de conciencia pictórica. Ver <Entity>Stawarska</Entity> (2001).
+                </NoteItem>
+                <NoteItem number="29">
+                    De hecho, aunque es improbable en nuestros días, es ciertamente imaginable que pudiera haber un sujeto que diera tal reporte y ni siquiera supiera que tenía un cerebro.
+                </NoteItem>
+                <NoteItem number="30">
+                    Recuerde que el tipo de fenomenología que me preocupa en el contexto de este capítulo es la fenomenología estática.
+                </NoteItem>
+                <NoteItem number="31">
+                    <Entity>Dennett</Entity> escribe: "[P]or supuesto los experimentadores sobre ilusiones confían en las creencias introspectivas de los sujetos... pero eso es el agnosticismo de la heterofenomenología" (2005, p. 54).
+                </NoteItem>
+
+                <ChapterNotesHeader id="notes-ch11" title="11. Temporalidad y el Presente Vivo" />
+                <NoteItem number="1">
+                    Los escritos de <Entity>Husserl</Entity> sobre la conciencia del tiempo incluyen las famosas "Lecciones sobre la Conciencia del Tiempo Interno del Año 1905" (<Entity>Husserl</Entity> 1991).
+                </NoteItem>
+                <NoteItem number="2">
+                    Digo unidad temporal, no objeto temporal.
+                </NoteItem>
+                <NoteItem number="3">
+                    <Entity>Varela</Entity> no indica si la correspondencia aquí es tipo-tipo o meramente token-token.
+                </NoteItem>
+                <NoteItem number="4">
+                    Sincronía en este contexto se refiere a la relación entre las estructuras temporales de las señales independientemente de la amplitud de la señal.
+                </NoteItem>
+                <NoteItem number="5">
+                    Para atención y memoria de trabajo, ver <Entity>Fries</Entity> et al. (2001).
+                </NoteItem>
+                <NoteItem number="6">
+                    Formas no lineales complejas de sincronía de banda cruzada también son de esperar (<Entity>Friston</Entity> 2000a, 2000b).
+                </NoteItem>
+                <NoteItem number="7">
+                    En un estudio posterior, <Entity>Rodriguez</Entity> y colegas han mostrado que la percepción consciente se correlaciona principalmente con la sincronía de fase y no con oscilaciones gamma (<Entity>Melloni</Entity> y <Entity>Rodriguez</Entity> 2005).
+                </NoteItem>
+                <NoteItem number="8">
+                    Para más discusión, ver <Entity>Faure</Entity> y <Entity>Korn</Entity> (2001).
+                </NoteItem>
+                <NoteItem number="9">
+                    Esta sección se basa en los tratamientos detallados en <Entity>Lutz</Entity> y <Entity>Thompson</Entity> (2003), y <Entity>Thompson</Entity>, <Entity>Lutz</Entity> y <Entity>Cosmelli</Entity> (2005).
+                </NoteItem>
+                <NoteItem number="10">
+                    <Entity>Metzinger</Entity> (2003, p. 592) concluye que "los datos de primera persona no existen". Esta concepción es defectuosa.
+                </NoteItem>
+                <NoteItem number="11">
+                    El término fenomenología en este contexto no se limita a la fenomenología en el sentido europeo que proviene de <Entity>Husserl</Entity>, sino que incluye cualquier proyecto sistemático de investigar y describir la experiencia, incluyendo tradiciones asiáticas.
+                </NoteItem>
+                <NoteItem number="12">
+                    Ejemplos preliminares de este tercer paso pueden encontrarse en estudios neurofenomenológicos de la epilepsia (<Entity>Le Van Quyen</Entity> y <Entity>Petitmengin</Entity> 2002) y dolor.
+                </NoteItem>
+                <NoteItem number="13">
+                    <Entity>Chalmers</Entity> (2000, p. 25) define la suficiencia mínima.
+                </NoteItem>
+                <NoteItem number="14">
+                    La idea de la conciencia como un campo unificado de experiencia subjetiva ha sido central para la fenomenología (<Entity>Gurwitsch</Entity> 1964).
+                </NoteItem>
+                <NoteItem number="15">
+                    <Entity>Ronald Bruzina</Entity>, en su revisión de <BookTitle>Naturalizing Phenomenology</BookTitle>, argumenta que el análogo neural de la estructura formal de la temporalidad no puede tomarse para proporcionar una cuenta del carácter específicamente temporal de la experiencia.
+                </NoteItem>
+                <NoteItem number="16">
+                    <Entity>Varela</Entity> introduce la noción de "pasajes generativos" entre fenomenología y ciencia para describir esta idea.
+                </NoteItem>
+
+                <ChapterNotesHeader id="notes-ch12" title="12. Dinamismo Primordial" />
+                <NoteItem number="1">
+                    La cuenta dinámica de <Entity>Varela</Entity> de la protención está cerca de la cuenta dinámica de <Entity>Kelso</Entity> de la intención.
+                </NoteItem>
+                <NoteItem number="2">
+                    Para la neurociencia de la emoción, ver <Entity>Panksepp</Entity> (1998a).
+                </NoteItem>
+                <NoteItem number="3">
+                    Para una discusión crítica exhaustiva y refutación de la posición de que no existe tal cosa como la emoción, ver <Entity>Charland</Entity> (2001).
+                </NoteItem>
+                <NoteItem number="4">
+                    <Entity>LeDoux</Entity> es bien conocido por su rechazo del concepto del sistema límbico.
+                </NoteItem>
+                <NoteItem number="5">
+                    Para más discusión de la relación entre el modelo de emoción de <Entity>Lewis</Entity> y el enfoque enactivo, ver <Entity>Colombetti</Entity> (en prensa).
+                </NoteItem>
+                <NoteItem number="6">
+                    También puede discernirse psicoterapéuticamente a través de lo que <Entity>Daniel Stern</Entity> (2004) llama la "entrevista micro-analítica".
+                </NoteItem>
+                <NoteItem number="7">
+                    <Entity>Varela</Entity> y <Entity>Depraz</Entity> (2005, pp. 67-68) proporcionan una descripción de la experiencia de las notas de <Entity>Varela</Entity>: "Hoy fui al concierto a las 11..."
+                </NoteItem>
+                <NoteItem number="8">
+                    En un punto, la descripción de <Entity>Husserl</Entity> es sorprendentemente reminiscente de las descripciones de espacio de estado de la teoría de sistemas dinámicos (2001, p. 216).
+                </NoteItem>
+
+                <ChapterNotesHeader id="notes-ch13" title="13. Empatía y Enculturación" />
+                <NoteItem number="1">
+                    Mi discusión de la empatía en este capítulo se basa en gran medida, con revisión, de <Entity>Thompson</Entity> (2001, 2005).
+                </NoteItem>
+                <NoteItem number="2">
+                    La siguiente discusión se basa en <Entity>Zahavi</Entity> (1997).
+                </NoteItem>
+                <NoteItem number="3">
+                    Uno podría argumentar que aunque los perfiles ausentes co-intentados no pueden ser intentados como los correlatos de mis percepciones co-presentes ficticias, pueden ser intentados como los correlatos de mis percepciones si caminara alrededor de la cosa. El problema con esta interpretación es que hace de los perfiles ausentes los correlatos de mis posibles percepciones futuras, lo cual ya se ha demostrado inadecuado.
+                </NoteItem>
+                <NoteItem number="4">
+                    Aquí sigo a <Entity>Zahavi</Entity> (1997, pp. 313–319).
+                </NoteItem>
+                <NoteItem number="5">
+                    Este trabajo fue la disertación doctoral de <Entity>Stein</Entity> de 1916, preparada bajo la supervisión de <Entity>Husserl</Entity>.
+                </NoteItem>
+                <NoteItem number="6">
+                    <Entity>Heidegger</Entity> (1995, pp. 201-209) rechaza el concepto de empatía (<em>Einfühlung</em>) como una forma errónea de entender las relaciones humanas.
+                </NoteItem>
+
+                <ChapterNotesHeader id="notes-appa" title="Apéndice A" />
+                <NoteItem number="1">
+                    Ver <Entity>Langsdorf</Entity> (1985); <Entity>Marbach</Entity> (1993); <Entity>Roy</Entity> (1995); <Entity>Roy</Entity> et al. (1999); <Entity>Welton</Entity> (2000); y <Entity>Zahavi</Entity> (2003a, 2004a).
+                </NoteItem>
+                <NoteItem number="2">
+                    Aquí sigo la interpretación no representacionalista de <Entity>Husserl</Entity>. <Entity>Dreyfus</Entity> es un exponente de la interpretación representacionalista.
+                </NoteItem>
+                <NoteItem number="3">
+                    Este punto merece mayor elaboración: (1) "Intencionalidad operativa designa experiencia prereflectiva..." (<Entity>Steinbock</Entity> 1999, p. 183). (2) <Entity>Dreyfus</Entity> cita un pasaje de la <BookTitle>Crisis</BookTitle> de <Entity>Husserl</Entity>. (3) <Entity>Husserl</Entity> no afirma en este pasaje, como dice <Entity>Dreyfus</Entity>, "que siempre tenemos acceso al contenido de nuestros estados intencionales". (4) Dada la fuerte vinculación entre <Entity>Husserl</Entity> y <Entity>Merleau-Ponty</Entity>... es inexacto afirmar que <Entity>Merleau-Ponty</Entity> desarrolló sus puntos de vista en oposición a <Entity>Husserl</Entity>.
+                </NoteItem>
+                <NoteItem number="4">
+                    <Entity>Dreyfus</Entity> afirma que <Entity>Husserl</Entity> aprendió de <Entity>Heidegger</Entity> la idea "de que toda cognición depende de un mundo...". Sin embargo, no proporciona evidencia para esta relación.
+                </NoteItem>
+                <NoteItem number="5">
+                    Ver <Entity>Depraz</Entity> (1999a); <Entity>Gupta</Entity> (1998, 2003, 2004); <Entity>Laycock</Entity> (1994); <Entity>Lusthaus</Entity> (2002); y <Entity>Yamaguchi</Entity> (1997).
+                </NoteItem>
+
+                <ChapterNotesHeader id="notes-appb" title="Apéndice B" />
+                <NoteItem number="1">
+                    Ver <Entity>Andersen</Entity> et al. (2000); <Entity>Schröder</Entity> (1998); <Entity>Silberstein</Entity> (2001, 2002); <Entity>Silberstein</Entity> y <Entity>McGeever</Entity> (1999); y <Entity>Van Gulick</Entity> (2001).
+                </NoteItem>
+                <NoteItem number="2">
+                    <Entity>Juarrero</Entity> trata los sistemas autopoiéticos y autocatalíticos como si fueran equivalentes, pero no lo son.
+                </NoteItem>
+                <NoteItem number="3">
+                    Otra visión holística de la emergencia va más allá al ver la emergencia como un tipo de fusión (<Entity>Humphreys</Entity> 1996). La diferencia entre fusión y holismo relacional es que una fusión no es una estructura relacional.
+                </NoteItem>
+                <NoteItem number="4">
+                    Ver <Entity>Belousek</Entity> (2003); <Entity>Hawthorne</Entity> y <Entity>Silberstein</Entity> (1995); <Entity>Healey</Entity> (1991); <Entity>Humphreys</Entity> (1996); <Entity>Kronz</Entity> y <Entity>Tiehen</Entity> (2002); y <Entity>Maudlin</Entity> (1998).
+                </NoteItem>
+                <NoteItem number="5">
+                    La emergencia ontológica en forma de holismo relacional viola la superveniencia mereológica atomista. El atomismo afirma que cada propiedad de un todo es lógicamente superveniente en las propiedades intrínsecas de las partes más fundamentales del todo.
+                </NoteItem>
+                <NoteItem number="6">
+                    Si un criterio de emergencia ontológica es que no sea un artefacto de nuestras teorías o modelos, y si se supone que la mecánica cuántica es el mejor caso de emergencia ontológica, entonces parecería que se asume una interpretación realista de la mecánica cuántica.
+                </NoteItem>
+                <NoteItem number="7">
+                    Por lo tanto parecería que <Entity>Kim</Entity> está equivocado cuando escribe: "Un todo W tiene una cierta propiedad emergente, M, en un momento dado t..." (1999, p. 29). Pero si W es un sistema complejo con estabilidad estructural, entonces bien podría haber tenido su propiedad emergente M en t, sin que su constituyente aj tuviera P en t.
+                </NoteItem>
+                <NoteItem number="8">
+                    Cf. <Entity>Kronz</Entity> y <Entity>Tiehen</Entity> (2002, pp. 332-333): "los emergentistas británicos pueden haber puesto demasiado énfasis en la formulación newtoniana de la física clásica...".
+                </NoteItem>
+                <NoteItem number="9">
+                    En meras tres oraciones en su "Dando Sentido a la Emergencia" <Entity>Kim</Entity> confronta la problemática kantiana de la auto-organización y casualmente la descarta sin siquiera una mención: "¿Pero cómo es posible que el todo afecte causalmente a sus partes constituyentes...?" (1999, p. 28).
+                </NoteItem>
+
+            </main>
+        );
+
+        // --- APP ---
+
+        const App = () => {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [activeNote, setActiveNote] = useState(null);
+
+            const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
+            return (
+                <div className="bg-slate-950 min-h-screen text-slate-300 selection:bg-cyan-500/30 selection:text-cyan-100">
+                    <ScrollProgress />
+                    <Navigation toggleMenu={toggleMenu} />
+                    <Sidebar isOpen={isMenuOpen} toggleMenu={toggleMenu} />
+                    
+                    <Hero />
+                    <NotesContent />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
