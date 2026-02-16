@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Mente en la Vida | Evan Thompson - Cap. 13</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        amber: {
+                            450: '#F59E0B',
+                        },
+                        cyan: {
+                            450: '#22D3EE',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #020617; /* bg-slate-950 */
+            color: #cbd5e1; /* text-slate-300 */
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+
+        .serif { font-family: 'Playfair Display', serif; }
+        
+        /* LaTeX adjustments */
+        .katex { font-size: 1.1em; color: #e2e8f0; }
+        
+        h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, useScroll, useSpring, AnimatePresence } = window.Motion;
+        
+        // --- NATIVE ICONS (Zero Dependency) ---
+        const IconBase = ({ children, size = 24, className = "" }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const Menu = (props) => (
+            <IconBase {...props}>
+                <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+            </IconBase>
+        );
+        
+        const X = (props) => (
+            <IconBase {...props}>
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </IconBase>
+        );
+
+        const ChevronRight = (props) => (
+            <IconBase {...props}>
+                <path d="m9 18 6-6-6-6"/>
+            </IconBase>
+        );
+
+        const User = (props) => (
+            <IconBase {...props}>
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </IconBase>
+        );
+
+        const Quote = (props) => (
+            <IconBase {...props}>
+                <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+            </IconBase>
+        );
+
+        // --- DATA ---
+        
+        const BOOK_DATA = {
+            title: "La Mente en la Vida",
+            author: "Evan Thompson",
+            toc: [
+                { title: "Inicio", id: "hero" },
+                { separator: "CAPÍTULO TRECE" },
+                { title: "Empatía y Enculturación", id: "ch13-intro" },
+                { title: "Intencionalidad e Intersubjetividad", id: "open-intersubjectivity" },
+                { title: "Concepto Fenomenológico de Empatía", id: "phenom-empathy" },
+                { title: "Acoplamiento Afectivo y Sensoriomotor", id: "affective-coupling" },
+                { title: "Transposición Imaginaria", id: "imaginary-transposition" },
+                { title: "Comprensión Mutua", id: "mutual-understanding" },
+                { title: "Percepción Moral", id: "moral-perception" },
+                { title: "Enculturación", id: "enculturation" }
+            ]
+        };
+
+        const FOOTNOTES = {
+            1: "Varela describe la protención como un parámetro de orden global que da forma a la dinámica de integración a gran escala en el cerebro.",
+            2: "El pensamiento aquí es que el significado o sentido mismo de 'objeto' (a saber, algo que se opone a uno mismo como un sujeto), que está implícito en la intencionalidad del acto perceptual, implica ser simultáneamente perceptible por una pluralidad de sujetos."
+        };
+
+        // --- COMPONENTS ---
+
+        const Concept = ({ children }) => (
+            <span className="text-amber-500 font-medium hover:text-amber-400 transition-colors cursor-help border-b border-amber-500/20 pb-0.5">
+                {children}
+            </span>
+        );
+
+        const Entity = ({ children }) => (
+            <span className="text-cyan-400 font-medium hover:text-cyan-300 transition-colors border-b border-cyan-400/20 pb-0.5">
+                {children}
+            </span>
+        );
+
+        const BookTitle = ({ children }) => (
+            <span className="text-white italic font-serif tracking-wide">
+                {children}
+            </span>
+        );
+
+        const BlockQuote = ({ children, author }) => (
+            <div className="my-10 relative group">
+                <div className="absolute -left-4 top-0 text-slate-700 opacity-50">
+                    <Quote size={40} />
+                </div>
+                <blockquote className="border-l-4 border-cyan-500/30 pl-8 pr-4 py-2 italic text-amber-500 text-lg leading-relaxed font-serif relative z-10 group-hover:border-cyan-500 transition-colors duration-500">
+                    {children}
+                </blockquote>
+                {author && <div className="mt-2 text-right text-sm text-cyan-500/80 font-mono">— {author}</div>}
+            </div>
+        );
+
+        const SectionHeader = ({ id, number, title }) => (
+            <div id={id} className="pt-24 pb-8 mb-8 border-b border-slate-800">
+                <div className="text-cyan-500 text-sm tracking-[0.2em] uppercase mb-2 font-semibold">
+                    {number}
+                </div>
+                <h2 className="text-4xl md:text-5xl text-white font-serif leading-tight">
+                    {title}
+                </h2>
+            </div>
+        );
+
+        const InteractiveFootnote = ({ id, setActiveNote }) => (
+            <sup 
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveNote(id);
+                }}
+                className="text-cyan-400 cursor-pointer font-bold ml-0.5 hover:text-white hover:underline transition-all"
+            >
+                [{id}]
+            </sup>
+        );
+
+        const Figure = ({ caption, children }) => (
+            <figure className="my-12 p-6 border border-dashed border-slate-700 rounded-lg bg-slate-900/50">
+                <div className="flex justify-center items-center mb-6 min-h-[200px] text-slate-500">
+                    {children}
+                </div>
+                <figcaption className="text-center text-sm text-slate-400 font-mono border-t border-slate-800 pt-4 mt-4">
+                    <span className="text-cyan-500 font-bold uppercase mr-2">Figura 13.1</span>
+                    {caption}
+                </figcaption>
+            </figure>
+        );
+
+        // --- LAYOUT COMPONENTS ---
+
+        const ScrollProgress = () => {
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+            return (
+                <motion.div
+                    className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50"
+                    style={{ scaleX }}
+                />
+            );
+        };
+
+        const Navigation = ({ toggleMenu }) => (
+            <nav className="fixed top-0 w-full bg-slate-950/80 backdrop-blur-md border-b border-slate-800/50 z-40 h-16 flex items-center justify-between px-6 transition-all duration-300">
+                <div className="flex items-center gap-4">
+                    <div className="w-8 h-8 bg-cyan-900/20 rounded-full flex items-center justify-center border border-cyan-500/30">
+                        <span className="text-cyan-500 font-serif font-bold">ET</span>
+                    </div>
+                    <div className="hidden md:block">
+                        <h1 className="text-sm text-slate-200 font-semibold tracking-wide">LA MENTE EN LA VIDA</h1>
+                        <p className="text-xs text-slate-500">Capítulo 13: Empatía y Enculturación</p>
+                    </div>
+                </div>
+                <button 
+                    onClick={toggleMenu}
+                    className="flex items-center gap-2 text-slate-400 hover:text-cyan-400 transition-colors group"
+                >
+                    <span className="text-xs uppercase tracking-widest font-semibold hidden sm:block group-hover:mr-1 transition-all">Índice</span>
+                    <Menu size={20} />
+                </button>
+            </nav>
+        );
+
+        const Sidebar = ({ isOpen, toggleMenu, activeSection }) => (
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={toggleMenu}
+                            className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
+                        />
+                        <motion.aside 
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed right-0 top-0 h-full w-80 bg-slate-900 border-l border-slate-800 z-50 p-8 shadow-2xl overflow-y-auto"
+                        >
+                            <div className="flex justify-between items-center mb-10">
+                                <h3 className="text-amber-500 font-serif italic text-xl">Contenidos</h3>
+                                <button onClick={toggleMenu} className="text-slate-400 hover:text-white transition-colors">
+                                    <X size={24} />
+                                </button>
+                            </div>
+                            <ul className="space-y-4">
+                                {BOOK_DATA.toc.map((item, idx) => (
+                                    item.separator ? (
+                                        <li key={idx} className="pt-6 pb-2 border-b border-slate-800 text-xs text-slate-500 uppercase tracking-widest font-bold">
+                                            {item.separator}
+                                        </li>
+                                    ) : (
+                                        <li key={idx}>
+                                            <a 
+                                                href={`#${item.id}`} 
+                                                onClick={toggleMenu}
+                                                className="flex items-center gap-3 text-slate-300 hover:text-cyan-400 transition-colors group"
+                                            >
+                                                <ChevronRight size={14} className="text-slate-600 group-hover:text-cyan-500 transition-colors" />
+                                                <span className="text-sm font-medium leading-relaxed">{item.title}</span>
+                                            </a>
+                                        </li>
+                                    )
+                                ))}
+                            </ul>
+                        </motion.aside>
+                    </>
+                )}
+            </AnimatePresence>
+        );
+
+        const TooltipModal = ({ activeNote, setActiveNote }) => (
+            <AnimatePresence>
+                {activeNote && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        className="fixed bottom-8 left-1/2 -translate-x-1/2 w-11/12 max-w-2xl z-50"
+                    >
+                        <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700 p-6 rounded-xl shadow-2xl relative">
+                            <button 
+                                onClick={() => setActiveNote(null)}
+                                className="absolute top-2 right-2 text-slate-500 hover:text-white"
+                            >
+                                <X size={16} />
+                            </button>
+                            <div className="flex gap-4">
+                                <span className="text-cyan-500 font-bold font-serif text-xl leading-none pt-1">
+                                    {activeNote}
+                                </span>
+                                <p className="text-sm text-slate-300 leading-relaxed">
+                                    {FOOTNOTES[activeNote]}
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        );
+
+        const Hero = () => (
+            <section id="hero" className="min-h-screen flex flex-col justify-center items-center text-center px-6 relative overflow-hidden">
+                {/* Background Atmosphere */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/10 via-slate-950 to-slate-950" />
+                
+                <motion.div 
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1, delay: 0.2 }}
+                    className="relative z-10"
+                >
+                    <span className="text-amber-500 tracking-[0.3em] text-xs font-bold uppercase mb-4 block">
+                        Capítulo Trece
+                    </span>
+                    <h1 className="text-5xl md:text-7xl font-serif text-white mb-6 leading-tight">
+                        Empatía y <br/> <span className="text-slate-400 italic">Enculturación</span>
+                    </h1>
+                    <div className="w-24 h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mx-auto mb-8" />
+                    <p className="text-xl text-slate-300 font-light tracking-wide">
+                        La Mente en la Vida
+                    </p>
+                </motion.div>
+                
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.5, duration: 1 }}
+                    className="absolute bottom-12"
+                >
+                   <div className="animate-bounce text-slate-600">
+                        <User size={20} className="mx-auto mb-2 text-cyan-900" />
+                        <span className="text-xs uppercase tracking-widest text-slate-600">Desliza para leer</span>
+                   </div>
+                </motion.div>
+            </section>
+        );
+
+        // --- MAIN CONTENT COMPONENT ---
+
+        const ChapterContent = ({ setActiveNote }) => (
+            <main className="w-full px-6 md:px-12 pb-32 text-lg md:text-xl leading-relaxed text-justify hyphens-auto text-slate-300">
+                
+                {/* CHAPTER 13 START */}
+                
+                <div id="ch13-intro" className="pt-24 first-letter:text-6xl first-letter:font-serif first-letter:text-white first-letter:float-left first-letter:mr-3 first-letter:mt-[-8px]">
+                    <p className="mb-8">
+                        AL EXPLORAR LA EMOCIÓN en el capítulo anterior, comenzamos con consideraciones abstractas sobre la estructura del flujo de la experiencia y luego nos movimos al tema más tangible de la auto-organización emocional y la dinámica del afecto. A medida que seguíamos este camino, la intersubjetividad de la experiencia humana ganó visibilidad creciente, volviéndose especialmente prominente en el ejemplo de ver una cara enojada y desviar la mirada.
+                    </p>
+                </div>
+
+                <p className="mb-6">
+                    Sin embargo, hasta ahora en este libro solo he aludido a la intersubjetividad sin darle la atención que merece. La intersubjetividad es un tema vasto e importante de la filosofía fenomenológica, con numerosas ramificaciones. También es una preocupación central para la psicología del desarrollo, la psicología social y la psicología clínica, para el psicoanálisis, y más recientemente para la neurociencia afectiva y cognitiva. Explorar las relaciones entre los muchos tratamientos fenomenológicos, clínicos y científicos de la intersubjetividad de manera integral requeriría otro libro. Mi objetivo en este capítulo final es, por consiguiente, mucho más modesto. Es construir un puente entre la ciencia de la mente y la fenomenología genética y generativa de la intersubjetividad de <Entity>Husserl</Entity>. Este puente pretende ser un paso preliminar para futuras investigaciones que se basarían tanto en otras discusiones fenomenológicas importantes de la intersubjetividad como en la investigación científica y clínica.
+                </p>
+
+                <p className="mb-6">
+                    Este capítulo está organizado alrededor de dos ideas. La primera idea es que el yo y el otro se enactúan recíprocamente a través de la empatía. La conciencia de uno mismo como un sujeto corporal en el mundo presupone una cierta comprensión empática del yo y del otro. La segunda idea es que la subjetividad humana emerge de procesos de desarrollo de <Concept>enculturación</Concept> y es configurada por la red cognitiva distribuida de la cultura simbólica. Por estas razones, la subjetividad humana es desde el principio intersubjetividad, y ninguna mente es una isla.
+                </p>
+
+                {/* INTENTIONALITY AND OPEN INTERSUBJECTIVITY SECTION */}
+                <SectionHeader id="open-intersubjectivity" number="Sección 01" title="Intencionalidad e Intersubjetividad Abierta" />
+
+                <p className="mb-6">
+                    Mi primer paso es introducir una idea importante de las reflexiones posteriores de <Entity>Husserl</Entity> sobre la intersubjetividad: la idea de que la intencionalidad de la conciencia es <Concept>"intersubjetivamente abierta"</Concept> (<Entity>Zahavi</Entity> 1997, 2001a, 2001b). La conciencia no está cerrada solipsísticamente sobre sí misma; más bien, está estructuralmente abierta al otro antes de cualquier encuentro real entre el yo y el otro.
+                </p>
+
+                <p className="mb-6">
+                    Ya hemos visto (en el Capítulo 2) que la intencionalidad en el sentido fenomenológico más amplio es apertura hacia el mundo. Lo que necesita énfasis ahora es que esta apertura es también implícitamente intersubjetiva, pues el mundo se nos revela como intersubjetivamente accesible. Por un lado, los tipos de cosas que encontramos en nuestros tratos con el mundo son ante todo artefactos culturales y equipamiento, no objetos físicos indiferentes (<Entity>Heidegger</Entity> 1996, pp. 62-67). Por otro lado, incluso los objetos, considerados abstractamente simplemente como objetos de percepción, aparecen ante nosotros como perceptibles por otros sujetos posibles. Es este último pensamiento el que quiero introducir aquí.<InteractiveFootnote id={2} setActiveNote={setActiveNote} />
+                </p>
+
+                <p className="mb-6">
+                    Cuando percibimos un objeto, aparece teniendo lados o perfiles que no están actualmente a la vista. Vemos el lado que nos enfrenta, mientras que los otros lados están ocultos. Aunque no vemos directamente los perfiles ocultos de un objeto, no obstante tenemos un sentido distintivamente perceptual de su presencia. En el lenguaje de <Entity>Husserl</Entity>, la percepción <Concept>"apresenta"</Concept> automáticamente los perfiles ocultos en y a través de su presentación de los visibles. El término <Concept>apresentación</Concept> se refiere a uno intentando la presencia de algo no dado directamente sobre la base de algo que es dado directamente. En la percepción, apresentamos o co-intentamos la parte trasera de un objeto, que no es inmediatamente visible, sobre la base del lado frontal, que es directamente visible. Cómo entender esta relación entre presencia y ausencia en la experiencia perceptual es un tema de larga data de la filosofía fenomenológica. La relevancia de la intersubjetividad para este tema puede sacarse a relucir de la siguiente manera: ¿podemos dar cuenta de esta relación entre presencia y ausencia en la experiencia perceptual sin referirnos a otra conciencia perceptual posible además de la propia? La respuesta de Husserl es negativa. En la percepción, o más precisamente en su función apresentadora, entendemos implícitamente los perfiles ausentes como siendo también los correlatos objetivos de las percepciones posibles de otro sujeto (ver <Entity>Zahavi</Entity> 1997, 2001a).
+                </p>
+
+                <p className="mb-6">
+                    El pensamiento aquí es que el significado o sentido mismo de <Concept>"objeto"</Concept> (a saber, algo que se opone a uno mismo como un sujeto), que está implícito en la intencionalidad del acto perceptual, implica ser simultáneamente perceptible por una pluralidad de sujetos. Para volver sobre los pasos principales que conducen a este pensamiento, consideren que si no hay necesidad de referirse a otros perceptores además de mí mismo al caracterizar la intencionalidad de mi percepción, entonces los perfiles ausentes u ocultos de un objeto deben ser apresentados como correlatos simplemente de mi percepción. Las siguientes dos alternativas, por lo tanto, se sugieren a sí mismas. Primero, los perfiles ausentes podrían ser apresentados como perfiles dados ya sea en mis percepciones pasadas o en mis posibles percepciones futuras del objeto. Segundo, los perfiles ocultos podrían ser apresentados como los correlatos de las percepciones que tendría ahora mismo si estuviera mirando la cosa desde puntos de vista diferentes al actual. Ambas cuentas parecen insatisfactorias. La primera hace que la unidad del objeto para la percepción sea el resultado de una serie de perfiles separados temporalmente, solo uno de los cuales (el visible) es actual. Pero no experimento el perfil frente a mí como presente con respecto a un perfil ausente pasado o futuro; lo experimento como presente con respecto a los otros perfiles co-presentes pero ocultos. Según la segunda cuenta, sin embargo, apresento los perfiles ausentes como correlatos de mis percepciones co-presentes, pero no actuales. Esta cuenta hace de la unidad del objeto para mi percepción un compuesto de perfiles actuales y no actuales (los correlatos de mis percepciones no actuales), mientras que necesita ser una unidad de perfiles actuales, algunos visibles y algunos ocultos.
+                </p>
+
+                <p className="mb-6">
+                    Así, los perfiles apresentados y ocultos parecen entenderse mejor no como correlatos de las propias percepciones posibles de uno, sino como los correlatos de las posibles percepciones de otros sujetos, que podrían percibir el objeto simultáneamente con uno mismo, aunque desde un punto de vista diferente. Para que uno sea capaz de apresentar los perfiles ocultos de un objeto, ningún otro sujeto necesita estar realmente presente, ni ningún otro sujeto necesita estar presente en el mundo en absoluto. (Como dice Husserl, yo podría ser el último sobreviviente de una plaga universal). Más bien, el punto es que la estructura intencional de la percepción revela los objetos como trascendiendo la conciencia individual de uno sobre ellos de tal manera que implica su presencia y perceptibilidad por otros sujetos posibles. De esta manera, la intencionalidad de la conciencia es intersubjetivamente abierta e incompatible con cualquier solipsismo que negaría la posibilidad en principio de una pluralidad de sujetos que ven el mismo mundo que yo.
+                </p>
+
+                <p className="mb-6">
+                    Además de la intersubjetividad abierta de la intencionalidad, que es una característica estructural de la conciencia, se pueden distinguir otros dos tipos de intersubjetividad en los análisis de <Entity>Husserl</Entity>. El primero es la experiencia de la presencia corporal del otro, o la experiencia cara a cara del yo y el otro. El segundo es la intersubjetividad generativa de normas, convenciones y tradiciones históricas transmitidas comunalmente. Ambos tipos de intersubjetividad jugarán un papel en este capítulo. Para preparar el camino, necesitamos examinar la relación entre la intersubjetividad abierta de la conciencia y la intersubjetividad como el encuentro cara a cara del yo y el otro.
+                </p>
+
+                <p className="mb-6">
+                    Uno podría suponer que la apertura intersubjetiva de la conciencia depende de la experiencia perceptual del otro, que la experiencia perceptual de uno de la presencia corporal expresiva del otro es la base para la intersubjetividad de la conciencia. Uno podría argumentar, por ejemplo, que cuando experimento a otra persona experimentándome, me doy cuenta tácitamente de que soy un otro para el otro, que soy revelado al otro como el otro es revelado a mí, y por lo tanto que soy solo uno entre muchos en un contexto de otros. De esta manera, mi conciencia se volvería intersubjetivamente abierta, por así decirlo, desde el exterior.
+                </p>
+
+                <p className="mb-6">
+                    Esta cuenta, sin embargo, entiende las cosas al revés. Para que yo perciba al otro —es decir, para que la presencia corporal del otro me sea revelada perceptualmente— la intersubjetividad abierta de la experiencia perceptual ya debe estar en juego. Así, la experiencia real de uno de otro sujeto corporal se basa en una apertura <em>a priori</em> al otro. Por la misma razón, la apertura intersubjetiva de la conciencia no puede reducirse a ninguna relación contingente y fáctica del yo y el otro, pues esta apertura pertenece a la estructura misma de la subjetividad antes de cualquier encuentro de tal tipo. Sin embargo, claramente hay mucho más en nuestra experiencia de otros sujetos que la mera dependencia de esta experiencia en la intersubjetividad abierta de la conciencia. Mientras que la intersubjetividad abierta es principalmente una característica de la estructura formal de la intencionalidad, la experiencia concreta del yo y el otro permite el disenso y así una experiencia de la alteridad del otro (<Entity>Zahavi</Entity> 1997, p. 317). Lo que propongo hacer ahora es considerar la estructura de esta experiencia concreta con más detalle examinando la experiencia de la empatía.
+                </p>
+
+                {/* THE PHENOMENOLOGICAL CONCEPT OF EMPATHY SECTION */}
+                <SectionHeader id="phenom-empathy" number="Sección 02" title="El Concepto Fenomenológico de la Empatía" />
+
+                <p className="mb-6">
+                    Los psicólogos usan el término empatía para describir tres procesos afectivos y cognitivos distinguibles e interrelacionados que involucran al yo y al otro (<Entity>Levenson</Entity> y <Entity>Reuf</Entity> 1992). El primero es sentir lo que otra persona está sintiendo; el segundo es saber lo que otra persona está sintiendo; y el tercero es responder compasivamente a la angustia de otra persona —una respuesta mejor descrita como <Concept>simpatía</Concept> (<Entity>Eisenberg</Entity> 2000).
+                </p>
+
+                <p className="mb-6">
+                    Los fenomenólogos abordan la empatía de una manera algo diferente (<Entity>Stein</Entity> 1989). La empatía es una forma única de intencionalidad en la cual estamos dirigidos hacia la experiencia del otro. Cualquier acto intencional que revele o presente <Concept>"experiencia ajena"</Concept> cuenta como empatía. Aunque la empatía, así entendida, se basa en la percepción (de la presencia corporal del otro) y puede involucrar inferencia en situaciones difíciles o problemáticas (cuando uno tiene que averiguar cómo se siente otra persona sobre algo), no es reducible a alguna combinación aditiva de percepción e inferencia. La concepción fenomenológica de la empatía se opone así a cualquier teoría según la cual entendemos a los otros percibiendo primero su comportamiento corporal y luego infiriendo o hipotetizando que su comportamiento es causado por experiencias o estados mentales internos similares a los que aparentemente causan un comportamiento similar en nosotros. Más bien, en la empatía experimentamos a otro ser humano directamente como una persona, es decir, como un ser intencional cuyos gestos corporales y acciones son expresivos de sus experiencias o estados mentales. La tarea para la fenomenología es analizar los modos o maneras en las que el otro es revelado como otra subjetividad, así como las estructuras intencionales de la conciencia que hacen posible esta revelación.
+                </p>
+
+                <p className="mb-6">
+                    <Entity>Edith Stein</Entity>, en su libro <em>Sobre el Problema de la Empatía</em>, llama la atención sobre una serie de características estructurales formales de la empatía, entendida como la conciencia de la experiencia de otro (<Entity>Stein</Entity> 1989, pp. 6-11). Podemos comenzar con la relación entre percepción y empatía. Tanto en la percepción como en la empatía, el objeto intencional se presenta como allí mismo ahora mismo, pero de diferentes maneras. Mientras que la percepción presenta un objeto como allí en su ser concreto e individual, la empatía no presenta la experiencia de otro sujeto de esta manera. Cuando uno se vuelve consciente de la tristeza de otra persona, la tristeza no se da como un ser concreto e individual, parado allí mismo ante uno, como cuando uno ve o toca algo. Más bien, la tristeza se da en y a través del semblante triste o la expresión dolorida. Hay así <Concept>"un paralelo cercano, aunque muy laxo, entre los actos empáticos y los lados desviados de lo que se ve"</Concept> (<Entity>Stein</Entity> 1989, p. 6). En la percepción, los lados desviados, aunque ocultos, y así en un sentido no percibidos, tienen un tipo de presencia perceptual, una presencia-en-ausencia perceptual. Similarmente, en la empatía, el sentimiento de tristeza, aunque no presente como lo es originalmente para el sujeto que experimenta la tristeza, tiene una presencia perceptual en el semblante triste. En lenguaje fenomenológico, mientras que los lados desviados de un objeto son apresentados sobre la base de su lado percibido, el sentimiento de una persona es apresentado sobre la base de su semblante y comportamiento captados empáticamente. Similarmente, mientras que el lado visible está allí mismo ahora mismo y captado como tal en la percepción, así el semblante triste está allí mismo ahora mismo y captado como tal en la empatía.
+                </p>
+
+                <p className="mb-6">
+                    Sin embargo, este paralelo solo llega hasta cierto punto. En la percepción, los lados desviados pueden en principio ser siempre traídos a la vista. En la empatía, aunque los aspectos ocultos o disimulados del semblante triste pueden ser traídos a la vista, la tristeza misma como un sentimiento subjetivo no puede hacerse perceptualmente presente de esta manera. En palabras de Stein: <Concept>"Puedo considerar la expresión de dolor, más exactamente, el cambio de cara que capto empáticamente como una expresión de dolor, desde tantos lados como desee. Sin embargo, en principio, nunca puedo obtener una 'orientación' donde el dolor mismo sea dado primordialmente"</Concept> (1989, p. 7).
+                </p>
+
+                <p className="mb-6">
+                    Esta "no primordialidad" de la empatía —el hecho de que una experiencia no puede ser revelada en su subjetividad original de primera persona desde la perspectiva de segunda persona de la empatía— significa que también hay un paralelo o una analogía entre la empatía y la memoria y la imaginación. Cuando uno recuerda una alegría, la alegría no está <Concept>"allí primordial y corporalmente"</Concept>, sino que más bien se da en la memoria <Concept>"como habiendo estado una vez viva"</Concept> (<Entity>Stein</Entity> 1989, p. 8). La alegría está ausente, pero no está simplemente ausente, pues tiene un tipo de presencia-en-ausencia para la experiencia recordada. Es, como vimos en el Capítulo 10, fenomenalmente ausente. Sin embargo, una vez más el paralelo o la analogía solo llega hasta cierto punto. En el caso de la memoria, el sujeto que está recordando es el mismo que el sujeto recordado. En el caso de la empatía, sin embargo, el sujeto que está empatizando no es el mismo que el sujeto empatizado.
+                </p>
+
+                <BlockQuote author="Edith Stein (1989)">
+                    Y esto es lo que es fundamentalmente nuevo en contraste con la memoria, la expectativa o la fantasía de nuestras propias experiencias. Estos dos sujetos están separados y no unidos, como previamente, por una conciencia de mismidad o una continuidad de experiencia. Y mientras estoy viviendo en la alegría del otro, no siento alegría primordial. No brota viva de mi "Yo". Tampoco tiene el carácter de haber vivido una vez como la alegría recordada. Pero mucho menos es meramente fantaseada sin vida real. Este otro sujeto es primordial aunque yo no lo experimente como primordial [como hago conmigo mismo]. En mi experiencia no primordial [del sentimiento del otro] me siento, por así decirlo, guiado por una primordial no experimentada por mí pero aún allí, manifestándose en mi experiencia no primordial.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    La empatía, como la percepción, la memoria, la imaginación y la expectativa, es así un tipo de experiencia intencional <em>sui generis</em>. La empatía comparte ciertas características estructurales con la percepción y ciertas otras características estructurales con la memoria, la imaginación y la expectativa, pero no puede reducirse a estos actos intencionales ni construirse a partir de ellos. Por lo tanto, además de las comparaciones anteriores, la empatía necesita ser analizada en sus propios términos.
+                </p>
+
+                <p className="mb-6">
+                    <Entity>Stein</Entity> describe la empatía como la experiencia de sentirse guiado por una experiencia que no es la propia pero que se da en la experiencia de uno de la presencia corporal expresiva de otro. Ella distingue <Concept>"tres niveles o modalidades de logro"</Concept> en la empatía, <Concept>"incluso si en un caso concreto las personas no siempre pasan por todos los niveles sino que a menudo se satisfacen con uno de los inferiores"</Concept> (<Entity>Stein</Entity> 1989, p. 10). Primero, la experiencia de otro emerge ante mí: <Concept>"Cuando surge ante mí todo a la vez, me enfrenta como un objeto (tal como la tristeza que 'leo en la cara de otro')"</Concept> (p. 10). Segundo, puedo indagar en el contenido de la experiencia y <Concept>"sus tendencias implicadas"</Concept>, en cuyo caso <Concept>"el contenido, habiéndome arrastrado hacia él, ya no es realmente un objeto"</Concept> (ibid.). Ahora estoy dirigido hacia el objeto de la experiencia empatizada, es decir, me transpongo mentalmente al lugar del otro para comprender el objeto de la experiencia del sujeto desde su punto de vista. Tercero, una vez que esta clarificación de la experiencia del otro ha tenido lugar, la experiencia me enfrenta de nuevo, pero ahora de una manera clarificada o explicada. Stein se refiere a estos tres niveles como <Concept>"(1) la emergencia de la experiencia, (2) la explicación cumplidora, y (3) la objetivación comprensiva de la experiencia explicada"</Concept> (ibid.).
+                </p>
+
+                <p className="mb-6">
+                    Estos niveles de empatía también pueden ser reiterados de vuelta hacia mí, de modo que tengo una experiencia empática de la experiencia empática del otro sobre mí. En otras palabras, <Concept>"entre los actos de otro que comprendo empáticamente puede haber actos empáticos en los que el otro comprende los actos de otro. Este 'otro' puede ser una tercera persona o yo mismo. En el segundo caso tenemos [lo que Theodor Lipps llama] 'simpatía reflexiva' donde mi experiencia original retorna a mí como una empatizada"</Concept> (<Entity>Stein</Entity> 1989, p. 18).
+                </p>
+
+                <p className="mb-6">
+                    A través de estos niveles, la empatía se basa en la experiencia del otro como un sujeto corporal vivo como uno mismo:
+                </p>
+
+                <BlockQuote author="Edith Stein (1989)">
+                    Este individuo no es dado como un cuerpo físico, sino como un cuerpo sensible, vivo, perteneciente a un "Yo", un "Yo" que siente, piensa, siente y quiere. El cuerpo vivo de este "Yo" no solo encaja en mi mundo fenoménico sino que es él mismo el centro de orientación de tal mundo fenoménico. Enfrenta este mundo y se comunica conmigo.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    Siguiendo a <Entity>Stein</Entity>, podemos explicar con más detalle esta experiencia empática del otro como un sujeto corporal vivo. Experimentamos la presencia corporal del otro como (1) animada por sus propios campos de sensación; (2) animada por sentimientos generales de vida o vitalidad (crecimiento, desarrollo, envejecimiento, salud, enfermedad, vigor, lentitud, y así sucesivamente); (3) expresiva de experiencia subjetiva; (4) otro centro de orientación en el espacio; y (5) capaz de acción voluntaria.
+                </p>
+
+                <p className="mb-6">
+                    Stein llama a la percepción empática de la presencia corporal del otro como animada por sus propios campos de sensación <Concept>"empatía sensual"</Concept> o <Concept>"sentir-dentro"</Concept> (<em>sensing-in</em>). Para tomar su ejemplo: <Concept>"La mano descansando sobre la mesa no yace allí como el libro a su lado. 'Presiona' contra la mesa más o menos fuertemente; yace allí lánguida o estirada; y yo 'veo' las sensaciones de presión y tensión"</Concept> (1989, p. 58). Hasta ahora este ejemplo incluye solo el primer nivel de logro en la empatía: la emergencia de la experiencia de otro. El segundo nivel implica indagar en el contenido de la experiencia del otro. Si esto sucede, entonces hay un movimiento desde la empatía como un acoplamiento sensorio-motor y afectivo involuntario de nuestros dos cuerpos vividos hacia la empatía como el movimiento imaginativo de mí mismo al lugar del otro: <Concept>"mi mano es movida (no en la realidad sino 'como si') al lugar de la ajena. Es movida dentro de ella y ocupa su posición y actitud, sintiendo ahora sus sensaciones, aunque no primordialmente y no como siendo suyas propias... la mano ajena es continuamente percibida como perteneciendo al cuerpo físico ajeno de modo que las sensaciones empatizadas son continuamente puestas en relieve como ajenas en contraste con nuestras propias sensaciones"</Concept> (1989, p. 58).
+                </p>
+
+                <p className="mb-6">
+                    Para que ocurra este tipo de empatía sensual, el propio cuerpo y el cuerpo del otro deben ser de un tipo similar o tener esquemas corporales comparables. Cuáles son los límites de este tipo o esquema corporal es una pregunta abierta e importante. Stein nota, <Concept>"la empatía es bastante exitosa con manos de hombres y niños que son muy diferentes a la mía"</Concept> (p. 58). Luego plantea el punto crucial: <Concept>"El tipo 'cuerpo físico humano' no define los límites del rango de mis objetos empáticos, más exactamente, de lo que puede dárseme como un cuerpo vivo"</Concept>. Por ejemplo: <Concept>"¿Debería quizás considerar la pata de un perro en comparación con mi mano? No tengo un mero cuerpo físico, tampoco, sino una extremidad sensible de un cuerpo vivo... Puedo sentir-dentro dolor cuando el animal está herido"</Concept>. Sin embargo, Stein mantiene, <Concept>"cuanto más me desvío del tipo 'hombre', menor se vuelve el número de posibilidades de cumplimiento"</Concept> (1989, p. 59).
+                </p>
+
+                <p className="mb-6">
+                    Entrelazada con la empatía sensual está la percepción de la presencia corporal del otro como expresiva de pensamientos y sentimientos subjetivos: <Concept>"nosotros 'vemos' vergüenza 'en' el sonrojo, irritación en el ceño fruncido, ira en el puño cerrado"</Concept> (1989, p. 75). Estos ejemplos de sonrojarse e irritación muestran que la percepción empática de las expresiones faciales es paradigmática de este aspecto de la empatía. Como escribe <Entity>Jonathan Cole</Entity> en un artículo sobre la encarnación facial:
+                </p>
+
+                <BlockQuote author="Jonathan Cole (1997)">
+                    [L]a cara implica una orden no solo de expresar, y de observar expresiones, sino de sumergirse uno mismo en lo que se expresa y sentir algo de ello uno mismo. Aunque complementario al lenguaje corporal, en esto puede ir más allá de lo que usualmente se considera que se expresa a través de la postura. Las expresiones realmente ayudan a constituir lo que está dentro. Una cara, por lo tanto, no es solo una expresión de un yo disponible para que otros lo lean, sino que hasta cierto punto el yo se constituye en la cara y se desarrolla, y se experimenta, en la interacción entre caras.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    Otro aspecto de la empatía es la percepción del otro como siendo otro centro de orientación en un mundo espacial común. Nuestra experiencia del espacio y nuestro sentido de mismidad corporal están entrelazados: Percibimos que las cosas están dispuestas a nuestro alrededor, mientras nosotros estamos "aquí", en lo que <Entity>Husserl</Entity> llama el "punto-cero" de la orientación espacial. Esta diferenciación entre "aquí" y "allí" no pertenece al espacio considerado como un medio independiente del propio cuerpo; pertenece a nuestro espacio corporal egocéntrico. Cuando percibimos a otro, lo percibimos como "allí" en relación con nosotros "aquí", y lo captamos como teniendo su propio espacio egocéntrico definido por su propio cuerpo. Además, percibimos su cuerpo como un locus de agencia intencional y movimiento voluntario. No experimentamos los movimientos de otro como mecánicos sino como vivos, espontáneos y volitivos. Ni la sensibilidad (tener campos de sensación) ni la orientación espacial (tener un espacio egocéntrico) pueden separarse del movimiento voluntario en nuestra percepción empática de otro. Al percibir empáticamente a otra persona como un ser sensible capaz de movimiento voluntario, la percibimos ocupando su propio "aquí", en relación con el cual nosotros estamos "allí".
+                </p>
+
+                <p className="mb-6">
+                    Una vez más, este tipo de experiencia empática puede permanecer en el primer nivel de logro (percibir empáticamente al otro allá), o puede proceder al segundo nivel donde se despliega de acuerdo con el movimiento imaginativo de ponerse uno mismo en el lugar del otro. Esta autotransposición imaginativa nos permite ganar una nueva perspectiva espacial sobre el mundo, la perspectiva del otro. Al mismo tiempo, continuamos teniendo nuestro propio centro de orientación espacial. Así, la empatía nos permite captar el espacio como un medio intersubjetivo en el que no hay un único punto-cero o centro corporal de orientación. Para poner el punto de otra manera, la empatía es una precondición para nuestra experiencia de habitar un mundo espacial común e intersubjetivo. La empatía proporciona un punto de vista en el que el propio centro de orientación es uno entre otros. Claramente, el espacio correlacionado a tal punto de vista no puede ser el propio espacio egocéntrico, pues ese espacio está definido por el propio punto-cero, mientras que la nueva perspectiva espacial contiene el propio punto-cero como simplemente un punto espacial entre muchos otros.
+                </p>
+
+                <p className="mb-6">
+                    Según <Entity>Husserl</Entity> y <Entity>Stein</Entity>, esta captación experiencial de un espacio intersubjetivo es una condición de posibilidad para la propia capacidad de experimentar el propio cuerpo vivo como un cuerpo físico como otros cuerpos en el mundo. Si uno estuviera confinado a su propio punto de vista de primera persona singular, tal que no tuviera absolutamente ninguna apertura empática a los otros, incluyendo cómo uno es un otro para el otro, uno no podría captar que el propio cuerpo es un objeto físico perceptible por una pluralidad de sujetos. Un objeto físico es algo que puede pararse ante uno en la percepción y ser examinado desde una multiplicidad de puntos de vista. El propio cuerpo vivo, sin embargo, desde el punto de vista exclusivamente de primera persona singular, no puede pararse ante uno de esta manera. No importa cómo uno gire, el propio cuerpo está siempre "aquí", en el punto-cero, nunca "allí". Uno no puede caminar alrededor de él para contemplarlo desde todos los lados (<Entity>Merleau-Ponty</Entity> 1962, pp. 90-97). En general, el propio cuerpo, como aquello por lo cual uno percibe el mundo, no puede ser revelado perceptualmente a uno como simplemente otro objeto en el mundo. Así, mientras consideremos el cuerpo vivo simplemente desde la perspectiva de primera persona singular, es fenomenalmente diferente a cualquier otro objeto físico. Es fenomenalmente <Concept>"el objeto más extraño"</Concept> (<Entity>Stein</Entity> 1989, p. 41), algo radicalmente incompleto. En palabras de Husserl: <Concept>"El mismo Cuerpo [cuerpo vivido] que me sirve como medio para toda mi percepción me obstruye en la percepción de sí mismo y es una cosa constituida notablemente imperfecta"</Concept> (1989, p. 167). A través de la empatía, específicamente la experiencia de uno mismo como un otro para el otro, uno gana una vista de su propio ser corporal más allá de su perspectiva de primera persona singular.
+                </p>
+
+                <p className="mb-6">
+                    <Entity>Stein</Entity> elabora este punto importante en términos de lo que ella llama empatía reiterada. En la <Concept>empatía reiterada</Concept>, me veo a mí mismo desde tu perspectiva. Dicho más precisamente, capto empáticamente tu experiencia empática de mí. De esta manera, adquiero una visión de mí mismo no meramente como algo perceptible por otros sino como algo perceptible empáticamente por otros como un sujeto corporal vivo. En otras palabras, ya no experimento meramente la sensibilidad desde dentro, sino que también me experimento a mí mismo como reconociblemente sensible desde fuera, desde la perspectiva del otro. De esta manera, mi sentido de mismidad personal, incluso a un nivel corporal básico, está atado al reconocimiento por otro y a la capacidad de captar ese reconocimiento empáticamente.
+                </p>
+
+                <p className="mb-6">
+                    Implícitos en la cuenta anterior hay tres procesos empáticos distinguibles o tipos de empatía, a los cuales también podemos añadir un cuarto (<Entity>Depraz</Entity> 2001b; <Entity>Thompson</Entity> 2001, 2005):
+                </p>
+
+                <ol className="list-decimal pl-8 mb-6 space-y-2 text-slate-400 marker:text-amber-500">
+                    <li>El acoplamiento o emparejamiento pasivo o involuntario de mi cuerpo vivo con tu cuerpo vivo en percepción y acción.</li>
+                    <li>El movimiento o transposición imaginaria de mí mismo a tu lugar.</li>
+                    <li>La comprensión de ti como un otro para mí, y de mí como un otro para ti.</li>
+                    <li>La percepción moral de ti como una persona.</li>
+                </ol>
+
+                <p className="mb-6">
+                    En las siguientes secciones, uso esta tipología fenomenológica de la experiencia empática como una manera de organizar y dar sentido a estudios empíricos recientes de la empatía y la cognición social desde la psicología del desarrollo, la etología, y la neurociencia cognitiva y afectiva. De esta manera, esbozo un marco neurofenomenológico para el estudio científico de la empatía.
+                </p>
+
+                {/* AFFECTIVE AND SENSORIMOTOR COUPLING SECTION */}
+                <SectionHeader id="affective-coupling" number="Sección 03" title="Acoplamiento Afectivo y Sensoriomotor" />
+
+                <p className="mb-6">
+                    El primer tipo de empatía es el <Concept>acoplamiento dinámico</Concept> o emparejamiento de los cuerpos vivos del yo y el otro. Es pasivo en el sentido de no ser iniciado voluntariamente o como resultado de deliberación o reflexión, y sirve como soporte para los otros aspectos de la empatía. <Concept>"Acoplamiento"</Concept> o <Concept>"emparejamiento"</Concept> significa un vínculo asociativo del yo y el otro sobre la base de su similitud corporal. Esta similitud opera no tanto al nivel de la apariencia visual, que forma parte de la imagen corporal como un objeto intencional presente a la conciencia, sino al nivel del gesto, la postura y el movimiento —es decir, al nivel del <Concept>esquema corporal</Concept> inconsciente (<Entity>Gallagher</Entity> 1986b). Así, el acoplamiento corporal o emparejamiento permite que la empatía no sea simplemente la comprensión de las emociones particulares de otro (tristeza, alegría, y así sucesivamente), sino en un nivel más fundamental la experiencia de otro como un sujeto corporal vivo como uno mismo.
+                </p>
+
+                <p className="mb-6">
+                    Esta concepción fenomenológica de la base corporal de la empatía puede vincularse a la ciencia de la mente refiriéndose al creciente cuerpo de evidencia psicológica y neurofisiológica de mecanismos de acoplamiento que vinculan al yo y al otro a niveles sensoriomotores y afectivos (<Entity>Decety</Entity> en prensa; <Entity>Decety</Entity> y <Entity>Sommerville</Entity> 2003; <Entity>Gallese</Entity>, <Entity>Keysers</Entity>, y <Entity>Rizzolatti</Entity> 2004; <Entity>Preston</Entity> y <Entity>de Waal</Entity> 2002). Por ejemplo, según la teoría de codificación común de percepción y acción, los eventos percibidos y las acciones planeadas comparten un formato neural común (<Entity>Prinz</Entity> 1997). Así, la percepción de una acción activa automáticamente no simplemente procesos de reconocimiento perceptual para esa acción, sino también varios aspectos de los procesos motores para generarla.
+                </p>
+
+                <p className="mb-6">
+                    Evidencia que apoya esta idea proviene del descubrimiento de las llamadas <Concept>neuronas espejo</Concept> en el área F5 de la corteza premotora de monos (<Entity>di Pellegrino et al.</Entity> 1992). Estas neuronas muestran el mismo patrón de actividad tanto cuando el animal lleva a cabo ciertos movimientos de mano dirigidos a metas como cuando el animal observa a otro individuo realizando las mismas acciones. La actividad de las neuronas se correlaciona con actos motores intencionales específicos (definidos por la presencia de una meta) y no con la ejecución de movimientos particulares (definidos por la contracción de grupos musculares particulares). Las neuronas pueden clasificarse según el tipo de acción, tal como "agarrar con la mano", "agarrar con la mano y la boca", y "alcanzar". Todas las neuronas del mismo tipo se correlacionan con acciones que cumplen el mismo objetivo. Sobre la base de estas propiedades, las neuronas espejo parecen formar un sistema cortical que empareja la observación de acciones motoras realizadas por otro individuo con la realización del mismo tipo de acciones por uno mismo (<Entity>Gallese</Entity>, <Entity>Keysers</Entity>, y <Entity>Rizzolatti</Entity> 2004).
+                </p>
+
+                <p className="mb-6">
+                    Estos hallazgos a nivel de neuronas individuales han sido complementados por estudios de imágenes cerebrales en humanos usando resonancia magnética funcional (fMRI). Un estudio mostró que la actividad en dos áreas corticales diferentes —la corteza parietal anterior derecha, y el área de Broca en la corteza frontal inferior izquierda (que es el área motora para el habla y el homólogo humano del área F5 en el mono)— se volvió más intensa cuando un individuo realizaba simultáneamente los mismos movimientos de dedos que observaba ser realizados por otro individuo (<Entity>Iacoboni et al.</Entity> 1999). Los autores de este estudio sugieren que el área frontal izquierda está preocupada con la meta motora de la acción observada, y por ende con entender el significado de la acción, mientras que el área parietal derecha está preocupada con los aspectos kinestésicos precisos del movimiento, y por ende con los detalles necesarios para memorizar o repetir el movimiento exacto. Otro estudio de imágenes cerebrales mostró que cuando un individuo observa a otro ejecutar acciones con diferentes partes del cuerpo (acciones de boca, acciones de mano, y acciones de pie), los patrones neurales de activación en el cerebro del observador corresponden a aquellos que estarían activos si el observador estuviera realizando las mismas acciones corporales (<Entity>Buccino et al.</Entity> 2001). Así, los sistemas espejo comprenden un rico repertorio de acciones corporales además de las acciones de mano.
+                </p>
+
+                <p className="mb-6">
+                    Estudios neurales de estos sistemas espejo proporcionan evidencia para la co-constitución dinámica de percepción y acción al nivel de la agencia intencional (<Entity>Hurley</Entity> 1998, pp. 413-419). En el contexto de la cognición social, esta interdependencia constitutiva da forma al dominio social sobre la base de una resonancia sensoriomotora entre el yo y el otro en la percepción y ejecución de la acción. En palabras de <Entity>Gallese</Entity>: <Concept>"cuando observamos acciones realizadas por otros individuos nuestro sistema motor 'resuena' junto con el del agente observado"</Concept> (<Entity>Gallese</Entity> 2001, p. 38).
+                </p>
+
+                <p className="mb-6">
+                    Tal reflejo y resonancia también ocurren en el caso del dolor y la emoción. Neuronas en la corteza cingulada anterior que responden cuando un paciente recibe un estímulo desagradable en su mano también responden cuando el paciente ve un pinchazo aplicado a la mano del examinador (<Entity>Hutchinson et al.</Entity> 1999). También se ha mostrado que la percepción de la emoción activa mecanismos neurales que juegan un papel clave en generar emociones (<Entity>Adolphs</Entity> 2003) y que muchas de las mismas áreas cerebrales se activan tanto cuando los sujetos imitan como cuando observan expresiones faciales de varias emociones (<Entity>Carr et al.</Entity> 2003).
+                </p>
+
+                <p className="mb-6">
+                    Además del acoplamiento sensoriomotor, el acoplamiento emotivo y la <Concept>resonancia afectiva</Concept> también ocurren entre el yo y el otro. En la resonancia afectiva, dos o más individuos afectan los estados emocionales del otro. Un ejemplo clásico es el llanto en infantes recién nacidos (que usualmente se etiqueta con el término engañoso contagio emocional). Los bebés recién nacidos lloran en respuesta al sonido del llanto de otro bebé, una reacción que se cree proporciona algunos de los fundamentos para el desarrollo posterior de la empatía cognitiva (<Entity>Eisenberg</Entity> y <Entity>Strayer</Entity> 1987; <Entity>de Waal</Entity> 1996, p. 121). La resonancia afectiva también ocurre cuando dos individuos se involucran en interacción directa y uno busca activamente afectar al otro, como cuando un joven rechazado hace una rabieta a los pies de su madre —un comportamiento visto no solo en humanos sino también en simios (<Entity>de Waal</Entity> 2002).
+                </p>
+
+                {/* IMAGINARY TRANSPOSITION SECTION */}
+                <SectionHeader id="imaginary-transposition" number="Sección 04" title="Transposición Imaginaria" />
+
+                <p className="mb-6">
+                    El segundo tipo de empatía es la transposición imaginaria de uno mismo al lugar del otro. Este proceso es más activo y cognitivo que la resonancia sensoriomotora y afectiva. En lugar de simplemente el emparejamiento corporal involuntario del yo y el otro, procesos cognitivos de toma de perspectiva permiten a uno imaginar o transponerse mentalmente al lugar del otro. Estudios comparativos de empatía de la etología cognitiva proporcionan una ventana importante sobre la empatía cognitiva. La presencia y extensión de la empatía entre animales no humanos, especialmente primates, es un tema de mucho debate. Según una visión de "todo o nada", la empatía cognitiva (el único tipo de empatía, según esta visión) requiere la capacidad cognitiva de atribuir estados mentales a otro individuo y de entender el comportamiento del otro a la luz de ellos. Esta capacidad, usualmente llamada <Concept>lectura de mente</Concept> (<em>mind-reading</em>), se toma por muchos teóricos como requiriendo la posesión de una <Concept>"teoría de la mente"</Concept>, un cuerpo teórico de conocimiento sobre estados mentales y su papel en generar comportamiento. Defensores de esta forma de pensar han argumentado que los chimpancés fallan ciertas pruebas de lectura de mente y por lo tanto no poseen una teoría de la mente. En consecuencia, se dice que son incapaces de empatía cognitiva (<Entity>Povinelli</Entity> 1998; <Entity>Povinelli</Entity> y <Entity>Preuss</Entity> 1995). Sin embargo, como he sugerido aquí y como otros han propuesto, más notablemente <Entity>Frans de Waal</Entity> (1996), la empatía no debe ser vista como un fenómeno de todo o nada. En palabras de de Waal: <Concept>"Existen muchas formas de empatía intermedias entre los extremos de mera agitación y angustia de otro y comprensión completa de su predicamento. En un extremo del espectro, los infantes rhesus se alteran y buscan contacto unos con otros tan pronto como uno de ellos grita. En el otro extremo, un chimpancé recuerda una herida que ha infligido, y regresa a la víctima para inspeccionarla"</Concept> (<Entity>de Waal</Entity> 1996, p. 69).
+                </p>
+
+                <p className="mb-6">
+                    Otros casos intermedios son el comportamiento de consuelo y el comportamiento de ayuda a medida. El comportamiento de consuelo es el contacto amistoso por un espectador no involucrado y menos angustiado hacia una víctima de un encuentro previamente agresivo. Por ejemplo, <Entity>de Waal</Entity>, en su libro <em>Good Natured</em>, presenta una fotografía de un chimpancé juvenil consolando a un adulto angustiado. El comportamiento de consuelo ha sido extensamente documentado en grandes simios solamente (y no se ha encontrado en especies de monos a pesar de grandes esfuerzos por encontrarlo). La ayuda a medida es venir en ayuda de otro (ya sea un coespecífico o un miembro de otra especie) con comportamientos adaptados a las necesidades particulares del otro (como cuando un simio ayuda a otro a bajar de un árbol o trata de ayudar a un pájaro herido a volar). Tal comportamiento, en palabras de de Waal, <Concept>"probablemente requiere una distinción entre yo y otro que permita que la situación del otro sea divorciada de la propia mientras se mantiene el vínculo emocional que motiva el comportamiento"</Concept> (<Entity>de Waal</Entity> 2002). Existe un gran número de reportes anecdóticos de ayuda a medida en simios.
+                </p>
+
+                <p className="mb-6">
+                    La empatía cognitiva en su plenitud, sin embargo, se logra cuando un individuo puede adoptar mentalmente la perspectiva del otro intercambiando lugares con el otro en la imaginación. Descrito fenomenológicamente: Yo estoy aquí e imagino ir allá y estar en el lugar donde tú estás ahora mismo. Inversamente, tú estás aquí (el "allí" donde imagino estar) y tú imaginas que vas allá, al lugar donde yo estoy (mi "aquí"). A través de este movimiento imaginado y transposición espacial, somos capaces de intercambiar nuestras perspectivas mentales, nuestros pensamientos y sentimientos. Si los simios poseen este tipo de capacidad mental es poco claro y un tema de debate (<Entity>Gallup</Entity> 1998; <Entity>Povinelli</Entity> 1998).
+                </p>
+
+                <p className="mb-6">
+                    En niños humanos, la capacidad mental para transponer el yo y el otro parece estar vinculada a la emergencia, alrededor de los nueve a doce meses de edad, de todo un grupo de capacidades cognitivas conocidas colectivamente como <Concept>atención conjunta</Concept> (<Entity>Tomasello</Entity> 1999, pp. 62-63). "Atención conjunta" se refiere a la estructura triádica de un niño, adulto, y un objeto o evento al cual comparten atención, y comprende las actividades de seguimiento de mirada (seguir confiablemente a dónde están mirando los adultos), compromiso conjunto con objetos o eventos compartidos, uso de adultos como puntos de referencia social, y aprendizaje imitativo (actuar sobre objetos como lo hacen los adultos). Alrededor del mismo tiempo, los infantes también comienzan a señalar cosas y sostenerlas para que alguien las vea, gestos que sirven para dirigir la atención adulta activa e intencionalmente. Como argumenta <Entity>Michael Tomasello</Entity>, <Concept>"los infantes comienzan a involucrarse en interacciones de atención conjunta cuando comienzan a entender a otras personas como agentes intencionales como el yo"</Concept> (1999, p. 68). Él propone que el infante usa su comprensión primal de los otros como "como yo" y su comprensión emergente de su propia agencia intencional, como la base sobre la cual juzgar analógica y categóricamente que los otros son agentes intencionales "como yo" también.
+                </p>
+
+                <p className="mb-6">
+                    Según esta visión, la experiencia del yo viene primero y sirve como base para desarrollar la comprensión del otro (<Entity>Decety</Entity> y <Entity>Sommerville</Entity> 2003; <Entity>Meltzoff</Entity> y <Entity>Moore</Entity> 1998). Contraria a esta visión es la visión de que el yo y el otro surgen juntos. Así, <Entity>Baressi</Entity> y <Entity>Moore</Entity> (1996) proponen que la autocomprensión y la comprensión del otro se desarrollan juntas a partir de una experiencia previa de relaciones intencionales que no diferencia entre fuentes de información de primera persona y tercera persona. Las diferencias entre estas visiones y su relación con diferencias comparables en cuentas fenomenológicas de la intersubjetividad están más allá del alcance de este capítulo y destacan como un tema importante para investigación futura.
+                </p>
+
+                {/* MUTUAL UNDERSTANDING SECTION */}
+                <SectionHeader id="mutual-understanding" number="Sección 05" title="Comprensión Mutua del Yo y del Otro" />
+
+                <p className="mb-6">
+                    El tercer tipo de empatía implica no simplemente imaginarme a mí mismo en tu lugar sino entenderte como un otro para mí, y a mí como un otro para ti. En otras palabras, la transposición imaginaria en este tipo de empatía implica la posibilidad de verme a mí mismo desde tu perspectiva, es decir, como tú me percibes empáticamente. La empatía así se vuelve reiterada, de modo que imagino empáticamente tu experiencia empática de mí y tú imaginas empáticamente mi experiencia empática de ti. También hablamos el uno al otro sobre nuestras experiencias, y así la comunicación lingüística y la interpretación participan en y estructuran este intercambio. Como resultado, cada uno de nosotros participa en un punto de vista intersubjetivo que trasciende nuestras propias perspectivas de primera persona singular.
+                </p>
+
+                <p className="mb-6">
+                    Podemos volvernos de nuevo a la psicología del desarrollo para obtener una visión de la génesis de este tercer aspecto de la empatía y el papel que juega en constituir una perspectiva intersubjetiva. <Entity>Tomasello</Entity>, en su libro <em>The Cultural Origins of Human Cognition</em>, describe esta génesis en el infante humano:
+                </p>
+
+                <BlockQuote author="Michael Tomasello (1999)">
+                    A medida que los infantes comienzan a seguir y dirigir la atención de otros a entidades externas a los nueve a doce meses de edad, sucede en ocasiones que la otra persona cuya atención un infante está monitoreando se enfoca en el infante mismo. El infante entonces monitorea la atención de esa persona hacia ella de una manera que no era posible previamente, es decir, previa a la revolución socio-cognitiva de los nueve meses. Desde este punto en adelante las interacciones cara a cara del infante con otros —que aparecen en la superficie como continuas con sus interacciones cara a cara de la infancia temprana— son transformadas radicalmente. Ella ahora sabe que está interactuando con un agente intencional que la percibe e intenta cosas hacia ella. Cuando el infante no entendía que otros perciben e intentan cosas hacia un mundo exterior, no podía haber duda de cómo percibían e intentaban cosas hacia mí. Después de llegar a este entendimiento, el infante puede monitorear la relación intencional del adulto con el mundo incluyéndose a sí misma... Por algo como este mismo proceso los infantes a esta edad también se vuelven capaces de monitorear las actitudes emocionales de los adultos hacia ellos también —un tipo de referencia social de las actitudes de otros hacia el yo. Este nuevo entendimiento de cómo otros se sienten sobre mí abre la posibilidad para el desarrollo de la timidez, la autoconciencia, y un sentido de autoestima. Evidencia de esto es el hecho de que dentro de unos pocos meses después de la revolución socio-cognitiva, en el primer cumpleaños, los infantes comienzan a mostrar los primeros signos de timidez y coquetería frente a otras personas y espejos.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    Como <Entity>Tomasello</Entity> continúa discutiendo, una vez que el infante entiende a otros individuos como seres intencionales y a sí misma como una participante entre otros en una interacción social, entonces surgen dimensiones cognitivas completamente nuevas. El niño llega a ser capaz de participar en <Concept>escenas atencionales conjuntas</Concept> —interacciones sociales en las que el niño y el adulto atienden conjuntamente a alguna tercera cosa, y a la atención del uno al otro a esa tercera cosa, por un periodo extendido de tiempo, y en las que el niño puede conceptualizar su propio rol desde la misma perspectiva "exterior" que la otra persona. Las escenas atencionales conjuntas a su vez proporcionan el marco para la adquisición del lenguaje, la representación simbólica y las convenciones comunicativas.
+                </p>
+
+                <p className="mb-6">
+                    Hay una serie de paralelos entre el análisis de <Entity>Tomasello</Entity> de las escenas atencionales conjuntas y el análisis fenomenológico de la empatía. Aunque él no usa el término empatía en este contexto, el logro cognitivo que describe de ser capaz de conceptualizarse a uno mismo desde la perspectiva de otra persona corresponde a lo que <Entity>Edith Stein</Entity> llama "empatía reiterada". En la empatía reiterada, uno se ve a sí mismo desde la perspectiva de otro y por ello se capta a sí mismo como un participante individual en un mundo intersubjetivo. Similarmente, la participación del niño en una escena atencional conjunta requiere que sea capaz de monitorear los actos intencionales de otra persona, incluyendo aquellos actos dirigidos hacia sus propios actos intencionales/atencionales, pues ella misma es a menudo el objeto de atención conjunta. Esta habilidad por parte del niño corresponde a ser capaz de involucrarse en empatía reiterada, en la cual el niño capta empáticamente no simplemente al otro como un agente intencional como él mismo, sino la experiencia empática del otro de sí mismo como un agente intencional. Sin esta habilidad empática para entenderse a uno mismo como un otro para el otro, es difícil ver cómo uno podría llegar a tener una perspectiva no egocéntrica e intersubjetiva sobre uno mismo como participante en una interacción social:
+                </p>
+
+                <BlockQuote author="Michael Tomasello (1999)">
+                    [L]a atención conjunta a veces se caracteriza como el niño coordinando la atención entre solo dos cosas: el objeto y el adulto. Pero... a medida que el niño comienza a monitorear la atención de los adultos a entidades externas, esa entidad externa a veces resulta ser el niño mismo —y así comienza a monitorear la atención de los adultos hacia ella y así a verse a sí misma desde el exterior, por así decirlo. Ella también comprende el rol del adulto desde este mismo punto de vista exterior, y así, en general, es como si estuviera viendo toda la escena desde arriba, con ella misma como solo una jugadora en ella. Esto es opuesto a la forma en que otras especies de primates e infantes humanos de seis meses ven la interacción social desde una perspectiva "interior", en la cual los otros participantes aparecen en un formato (exterocepción de tercera persona) y el "Yo" aparece en otro formato diferente (propiocepción de primera persona...).
+                </BlockQuote>
+
+                <p className="mb-6">
+                    La discusión de <Entity>Tomasello</Entity> sobre el logro del niño de esta perspectiva intersubjetiva enfatiza la progresión del desarrollo desde la comprensión del neonato del otro como un ser animado a la comprensión del infante del otro como un agente intencional con atención y comportamiento dirigido a metas, a la comprensión del niño de cuatro años del otro como un agente mental con pensamientos y creencias (que no necesitan expresarse en comportamiento y pueden fallar en coincidir con el mundo).
+                </p>
+
+                <p className="mb-6">
+                    Los fenomenólogos, sin descuidar los aspectos intencionales y mentales del yo, llaman la atención sobre la ambigüedad de primera persona/tercera persona del cuerpo vivido en la empatía reiterada. Mi cuerpo es vivido por mí en primera persona, pero también te aparece a ti en tercera persona (o segunda persona), y al captar empáticamente esa experiencia tuya, me experimento a mí mismo como un otro para ti. Aquí se puede hacer una conexión con el punto sobre la diferencia entre formatos cognitivos de primera persona (propioceptivos) y tercera persona (exteroceptivos) en interacciones sociales. Si el "Yo" apareciera solo en un formato de primera persona singular, entonces no sería posible tener ninguna comprensión no egocéntrica del "Yo" como un individuo corporal en un mundo intencional público que trasciende al yo. Mi experiencia egocéntrica (propioceptiva y kinestésica) de mí mismo no me presenta mi cuerpo como una cosa perceptual equivalente a otras cosas perceptuales que están ante mí —pues mi cuerpo no está ante mí de esta manera. Por lo tanto, como remarcamos antes, si el cuerpo vivido fuera revelado solo desde una perspectiva de primera persona singular, parecería diferente a cualquier otro objeto y extrañamente incompleto. A través de la empatía reiterada en escenas atencionales conjuntas —la experiencia de uno mismo como un otro para el otro— uno puede ganar una visión no egocéntrica e intersubjetiva del propio cuerpo vivido como un agente intencional individual en un mundo público.
+                </p>
+
+                {/* MORAL PERCEPTION SECTION */}
+                <SectionHeader id="moral-perception" number="Sección 06" title="Percepción Moral" />
+
+                <p className="mb-6">
+                    El cuarto tipo de empatía es la percepción del otro como un ser que merece preocupación y respeto. Este tipo de empatía no es lo mismo que cualquier sentimiento particular de preocupación por otro, como simpatía, amor o compasión. Más bien, es la capacidad subyacente para tener tales sentimientos de preocupación dirigidos al otro y con respecto al otro (<Entity>Vetlesen</Entity> 1994). Cultivamos esta capacidad en cada uno —por ejemplo, de padre a hijo— y por ello nos constituimos mutuamente como personas en un sentido moral.
+                </p>
+
+                <p className="mb-6">
+                    Este tipo de empatía también puede introducirse desde una perspectiva del desarrollo. Como hemos visto, hay una progresión desde la comprensión del infante de los otros como agentes intencionales (con atención, estrategias conductuales y metas) a la comprensión del niño pequeño de los otros como agentes mentales (con creencias, deseos y planes). Según <Entity>Piaget</Entity> y <Entity>Tomasello</Entity>, la comprensión moral comienza a emerger alrededor del mismo tiempo que el niño llega a entender a los otros como agentes mentales. Deriva no de las reglas que los adultos imponen sobre el comportamiento sino de empatizar con otras personas como agentes mentales y ser capaz de ver y sentir las cosas desde su punto de vista (<Entity>Tomasello</Entity> 1999, pp. 179-181).
+                </p>
+
+                <p className="mb-6">
+                    Dentro de la filosofía moral occidental hay una larga tradición que se remonta a <Entity>Kant</Entity> que enfatiza la razón sobre el sentimiento. Actuar por deberes legislados por la razón se piensa que tiene mayor valor moral que actuar sobre la base del sentimiento o sentimiento. Sin embargo, como observa <Entity>de Waal</Entity>, haciendo eco de <Entity>David Hume</Entity> y <Entity>Adam Smith</Entity>: <Concept>"La ayuda a otros en necesidad nunca sería internalizada como un deber sin el sentimiento de compañerismo que impulsa a las personas a interesarse unas por otras. Los sentimientos morales vinieron primero; los principios morales segundo"</Concept> (1996, p. 87).
+                </p>
+
+                <p className="mb-6">
+                    La empatía en el sentido moral es una capacidad cognitiva y emocional básica que subyace a todos los sentimientos y emociones morales que uno puede tener por otro. El punto aquí no es que la empatía agota la experiencia moral, pues ciertamente no lo hace, sino que la empatía proporciona la fuente de ese tipo de experiencia y el punto de entrada a ella. Sin empatía, la preocupación y el respeto por los otros como personas en el sentido moral —como fines en sí mismos— estarían grandemente empobrecidos. Como ha argumentado <Entity>Mark Johnson</Entity>:
+                </p>
+
+                <BlockQuote author="Mark Johnson (1993)">
+                    [E]l imperativo Kantiano de tratar siempre a los otros (y a uno mismo) como fines en sí mismos no tiene significado práctico independiente de nuestra toma imaginativa del lugar del otro. Contrario a las afirmaciones explícitas de Kant, no podemos saber qué significa tratar a alguien como un fin en sí mismo, de ninguna manera concreta, a menos que podamos imaginar su experiencia, sentimientos, planes, metas y esperanzas. No podemos saber qué demanda el respeto por los otros de nosotros, a menos que participemos imaginativamente en su experiencia del mundo.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    Los cuatro tipos de empatía presentados aquí ocurren juntos en la experiencia intersubjetiva cara a cara. Se entrelazan a través del cuerpo vivido y a través del lenguaje. Tú te imaginas a ti mismo en mi lugar sobre la base de la similitud expresiva y el acoplamiento espontáneo de nuestros cuerpos vividos. Esta experiencia tuya contribuye a la constitución de mí para mí mismo, pues me experimento a mí mismo como un ser intersubjetivo imaginando empáticamente tu experiencia empática de mí. Inversamente, yo me imagino a mí mismo en tu lugar, y esta experiencia mía contribuye a la constitución de ti para ti mismo. A medida que nos comunicamos en lenguaje y gesto, nos interpretamos y entendemos mutuamente dialógicamente. Esta dinámica dialógica no es una combinación lineal o aditiva de dos mentes preexistentes confinadas en cráneos. Emerge de y forma recíprocamente el acoplamiento no lineal de uno mismo y otro en percepción y acción, emoción e imaginación, y gesto y habla. De esta manera, el yo y el otro se producen mutuamente a través de la empatía.
+                </p>
+
+                {/* ENCULTURATION SECTION */}
+                <SectionHeader id="enculturation" number="Sección 07" title="Enculturación" />
+
+                <p className="mb-6">
+                    Al retomar la empatía al final de este libro, nuestro enfoque ha cambiado de la cognición individual y la subjetividad a la cognición social y la intersubjetividad. La empatía, sin embargo, es solo un aspecto de la intersubjetividad, uno que opera al nivel del encuentro cara a cara entre individuos en un grupo social. Para una perspectiva más completa sobre la intersubjetividad necesitamos tomar en cuenta la cultura, la historia y el mundo de la vida. Necesitamos mirar no solo las estructuras formales de la experiencia empática y su desarrollo encarnado, sino también el devenir cultural e histórico de la experiencia humana dentro y a través de las generaciones. En términos fenomenológicos, necesitamos movernos de análisis estáticos y genéticos a unos generativos.
+                </p>
+
+                <p className="mb-6">
+                    Una de las razones más importantes por las que la mentalidad humana no puede reducirse simplemente a lo que sucede dentro del cerebro de un individuo es que la actividad mental humana es fundamentalmente social y cultural. La cultura no es una mera adición o soporte externo a la cognición; está tejida en la tela misma de cada mente humana desde el principio. La cultura simbólica en particular da forma a la "arquitectura cognitiva" de la mente humana. Despojados de la cultura, simplemente no tendríamos las capacidades cognitivas que nos hacen humanos. En palabras del neuropsicólogo <Entity>Merlin Donald</Entity>:
+                </p>
+
+                <BlockQuote author="Merlin Donald (2001)">
+                    Nuestra dependencia de la cultura es muy profunda y se extiende a la existencia misma de ciertos tipos de representación simbólica y pensamiento. Los humanos socialmente aislados no desarrollan lenguaje o ninguna forma de pensamiento simbólico y no tienen verdaderos símbolos de ningún tipo. De hecho, el cerebro humano aislado no actúa como un órgano simbolizador, no más que un cerebro de simio. Es aparentemente incapaz de generar representaciones simbólicas por sí solo. Lo hace solo a través de una enculturación intensiva.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    Podemos adoptar el término de desarrollo <Concept>enculturación</Concept> para describir este poder constitutivo de la cultura. La mentalidad humana emerge de procesos de desarrollo de enculturación y es configurada por la red cognitiva distribuida de la cultura simbólica.
+                </p>
+
+                <p className="mb-6">
+                    En años recientes, unos pocos científicos cognitivos en diferentes campos han llamado la atención sobre el papel constitutivo que la cultura juega en la cognición humana (<Entity>Donald</Entity> 1991, 2001; <Entity>Hendriks-Jansen</Entity> 1996; <Entity>Hutchins</Entity> 1995; <Entity>Tomasello</Entity> 1999). Aunque sus estudios implican claramente que no tiene sentido pensar en la cultura y la naturaleza como dominios de desarrollo separados, permanece una tendencia persistente en la ciencia de la mente a conceptualizar el desarrollo cognitivo humano en el marco dicotómico de "naturaleza versus cultura" o "naturaleza versus crianza". Por lo tanto, desde el principio necesitamos situar la tesis de la enculturación en un marco de desarrollo que rechace explícitamente estas categorías dicotómicas. La <Concept>teoría de sistemas del desarrollo</Concept>, discutida en el Capítulo 7, nos da el marco que necesitamos. La teoría de sistemas del desarrollo rechaza las cuentas de la evolución y el desarrollo que están estructuradas conceptualmente por las dicotomías innato-versus-adquirido, naturaleza-versus-crianza, y naturaleza-versus-cultura. El sistema de desarrollo de un organismo o ciclo de vida es la matriz de recursos necesarios para su desarrollo. Cualquier recurso que recurra confiablemente en cada generación y juegue un papel en reconstruir el ciclo de vida cuenta como algo heredado. Tales recursos incluyen no simplemente genes, sino muchos otros elementos del organismo y su nicho, desde componentes citoplasmáticos dentro de la célula, que deben pasarse con los genes, hasta organismos simbiontes, estructuras sociales y prácticas culturales.
+                </p>
+
+                <p className="mb-6">
+                    Además, la teoría de sistemas del desarrollo rechaza la concepción de "molécula maestra" de los genes: los genes no son causas de desarrollo distintivamente informacionales diferentes en tipo de otros factores de desarrollo que no califican como informacionales. En lugar de desplegarse de acuerdo con un plano o programa genético transmitido, el proceso de desarrollo de un ciclo de vida se reconstruye a sí mismo de generación en generación por medio de miríadas de vías causales interdependientes en múltiples niveles —genético, celular, social y cultural. La evolución no es simplemente cambio en frecuencias génicas, sino <Concept>"cambio en la distribución y constitución de sistemas de desarrollo (organismo-entorno)"</Concept> (<Entity>Oyama</Entity> 2000b, p. 77). Tampoco es la ontogenia el resultado de dos clases mutuamente excluyentes de factores de desarrollo heredados y adquiridos. Los rasgos fenotípicos son tanto adquiridos como heredados porque deben ser construidos en el desarrollo de nuevo en cada generación y así adquiridos en la ontogenia; y los recursos ambientales son tanto heredados o transmitidos como adquiridos, pues se pasan inseparablemente con los genes y así entran en la formación del organismo desde el mismo comienzo. Desde una perspectiva de sistemas del desarrollo entonces, no tiene sentido dividir los rasgos del organismo humano en las categorías separadas de naturaleza y cultura. Como declaran <Entity>Griffiths</Entity> y <Entity>Gray</Entity>:
+                </p>
+
+                <BlockQuote author="Griffiths y Gray (1994)">
+                    Muchas características típicas de la especie de la psicología humana dependen críticamente de características replicadas establemente de la cultura humana. Muchas características psicológicas que son específicas a ciertas culturas humanas pueden sin embargo tener explicaciones evolutivas, ya que esta variación puede reflejar diferenciación entre linajes de sistemas de desarrollo. Un programa de investigación obvio dentro de la teoría de sistemas del desarrollo es un intento de localizar recursos de desarrollo críticos en la cultura(s) humana, y estudiar su influencia en el desarrollo, y cómo ellos mismos son replicados.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    Los recursos de desarrollo críticos proporcionados por la cultura humana han sido durante mucho tiempo de preocupación central para el campo de la psicología cultural (<Entity>Bruner</Entity> 1990; <Entity>Tomasello</Entity> 1999; <Entity>Vygotsky</Entity> 1978). Un buen ejemplo de este campo —uno que nos permite construir sobre la discusión de la empatía— es el estudio de la atención conjunta y el aprendizaje cultural. <Entity>Donald</Entity> describe la atención conjunta como un <Concept>"dispositivo de guía cultural primario"</Concept> que <Concept>"permite a los niños seguir señales culturales que se volverán cada vez más abstractas a medida que expanden sus horizontes"</Concept> (2001, p. 205). La naturaleza de estos horizontes en expansión ha sido revisada a fondo por <Entity>Tomasello</Entity> (1999), quien describe cómo las escenas de atención conjunta son la base para la adquisición del lenguaje y la representación simbólica. También son la base para toda una serie de capacidades y estructuras cognitivas asociadas, tales como la habilidad de examinar el propio pensamiento desde la perspectiva del otro y por ello redescribir las propias representaciones cognitivas del mundo. Dibujando de su trabajo, podemos mostrar cómo el análisis fenomenológico genético de la empatía y el cuerpo vivido puede situarse dentro de un análisis generativo más abarcador de la cultura y el mundo de la vida intersubjetivo.
+                </p>
+
+                <p className="mb-6">
+                    Permítanme comenzar volviendo al acoplamiento cara a cara de infante y adulto en la interacción atencional conjunta. En esta forma característicamente humana de acoplamiento estructural (pero ver <Entity>Savage-Rumbaugh</Entity>, <Entity>Fields</Entity>, y <Entity>Taglialatela</Entity> 2001 sobre simios), dos (o más) individuos atienden conjuntamente a alguna cosa compartida, y a la atención del uno al otro a esa cosa, a través del acoplamiento recíproco de sus cuerpos vividos —contacto visual, expresiones faciales, voz, tacto y gesto— y sus capacidades para la conciencia consciente extendida temporalmente y el control atencional voluntario de la acción (<Entity>Donald</Entity> 2001, pp. 194-204).
+                </p>
+
+                <p className="mb-6">
+                    Necesitamos notar dos características cruciales de las escenas atencionales conjuntas en las que los infantes y niños pequeños llegan a participar con adultos (<Entity>Tomasello</Entity> 1999, pp. 97-98). La primera es que estas escenas ocupan un terreno medio de realidad social compartida entre el mundo perceptual más grande y el mundo lingüístico más pequeño: incluyen solo un subconjunto de cosas en el mundo perceptual del niño, pero más cosas que aquellas indicadas en cualquier conjunto de símbolos lingüísticos. La segunda es que la comprensión del niño de esta realidad social compartida incluye no simplemente al adulto y al objeto de su atención compartida, sino al niño mismo, <Concept>"conceptualizado desde la misma perspectiva 'exterior' que la otra persona y el objeto de modo que todos están en un formato representacional común"</Concept> (<Entity>Tomasello</Entity> 1999, pp. 97-98). Hemos visto cómo este formato representacional externo y no egocéntrico está relacionado con la empatía, en particular con la empatía reiterada mediante la cual uno comprende la experiencia de otro de uno mismo (por ejemplo, la atención de otro a los propios actos intencionales y atencionales en una escena atencional conjunta). Lo que necesitamos examinar ahora es cómo este formato no egocéntrico proporciona el contexto intersubjetivo para el aprendizaje cultural y la adquisición del lenguaje y la representación simbólica.
+                </p>
+
+                <p className="mb-6">
+                    Según <Entity>Tomasello</Entity>, la adquisición del lenguaje y la representación simbólica en escenas atencionales conjuntas procede sobre la base de las habilidades del niño para entender actos e intenciones comunicativas, así como para involucrarse en un tipo particular de aprendizaje imitativo y cultural llamado <Concept>imitación de inversión de roles</Concept> (1999, pp. 100-107). Las intenciones comunicativas son intenciones de dirigir la atención de otra persona a algo en la escena atencional conjunta. Para que el niño entienda las intenciones comunicativas, tiene que ser capaz de monitorear los estados intencionales de otros hacia sus propios estados intencionales/atencionales. Para producir los actos comunicativos que entiende, sin embargo, tiene que aprender a usar símbolos comunicativos hacia el adulto de la misma manera que el adulto los usa hacia ella. Este tipo de aprendizaje imitativo y cultural requiere no simplemente que el niño se sustituya a sí mismo por el adulto como actor, sino que sustituya al adulto por sí mismo como el objetivo del acto intencional (de lo contrario terminaría dirigiendo el símbolo hacia sí misma). Ella es capaz de efectuar esta sustitución porque puede entender toda la escena atencional conjunta desde una perspectiva externa, en la cual ella y el adulto están representados en el mismo formato no egocéntrico y por ende son intercambiables. (Este no sería el caso si ella estuviera representada en un formato de primera persona o egocéntrico, y el adulto en un formato de tercera persona). Este proceso de imitación de inversión de roles en la comunicación, cree Tomasello, <Concept>"realmente crea la convención o símbolo comunicativo entendido intersubjetivamente"</Concept> (1999, p. 107). Así, las convenciones o símbolos comunicativos son enactuados o generados para el infante por la imitación de inversión de roles.
+                </p>
+
+                <p className="mb-6">
+                    Una característica que distingue los símbolos comunicativos del lenguaje de otros símbolos intersubjetivos y comunicativos es que son perspectivales —encarnan la variedad de perspectivas que los seres humanos pueden tomar sobre las cosas para propósitos comunicativos. Consideren uno de los ejemplos de <Entity>Tomasello</Entity>:
+                </p>
+
+                <BlockQuote author="Michael Tomasello (1999)">
+                    Un usuario individual del lenguaje mira un árbol y, antes de atraer la atención de su interlocutor a ese árbol, debe decidir, basado en su evaluación del conocimiento y expectativas actuales del oyente, si usar Ese árbol de allá, Él, El roble, Ese roble de cien años, El árbol, El árbol del columpio, Esa cosa en el patio delantero, El adorno, La vergüenza, o cualquier número de otras expresiones. Ella debe decidir si el árbol está en / está parado en / está creciendo en / fue colocado en / está floreciendo en el patio delantero. Y estas decisiones no se toman sobre la base de la meta directa del hablante con respecto al objeto o actividad involucrada, sino más bien sobre la base de su meta con respecto al interés y atención del oyente a ese objeto o actividad. Esto significa que el hablante sabe que el oyente comparte con ella estas mismas opciones para la interpretación —de nuevo, todas disponibles simultáneamente. De hecho, el hecho de que el hablante esté, mientras habla, monitoreando el estado atencional del oyente (y viceversa) significa que ambos participantes en una conversación siempre son conscientes de que hay al menos sus dos perspectivas reales sobre una situación, así como las muchas más que están simbolizadas en símbolos y construcciones no usados.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    La adquisición del lenguaje implica la internalización de tales perspectivas múltiples e intenciones comunicativas. A medida que uno adquiere un lenguaje, uno internaliza, a través del aprendizaje imitativo y cultural, las intenciones comunicativas de otros para hacer que uno comparta su atención, así como las perspectivas que toman sobre las cosas en escenas atencionales conjuntas. En otras palabras, la adquisición del lenguaje implica la internalización de la atención conjunta en representación simbólica (<Entity>Tomasello</Entity> 1999, pp. 125-129).
+                </p>
+
+                <p className="mb-6">
+                    La enculturación de la mente en el lenguaje transforma fundamentalmente la naturaleza de la cognición humana. <Entity>Tomasello</Entity> detalla tres formas principales interrelacionadas en las que el lenguaje construye sobre habilidades cognitivas humanas básicas y las modela en otras mucho más complejas: (1) La comunicación lingüística es el vehículo para la "transmisión" de la mayoría del conocimiento cultural: <Concept>"Más allá de las habilidades fundamentales de cognición de los primates... el conocimiento y la experiencia de dominio específico de los niños dependen casi totalmente del conocimiento acumulado de sus culturas y su 'transmisión' a ellos vía símbolos lingüísticos y otros, incluyendo tanto la escritura como las imágenes"</Concept> (p. 165). (2) La comunicación lingüística influye en la construcción de los niños de categorías cognitivas, relaciones, analogías y metáforas. En inglés, por ejemplo, podemos interpretar objetos y propiedades como eventos o actividades (Él heló el disco; Ella coloreó la imagen): actividades y propiedades como objetos (Patinar es divertido; El verde es mi color favorito); y objetos y eventos como si fueran otros objetos y eventos (El tiempo es una flecha; El amor es un viaje) (p. 157; ver también <Entity>Johnson</Entity> 1987; <Entity>Lakoff</Entity> 1987; <Entity>Lakoff</Entity> y <Entity>Johnson</Entity> 1980). (3) La interacción lingüística con otros o discurso induce a los niños a tomar diferentes perspectivas conceptuales, incluyendo la perspectiva del otro sobre su propio discurso. La internalización del niño de la "voz" instructiva del adulto y la perspectiva sobre sí misma juega un papel clave en el desarrollo de representaciones dialógicas (representaciones del diálogo intersubjetivo mismo) así como representaciones autorreflexivas y metacognitivas (pp. 170-200).
+                </p>
+
+                <p className="mb-6">
+                    Es interesante especular sobre la relación entre la enculturación de la mente humana en sistemas simbólicos y el cerebro. Uno podría pensar en aplicar la lógica de la emergencia a esta relación. Por un lado, las propiedades de los sistemas simbólicos distribuidos no pueden predecirse de lo que los cerebros individuales pueden hacer en aislamiento, pues emergen de las interacciones complejas de muchos individuos (<Entity>Donald</Entity> 2001, pp. 152-153). Por otro lado, parece razonable hipotetizar que el entorno cultural de representación simbólica, que proporciona el andamiaje para la construcción de representaciones y habilidades cognitivas complejas, puede alterar la arquitectura neural del cerebro en desarrollo (<Entity>Donald</Entity> 2001, pp. 153, 212). De hecho, la evidencia neurocientífica se está acumulando ahora de que la actividad cerebral dependiente de la experiencia en contextos ambientales particulares juega un papel enorme en el desarrollo del cerebro individual. En lugar de ser una colección de módulos preespecificados, el cerebro parece ser un órgano que se construye a sí mismo en el desarrollo a través de actividad generada espontáneamente y dependiente de la experiencia (<Entity>Quartz</Entity> 1999; <Entity>Quartz</Entity> y <Entity>Sejnowski</Entity> 1997), un proceso de desarrollo hecho posible por mecanismos de desarrollo robustos y flexibles conservados en la evolución animal (ver Capítulo 7).
+                </p>
+
+                <p className="mb-6">
+                    Dado este punto de vista "constructivista neural" y el consiguiente de la teoría de sistemas del desarrollo —parece razonable creer que, como lo pone <Entity>Donald</Entity>, <Concept>"las culturas simbolizadoras poseen un camino directo hacia nuestros cerebros y afectan la manera en que partes mayores del cerebro ejecutivo se conectan durante el desarrollo. Esta es la idea clave de la enculturación profunda... La cultura efectivamente conecta subsistemas funcionales en el cerebro que de otra manera no existirían"</Concept> (2001, p. 212). De esta manera, <Concept>"la cultura comienza en el útero"</Concept> (<Entity>Savage-Rumbaugh</Entity>, <Entity>Fields</Entity>, y <Entity>Taglialatela</Entity> 2001, p. 278).
+                </p>
+
+                <p className="mb-6">
+                    En términos fenomenológicos, este poder de la cultura y el lenguaje para dar forma a la subjetividad y experiencia humana pertenece no simplemente a la constitución genética del individuo, sino a la constitución generativa de la comunidad intersubjetiva. La subjetividad individual es desde el principio intersubjetividad, como resultado de las normas, convenciones, artefactos simbólicos y tradiciones culturales transmitidas comunalmente en las que el individuo está siempre ya incrustado. Así, la internalización de la atención conjunta en representaciones simbólicas no es simplemente un fenómeno ontogenético, sino uno histórico y cultural:
+                </p>
+
+                <BlockQuote author="Michael Tomasello (1999)">
+                    Una de las cosas más interesantes sobre el proceso de adquisición del lenguaje es que los adultos de quienes el niño está aprendiendo pasaron por el mismo proceso antes en sus vidas, y a través de generaciones los artefactos simbólicos que comprenden el inglés, turco, o cualquier lenguaje, acumulan modificaciones a medida que nuevas formas lingüísticas son creadas por gramaticalización, sintactización, y otros procesos de cambio de lenguaje —de modo que el niño de hoy está aprendiendo todo el conglomerado derivado históricamente. Consecuentemente, cuando el niño aprende el uso convencional de estos símbolos bien viajados, lo que está aprendiendo son las maneras en que sus antepasados en la cultura han encontrado útil manipular la atención de otros en el pasado. Y debido a que la gente de una cultura, a medida que se mueven a través del tiempo histórico, evolucionan muchos y variados propósitos para manipular la atención del uno al otro (y debido a que necesitan hacer esto en muchos tipos diferentes de situaciones de discurso), el niño de hoy se enfrenta con una panoplia de diferentes símbolos y construcciones lingüísticas que encarnan muchas interpretaciones atencionales diferentes de cualquier situación dada. Consecuentemente, a medida que el niño internaliza un símbolo lingüístico —a medida que aprende las perspectivas humanas encarnadas en un símbolo lingüístico— ella representa cognitivamente no solo los aspectos perceptuales o motores de una situación sino también una manera, entre otras maneras de las cuales es consciente, de que la situación actual puede ser interpretada atencionalmente por "nosotros", los usuarios de ese símbolo. La manera en que los seres humanos usan símbolos lingüísticos crea así una clara ruptura con las representaciones perceptuales o sensorio-motoras directas, y se debe enteramente a la naturaleza social de los símbolos lingüísticos.
+                </BlockQuote>
+
+                <p className="mb-6">
+                    Las representaciones simbólicas intersubjetivas que configuran la mente humana son el producto de procesos generativos y generacionales en tres escalas de tiempo —filogenia, historia y ontogenia (<Entity>Tomasello</Entity> 1999, pp. 10, 202-203). El tiempo filogenético es el tiempo durante el cual la especie primate humana evolucionó su forma distintiva de cognición social, sobre la base de la identificación con otros miembros de la especie como seres intencionales y mentales. Este proceso evolutivo también incluyó la evolución de una forma distintiva de conciencia: una <Concept>"capacidad consciente"</Concept> expandida para la conciencia a largo plazo, la autorregulación cognitiva y emocional, y el control atencional voluntario, en una escala de tiempo de minutos y horas, no simplemente segundos (<Entity>Donald</Entity> 2001). Estas expansiones evolutivas de la mente humana fueron una precondición para el aprendizaje imitativo y la innovación, y por ende para la generación de cultura. El tiempo histórico es el tiempo de la evolución cultural acumulativa, que a su vez requiere tiempo ontogenético para su realización. Los niños aprenden cosas de sus antepasados y luego las modifican (en tiempo ontogenético), y estas modificaciones se acumulan a lo largo de las generaciones (en tiempo histórico). <Entity>Tomasello</Entity> apoda a este proceso el <Concept>"efecto trinquete"</Concept> (<em>ratchet effect</em>) de la evolución cultural acumulativa: las innovaciones se acumulan a lo largo de las generaciones gracias al aprendizaje cultural imitativo. El efecto trinquete ha <Concept>"cambiado radicalmente la naturaleza del nicho ontogenético en el cual se desarrollan los niños humanos de modo que, en efecto, los niños modernos encuentran e interactúan con sus mundos físicos y sociales casi totalmente a través de los lentes mediadores de artefactos culturales preexistentes"</Concept> (<Entity>Tomasello</Entity> 1999, p. 202).
+                </p>
+
+                <p className="mb-6">
+                    <Entity>Tomasello</Entity> y <Entity>Donald</Entity> ven ambos la filogenia como equivalente a la evolución biológica, en oposición a la evolución cultural acumulativa, que sucede sobre el tiempo histórico y ontogenético sobre la base de las adaptaciones biológicas de la especie primate humana (comprensión intencional y capacidad consciente agrandada) tal como evolucionaron en el tiempo filogenético. El problema con esta manera de dividir las cosas es que tiende a recaer en las dicotomías naturaleza/cultura e innato/adquirido. Debajo de las ropas culturales adquiridas en la historia y la ontogenia, está el primate humano desnudo de la filogenia (una imagen contraria a las intenciones de <Entity>Tomasello</Entity> y <Entity>Donald</Entity>). Para resolver este problema necesitamos vincular la psicología cultural a la teoría de sistemas del desarrollo. La evolución es la evolución de sistemas de desarrollo; la evolución humana incluye la evolución de una nueva etapa de desarrollo, a saber, la niñez, la cual está vinculada a una nueva forma de cognición social; y esta nueva forma de cognición social depende crucialmente de los procesos generativos y generacionales de la cultura humana.
+                </p>
+
+                <p className="mb-6">
+                    En esta sección final de este capítulo, he esbozado solo los comienzos más desnudos de una perspectiva generativa sobre la experiencia humana que apunta a combinar la fenomenología y la ciencia de la mente. Mucho trabajo queda por hacer, pero espero haber mostrado cómo podemos trazar un camino desde la vida a la conciencia, a la intersubjetividad y la cultura que pueda hacer justicia a nuestra existencia como sujetos corporales vivos. El sujeto humano individual es el sujeto corporal enculturado. De esta manera, el sujeto que conoce y siente no es el cerebro en la cabeza, o incluso el cerebro más el cuerpo, sino la persona situada social y culturalmente, el ser humano enculturado.
+                </p>
+
+            </main>
+        );
+
+        // --- APP ---
+
+        const App = () => {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [activeNote, setActiveNote] = useState(null);
+
+            const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
+            return (
+                <div className="bg-slate-950 min-h-screen text-slate-300 selection:bg-cyan-500/30 selection:text-cyan-100">
+                    <ScrollProgress />
+                    <Navigation toggleMenu={toggleMenu} />
+                    <Sidebar isOpen={isMenuOpen} toggleMenu={toggleMenu} />
+                    
+                    <Hero />
+                    <ChapterContent setActiveNote={setActiveNote} />
+                    
+                    <TooltipModal activeNote={activeNote} setActiveNote={setActiveNote} />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
