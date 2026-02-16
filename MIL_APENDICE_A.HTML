@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Mente en la Vida | Evan Thompson - Apéndice A</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        amber: {
+                            450: '#F59E0B',
+                        },
+                        cyan: {
+                            450: '#22D3EE',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #020617; /* bg-slate-950 */
+            color: #cbd5e1; /* text-slate-300 */
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+
+        .serif { font-family: 'Playfair Display', serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, useScroll, useSpring, AnimatePresence } = window.Motion;
+        
+        // --- NATIVE ICONS (Zero Dependency) ---
+        const IconBase = ({ children, size = 24, className = "" }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const Menu = (props) => (
+            <IconBase {...props}>
+                <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+            </IconBase>
+        );
+        
+        const X = (props) => (
+            <IconBase {...props}>
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </IconBase>
+        );
+
+        const ChevronRight = (props) => (
+            <IconBase {...props}>
+                <path d="m9 18 6-6-6-6"/>
+            </IconBase>
+        );
+
+        const User = (props) => (
+            <IconBase {...props}>
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </IconBase>
+        );
+
+        const Quote = (props) => (
+            <IconBase {...props}>
+                <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+            </IconBase>
+        );
+
+        // --- DATA ---
+        
+        const BOOK_DATA = {
+            title: "La Mente en la Vida",
+            author: "Evan Thompson",
+            toc: [
+                { title: "Inicio", id: "hero" },
+                { separator: "APÉNDICE A" },
+                { title: "Husserl y la Ciencia Cognitiva", id: "appendix-a-intro" },
+                { title: "Reevaluación de la Fenomenología", id: "reevaluation" },
+                { title: "Crítica a la Interpretación de Dreyfus", id: "dreyfus-critique" },
+                { title: "Puntos Clave de la Reevaluación", id: "key-points" },
+                { title: "Conclusión", id: "conclusion" }
+            ]
+        };
+
+        // --- COMPONENTS ---
+
+        const Concept = ({ children }) => (
+            <span className="text-amber-500 font-medium hover:text-amber-400 transition-colors cursor-help border-b border-amber-500/20 pb-0.5">
+                {children}
+            </span>
+        );
+
+        const Entity = ({ children }) => (
+            <span className="text-cyan-400 font-medium hover:text-cyan-300 transition-colors border-b border-cyan-400/20 pb-0.5">
+                {children}
+            </span>
+        );
+
+        const BookTitle = ({ children }) => (
+            <span className="text-white italic font-serif tracking-wide">
+                {children}
+            </span>
+        );
+
+        const BlockQuote = ({ children, author }) => (
+            <div className="my-10 relative group">
+                <div className="absolute -left-4 top-0 text-slate-700 opacity-50">
+                    <Quote size={40} />
+                </div>
+                <blockquote className="border-l-4 border-cyan-500/30 pl-8 pr-4 py-2 italic text-amber-500 text-lg leading-relaxed font-serif relative z-10 group-hover:border-cyan-500 transition-colors duration-500">
+                    {children}
+                </blockquote>
+                {author && <div className="mt-2 text-right text-sm text-cyan-500/80 font-mono">— {author}</div>}
+            </div>
+        );
+
+        const SectionHeader = ({ id, number, title }) => (
+            <div id={id} className="pt-24 pb-8 mb-8 border-b border-slate-800">
+                <div className="text-cyan-500 text-sm tracking-[0.2em] uppercase mb-2 font-semibold">
+                    {number}
+                </div>
+                <h2 className="text-4xl md:text-5xl text-white font-serif leading-tight">
+                    {title}
+                </h2>
+            </div>
+        );
+
+        // --- LAYOUT COMPONENTS ---
+
+        const ScrollProgress = () => {
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+            return (
+                <motion.div
+                    className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-50"
+                    style={{ scaleX }}
+                />
+            );
+        };
+
+        const Navigation = ({ toggleMenu }) => (
+            <nav className="fixed top-0 w-full bg-slate-950/80 backdrop-blur-md border-b border-slate-800/50 z-40 h-16 flex items-center justify-between px-6 transition-all duration-300">
+                <div className="flex items-center gap-4">
+                    <div className="w-8 h-8 bg-cyan-900/20 rounded-full flex items-center justify-center border border-cyan-500/30">
+                        <span className="text-cyan-500 font-serif font-bold">ET</span>
+                    </div>
+                    <div className="hidden md:block">
+                        <h1 className="text-sm text-slate-200 font-semibold tracking-wide">LA MENTE EN LA VIDA</h1>
+                        <p className="text-xs text-slate-500">Apéndice A: Husserl y la Ciencia Cognitiva</p>
+                    </div>
+                </div>
+                <button 
+                    onClick={toggleMenu}
+                    className="flex items-center gap-2 text-slate-400 hover:text-cyan-400 transition-colors group"
+                >
+                    <span className="text-xs uppercase tracking-widest font-semibold hidden sm:block group-hover:mr-1 transition-all">Índice</span>
+                    <Menu size={20} />
+                </button>
+            </nav>
+        );
+
+        const Sidebar = ({ isOpen, toggleMenu, activeSection }) => (
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={toggleMenu}
+                            className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
+                        />
+                        <motion.aside 
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed right-0 top-0 h-full w-80 bg-slate-900 border-l border-slate-800 z-50 p-8 shadow-2xl overflow-y-auto"
+                        >
+                            <div className="flex justify-between items-center mb-10">
+                                <h3 className="text-amber-500 font-serif italic text-xl">Contenidos</h3>
+                                <button onClick={toggleMenu} className="text-slate-400 hover:text-white transition-colors">
+                                    <X size={24} />
+                                </button>
+                            </div>
+                            <ul className="space-y-4">
+                                {BOOK_DATA.toc.map((item, idx) => (
+                                    item.separator ? (
+                                        <li key={idx} className="pt-6 pb-2 border-b border-slate-800 text-xs text-slate-500 uppercase tracking-widest font-bold">
+                                            {item.separator}
+                                        </li>
+                                    ) : (
+                                        <li key={idx}>
+                                            <a 
+                                                href={`#${item.id}`} 
+                                                onClick={toggleMenu}
+                                                className="flex items-center gap-3 text-slate-300 hover:text-cyan-400 transition-colors group"
+                                            >
+                                                <ChevronRight size={14} className="text-slate-600 group-hover:text-cyan-500 transition-colors" />
+                                                <span className="text-sm font-medium leading-relaxed">{item.title}</span>
+                                            </a>
+                                        </li>
+                                    )
+                                ))}
+                            </ul>
+                        </motion.aside>
+                    </>
+                )}
+            </AnimatePresence>
+        );
+
+        const Hero = () => (
+            <section id="hero" className="min-h-screen flex flex-col justify-center items-center text-center px-6 relative overflow-hidden">
+                {/* Background Atmosphere */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/10 via-slate-950 to-slate-950" />
+                
+                <motion.div 
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1, delay: 0.2 }}
+                    className="relative z-10"
+                >
+                    <span className="text-amber-500 tracking-[0.3em] text-xs font-bold uppercase mb-4 block">
+                        Apéndice A
+                    </span>
+                    <h1 className="text-5xl md:text-7xl font-serif text-white mb-6 leading-tight">
+                        Husserl y la <br/> <span className="text-slate-400 italic">Ciencia Cognitiva</span>
+                    </h1>
+                    <div className="w-24 h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mx-auto mb-8" />
+                    <p className="text-xl text-slate-300 font-light tracking-wide">
+                        Una Reevaluación Fenomenológica
+                    </p>
+                </motion.div>
+                
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.5, duration: 1 }}
+                    className="absolute bottom-12"
+                >
+                   <div className="animate-bounce text-slate-600">
+                        <User size={20} className="mx-auto mb-2 text-cyan-900" />
+                        <span className="text-xs uppercase tracking-widest text-slate-600">Desliza para leer</span>
+                   </div>
+                </motion.div>
+            </section>
+        );
+
+        // --- MAIN CONTENT COMPONENT ---
+
+        const ChapterContent = () => (
+            <main className="w-full px-6 md:px-12 pb-32 text-lg md:text-xl leading-relaxed text-justify hyphens-auto text-slate-300">
+                
+                {/* INTRO */}
+                <div id="appendix-a-intro" className="pt-24 first-letter:text-6xl first-letter:font-serif first-letter:text-white first-letter:float-left first-letter:mr-3 first-letter:mt-[-8px]">
+                    <p className="mb-8">
+                        LOS LECTORES FAMILIARIZADOS CON MI LIBRO ANTERIOR, <BookTitle>De cuerpo presente: las ciencias cognitivas y la experiencia humana</BookTitle> (<Entity>Varela</Entity>, <Entity>Thompson</Entity> y <Entity>Rosch</Entity> 1991), podrían sorprenderse por la importancia que le doy a la fenomenología husserliana aquí, dada la actitud crítica hacia <Entity>Husserl</Entity> que ese libro expresaba. ¿Qué explica este cambio de actitud? El propósito de este Apéndice es aclarar este asunto.
+                    </p>
+                </div>
+
+                <p className="mb-6">
+                    En <BookTitle>De cuerpo presente</BookTitle>, afirmamos (i) que <Entity>Husserl</Entity> era un <Concept>solipsista metodológico</Concept> (p. 16); (ii) que su teoría ignoraba <Concept>"tanto el aspecto consensual como el aspecto directamente encarnado de la experiencia"</Concept> (p. 17); (iii) que su teoría de la intencionalidad era una <Concept>teoría representacional</Concept> (p. 68); (iv) que su teoría del mundo de la vida era <Concept>reduccionista</Concept> y <Concept>representacionalista</Concept> (que trató de analizar el mundo de la vida <Concept>"en un conjunto más fundamental de constituyentes"</Concept> (p. 117) consistentes en creencias entendidas como representaciones mentales (p. 18)); y (v) que su fenomenología era un proyecto puramente abstracto y teórico carente de una dimensión pragmática (pp. 19, 117). Concluimos que el proyecto husserliano fue un <Concept>"fracaso"</Concept> (p. 19) e incluso escribimos sobre el <Concept>"colapso de la fenomenología"</Concept> de manera más general (p. 19). Esta evaluación motivó entonces nuestro giro hacia la tradición de la filosofía budista y la meditación de atención plena-conciencia (mindfulness-awareness) como un socio fenomenológico más prometedor para la ciencia cognitiva.
+                </p>
+
+                <SectionHeader id="reevaluation" number="Sección 01" title="Reevaluación de la Fenomenología" />
+
+                <p className="mb-6">
+                    Como indica el Capítulo 2, sin embargo, ya no suscribo esta evaluación de la fenomenología husserliana. Nuestra interpretación anterior de <Entity>Husserl</Entity> estaba equivocada. La fenomenología husserliana tiene muchos más recursos de los que nos dimos cuenta para una fertilización cruzada productiva tanto con las ciencias de la mente (<Entity>Petitot</Entity> et al. 1999; <Entity>Varela</Entity> 1996) como con el pensamiento budista (<Entity>Thompson</Entity> 2005; <Entity>Varela</Entity> 2000b; <Entity>Varela</Entity> y <Entity>Depraz</Entity> 2003). En particular, ahora creo (i) que <Entity>Husserl</Entity> no era un solipsista metodológico; (ii) que estaba grandemente preocupado con los aspectos intersubjetivos y encarnados de la experiencia; (iii) que su teoría de la intencionalidad no era una teoría representacional; y (iv) que su teoría del mundo de la vida no era reduccionista y representacionalista. Además, aunque pienso que la fenomenología ha tendido a sobre-enfatizar la discusión teórica en la forma de interpretación textual (en detrimento de la pragmática fenomenológica así como de análisis fenomenológicos originales y argumentación filosófica), creo que es demasiado fácil decir simplemente que la fenomenología es un proyecto puramente abstracto y teórico carente de una dimensión pragmática. Se sigue que ahora no caracterizaría la fenomenología husserliana como un <Concept>"fracaso"</Concept>. Tampoco afirmaría que la fenomenología sufrió un <Concept>"colapso"</Concept> debido a su negligencia de la pragmática fenomenológica.
+                </p>
+
+                <p className="mb-6">
+                    Mi punto de vista ha cambiado por dos razones. La primera es que cuando <Entity>Varela</Entity> y yo estábamos escribiendo <BookTitle>De cuerpo presente</BookTitle> (durante 1986-1989; <Entity>Eleanor Rosch</Entity> se unió al proyecto cerca del final de 1989) nuestro conocimiento de <Entity>Husserl</Entity> era limitado. Estábamos familiarizados con las principales obras publicadas en traducción al inglés (<BookTitle>Investigaciones Lógicas</BookTitle>, <BookTitle>Ideas I</BookTitle>, <BookTitle>Meditaciones Cartesianas</BookTitle>, <BookTitle>La Crisis de las Ciencias Europeas y la Fenomenología Trascendental</BookTitle>) pero no las habíamos estudiado con suficiente cuidado, y no sabíamos sobre los escritos de <Entity>Husserl</Entity> sobre síntesis pasiva (entonces no traducidos) e intersubjetividad (aún no traducidos). Ambos estábamos más familiarizados con <Entity>Heidegger</Entity> y fuimos influenciados por su lectura (en gran medida poco caritativa) de <Entity>Husserl</Entity>. También teníamos poco conocimiento de otros pensadores fenomenológicos que fueron profundamente influenciados por <Entity>Husserl</Entity> (<Entity>Merleau-Ponty</Entity> exceptuado), y habíamos estudiado solo un poco de la literatura secundaria sobre <Entity>Husserl</Entity>.
+                </p>
+
+                <SectionHeader id="dreyfus-critique" number="Sección 02" title="Crítica a la Interpretación de Dreyfus" />
+
+                <p className="mb-6">
+                    La segunda razón es que aceptamos la influyente interpretación de <Entity>Hubert Dreyfus</Entity> (1982) de <Entity>Husserl</Entity> como un filósofo representacionalista y protocognitivista, así como su crítica heideggeriana de <Entity>Husserl</Entity> así interpretado. <Entity>Dreyfus</Entity> ha sido un pionero en traer la tradición fenomenológica al corazón de las ciencias cognitivas a través de su importante crítica de la inteligencia artificial (<Entity>Dreyfus</Entity> 1972, 1992) y sus estudios innovadores sobre el conocimiento y la acción hábil (<Entity>Dreyfus</Entity> 2002; <Entity>Dreyfus</Entity> y <Entity>Dreyfus</Entity> 1986). Sin embargo, su trabajo también está marcado por una interpretación peculiar de <Entity>Husserl</Entity>. <Entity>Dreyfus</Entity> presenta la fenomenología de <Entity>Husserl</Entity> como una forma de representacionalismo que anticipa teorías cognitivistas y computacionales de la mente. Luego ensaya las críticas de <Entity>Heidegger</Entity> a <Entity>Husserl</Entity> así entendido y las despliega contra el cognitivismo y la inteligencia artificial. <Entity>Dreyfus</Entity> lee a <Entity>Husserl</Entity> en gran medida a través de una combinación de la interpretación de <Entity>Heidegger</Entity> y una reconstrucción analítica particular (Fregeana) de un aspecto del pensamiento de <Entity>Husserl</Entity>—la noción de <Entity>Husserl</Entity> del <Concept>noema</Concept>. Así, el <Entity>Husserl</Entity> que <Entity>Dreyfus</Entity> presenta a la ciencia cognitiva y a la filosofía analítica de la mente es una construcción interpretativa problemática y no debería tomarse al pie de la letra.
+                </p>
+
+                <p className="mb-6">
+                    Por un tiempo, la interpretación de <Entity>Dreyfus</Entity> funcionó como una visión recibida en la comunidad de ciencia cognitiva sobre el pensamiento de <Entity>Husserl</Entity> y su relación con la ciencia cognitiva. Esta interpretación ha sido desde entonces seriamente desafiada por un número de estudiosos de <Entity>Husserl</Entity> y filósofos. Este no es el lugar para revisar estas controversias en detalle. Baste decir que tomo estos estudios como habiendo demostrado los siguientes puntos:
+                </p>
+
+                <SectionHeader id="key-points" number="Sección 03" title="Puntos Clave de la Reevaluación" />
+
+                <ol className="list-decimal pl-8 mb-6 space-y-4 text-slate-400 marker:text-amber-500">
+                    <li>
+                        <p>
+                            <Entity>Husserl</Entity> no suscribe a una teoría representacional de la mente, y ciertamente no a una teoría representacional del tipo que <Entity>Dreyfus</Entity> desea criticar. Las experiencias intencionales no adquieren su direccionalidad en virtud de <Concept>"un reino especial de entidades representacionales"</Concept> (<Entity>Dreyfus</Entity> 1982, p. 1). Más bien, la apertura intencional de la conciencia es una parte integral de su ser (<Entity>Zahavi</Entity> 2003a, p. 21).
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <Entity>Husserl</Entity> no es un solipsista metodológico. La <Concept>reducción fenomenológica trascendental</Concept> no es una manera de tratar de caracterizar los contenidos de la conciencia puramente internamente, aparte de su relación con el mundo. Es una manera de caracterizar el mundo, a saber, al nivel fenomenal en el que es experimentado, y de estudiar la relación del mundo así caracterizado con nuestra subjetividad.
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <Entity>Husserl</Entity> no asimila toda la intencionalidad a la intencionalidad dirigida a objetos; él no <Concept>"afirma que toda la vida mental, incluso nuestra conciencia de la actividad práctica y nuestro sentido de existir en un mundo compartido, debe ser una forma de direccionalidad hacia objetos"</Concept> (<Entity>Dreyfus</Entity> 1982, p. 9; ver también <Entity>Dreyfus</Entity> 1988). Por el contrario, como indica la discusión anterior sobre la <Concept>síntesis pasiva</Concept>, la noción de una <Concept>"intencionalidad operativa"</Concept> precognitiva y no dirigida a objetos es central para el tema de la fenomenología de <Entity>Husserl</Entity> en su registro genético.
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            <Entity>Husserl</Entity> no trata el "trasfondo" (<em>background</em>) presupuesto por las experiencias intencionales dirigidas a objetos como simplemente un sistema de creencias entendidas como representaciones mentales (<Entity>Dreyfus</Entity> 1982, p. 23). En <BookTitle>Ideas II</BookTitle>, por ejemplo, <Entity>Husserl</Entity> distingue entre conciencia de objetos y comportamiento hacia objetos, y luego declara: <Concept>"Lo último, sin embargo, es un trasfondo que es previo a todo comportamiento y es en cambio presupuesto por todo comportamiento"</Concept> (<Entity>Husserl</Entity> 1989, p. 291; énfasis en el original). No hay sugerencia de que este trasfondo consista en creencias en el sentido de estados mentales distintos dirigidos a objetos. Más bien, continúa escribiendo: <Concept>"En cierto sentido, hay, en las oscuras profundidades, un suelo raíz"</Concept>; habla de este suelo raíz como nuestro <Concept>"lado natural"</Concept>, <Concept>"la base subyacente de la subjetividad"</Concept>, y luego declara: <Concept>"Al lado natural pertenecen inmediatamente la vida inferior de los sentimientos, la vida instintiva, y de hecho la función de la atención también..."</Concept> (p. 292). No hay sugerencia de que este <Concept>"suelo raíz"</Concept> de vida instintiva sea completamente recuperable al nivel del análisis intencional reflexivo (ver <Entity>Sheets-Johnstone</Entity> 1999a, pp. 249-252; ver también <Entity>Mensch</Entity> 1998).
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            El tratamiento de <Entity>Husserl</Entity> del mundo de la vida no puede reducirse a un intento de analizar el mundo de la vida en un conjunto de <Concept>"suposiciones"</Concept> o <Concept>"hipótesis"</Concept> sedimentadas en el trasfondo (equivalente a un sistema de "marcos" en inteligencia artificial) (<Entity>Dreyfus</Entity> 1982, pp. 23-24; 1988). Más bien, <Entity>Husserl</Entity> reconoce que el mundo de la vida como horizonte y suelo predado no es precisamente objetivable de esta manera. Esta realización lo lleva a imaginar la posibilidad de una fenomenología generativa del mundo de la vida (ver <Entity>Steinbock</Entity> 1995, pp. 104-122; <Entity>Welton</Entity> 2000, pp. 331-392).
+                        </p>
+                    </li>
+                </ol>
+
+                <SectionHeader id="conclusion" number="Sección 04" title="Conclusión" />
+
+                <p className="mb-6">
+                    En resumen, aunque se debe dar crédito a <Entity>Dreyfus</Entity> por traer a <Entity>Husserl</Entity> al ámbito de la ciencia cognitiva, es importante ir más allá de su interpretación y reevaluar la relación de <Entity>Husserl</Entity> con la ciencia cognitiva sobre la base de una evaluación exhaustiva del trabajo de su vida. Esta reevaluación ya está en marcha (ver <Entity>Petitot</Entity> et al. 1999). Puede verse como parte de una apropiación más amplia de la fenomenología en el pensamiento contemporáneo, en relación tanto con otros movimientos de la filosofía del siglo veinte como con el rico potencial para la fertilización cruzada con tradiciones filosóficas asiáticas. Estos nuevos desarrollos han influenciado grandemente mi pensamiento en este libro.
+                </p>
+
+            </main>
+        );
+
+        // --- APP ---
+
+        const App = () => {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [activeNote, setActiveNote] = useState(null);
+
+            const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
+            return (
+                <div className="bg-slate-950 min-h-screen text-slate-300 selection:bg-cyan-500/30 selection:text-cyan-100">
+                    <ScrollProgress />
+                    <Navigation toggleMenu={toggleMenu} />
+                    <Sidebar isOpen={isMenuOpen} toggleMenu={toggleMenu} />
+                    
+                    <Hero />
+                    <ChapterContent setActiveNote={setActiveNote} />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
