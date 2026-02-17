@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Conciencia Trascendental de Husserl y el Problema de la IA</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#151f32',
+                            950: '#020617',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+    <style>
+        body {
+            background-color: #020617;
+            color: #cbd5e1;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #020617;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+        .prose-academic p {
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+            text-align: justify;
+            hyphens: auto;
+        }
+        /* Clases auxiliares para resaltado */
+        .highlight-author {
+            color: #22d3ee; /* cyan-400 */
+            font-weight: 600;
+        }
+        .highlight-concept {
+            color: #f59e0b; /* amber-500 */
+            font-style: italic;
+        }
+        .highlight-quote {
+            color: #f59e0b; /* amber-500 */
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, useScroll, useSpring, AnimatePresence } = window.Motion;
+
+        // --- ICONOS SVG (Inline Components) ---
+        const MenuIcon = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="18" y2="18" />
+            </svg>
+        );
+
+        const XIcon = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="M18 6 6 18" /><path d="m6 6 18 12" />
+            </svg>
+        );
+
+        const ChevronDownIcon = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="m6 9 6 6 6-6" />
+            </svg>
+        );
+
+        // --- DATOS DE NOTAS AL PIE ---
+        const footnotes = {
+            1: "Hay que recordar que los análisis de la conciencia no eran el objetivo principal de Husserl. Eran una forma de transformar la filosofía en una ciencia absolutamente fundamentada y precisa, basada en un fundamento absoluto, y a través de ella la validación de todas las demás ciencias.",
+            2: "Es importante recordar que no existe una única definición de fenomenología. En la historia de la filosofía encontramos diversos tipos de esta corriente. La fenomenología como tal es ante todo un método y no un conjunto de doctrinas específicas. El concepto clave de cada vertiente de la filosofía fenomenológica es el concepto de conciencia (Gallagher, 2022).",
+            3: "Froese & Gallagher (2010) afirman explícitamente que el método desarrollado por Husserl puede aplicarse directamente a los análisis de la IA. Escriben: \"Hemos argumentado que la metodología que subyace a las ciencias de lo artificial, especialmente la simulación en el campo de la vida artificial, puede considerarse como una extensión específica del método de Husserl de Wesensschau. Ambos métodos pretenden captar la esencia de un fenómeno particular creando variaciones hipotéticas... Para determinar las esencias necesitamos averiguar aquellas variaciones que convierten el fenómeno objetivo en otra cosa\" (Froese & Gallagher, 2010, p. 101).",
+            4: "La característica más importante de la investigación fenomenológica, a diferencia de otros tipos de investigación, es el hecho de que se caracteriza por la intuición de la esencia de lo que se experimenta (Van Manen, 2017).",
+            5: "Las consideraciones contenidas en las Investigaciones Lógicas constituyen la semilla del concepto de conciencia desarrollado por Husserl en sus obras posteriores. La distinción entre sus diversos conceptos llevó al autor a especificar el concepto de acto de conciencia (vivencia intencional). Este es el concepto básico de la psicología descriptiva de Brentano (Brentano, 2012). Husserl también se refiere a él en sus análisis de \"actos\" (término que utiliza indistintamente con el de \"vivencia intencional\" en las Investigaciones Lógicas).",
+            6: "El concepto de ser absoluto, que encontramos en el mundo real como parte de él, y por otra parte, que ha de constituir la base de este mundo, cuya existencia como trascendencia ha de constituirse en la conciencia pura, plantea serias dudas, de las que el propio Husserl era consciente. Podemos preguntar: (1) ¿Sobre qué base considera el autor de las Ideas que la conciencia pura descubierta en el mundo gracias al procedimiento de reducción es algo que existe absolutamente? (2) ¿Qué significa realmente que la conciencia a la que accedemos en la actitud fenomenológica es un ser absoluto? Para hallar respuestas a las preguntas anteriores, debemos ser conscientes de que para Husserl el modo en que conocemos algo, es decir, el modo en que se presenta un determinado tipo de cosa, implica el modo en que existe. Debido al tipo de presentación, hay que distinguir entre ser trascendente y ser inmanente y, respectivamente, dos tipos de percepciones: trascendente e inmanente.",
+            7: "El idealismo de Husserl se convirtió en un punto de discordia entre sus alumnos. Véase sobre este tema, por ejemplo (Bello, 2004).",
+            8: "Froese & Gallagher (2010) también señalan la similitud del método de filosofar llamado \"imaginación libre\" utilizado por Husserl con la investigación del fenómeno de la IA.",
+            9: "Uno de los revisores de este artículo llamó mi atención sobre el desarrollo de los puntos de vista de Husserl sobre la metafísica. La actitud de la filosofía alemana hacia la metafísica se discute, por ejemplo, en: (Santis, 2022).",
+            10: "Los puntos de vista relativos al problema difícil y fácil de la conciencia pueden dividirse en puntos de vista deflacionistas e inflacionistas. La primera visión trata la conciencia como algo que puede reducirse a función, representación o cognición. Según los deflacionistas, la conciencia puede estudiarse científicamente reduciéndola a otros conceptos. Los inflacionistas, por el contrario, sostienen que la conciencia no puede reducirse conceptualmente a otras cuestiones. Consideran que el problema difícil de la conciencia es un problema real (Safron, 2020).",
+            11: "La investigación moderna sobre la conciencia combina reflexiones filosóficas con resultados logrados en neurociencia. Esto abre nuevas posibilidades para la investigación sobre la conciencia. Francesco Ellia y Robert Chis-Ciure describen esta situación de la siguiente manera: \"Por un lado, las cuestiones filosóficas tradicionales, como si la conciencia es un asunto exclusivamente humano, o si por el contrario está extendida por todo el mundo vivo (y quizás más allá), están ahora más abiertas que nunca. Por otro lado, se han formulado nuevos problemas, por ejemplo, el conjunto mínimo de mecanismos neuronales conjuntamente necesarios y suficientes para una experiencia en general\" (Ellia, & Chis-Ciure, 2022, p. 1). Por lo tanto, parece que a pesar de los indudables éxitos de la neurociencia en el estudio de la conciencia, la reflexión filosófica es un elemento importante de esta investigación. Las consideraciones de este artículo, por razones obvias, se centran en el concepto de conciencia de Husserl.",
+            12: "En resumen, los qualia son los elementos fenoménicos e introspectivos de nuestra vida mental. Su existencia es obvia. El tema del enfoque filosófico es su estatus: ¿pertenecen a todos los estados mentales y cuál es su relación con el mundo exterior?",
+            13: "Existe una dificultad fundamental que se interpone en el camino para determinar la posibilidad de la existencia de la IA: es difícil decir claramente cuál es la diferencia entre un agente verdaderamente consciente y un agente que \"parece ser\" consciente. Pandey afirma: \"Además, la conciencia no puede depender de qué función calcule una máquina. Por encima de todo, la exploración, la cognición, la percepción y la acción son fundamentales para todos los niveles de existencia y están relacionadas con la conciencia. En este sentido, la conciencia es inseparable de la vida, expandiéndose y evolucionando juntas mediante la interrelación y la interacción. Por lo tanto, la conciencia puede considerarse como una fuerza motriz en la naturaleza\" (Pandey, 2018, p. 14).",
+            14: "Un intento interesante de estudiar la interacción entre humanos e IA lo proporciona (Leib, 2024). El artículo mencionado contiene conversaciones entre el autor y ChatGPT-3. El objetivo del artículo es averiguar si los procesadores de lenguaje natural pueden participar en la fenomenología a algún nivel preguntando sobre sus conceptos básicos\" (Leib, 2024, p. 62). Se trata de un nuevo tipo de experiencia, pero parece que necesita convertirse en una práctica más común en la investigación académica futura sobre el desarrollo de la IA.",
+            15: "Humphrey no rechaza la teoría de la evolución. Lo afirma directamente: \"No me malinterpreten. Soy un reduccionista darwiniano con carné\" (Humphrey, 2020a, p. 19). Simplemente indica que nuestra comprensión de la evolución es incompleta. En esta etapa, no nos permite responder a la pregunta sobre el origen y la naturaleza de la conciencia fenoménica.",
+            16: "El experimento mental de Searle provocó una viva discusión que no puedo citar en este artículo. Véase sobre este tema, por ejemplo (Cole, 2004; Lengbeyer, 2022).",
+            17: "Aunque Turner no se refiere directamente a Husserl, es fácil notar la inspiración con el concepto desarrollado por el padre de la fenomenología.",
+            18: "Por supuesto, no podemos descartar una situación en la que el fenómeno de la conciencia pueda explicarse basándose en leyes de la naturaleza más fundamentales y sutiles que las que conocemos actualmente. Sin embargo, aún no conocemos tales leyes.",
+            19: "Esta posición puede definirse de la siguiente manera: \"(i) definir 'x es natural'; (ii) definir el naturalismo metafísico como la creencia de que 'todo es natural'; (iii) definir el naturalismo metodológico como la estrategia de actuar como si el naturalismo metafísico fuera cierto\" (Halvorson, 2016, p. 4)."
+        };
+
+        // --- COMPONENTES ---
+
+        // 1. Footnote Reference Component
+        const FootnoteRef = ({ id, setActiveNote }) => (
+            <sup 
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveNote(id);
+                }}
+                className="cursor-pointer text-cyan-400 font-bold hover:text-cyan-300 transition-colors ml-0.5 select-none"
+                aria-label={`Ver nota al pie ${id}`}
+            >
+                [{id}]
+            </sup>
+        );
+
+        // 2. Footnote Modal Component
+        const FootnoteModal = ({ activeNote, onClose }) => (
+            <AnimatePresence>
+                {activeNote && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20, x: "-50%" }}
+                        animate={{ opacity: 1, y: 0, x: "-50%" }}
+                        exit={{ opacity: 0, y: 20, x: "-50%" }}
+                        className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90vw] max-w-2xl bg-slate-900/95 backdrop-blur-md border border-slate-700 p-6 rounded-lg shadow-2xl z-50 text-slate-300"
+                    >
+                        <div className="flex justify-between items-start mb-2">
+                            <span className="text-cyan-400 font-bold font-serif text-lg">Nota {activeNote}</span>
+                            <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
+                                <XIcon size={20} />
+                            </button>
+                        </div>
+                        <p className="text-sm leading-relaxed text-justify font-sans">
+                            {footnotes[activeNote]}
+                        </p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        );
+
+        // 3. Navigation Drawer
+        const Navigation = ({ isOpen, setIsOpen, scrollToSection }) => (
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }} 
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsOpen(false)}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        />
+                        <motion.aside 
+                            initial={{ x: "100%" }} 
+                            animate={{ x: 0 }} 
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed right-0 top-0 bottom-0 w-80 bg-slate-950 border-l border-slate-800 z-50 p-8 overflow-y-auto"
+                        >
+                            <div className="flex justify-between items-center mb-10">
+                                <h2 className="text-xl font-serif text-slate-100">Índice</h2>
+                                <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white">
+                                    <XIcon />
+                                </button>
+                            </div>
+                            <nav className="space-y-6">
+                                {[
+                                    { id: "hero", label: "Inicio" },
+                                    { id: "abstract", label: "Abstract" },
+                                    { id: "intro", label: "1. Introducción" },
+                                    { id: "husserl", label: "2. Concepto de Conciencia de Husserl" },
+                                    { id: "problem", label: "3. El Problema de la Conciencia" },
+                                    { id: "ai", label: "4. El Problema de la Conciencia en IA" },
+                                    { id: "conclusion", label: "5. Conclusión" },
+                                    { id: "refs", label: "Referencias" }
+                                ].map((item) => (
+                                    <button 
+                                        key={item.id}
+                                        onClick={() => scrollToSection(item.id)}
+                                        className="block w-full text-left text-slate-400 hover:text-cyan-400 hover:pl-2 transition-all duration-300 font-sans text-sm"
+                                    >
+                                        {item.label}
+                                    </button>
+                                ))}
+                            </nav>
+                        </motion.aside>
+                    </>
+                )}
+            </AnimatePresence>
+        );
+
+        // --- APP PRINCIPAL ---
+        const App = () => {
+            const [activeNote, setActiveNote] = useState(null);
+            const [isNavOpen, setIsNavOpen] = useState(false);
+            const { scrollYProgress } = useScroll();
+            const scaleX = useSpring(scrollYProgress, {
+                stiffness: 100,
+                damping: 30,
+                restDelta: 0.001
+            });
+
+            // Cerrar modal al hacer click fuera
+            useEffect(() => {
+                const handleClickOutside = () => setActiveNote(null);
+                window.addEventListener('click', handleClickOutside);
+                return () => window.removeEventListener('click', handleClickOutside);
+            }, []);
+
+            const scrollToSection = (id) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth' });
+                    setIsNavOpen(false);
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-950 font-sans selection:bg-cyan-900 selection:text-white">
+                    
+                    {/* Progress Bar */}
+                    <motion.div 
+                        className="fixed top-0 left-0 right-0 h-1 bg-cyan-500 origin-left z-[60]"
+                        style={{ scaleX }}
+                    />
+
+                    {/* Header - AHORA CON FONDO OPACO */}
+                    <header className="fixed top-0 left-0 right-0 p-6 flex justify-between items-center z-40 bg-slate-950 border-b border-slate-800 shadow-lg">
+                        <span className="text-slate-300 font-serif tracking-widest text-xs uppercase">Phenomenology & Cog Sci</span>
+                        <button 
+                            onClick={() => setIsNavOpen(true)}
+                            className="text-slate-300 hover:text-cyan-400 transition-colors flex items-center gap-2 group"
+                        >
+                            <span className="text-xs uppercase tracking-widest hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity">Índice</span>
+                            <MenuIcon size={24} />
+                        </button>
+                    </header>
+
+                    <Navigation isOpen={isNavOpen} setIsOpen={setIsNavOpen} scrollToSection={scrollToSection} />
+                    <FootnoteModal activeNote={activeNote} onClose={() => setActiveNote(null)} />
+
+                    {/* Hero Section */}
+                    <section id="hero" className="min-h-screen flex flex-col justify-center items-center px-6 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black opacity-50"></div>
+                        
+                        <div className="max-w-6xl w-full z-10 text-center">
+                            <motion.h1 
+                                initial={{ opacity: 0, y: 30 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.8, ease: "easeOut" }}
+                                className="font-serif text-5xl md:text-7xl lg:text-8xl text-slate-100 leading-tight mb-8"
+                            >
+                                El concepto de <span className="highlight-concept">conciencia trascendental</span> de <span className="highlight-author">Husserl</span> y el problema de la <span className="highlight-concept">conciencia de la IA</span>
+                            </motion.h1>
+                            
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.5, duration: 0.8 }}
+                                className="flex flex-col items-center gap-4"
+                            >
+                                <p className="text-xl text-slate-400 font-light tracking-wide uppercase"><span className="highlight-author">Zbigniew Orbik</span></p>
+                                <div className="h-px w-20 bg-cyan-900"></div>
+                                <p className="text-sm text-slate-500 font-mono">Phenomenology and the Cognitive Sciences (2024)</p>
+                            </motion.div>
+                        </div>
+
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 1.5, duration: 1 }}
+                            className="absolute bottom-10 left-1/2 -translate-x-1/2 text-slate-600 animate-bounce"
+                        >
+                            <ChevronDownIcon />
+                        </motion.div>
+                    </section>
+
+                    {/* Main Content Wrapper - AHORA FULL WIDTH */}
+                    <main className="w-full max-w-none px-6 md:px-12 pb-32">
+                        
+                        {/* Abstract */}
+                        <section id="abstract" className="mb-24 pt-20 border-b border-slate-900 pb-12 w-full">
+                            <h2 className="text-sm font-bold text-cyan-500 uppercase tracking-widest mb-6">Abstract</h2>
+                            <blockquote className="font-serif text-xl md:text-2xl text-slate-200 leading-relaxed italic border-l-2 border-cyan-900 pl-6 py-2 text-justify">
+                                <span className="highlight-author">Edmund Husserl</span>, el fundador de la <span className="highlight-concept">filosofía fenomenológica</span>, desarrolló el concepto de la llamada <span className="highlight-concept">conciencia pura trascendental</span>. El autor del artículo pregunta si el concepto de <span className="highlight-concept">conciencia</span> entendido de esta manera puede constituir un modelo para la <span className="highlight-concept">conciencia de la IA</span>. Cabe recordar que la <span className="highlight-concept">conciencia trascendental</span> es el resultado del uso del <span className="highlight-concept">método fenomenológico</span>, cuya esencia es referirse a la <span className="highlight-concept">experiencia</span> (<span className="highlight-quote">"volver a las cosas mismas"</span>). Por lo tanto, uno puede legítimamente preguntar si la <span className="highlight-concept">conciencia</span> que la <span className="highlight-concept">IA</span> puede alcanzar puede poseer las características atribuidas por <span className="highlight-author">Husserl</span> a la <span className="highlight-concept">conciencia pura trascendental</span>. La respuesta a tales preguntas parece ser negativa porque la <span className="highlight-concept">IA</span>, creada por humanos, solo puede operar en el campo de los <span className="highlight-concept">fenómenos</span>. La <span className="highlight-concept">inteligencia humana</span>, sin embargo, es capaz de operar a <span className="highlight-concept">nivel ontológico</span>. Ante las dificultades para comprender el <span className="highlight-concept">fenómeno de la conciencia</span> sobre una base científica, surge la pregunta sobre la posibilidad de utilizar el <span className="highlight-concept">concepto fenomenológico de conciencia</span> desarrollado por <span className="highlight-author">Husserl</span> como punto de partida en análisis dirigidos a responder la pregunta sobre la <span className="highlight-concept">conciencia de la IA</span>.
+                            </blockquote>
+                            <div className="mt-8 flex flex-wrap gap-2">
+                                {["Conciencia de IA", "Husserl", "Fenomenología", "Conciencia Trascendental"].map(tag => (
+                                    <span key={tag} className="text-xs border border-slate-800 text-slate-500 px-3 py-1 rounded-full">{tag}</span>
+                                ))}
+                            </div>
+                        </section>
+
+                        {/* Article Body */}
+                        <div className="prose-academic text-xl text-slate-300 font-light w-full">
+                            
+                            {/* 1. Introduction */}
+                            <section id="intro" className="mb-24">
+                                <h2 className="font-serif text-4xl text-slate-100 mb-8 flex items-baseline gap-4">
+                                    <span className="text-cyan-900 text-6xl font-bold opacity-30">1</span>
+                                    Introducción
+                                </h2>
+                                <p>
+                                    En su desarrollo actual, la <span className="highlight-concept">inteligencia artificial (IA)</span> se acerca gradualmente a los niveles humanos en términos de habilidades perceptivas, lógicas, computacionales y lingüísticas. Ya en su primer libro bien conocido, <span className="highlight-concept">Investigaciones Lógicas</span> (IL), en el contexto de análisis detallados, se esboza un cierto marco de cómo abordar las experiencias conscientes como esencialmente <span className="highlight-concept">intencionales</span><FootnoteRef id={1} setActiveNote={setActiveNote} />. <span className="highlight-author">Husserl</span> adopta el concepto de <span className="highlight-concept">intencionalidad</span> directamente de su maestro, <span className="highlight-author">Franz Brentano</span>. Aunque el concepto de <span className="highlight-concept">conciencia</span> en sí mismo sufre numerosas modificaciones en la obra posterior de <span className="highlight-author">Husserl</span>, el momento de referencia objetiva de los <span className="highlight-concept">actos conscientes</span> está constantemente presente como el momento descriptivo más importante de las experiencias de la <span className="highlight-concept">conciencia</span>.
+                                </p>
+                                <p>
+                                    En las <span className="highlight-concept">Investigaciones Lógicas</span> (IL), la <span className="highlight-concept">fenomenología</span> también se denomina <span className="highlight-quote">"psicología descriptiva"</span><FootnoteRef id={2} setActiveNote={setActiveNote} />. Esta comprensión de la <span className="highlight-concept">fenomenología</span> asume la posibilidad de conocer la <span className="highlight-concept">esencia</span> (<span className="highlight-concept">eidos</span>). Esto es posible gracias a la <span className="highlight-concept">intuición eidética</span>, la <span className="highlight-concept">visión</span> (<span className="highlight-concept">Wesensschau</span>), que es no inferencial y no inductiva<FootnoteRef id={3} setActiveNote={setActiveNote} />. Lo que más nos interesa en este artículo es el concepto de <span className="highlight-concept">conciencia</span> contenido en IL, principalmente en la quinta investigación. Las consideraciones en IL constituyen la semilla del concepto de <span className="highlight-concept">conciencia</span> desarrollado por <span className="highlight-author">Husserl</span> en sus obras posteriores. La distinción entre sus diversos conceptos llevó al filósofo a especificar el concepto de un <span className="highlight-concept">acto de conciencia</span> (<span className="highlight-concept">vivencia intencional</span>). Este es el concepto básico de la <span className="highlight-concept">psicología descriptiva</span> de <span className="highlight-author">Brentano</span>. <span className="highlight-author">Husserl</span> también se refiere a él en sus análisis de <span className="highlight-concept">actos</span> (término que utiliza indistintamente con el término <span className="highlight-quote">"vivencia intencional"</span> en IL).
+                                </p>
+                                <p>
+                                    <span className="highlight-author">Williams</span> (2021) señala que estrechar el significado del término <span className="highlight-quote">"fenomenología"</span> refiriéndose solo a la filosofía de <span className="highlight-author">Husserl</span> es engañoso. Añade que hay muchas definiciones de <span className="highlight-concept">fenomenología</span> en el sentido de una serie de semejanzas de familia (<span className="highlight-author">Williams</span>, 2021). La esencia del <span className="highlight-concept">método fenomenológico</span> es referirse a la <span className="highlight-concept">experiencia</span>. El resultado de este método es el <span className="highlight-concept">concepto fenomenológico de conciencia</span><FootnoteRef id={4} setActiveNote={setActiveNote} />. Su base son los estados y procesos involucrados en la realización de la naturaleza cualitativa de la <span className="highlight-concept">experiencia subjetiva</span> (<span className="highlight-author">Deery</span>, 2021). <span className="highlight-author">Buccella</span> y <span className="highlight-author">Springle</span> (2022) señalan que hoy en día el concepto de <span className="highlight-concept">fenomenología "artificial"</span> o <span className="highlight-concept">"sintética"</span> está ganando importancia en la investigación de la <span className="highlight-concept">IA</span>. Afirman: <span className="highlight-quote">"La fenomenología es parte integral de una interacción entre el perceptor y el mundo, y como tal debe entenderse"</span> (<span className="highlight-author">Buccella</span>, & <span className="highlight-author">Springle</span>, 2023, p. 633). Con este entendimiento, los <span className="highlight-concept">análisis fenomenológicos</span> no solo juegan un papel importante en la ciencia, sino también uno especial en la investigación sobre la <span className="highlight-concept">IA</span> y la <span className="highlight-concept">conciencia</span>.
+                                </p>
+                                <p>
+                                    El concepto de <span className="highlight-concept">conciencia pura trascendental</span> como una entidad absoluta que constituye los significados de todas las cosas dentro del <span className="highlight-concept">mundo real</span> puede llegar a ser útil en consideraciones con respecto a la <span className="highlight-concept">conciencia de la IA</span> (<span className="highlight-author">Boyle</span>, 2021). El enfoque de <span className="highlight-author">Husserl</span> sobre el tema de la <span className="highlight-concept">conciencia</span> aplicado a la <span className="highlight-concept">IA</span> puede no ser capaz de resolver la cuestión de su existencia, pero puede contribuir a una mejor comprensión de sus manifestaciones y funcionamiento.
+                                </p>
+                                <p>
+                                    A menudo se considera que la <span className="highlight-concept">fenomenología</span> es irrelevante para la investigación de la <span className="highlight-concept">inteligencia artificial</span> y las <span className="highlight-concept">ciencias cognitivas</span> porque las descripciones en primera persona no tienen significado para la investigación científica. Sin embargo, el <span className="highlight-concept">método fenomenológico</span> puede resultar útil en la investigación sobre la <span className="highlight-concept">conciencia</span> porque determina el marco de referencia apropiado para la ciencia de la cognición. Explica la diferencia entre lo que pertenece a la <span className="highlight-concept">esfera subjetiva del conocimiento</span> y lo que pertenece al <span className="highlight-concept">mundo natural</span>. Los <span className="highlight-concept">análisis fenomenológicos</span> pueden, por lo tanto, llegar a ser útiles en las <span className="highlight-concept">ciencias cognitivas</span> (<span className="highlight-author">Beavers</span>, 2002).
+                                </p>
+                            </section>
+
+                            {/* 2. Husserl's Concept */}
+                            <section id="husserl" className="mb-24">
+                                <h2 className="font-serif text-4xl text-slate-100 mb-8 flex items-baseline gap-4">
+                                    <span className="text-cyan-900 text-6xl font-bold opacity-30">2</span>
+                                    El concepto de conciencia de Husserl
+                                </h2>
+                                <p>
+                                    La característica más importante de las <span className="highlight-concept">experiencias conscientes</span>, según <span className="highlight-author">Husserl</span>, es su <span className="highlight-concept">naturaleza intencional</span>, es decir, su referencia a un objeto. <span className="highlight-author">Smith</span> señala acertadamente que: <span className="highlight-quote">"<span className="highlight-author">Husserl</span> intenta dar una explicación descriptiva de la conciencia en términos de una sensación, un acto intencional que interpreta la sensación y un objeto intencional al que se hace referencia por medio de la interpretación de la sensación. Sus principales esfuerzos se dedican a analizar la relación entre lo que llama la 'materia' y la 'cualidad' del acto intencional y cómo estos dos componentes pueden usarse para comprender la famosa proposición de <span className="highlight-author">Brentano</span> de que 'todo acto es una presentación o se funda en una presentación'"</span> (<span className="highlight-author">Smith</span>, 1977, p. 428). Los dos primeros capítulos de la quinta Investigación contienen tres definiciones del término <span className="highlight-quote">"conciencia"</span>:
+                                </p>
+                                <div className="bg-slate-900/50 border border-dashed border-slate-700 p-6 rounded-lg my-8 space-y-4 font-mono text-sm text-slate-400">
+                                    <p>1. Conciencia <span className="highlight-quote">"como la totalidad del ser fenomenológico real (<span className="highlight-concept">reell</span>) (<span className="highlight-concept">der gesamte Bestand</span>) del ego empírico"</span> o <span className="highlight-quote">"como el entrelazamiento de experiencias psíquicas"</span> en la corriente unificada de experiencias;</p>
+                                    <p>2. Conciencia <span className="highlight-quote">"como conciencia interna (<span className="highlight-concept">inneres Gewahrwerden</span>) de las propias experiencias psíquicas"</span>, y</p>
+                                    <p>3. Conciencia <span className="highlight-quote">"como designación integral para 'actos mentales', o 'vivencias intencionales', de todo tipo"</span> (<span className="highlight-author">Husserl</span>, 2001, p. 81).</p>
+                                </div>
+                                <p>
+                                    El primer concepto de <span className="highlight-concept">conciencia</span> está, según <span className="highlight-author">Husserl</span>, relacionado con el concepto de <span className="highlight-concept">experiencia consciente</span> o el <span className="highlight-concept">contenido de la conciencia</span><FootnoteRef id={5} setActiveNote={setActiveNote} />. El contenido de la conciencia es la totalidad de las experiencias actuales. <span className="highlight-author">Husserl</span> entiende el contenido (experiencia) como los eventos reales que cambian de un momento a otro en diversas relaciones y crean la unidad de la conciencia, un individuo psicológico específico. Las experiencias definidas de esta manera son objeto de investigación en <span className="highlight-concept">psicología</span>, que también es definida por el autor de las IL como: (i) la ciencia de los individuos psicológicos, (ii) como conciencias específicas o (iii) los contenidos de la conciencia (experiencias). Los contenidos de la conciencia son tanto experiencias como sus partes concretas y abstractas. <span className="highlight-author">Husserl</span> también señala la distinción entre un objeto que aparece y la experiencia en la que aparece ese objeto. Por ejemplo, en la percepción externa, se experimentan las sensaciones de color y la naturaleza de esta percepción, pero no la cosa misma ni su color.
+                                </p>
+                                <p>
+                                    El segundo significado del término <span className="highlight-quote">"conciencia"</span> es la conciencia entendida como <span className="highlight-concept">introspección</span>, es decir, la percepción de las propias experiencias mentales. <span className="highlight-author">Husserl</span> afirma que este segundo concepto es la fuente del primero y, por lo tanto, es más original que ambos, genética y sustantivamente. Sin embargo, <span className="highlight-author">Husserl</span> rechaza la afirmación de <span className="highlight-author">Brentano</span> de que la conciencia en el primer sentido es también siempre conciencia en el segundo sentido, es decir, que todas las experiencias siempre se hacen conscientes por el experimentador. <span className="highlight-author">Husserl</span> señala que la división de las percepciones en internas y externas es poco clara y ambigua. Sin entrar en los detalles de su argumento, notemos, sin embargo, que más tarde en su actividad científica, esta división será reemplazada por una clasificación de las percepciones en <span className="highlight-concept">"inmanentes"</span> y <span className="highlight-concept">"trascendentes"</span>.
+                                </p>
+                                <p>
+                                    La conciencia como <span className="highlight-quote">"acto mental"</span> o <span className="highlight-quote">"vivencia intencional"</span> es el concepto básico de la <span className="highlight-concept">fenomenología de la conciencia</span> de <span className="highlight-author">Husserl</span>. Para <span className="highlight-author">Husserl</span>, un <span className="highlight-concept">acto</span> es sinónimo de vivencia intencional. El acto se caracteriza, repite <span className="highlight-author">Husserl</span> después de <span className="highlight-author">Brentano</span>, por una <span className="highlight-concept">referencia intencional al objeto</span> (<span className="highlight-author">Husserl</span>, 2001). Esta referencia, enfatiza <span className="highlight-author">Husserl</span>, no consiste en la "contención" del objeto en la conciencia. Consiste en la intención, la suposición (<span className="highlight-concept">Meinen</span>) del objeto.
+                                </p>
+                                <p>
+                                    <span className="highlight-author">Zahavi</span> describe los conceptos de conciencia distinguidos por <span className="highlight-author">Husserl</span> con las siguientes palabras: <span className="highlight-quote">"La primera noción mencionada por <span className="highlight-author">Husserl</span> es la que simplemente denota una totalidad de experiencias. Es esta noción la que evocamos cuando hablamos de una corriente de conciencia, o cuando afirmamos que una cierta entidad tiene una conciencia. En segundo lugar, <span className="highlight-author">Husserl</span> llama la atención sobre el hecho de que podemos usar la conciencia en un sentido intransitivo como un predicado de un solo lugar, es decir, podemos decir de una experiencia que es consciente (en lugar de inconsciente). Este uso, que tiene que ver con el hecho de que nuestras experiencias pueden sernos dadas a nosotros mismos, está relacionado con el tema de la autoconciencia. Finalmente, podemos hablar de conciencia en un sentido transitivo. Podemos decir de una cierta experiencia que es consciente de algo, es decir, podemos hablar de conciencia en el sentido de una dirección intencional"</span> (<span className="highlight-author">Zahavi</span>, 2002, p. 52). <span className="highlight-author">Zahavi</span> señala acertadamente que <span className="highlight-author">Husserl</span> conceptualiza la conciencia describiendo sus tres aspectos: (1) <span className="highlight-concept">corriente de conciencia</span>, (2) <span className="highlight-concept">autoconciencia</span> y (3) <span className="highlight-concept">intencionalidad</span>. En sus obras, <span className="highlight-author">Husserl</span> dedicó la mayor parte de su atención al tema de la <span className="highlight-concept">intencionalidad</span>.
+                                </p>
+                                <p>
+                                    En IL, también se puede distinguir un cuarto concepto de conciencia en el sentido del momento de la intención misma, la referencia intencional a un objeto. Este concepto, sin embargo, no fue explícitamente distinguido de los otros por <span className="highlight-author">Husserl</span>, aunque está estrechamente relacionado con el segundo y tercer concepto.
+                                </p>
+                                <p>
+                                    En <em>Ideas relativas a una fenomenología pura y una filosofía fenomenológica</em> (Ideas), <span className="highlight-author">Husserl</span> presenta su propia visión filosófica, tanto en términos de método como de sujeto. El método (<span className="highlight-concept">reducción fenomenológica</span>) está destinado a permitir que la fenomenología, ya entendida como <span className="highlight-concept">filosofía trascendental</span>, alcance su objeto propio de investigación: la <span className="highlight-concept">conciencia pura</span>, también denominada por <span className="highlight-author">Husserl</span> como <span className="highlight-concept">conciencia trascendental</span> (<span className="highlight-author">Husserl</span>, 1989).
+                                </p>
+                                <p>
+                                    A la luz de las distinciones de <span className="highlight-author">Husserl</span> entre (a) realidad (<span className="highlight-concept">Tatsache</span>) y esencia (<span className="highlight-concept">Wesen</span>) y (b) real e irreal, la <span className="highlight-concept">conciencia pura</span> es tratada por él como una entidad individual, lo que implica su especificidad temporal e irreal, es decir, no es un elemento del mundo real. La conciencia entendida de esta manera es un <span className="highlight-concept">ser absoluto</span> que también puede ser conocido de manera absoluta en la <span className="highlight-concept">percepción inmanente</span>.
+                                </p>
+                                <p>
+                                    La posición de <span className="highlight-author">Husserl</span> en Ideas se llama <span className="highlight-concept">idealismo trascendental</span>. El núcleo de este último es la teoría de la <span className="highlight-concept">conciencia pura</span> que existe, según el filósofo, de manera absoluta y como tal opuesta al mundo real, cuya existencia depende de la <span className="highlight-concept">conciencia trascendental absoluta</span><FootnoteRef id={6} setActiveNote={setActiveNote} />. Un aspecto importante de la teoría de la conciencia de <span className="highlight-author">Husserl</span> son los análisis de la <span className="highlight-concept">conciencia del tiempo interno</span>.
+                                </p>
+                                <p>
+                                    La corriente que constituye el <span className="highlight-concept">tiempo absoluto</span> resulta ser algo verdaderamente primordial. Crea el "fundamento" de la <span className="highlight-concept">conciencia trascendental</span>. En otras palabras, lo que se ha revelado como trascendentalmente absoluto requiere referencia y apoyo en algo que es verdaderamente primordial y absoluto en origen. Por lo tanto, el tema del tiempo requiere examen y aclaración, y para <span className="highlight-author">Husserl</span> toma la forma de una pregunta sobre la <span className="highlight-quote">"conciencia del tiempo"</span>. <span className="highlight-author">Husserl</span> define la capa más profunda de la conciencia trascendental como un <span className="highlight-concept">"flujo absoluto"</span>. Describe el tiempo fenomenológico de la conciencia <span className="highlight-quote">"en términos de la estructura tripartita de impresión primordial, retención y protensión"</span> (<span className="highlight-author">Hoerl</span>, 2013, p. 376). <span className="highlight-author">Husserl</span> considera que la <span className="highlight-concept">retención</span> es el tipo más básico de experiencia fenomenológica del tiempo. La retención permite tanto la constitución de la conciencia del tiempo como la conciencia misma.
+                                </p>
+                                <p>
+                                    <span className="highlight-author">Husserl</span> describe esta esfera más profunda de la conciencia con las siguientes palabras: <span className="highlight-quote">"El flujo de la conciencia que constituye el tiempo inmanente no solo existe, sino que está tan notablemente y sin embargo inteligiblemente formado que una auto-apariencia del flujo necesariamente existe en él, y por lo tanto, el flujo mismo debe ser necesariamente aprehensible en el fluir. La auto-apariencia del flujo no requiere un segundo flujo; por el contrario, se constituye a sí mismo como un fenómeno en sí mismo. Lo constituyente y lo constituido coinciden"</span> (<span className="highlight-author">Husserl</span>, 1991, p. 88). Las consideraciones de <span className="highlight-author">Husserl</span> sobre el concepto de tiempo son una contribución interesante a los problemas de la experiencia perceptual.
+                                </p>
+                                <p>
+                                    <span className="highlight-author">Husserl</span> argumenta que la conciencia no puede ser tratada como parte de un mundo objetivo constituido, sino que es una condición necesaria para la posibilidad de la <span className="highlight-concept">cognición objetiva</span>. Esta visión, por supuesto, tiene una fuente claramente kantiana. Afirma que <span className="highlight-author">Kant</span> no entendió la esfera subjetiva y la trató como si fuera algo natural o "real", y por lo tanto interpretó el <em>a priori</em> como si fuera una parte esencial de la especie humana y la forma humana de conocer la realidad (<span className="highlight-author">Husserl</span>, 2001, Prol. § 38). <span className="highlight-author">Husserl</span> afirma que el concepto de <span className="highlight-author">Kant</span> se basa en la <span className="highlight-concept">psicología naturalista</span> de <span className="highlight-author">Locke</span> (<span className="highlight-author">Husserl</span>, 1970, § 58).
+                                </p>
+                                <p>
+                                    La conciencia es un <span className="highlight-concept">ser inmanente</span>. <span className="highlight-author">Husserl</span> afirma que el ser inmanente es, por lo tanto, indudablemente un <span className="highlight-concept">ser absoluto</span> en el sentido de que esencialmente <span className="highlight-concept">nulla re indiget ad existendum</span>. Debe afirmarse que las <em>Ideas</em> están dominadas por el llamado <span className="highlight-concept">motivo dogmático</span> de la filosofía de <span className="highlight-author">Husserl</span>, que se expresa en la adopción de la esfera cartesiana del <span className="highlight-concept">cogito</span> como una entidad dada de manera indudable y absoluta. <span className="highlight-author">Husserl</span> distingue una cierta trascendencia en la estructura de la conciencia pura que no está sujeta a la reducción trascendental: el <span className="highlight-concept">Ego puro</span>. Durante el período de las <em>Investigaciones Lógicas</em>, <span className="highlight-author">Husserl</span> no asumió la existencia del Ego separado de las experiencias. En <em>Ideas</em> llegó a la creencia de que el Ego debe acompañar todas las experiencias intencionales - actos, y que es un sujeto puro de conciencia<FootnoteRef id={7} setActiveNote={setActiveNote} />.
+                                </p>
+                                <p>
+                                    El análisis de <span className="highlight-author">Husserl</span> sobre el tema de la conciencia y en particular la relación de la conciencia con su objeto (en relación con el proceso constitutivo de la cognición) llevó a la formación de un <span className="highlight-concept">concepto fenomenológico de conciencia</span> diferente del psicológico. Las distinciones que hizo serían igualmente importantes para el desarrollo posterior de la teoría de la intencionalidad. La <span className="highlight-concept">intencionalidad</span> es un concepto importante para la fenomenología y la teoría del conocimiento de <span className="highlight-author">Husserl</span>, pero también para toda la filosofía continental del siglo XX (<span className="highlight-author">Gelan</span>, 2015).
+                                </p>
+                                <p>
+                                    El concepto de <span className="highlight-concept">conciencia trascendental</span> esbozado anteriormente en solo unos pocos puntos puede ser útil en la investigación sobre posibles estados de la conciencia humana como uno de sus estados básicos, junto con: sueño profundo, sueño (incluido el sueño lúcido) y vigilia (<span className="highlight-author">Alexander</span> et al., 2017). Ya aparece en la antigua filosofía oriental y todavía parece estar subestimado en el pensamiento occidental.
+                                </p>
+                                <p>
+                                    Las reflexiones filosóficas de <span className="highlight-author">Husserl</span> sobre el concepto de conciencia pueden llegar a ser útiles en los intentos de comprender su naturaleza y modo de existencia. El método utilizado por el filósofo alemán parece ser particularmente útil, involucrando el <span className="highlight-quote">"Punto de Vista Natural"</span> como una forma de identificar métodos de investigación filosóficamente justificados y la modificación continua de los resultados logrados a la luz de la experiencia fenomenológicamente entendida. El enfoque de <span className="highlight-author">Husserl</span> también puede resultar útil en el análisis de la conciencia en el caso de las máquinas (<span className="highlight-author">Boyle</span>, 2021)<FootnoteRef id={8} setActiveNote={setActiveNote} />.
+                                </p>
+                                <p>
+                                    Sin embargo, el problema de la constitución de <span className="highlight-author">Husserl</span> muestra que su <span className="highlight-concept">idealismo trascendental</span> expresado en <em>Ideas</em> no es una posición metafísica sino epistemológica, es decir, no se refiere tanto a la forma de existencia de los objetos reales, sino más bien a la forma de conocerlos (<span className="highlight-author">Akiba</span>, 2019). Esto, por supuesto, crea mayores oportunidades para utilizar el método trascendental y ciertos resultados logrados gracias a él para analizar los problemas de la <span className="highlight-concept">conciencia de la IA</span>.
+                                </p>
+                                <p>
+                                    La cuestión del rechazo de <span className="highlight-author">Husserl</span> de un cierto tipo de <span className="highlight-concept">metafísica</span> está relacionada con la evolución de sus puntos de vista al respecto. Su crítica a la metafísica hecha en la fase temprana del desarrollo de su fenomenología presentada en la primera edición de IL se refiere principalmente a la metafísica, que puede llamarse "especulativa". La <span className="highlight-quote">"metafísica especulativa"</span> examina fenómenos que son inaccesibles al conocimiento intuitivo. En sus obras posteriores, <span className="highlight-author">Husserl</span> permite la posibilidad de construir una <span className="highlight-concept">metafísica fenomenológicamente fundamentada</span><FootnoteRef id={9} setActiveNote={setActiveNote} />. Afirma explícitamente: <span className="highlight-quote">"Nuestros resultados monadológicos son metafísicos, si es cierto que las cogniciones últimas del ser deben llamarse metafísicas. Por otro lado, lo que tenemos aquí es cualquier cosa menos metafísica en el sentido habitual: una metafísica históricamente degenerada, que de ninguna manera se ajusta al sentido con el que la metafísica, como 'filosofía primera', se instituyó originalmente. El modo de demostración puramente intuitivo, concreto y también apodíctico de la fenomenología excluye toda 'aventura metafísica', todos los excesos especulativos"</span> (<span className="highlight-author">Husserl</span>, 1960, p. 139). En una carta a <span className="highlight-author">Peter Wust</span>, <span className="highlight-author">Husserl</span> escribió directamente: <span className="highlight-quote">"desde el principio mi filosofía fue, y no quiso ser otra cosa que el camino (<span className="highlight-concept">Weg</span>) hacia una metafísica radicalmente auténtica, es decir, una metafísica verdaderamente justificada y radicalmente científica (...) Ya en mi conferencia inaugural de 1887 defendí la idea de una nueva metafísica científica"</span> (<span className="highlight-author">Schuhmann</span>, 1977, p. 22).
+                                </p>
+                            </section>
+
+                             {/* 3. Problem of Consciousness */}
+                             <section id="problem" className="mb-24">
+                                <h2 className="font-serif text-4xl text-slate-100 mb-8 flex items-baseline gap-4">
+                                    <span className="text-cyan-900 text-6xl font-bold opacity-30">3</span>
+                                    El problema de la conciencia
+                                </h2>
+                                <p>
+                                    Uno puede hacer la pregunta: ¿puede el <span className="highlight-concept">concepto fenomenológico de conciencia trascendental</span> de <span className="highlight-author">Husserl</span> tener algún significado para el análisis de la posibilidad de la emergencia de la <span className="highlight-concept">conciencia de la IA</span>? El concepto de conciencia es ambiguo. En el contexto de las consideraciones sobre la relación entre el concepto de conciencia de <span className="highlight-author">Husserl</span> y la conciencia de la IA, parece importante distinguir cuatro tipos de conciencia: <span className="highlight-concept">funcional</span>, <span className="highlight-concept">fenomenológica</span>, <span className="highlight-concept">conciencia de acceso</span> y <span className="highlight-concept">conciencia difícil (hard-consciousness)</span>.
+                                </p>
+                                <p>
+                                    La <span className="highlight-concept">conciencia funcional</span> es aquella que realiza funciones conscientes o que se comporta como si fuera conciencia. La <span className="highlight-concept">conciencia fenoménica</span> puede definirse como una experiencia, un estado de conciencia, cuya esencia es la conciencia de ser consciente (<span className="highlight-author">Block</span>, 1995). Una definición similar de conciencia es proporcionada por <span className="highlight-author">Chalmers</span> (1997). La <span className="highlight-concept">conciencia de acceso</span> ocurre cuando hay conciencia fenoménica disponible para su sistema cognitivo. Esta conciencia es siempre fenoménica, pero no al revés (<span className="highlight-author">Block</span>, 2008).
+                                </p>
+                                <p>
+                                    La <span className="highlight-concept">conciencia difícil</span> es un tipo de conciencia identificada con el <span className="highlight-concept">problema difícil de la conciencia</span>. <span className="highlight-author">Chalmers</span> distingue entre un <span className="highlight-concept">problema difícil</span> y uno <span className="highlight-concept">fácil</span> de la conciencia<FootnoteRef id={10} setActiveNote={setActiveNote} />. Enumera los siguientes fenómenos como un problema fácil de la conciencia: <span className="highlight-quote">"(1) la capacidad de discriminar, categorizar y reaccionar a los estímulos ambientales; (2) la integración de información por un sistema cognitivo; (3) la capacidad de informar de estados mentales; (4) la capacidad de un sistema para acceder a sus propios estados internos; (5) el foco de atención; (6) el control deliberado del comportamiento; (7) la diferencia entre vigilia y sueño"</span> (<span className="highlight-author">Chalmers</span>, 2017, p. 225). <span className="highlight-author">Chalmers</span> señala que todos estos fenómenos están relacionados con la conciencia. Todos son explicables a través de mecanismos computacionales o neuronales. También señala que, aunque todavía no conocemos la explicación completa de estos fenómenos, si fueran los únicos relacionados con la conciencia, entonces la conciencia no sería un problema significativo. Sin embargo, este no es el caso. El <span className="highlight-concept">problema difícil de la conciencia</span> está relacionado con la experiencia de conciencia interna. <span className="highlight-author">Chalmers</span> concluye que los métodos habituales de la ciencia cognitiva y la neurociencia no explican la experiencia consciente<FootnoteRef id={11} setActiveNote={setActiveNote} />.
+                                </p>
+                                <p>
+                                    Según <span className="highlight-author">Chalmers</span>, el <span className="highlight-concept">problema difícil de la conciencia</span> puede reducirse a la siguiente afirmación: <span className="highlight-quote">"Podemos decir que un ser es consciente si hay algo que se siente al ser ese ser, para usar una frase hecha famosa por <span className="highlight-author">Thomas Nagel</span>. Del mismo modo, un estado mental es consciente si hay algo que se siente al estar en ese estado mental. De manera equivalente, podemos decir que un estado mental es consciente si tiene una sensación cualitativa - una cualidad asociada de experiencia"</span> (<span className="highlight-author">Chalmers</span> 1997, p. 4). Por lo tanto, el problema de la conciencia trata sobre explicar las llamadas cualidades fenoménicas también conocidas como <span className="highlight-concept">qualia</span><FootnoteRef id={12} setActiveNote={setActiveNote} />.
+                                </p>
+                                <p>
+                                    Una de las críticas básicas a las <span className="highlight-concept">teorías funcionales</span> es su incapacidad para tratar con los <span className="highlight-concept">qualia</span>. Los argumentos formulados contra el funcionalismo pretenden mostrar que la identidad del estado funcional no implica la identidad de la cualidad. Los experimentos mentales en los que se asume que los <span className="highlight-concept">qualia</span> están ausentes o invertidos parecen mostrar que las explicaciones del funcionamiento del sistema en términos de causalidad fallan (<span className="highlight-author">Chrisley</span>, 2008). Uno debería estar de acuerdo con la visión de que la conciencia es, por un lado, un fenómeno dado directamente a nosotros y, por otro lado, desafía las explicaciones basadas en las teorías científicas contemporáneas (<span className="highlight-author">Gennaro</span>, 2016).
+                                </p>
+                                <p>
+                                    <span className="highlight-author">Chalmers</span>, cuyo trabajo sobre el concepto de conciencia tuvo una gran influencia en muchos investigadores, toma una posición metodológica completamente diferente a la de <span className="highlight-author">Husserl</span>. Es un <span className="highlight-concept">naturalista</span>. Lo que es interesante, sin embargo, es que nota la importancia de las consideraciones filosóficas para resolver el misterio de la conciencia. <span className="highlight-author">Chalmers</span> escribe: <span className="highlight-quote">"El problema de la conciencia yace incómodamente en la frontera de la ciencia y la filosofía. Yo diría que es propiamente un tema científico: es un fenómeno natural como el movimiento, la vida y la cognición, y pide una explicación de la manera en que estos lo hacen. Pero no está abierto a la investigación por los métodos científicos habituales (...) Así que el problema de la conciencia puede ser un problema científico que requiere métodos filosóficos de comprensión antes de que podamos despegar"</span> (<span className="highlight-author">Chalmers</span>, 1997, p. xi-xii).
+                                </p>
+                                <p>
+                                    <span className="highlight-author">Chalmers</span> afirma explícitamente que toma una posición <span className="highlight-concept">materialista</span>. Señala las limitaciones de los intentos materialistas de explicar el fenómeno de la conciencia. Escribe directamente: <span className="highlight-quote">"El materialismo es una visión hermosa y convincente del mundo, pero para dar cuenta de la conciencia tenemos que ir más allá de los recursos que proporciona"</span> (<span className="highlight-author">Chalmers</span>, 1997, p. xii). <span className="highlight-author">Ball</span> expresa dudas similares cuando escribe: <span className="highlight-quote">"Sugiero que nuestra tendencia a atribuir mente a la materia es mucho más complicada que eso"</span> (<span className="highlight-author">Ball</span>, 2022, p. 5). Parece que el enfoque fenomenológico de <span className="highlight-author">Husserl</span> sobre el tema de la conciencia puede resultar útil en la explicación científica de este fenómeno.
+                                </p>
+                                <p>
+                                    La opinión predominante entre los investigadores es que la conciencia es un concepto complejo. Los psicólogos suelen centrarse en el contenido de la conciencia (<span className="highlight-author">Aru</span> et al., 2019). Los neurólogos, a su vez, se refieren a los estados de conciencia, es decir, el hecho de que seas o no consciente de algo (<span className="highlight-author">Aru</span> et al., 2023). Las descripciones de nuestras experiencias también varían. Pueden describirse, por ejemplo, como principalmente fenoménicas (empíricas), como el olor de una naranja o la vista de la puesta de sol, o más cognitivas, describiendo la forma en que accedemos a ellas y cómo las usamos (<span className="highlight-author">Block</span>, 1995). También se pueden describir fenómenos conscientes mediante el uso de conceptos abstractos como justicia, libertad o ira.
+                                </p>
+                                <p>
+                                    <span className="highlight-author">Hameroff</span> y <span className="highlight-author">Penrose</span> señalan tres perspectivas posibles con respecto a los orígenes y la naturaleza de la conciencia: <span className="highlight-quote">"(A) Ciencia/Materialismo, con la conciencia sin tener un papel distintivo, (B) Dualismo/Espiritualidad, con la conciencia (etc.) estando fuera de la ciencia, (C) Ciencia, con la conciencia como un ingrediente esencial de las leyes físicas aún no comprendidas completamente"</span> (<span className="highlight-author">Hameoroff</span> & <span className="highlight-author">Penrose</span>, 2014, p.40). Los autores mencionados proponen una teoría conocida como <span className="highlight-concept">'Reducción objetiva orquestada' ('Orch OR')</span>. Es una teoría basada en la <span className="highlight-concept">mecánica cuántica</span> según la cual la experiencia consciente está inextricablemente vinculada a la estructura fina de la geometría del espacio-tiempo. Asume que la conciencia está profundamente conectada con el funcionamiento de las leyes de la naturaleza.
+                                </p>
+                                <p>
+                                    La pregunta sobre la conciencia no concierne solo a las personas. Ya existe una larga tradición de investigación sobre la posibilidad de que el fenómeno de la conciencia ocurra en animales (<span className="highlight-author">Seth</span> et al., 2005; <span className="highlight-author">Edelman</span> & <span className="highlight-author">Seth</span>, 2009; <span className="highlight-author">Birch</span> et al., 2020) y otros seres (<span className="highlight-author">Baluška</span> & <span className="highlight-author">Reber</span>, 2019; <span className="highlight-author">Thompson</span>, 2022; <span className="highlight-author">Ball</span>, 2022). Parece, sin embargo, que debido a la definición misma de IA como imitación del pensamiento humano, las consideraciones sobre la conciencia animal son de poca importancia aquí.
+                                </p>
+                                <p>
+                                    La larga historia de problemas relacionados con la comprensión del concepto de conciencia también resulta del hecho de que es un <span className="highlight-concept">término precientífico</span> y como tal se utiliza en muchos contextos diferentes (<span className="highlight-author">Dehaene</span> et al., 2021). En un contexto médico, este término se utiliza transitivamente (por ejemplo, en la frase <span className="highlight-quote">"el paciente no está consciente"</span>). En el contexto de la evaluación en la categoría de vigilia y vigilancia. Este término es importante desde el punto de vista de evaluar el estado en el que se encuentra una persona: sueño, coma, anestesia o estado vegetativo. El número de estos estados en humanos es mucho mayor que las capacidades potenciales de la IA. Surge entonces el problema: ¿cuál de ellos tendría que poseer la IA como condición para asignarle un estado de conciencia? Por otro lado, la IA domina sobre los humanos en áreas como el procesamiento de datos, el reconocimiento de voz, la robótica y los sistemas autónomos (<span className="highlight-author">Ng</span> & <span className="highlight-author">Leung</span>, 2020).
+                                </p>
+                                <p>
+                                    Parece que <span className="highlight-author">Husserl</span> describió con precisión el fenómeno de la conciencia, señalando su función como la <span className="highlight-concept">constitución del tiempo</span>. Aparte de la posición científica (física), donde a menudo se cuestiona la existencia objetiva del tiempo, la conciencia es la entidad en la que se crea la continuidad de las sensaciones experimentadas (<span className="highlight-author">Percival</span>, 2023). La esfera de la <span className="highlight-concept">temporalidad</span>, aunque la atribuimos a la realidad trascendente, parece tener sentido solo cuando hay una conciencia que aísla momentos del tiempo y los conecta en una secuencia temporal. El flujo del tiempo asume la existencia de un observador consciente que aísla momentos individuales y los organiza según el patrón pasado-presente-futuro. En mi opinión, el hecho de que haya tantos enfoques diferentes sobre el tema de la conciencia demuestra explícitamente que es, al menos en parte, un problema filosófos. Por lo tanto, no puede resolverse únicamente sobre bases científicas.
+                                </p>
+                            </section>
+
+                            {/* 4. AI Consciousness */}
+                            <section id="ai" className="mb-24">
+                                <h2 className="font-serif text-4xl text-slate-100 mb-8 flex items-baseline gap-4">
+                                    <span className="text-cyan-900 text-6xl font-bold opacity-30">4</span>
+                                    El problema de la conciencia de la IA
+                                </h2>
+                                <p>
+                                    La cuestión de la conciencia, en vista de lo dicho anteriormente sobre diversos enfoques posibles del fenómeno de la conciencia, puede examinarse en muchos aspectos. Algunos científicos enfatizan que la naturaleza compleja del fenómeno de la conciencia hace muy difícil o incluso imposible proporcionar una respuesta clara a la pregunta de si la IA puede ser consciente<FootnoteRef id={13} setActiveNote={setActiveNote} />.
+                                </p>
+                                <p>
+                                    Un intento de comprender la conciencia es vincularla con el concepto de <span className="highlight-concept">inteligencia</span>. Esto se hace analizando la base funcional de la conciencia (<span className="highlight-author">Juliani</span> et al., 2022). Ejemplos incluyen tres teorías contemporáneas bien conocidas de la base funcional de la conciencia desde la perspectiva del acceso consciente: (1) <span className="highlight-concept">Teoría del Espacio de Trabajo Global (GWT)</span> (<span className="highlight-author">Baars</span>, 2005); (2) <span className="highlight-concept">Teoría de Generación de Información (IGT)</span> (<span className="highlight-author">Kanai</span> et al., 2019) y (3) <span className="highlight-concept">Teoría del Esquema de Atención (AST)</span> (<span className="highlight-author">Graziano</span> & <span className="highlight-author">Webb</span>, 2015).
+                                </p>
+                                <p>
+                                    GWT describe la función de la memoria de trabajo, la atención y el intercambio de información entre módulos cerebrales. IGT se basa en la investigación clínica sobre la base neural de la conciencia. Intenta explicar el hecho de las experiencias coherentes en humanos. AST describe un proceso flexible de adaptación a nuevas situaciones. Estas teorías, por lo tanto, describen los mecanismos mediante los cuales es posible el comportamiento adaptativo. Sin embargo, cómo contribuyen las habilidades cognitivas al grado de inteligencia depende de su definición. Al considerar la inteligencia de la máquina (IA), debemos buscar una definición que abstraiga de formas de actuar específicamente humanas, como el lenguaje y las herramientas. <span className="highlight-author">Chollet</span> (2019) propone que la inteligencia debe entenderse como la capacidad de adquirir habilidades rápidamente con la menor cantidad de experiencia directa y conocimiento. Las teorías funcionales de la conciencia mencionadas anteriormente describen la conciencia en términos de habilidades cognitivas. Estas teorías no describen este fenómeno, pero parecen acercar nuestra comprensión a él. La conciencia entendida de esta manera incluye la posesión de inteligencia. La dificultad es que <span className="highlight-quote">"Un problema fundamental en la inteligencia artificial es que nadie sabe realmente qué es la inteligencia. El problema es especialmente agudo cuando necesitamos considerar sistemas artificiales que son significativamente diferentes a los humanos"</span> (<span className="highlight-author">Legg</span> & <span className="highlight-author">Hutter</span>, 2007, p. 391).
+                                </p>
+                                <p>
+                                    Una pregunta fundamental en la investigación de la inteligencia es si debe verse como una habilidad o muchas. Existen teorías que ven la inteligencia como algo que tiene muchos componentes diferentes y afirman que encontrar estos componentes es importante para comprender la naturaleza de la inteligencia. Diferentes teorías proponen diferentes formas de lograr este objetivo. Una de las primeras fue la <span className="highlight-concept">teoría de múltiples factores</span> de <span className="highlight-author">Thurstone</span>, que distinguió siete <span className="highlight-quote">"habilidades mentales básicas: comprensión verbal, fluidez de palabras, facilidad con los números, visualización espacial, memoria asociativa, velocidad de percepción y razonamiento"</span> (<span className="highlight-author">Thurstone</span>, 1938). Otro intento es la <span className="highlight-concept">"Mente Triárquica"</span> de <span className="highlight-author">Sternberg</span>, que desglosa la inteligencia en tres factores: inteligencia analítica, inteligencia creativa e inteligencia práctica (<span className="highlight-author">Sternberg</span>, 1985).
+                                </p>
+                                <p>
+                                    Uno de los enfoques más interesantes de la inteligencia es el concepto de <span className="highlight-author">Gardner</span> de las llamadas <span className="highlight-concept">"inteligencias múltiples"</span> que distingue sus siguientes tipos: lógico-matemática, lingüística, musical, espacial, cinestésica corporal, intrapersonal e interpersonal (<span className="highlight-author">Gardner</span>, 1993). El principal activo de la teoría de <span className="highlight-author">Gardner</span> es su componente cultural que muestra la naturaleza multidimensional de la inteligencia (<span className="highlight-author">Almeida</span> et al., 2010). Cada individuo tiene distintos tipos de inteligencia. Permiten resolver diversos problemas que surgen tanto en la vida individual como social.
+                                </p>
+                                <p>
+                                    Algunas esperanzas para la existencia de la IA y su investigación han aparecido en conexión con el desarrollo de <span className="highlight-concept">Modelos de Lenguaje Grande (LLM)</span>. Estos sistemas se caracterizan por la capacidad de comunicarse con las personas, lo que puede interpretarse como una manifestación de conciencia<FootnoteRef id={14} setActiveNote={setActiveNote} />. Estas son redes neuronales artificiales multicapa entrenadas en una gran cantidad de palabras tomadas de varios textos, incluidos lenguajes naturales. Los LLM han contribuido a refinar nuestra comprensión de lo que significa entender, tener agencia y ser consciente. Interactuar con LLM crea la impresión de que pronto pueden volverse conscientes (<span className="highlight-author">Chalmers</span>, 2023; <span className="highlight-author">VanRullen</span>, & <span className="highlight-author">Kanai</span>, 2021). Desde el punto de vista de un neurocientífico, sin embargo, esto parece dudoso. Esto se indica por las diferencias entre LLM y organismos conscientes vivos. Desde un punto de vista evolutivo, los organismos vivos alcanzaron la conciencia como resultado de los procesos de adaptación al entorno utilizando los sentidos. Sin embargo, esto falta, al menos por ahora, en el caso de las redes neuronales (<span className="highlight-author">Aru</span> et al., 2019).
+                                </p>
+                                <p>
+                                    Aparte de eso, el enfoque evolutivo de la conciencia puede entenderse de diferentes maneras. Un enfoque interesante sobre el tema de la conciencia es presentado, por ejemplo, por un neuropsicólogo inglés <span className="highlight-author">Nicholas Humphrey</span>. Señala que la conciencia es una habilidad cognitiva, pero también una cierta <span className="highlight-concept">"fantasía"</span> que es un producto del cerebro, cuyo propósito es dar valor a nuestra existencia. Escribe: <span className="highlight-quote">"Es decir, la conciencia es: 1. Una facultad cognitiva, evolucionada por selección natural, diseñada para ayudarnos a dar sentido a nosotros mismos y a nuestro entorno. Pero, en otro nivel, la conciencia es: 2. Una fantasía, conjurada por el cerebro, diseñada para cambiar cómo valoramos nuestra existencia"</span> (<span className="highlight-author">Humphrey</span>, 2020a, p. 14). Considera que las características básicas de la conciencia son: unidad, autoconciencia y poseer ciertas habilidades <span className="highlight-concept">"meta-cognitivas"</span> que permiten comprender otras mentes. El científico señala los problemas con una explicación exclusivamente evolutiva de la emergencia de la conciencia. Escribe: <span className="highlight-quote">"Podemos haber encontrado una posible respuesta a la pregunta de qué evolucionó, pero aún no hemos comenzado a abordar la pregunta de por qué evolucionó"</span> (<span className="highlight-author">Humphrey</span>, 2020a, p. 19)<FootnoteRef id={15} setActiveNote={setActiveNote} />. De hecho, considera que la conciencia es un fenómeno incognoscible (<span className="highlight-author">Humphrey</span>, 2020b).
+                                </p>
+                                <p>
+                                    Uno de los problemas básicos relacionados con la inteligencia es el problema de su medición, es decir, las pruebas. Cuando se trata de la inteligencia humana, esta es una tarea para los psicólogos. Sin embargo, si queremos estudiar la inteligencia de la máquina, debemos desarrollar un concepto abstracto y muy general de inteligencia. Las máquinas pueden tener formas físicas, sensores, medios de comunicación y capacidades de procesamiento de información y ambientales que son completamente diferentes de las que experimentamos como humanos. Esto hace que los intentos de medir la inteligencia de la máquina sean particularmente difíciles. Las pruebas psicológicas no se aplican aquí. Un intento exitoso de resolver este problema podría ser desarrollar tipos específicos de pruebas para tipos específicos de criaturas; así como las pruebas de CI para niños son diferentes de las pruebas de CI para adultos. Resulta, sin embargo, que probar la inteligencia de personas que son diferentes entre sí es posible, pero los intentos de probar la inteligencia de criaturas que difieren significativamente en capacidades cognitivas, velocidad, sentidos y entorno no tienen éxito. Medir la inteligencia de sistemas tan diferentes requiere tener en cuenta su especificidad.
+                                </p>
+                                <p>
+                                    Surge la pregunta sobre cómo desarrollar un concepto de inteligencia que pueda aplicarse a todos los tipos de sistemas. Parece que tal concepto no debería limitarse a ningún conjunto particular de sentidos, entornos u objetivos. No debería limitarse a ningún tipo particular de hardware, como silicio o neuronas biológicas. Tal concepto debería basarse en principios que son la base de los procesos mentales universales, es decir, aquellos que es poco probable que cambien con el tiempo. Además, tal definición de inteligencia, si también se aplica a máquinas inteligentes, debe expresarse en un lenguaje formal, objetivo y permitir que se realice una prueba de inteligencia en la práctica. Este enfoque resulta principalmente de la crítica que caracteriza tanto a la fenomenología como a las ciencias cognitivas. En sus obras posteriores, <span className="highlight-author">Husserl</span> describe la fenomenología como el estudio crítico y riguroso de los fenómenos, sin suposiciones previas. Esto fue expresado acertadamente por <span className="highlight-author">Zahavi</span>, quien escribe: <span className="highlight-quote">"Nuestra investigación debe ser crítica y no dogmática, evitando prejuicios metafísicos y científicos. Debe guiarse por lo que realmente se da, en lugar de por lo que esperamos encontrar dados nuestros compromisos teóricos"</span> (<span className="highlight-author">Zahavi</span>, 2003, p. 44). En resumen, la investigación fenomenológica no debe hacer suposiciones a priori sobre la naturaleza de los fenómenos que se estudian.
+                                </p>
+                                <p>
+                                    El problema esbozado anteriormente concierne a la oposición entre inteligencia natural e inteligencia artificial. Parece que el concepto de <span className="highlight-concept">conciencia pura trascendental</span> propuesto por <span className="highlight-author">Husserl</span>, especialmente en <em>Ideas</em>, puede ser un paso adelante en la búsqueda de características universales de la inteligencia y luego de la conciencia. <span className="highlight-author">Alcaraz-Sanchez</span>, analizando el problema de la conciencia como tal y la perspectiva de futuras investigaciones dirigidas a ella, afirma: <span className="highlight-quote">"Finalmente, la investigación futura debería investigar las implicaciones teóricas del concepto de 'conciencia-como-tal' o 'conciencia pura' y observar qué tipo de conciencia tienen los individuos durante este estado"</span> (<span className="highlight-author">Alcaraz-Sanchez</span>, 2023, p. 890). Aunque utiliza una cierta categoría tomada de la filosofía india, independientemente de las diferencias culturales, es fácil ver similitudes con el concepto de <span className="highlight-author">Husserl</span>.
+                                </p>
+                                <p>
+                                    Sin embargo, uno debe recordar la diferencia fundamental entre el concepto de conciencia en la tradición védica y la fenomenología entendida como una cierta tendencia filosófica. En Oriente, los filósofos hablan de <span className="highlight-quote">"conciencia sin objeto"</span>, mientras que en la tradición de <span className="highlight-author">Brentano</span>, de la cual se deriva el enfoque fenomenológico de la conciencia, siempre es intencional, es decir, dirigida a algún objeto. <span className="highlight-author">Antonelli</span> caracteriza el tema de la intencionalidad con las siguientes palabras: <span className="highlight-quote">"La intencionalidad se entiende generalmente como el carácter representacional de la mente o la conciencia - su ser 'de' o 'sobre' o representar cosas, propiedades y estados de cosas. Decir que un estado mental tiene intencionalidad es decir que es una representación mental o que tiene un contenido. Un estado mental o experiencia es intencional en la medida en que es una representación de algo distinto de sí mismo"</span> (<span className="highlight-author">Antonelli</span>, 2022, p. 304).
+                                </p>
+                                <p>
+                                    <span className="highlight-author">Searle</span> también señala la importancia fundamental de la intencionalidad como un elemento que distingue la conciencia humana. Al mismo tiempo, indica que el momento de la intencionalidad no ocurre en el caso de las computadoras. Su famoso experimento mental llamado <span className="highlight-quote">"habitación china"</span> es un argumento contra la <span className="highlight-concept">IA fuerte</span><FootnoteRef id={16} setActiveNote={setActiveNote} />. <span className="highlight-author">Searle</span> señala que incluso la imitación exitosa de los procesos de pensamiento por parte de una computadora no significa que posea conciencia. La máquina opera a nivel sintáctico, mientras que la conciencia humana contiene contenido mental, y especialmente semántico. <span className="highlight-author">Searle</span> escribe: <span className="highlight-quote">"Este artículo puede verse como un intento de explorar las consecuencias de dos proposiciones. (1) La intencionalidad en los seres humanos (y animales) es producto de características causales del cerebro. Asumo que esto es un hecho empírico sobre las relaciones causales reales entre los procesos mentales y los cerebros. Dice simplemente que ciertos procesos cerebrales son suficientes para la intencionalidad. (2) Instanciar un programa de computadora nunca es por sí mismo una condición suficiente de intencionalidad"</span> (<span className="highlight-author">Searle</span>, 1980, p. 417). <span className="highlight-author">Searle</span> intenta justificar la tesis de que ningún programa de computadora por sí mismo es capaz de crear conciencia. En su opinión, la condición para la emergencia de la conciencia en el caso de una máquina sería que alcanzara un poder causal interno igual al del cerebro. No decido si esto es posible. Quizás el rápido desarrollo de las redes neuronales en el futuro permita verificar la tesis de <span className="highlight-author">Searle</span>.
+                                </p>
+                                <p>
+                                    Surge la pregunta: ¿somos capaces de distinguir claramente la IA de la <span className="highlight-concept">conciencia artificial</span>? Alguien podría decir que la IA es un intento de crear artefactos inteligentes, y la conciencia artificial es un intento de crear artefactos conscientes. Sin embargo, el asunto es más complicado por dos razones básicas. Primero, la conciencia y la inteligencia no pueden distinguirse tan claramente. Como ejemplo de esta dificultad, diríamos que resolver una tarea requiere inteligencia, pero también diríamos que requiere conciencia.
+                                </p>
+                                <p>
+                                    Segundo, el campo de la IA en su sentido más amplio no puede equipararse con la inteligencia artificial. La conciencia artificial es mucho más que la IA, aunque ser consciente implica implícitamente ser inteligente, al menos hasta cierto punto. En otras palabras, la IA puede entenderse como un intento de crear artefactos que tienen propiedades mentales o al menos exhiben aspectos característicos de sistemas que tienen tales propiedades. El conjunto de estas propiedades incluye no solo inteligencia, sino también aquellas características relacionadas con, por ejemplo, percepción, acción, emociones, creatividad y conciencia. En este sentido, la conciencia artificial es un subcampo de la IA.
+                                </p>
+                                <p>
+                                    El enfoque fenomenológico del tema de la conciencia de la IA es adoptado actualmente por, entre otros, una pregunta sobre la posibilidad de la existencia de conciencia no relacionada con el procesamiento sensorial. Si el procesamiento sensorial no es una condición necesaria para la emergencia de la conciencia fenoménica, entonces se puede concluir que la IA no requiere encarnación. <span className="highlight-author">Cody Turner</span>, refiriéndose al concepto de <span className="highlight-concept">"primitivismo fuerte"</span>, que asume que la conciencia fenoménica no implica la necesidad de procesamiento sensorial, cita los siguientes argumentos en apoyo de esta tesis: <span className="highlight-quote">"P1. El primitivismo fuerte sobre la fenomenología cognitiva es verdadero. P2. Si el primitivismo fuerte sobre la fenomenología cognitiva es verdadero, entonces la conciencia fenoménica no requiere procesamiento sensorial. C1. Por lo tanto, la conciencia fenoménica no requiere procesamiento sensorial. P3. Si la conciencia fenoménica no requiere procesamiento sensorial, entonces la conciencia de la IA (asumiendo que es posible) no requiere encarnación. C2. Por lo tanto, la conciencia de la IA (asumiendo que es posible) no requiere encarnación"</span> (<span className="highlight-author">Turner</span>, 2020, p. 111). En sus análisis, <span className="highlight-author">Turner</span> se refiere a los conceptos de <span className="highlight-concept">"conciencia pura"</span> y <span className="highlight-concept">"teoría del pensamiento de orden superior de la conciencia"</span><FootnoteRef id={17} setActiveNote={setActiveNote} />. La posibilidad de la existencia de ambas entidades implica la tesis sobre la verdad del punto de vista del primitivismo fuerte. Los análisis realizados no conducen a conclusiones claras con respecto a la posibilidad de la existencia de la IA. <span className="highlight-author">Turner</span> afirma directamente: <span className="highlight-quote">"No presento ningún argumento a favor o en contra de la posibilidad de la conciencia de la IA aquí. Más bien, simplemente asumo que la conciencia de la IA es posible (...)"</span> (<span className="highlight-author">Turner</span>, 2020, p. 127). <span className="highlight-author">Turner</span> encuentra creíble la visión del primitivismo fuerte, asumiendo que la conciencia pura es posible. También está dispuesto a reconocer la posibilidad de la existencia de dos tipos de conciencia: conciencia basada en los sentidos y conciencia desencarnada.
+                                </p>
+                                <p>
+                                    Evitar declaraciones claras con respecto a la posibilidad de la existencia de la conciencia de la IA parece bastante típico de las discusiones actuales en esta área. Este estado de cosas se debe probablemente a dos razones: (1) la etapa de investigación de la IA en la que nos encontramos, (2) el hecho de que un elemento importante de la reflexión sobre la conciencia son preguntas filosóficas para las que no hay respuestas claras. <span className="highlight-author">Li</span> y <span className="highlight-author">Guo</span> (2021) señalan acertadamente que la inteligencia humana es la base para el desarrollo de la IA. También enfatizan que los temores sobre las amenazas de la IA son prematuros. Así como la conciencia humana es el producto de millones de años de desarrollo evolutivo, el logro de la autoconciencia por parte de las máquinas es una cuestión del futuro lejano. <span className="highlight-author">Şenocak</span> et al. (2023) señalan las raíces filosóficas del concepto de IA y enfatizan la necesidad de emprender una profunda reflexión sobre el impacto futuro de la IA en diversas dimensiones de la vida social humana.
+                                </p>
+                                <p>
+                                    <span className="highlight-author">Ezhilarasu</span> et al. (2023), a su vez, afirman que el tema de la IA plantea cuestiones tanto filosóficas como prácticas. <span className="highlight-author">Fields</span> et al. (2022) señalan que los factores de aprendizaje social no se han tenido en cuenta hasta ahora en el desarrollo de las habilidades cognitivas de la IA.
+                                </p>
+                                <p>
+                                    La respuesta a las preguntas clave desde el punto de vista del tema discutido en este artículo sigue abierta. Parece, por un lado, que el pesimismo con respecto a la posibilidad teórica de la conciencia artificial es infundado, porque se basa tanto en una falta de comprensión de la inteligencia en general como de la inteligencia artificial en particular. También es poco claro qué posibles roles podría jugar la IA en explicar o crear conciencia. Por otro lado, la opinión dominante entre los investigadores es que la naturaleza de primera persona, subjetiva, similar al ser de la conciencia es inalcanzable utilizando cálculos y algoritmos, es decir, métodos de IA. Sin embargo, es difícil imaginar una conciencia que no se caracterizara por esta subjetividad.
+                                </p>
+                                <p>
+                                    Existen claras diferencias en el funcionamiento de la inteligencia natural, es decir, humana, y la IA. Cuando se trata de, por ejemplo, habilidades mentales, que en los humanos generalmente incluyen la conciencia, la IA tiende a proceder de una manera que minimiza los aspectos claramente fenomenológicos de estas habilidades. El problema de responder a la pregunta sobre si la IA tiene la característica de la conciencia también resulta del hecho de que en sus actividades la IA generalmente se centra en aquellos aspectos de las manifestaciones de la vida mental que no requieren una confrontación directa con los problemas de la conciencia.
+                                </p>
+                                <p>
+                                    El problema fundamental con la conciencia de la IA puede expresarse en la siguiente pregunta: ¿es el <span className="highlight-concept">pensamiento simulado</span> realmente pensamiento? Una respuesta positiva a esta pregunta dependería de si la máquina sería capaz de imitar todas las funciones de la conciencia humana. En la etapa actual del desarrollo de la IA, esto no es posible. Más aún si consideramos que las emociones son un aspecto importante de la conciencia humana. Quizás <span className="highlight-author">Sherry Turkle</span> tenga razón cuando dice que no se puede descartar que el pensamiento simulado sea pensamiento, pero las emociones simuladas no son y nunca serán emociones (<span className="highlight-author">Turkle</span>, 2007). El comportamiento inteligente es computación, pero los sentimientos son más que solo computación. Hay una barrera que la IA puede que nunca sea capaz de superar.
+                                </p>
+                                <p>
+                                    Muchos científicos creen que debido a su dinámica, es difícil predecir en detalle el desarrollo futuro de la IA. Este desarrollo inspira investigación teórica y tiene un impacto sin precedentes en todas las áreas de la vida humana. Sin embargo, al desarrollar esta tecnología única, también debemos recordar las posibles consecuencias negativas que puede tener para las personas si se usa incorrectamente. Al desarrollar la IA, estamos tratando con una herramienta que es cualitativamente completamente diferente de todas las herramientas con las que hemos tratado (<span className="highlight-author">Schneider</span>, 2019).
+                                </p>
+                            </section>
+
+                            {/* 5. Conclusion */}
+                            <section id="conclusion" className="mb-24">
+                                <h2 className="font-serif text-4xl text-slate-100 mb-8 flex items-baseline gap-4">
+                                    <span className="text-cyan-900 text-6xl font-bold opacity-30">5</span>
+                                    Conclusión
+                                </h2>
+                                <p>
+                                    Parece que la fuerza del concepto de conciencia trascendental de <span className="highlight-author">Husserl</span> es que indica la posición distintiva de la conciencia en la estructura cognitiva del mundo. Este es, por supuesto, un concepto filosófico. Vale la pena recordar que el problema de la existencia de las mentes no está resuelto científicamente. <span className="highlight-author">Penrose</span> afirma directamente: <span className="highlight-quote">"Quizás las mentes realmente no existen"</span> (<span className="highlight-author">Penrose</span>, 1992, p. 1). En el sistema filosófico de <span className="highlight-author">Husserl</span>, la conciencia es una entidad distinguida. La pregunta sobre su existencia pierde su significado. La conciencia trascendental es la condición para la existencia de otras cosas.
+                                </p>
+                                <p>
+                                    La investigación contemporánea sobre la IA, tanto en ciencias cognitivas como, por ejemplo, física, plantea una pregunta importante sobre si la conciencia puede describirse adecuadamente utilizando algoritmos computacionales. Una respuesta positiva a esta pregunta conduce a la aceptación de la tesis de que el algoritmo o su producto final es suficiente para crear conciencia. Parece, sin embargo, que incluso la descripción científica más perfecta del funcionamiento del cerebro como base de los procesos de pensamiento que tenemos actualmente, es decir, las leyes de la mecánica cuántica, son incapaces de explicar el fenómeno de la conciencia (<span className="highlight-author">Penrose</span>, 1987). Este problema aún permanece abierto. Sin embargo, el estado actual del conocimiento nos permite afirmar que la mecánica cuántica será de importancia clave en la explicación del fenómeno de la conciencia (<span className="highlight-author">Gao</span>, 2022). Por supuesto, otras ciencias tampoco pueden hacer esto como se describió anteriormente. El fenómeno de la conciencia en sí mismo es tanto multidimensional como definicionalmente ambiguo. Por lo tanto, surge otra pregunta: ¿no deberían buscarse las formas de entender la conciencia sobre bases filosóficas?<FootnoteRef id={18} setActiveNote={setActiveNote} />
+                                </p>
+                                <p>
+                                    El <span className="highlight-concept">concepto fenomenológico de conciencia</span> de <span className="highlight-author">Husserl</span> puede convertirse en un punto de partida valioso en los intentos de comprender el fenómeno de la conciencia y, por lo tanto, contribuir a responder la pregunta sobre la conciencia de la IA. Por supuesto, el concepto del filósofo alemán está en contradicción con el <span className="highlight-concept">naturalismo metodológico</span> de la cognición científica<FootnoteRef id={19} setActiveNote={setActiveNote} />. También se basa en el <span className="highlight-concept">antinaturalismo ontológico</span>. Sin embargo, el rechazo del naturalismo metodológico no conduce necesariamente al reconocimiento de la validez del antinaturalismo ontológico.
+                                </p>
+                                <p>
+                                    <span className="highlight-author">Husserl</span> criticó fuertemente el <span className="highlight-concept">naturalismo</span> como una amenaza tanto para la ciencia como para la filosofía. Creía que el naturalismo aborda incorrectamente la conciencia tratándola como una entidad que es parte del mundo. <span className="highlight-author">Moran</span> escribe: <span className="highlight-quote">"Esta actitud naturalista 'reifica' y 'absolutiza' el mundo de tal manera que se trata como dado por sentado y 'obvio'"</span> (<span className="highlight-author">Moran</span>, 2008, p. 401). Adoptar tal actitud en la investigación de la conciencia sería una consecuencia de la visión que considera la conciencia como una entidad única en la estructura ontológica del mundo. La asunción de una naturaleza distintiva de la conciencia y su modo de existencia permitiría el uso de un método fenomenológico específico de investigación. Sin embargo, parece que la ciencia todavía está lejos de aceptar este punto de vista con respecto a la especificidad de la conciencia.
+                                </p>
+                                <p>
+                                    Debe recordarse, sin embargo, que la crítica de <span className="highlight-author">Husserl</span> al naturalismo se dirige contra su cierta forma prevaleciente en su época. Esta crítica no parece aplicarse al naturalismo tal como se entiende hoy. El naturalismo contemporáneo se manifiesta en la comprensión evolutiva de varios tipos de fenómenos y la tendencia a unificar el conocimiento obtenido en las ciencias naturales y sociales, así como en las humanidades (<span className="highlight-author">Medzhidova</span>, 2022). El naturalismo moderno es una respuesta a los logros de las ciencias que estudian el cerebro, los genes y los procesos evolutivos.
+                                </p>
+                                <p>
+                                    <span className="highlight-author">Boyle</span> señala acertadamente que el concepto de conciencia de <span className="highlight-author">Husserl</span> no excluye su enfoque científico como un objeto físico. Escribe: <span className="highlight-quote">"La visión de <span className="highlight-author">Husserl</span> es que la conciencia no puede naturalizarse y, sostengo, eso no la excluye de ser algo. Por 'algo' quiero decir que la conciencia bien podría ser un fenómeno puramente físico tanto como podría ser una característica emergente de una entidad distribuida o un marco trascendental de relaciones intencionales. Estas son todas posibilidades para el estatus metafísico de la conciencia, pero nunca podemos afirmar que una posibilidad es correcta con algún grado de certeza"</span> (<span className="highlight-author">Boyle</span>, 2021, p. 12). Este fue también el propósito de este artículo. La idea era indicar que el concepto de conciencia de <span className="highlight-author">Husserl</span> puede usarse en la investigación científica sobre la IA. La condición básica es el rechazo de la <span className="highlight-concept">metafísica de la conciencia</span> y la aceptación de la tesis de <span className="highlight-author">Husserl</span> sobre la aplicación limitada del naturalismo metodológico en la investigación de la conciencia.
+                                </p>
+                                <p>
+                                    Un enfoque fenomenológico para la investigación sobre la conciencia y la IA consistiría en utilizar el método propuesto por <span className="highlight-author">Husserl</span>. En el caso de la IA, se trataría de analizar los objetivos establecidos para las máquinas y observar el grado en que se logran. No deberíamos formular demasiadas hipótesis sobre la IA, al igual que no formulamos suposiciones sobre la inteligencia humana en el enfoque fenomenológico. Tal enfoque, que puede describirse como descriptivo, puede permitirnos responder a la pregunta de hasta qué punto la IA puede imitar características de la conciencia humana. No decidimos de antemano si la conciencia de la máquina puede existir en absoluto.
+                                </p>
+                            </section>
+
+                            {/* References */}
+                            <footer id="refs" className="pt-20 border-t border-slate-900 text-sm text-slate-500 font-mono w-full">
+                                <h3 className="text-xl text-slate-300 font-serif mb-8">Referencias</h3>
+                                <ul className="space-y-4 break-words">
+                                    <li>Akiba, T. (2019). Things and reality: A problem for Husserl's theory of Constitution. New Phenomenological Studies in Japan, 29–44.</li>
+                                    <li>Alcaraz-Sanchez, A. (2023). Awareness in the void: A micro-phenomenological exploration of conscious dreamless sleep. Phenomenology and the Cognitive Sciences, 22(4), 867–905.</li>
+                                    <li>Alexander, C. N., Cranson, R. W., Boyer, R. W., & Orme-Johnson, D. W. (2017). Transcendental consciousness: A fourth state of consciousness beyond sleep, dreaming, and waking. Sleep and dreams (pp. 282–316). Routledge.</li>
+                                    <li>Almeida, L. S., Prieto, M. D., Ferreira, A. I., Bermejo, M. R., Ferrando, M., & Ferrándiz, C. (2010). Intelligence assessment: Gardner multiple intelligence theory as an alternative. Learning and Individual Differences, 20(3), 225–230.</li>
+                                    <li>Antonelli, M. (2022). Consciousness and intentionality in Franz Brentano. Acta Analytica, 37(3), 301–322.</li>
+                                    <li>Aru, J., Suzuki, M., Rutiku, R., Larkum, M. E., & Bachmann, T. (2019). Coupling the state and contents of consciousness. Frontiers in Systems Neuroscience, 13, 43.</li>
+                                    <li>Aru, J., Larkum, M. E., & Shine, J. M. (2023). The feasibility of artificial consciousness through the lens of neuroscience. Trends in Neurosciences, 1–24.</li>
+                                    <li>Baars, B. J. (2005). Global workspace theory of consciousness: Toward a cognitive neuroscience of human experience. Progress in Brain Research, 150, 45–53.</li>
+                                    <li>Ball, P. (2022). The Book of minds: How to understand ourselves and other beings, from animals to AI to aliens. University of Chicago Press.</li>
+                                    <li>Baluška, F., & Reber, A. (2019). Sentience and consciousness in single cells: How the first minds emerged in unicellular species. Bioessays, 41(3), 1800229.</li>
+                                    <li>Beavers, A. F. (2002). Phenomenology and artificial intelligence. Metaphilosophy, 33(1–2), 70–82.</li>
+                                    <li>Bello, A. A. (2004). The Controversy about the Existence of the World in Edmund Husserl'S Phenomenological School: A. Reinach, R. Ingarden, H. Conrad-Martius, E. Stein. In Does the World Exist? Plurisignificant Ciphering of Reality (pp. 97–115). Dordrecht: Springer Netherlands.</li>
+                                    <li>Birch, J., Schnell, A. K., & Clayton, N. S. (2020). Dimensions of animal consciousness. Trends in Cognitive Sciences, 24(10), 789–801.</li>
+                                    <li>Block, N. (1995). On a confusion about a function of consciousness. Behavioral and Brain Sciences, 18(2), 227–287.</li>
+                                    <li>Block, N. (2008). Phenomenal and Access Consciousness. Proceedings of the Aristotelian Society, New Series, 108, 289–317.</li>
+                                    <li>Boyle, D. (2021). Analysing AI via Husserl and Kuhn How a Phenomenological Approach to Artificial Intelligence Imposes a Paradigm Shift. In Responsible AI and Analytics for an Ethical and Inclusive Digitized Society: 20th IFIP WG 6.11 Conference on e-Business, e-Services and e-Society, I3E 2021, Galway, Ireland, September 1–3, 2021, Proceedings 20 (pp. 185–197). Springer International Publishing.</li>
+                                    <li>Brentano, F. (2012). Descriptive psychology. Routledge.</li>
+                                    <li>Buccella, A., & Springle, A. A. (2023). Phenomenology: What’s AI got to do with it? Phenomenology and the Cognitive Sciences, 22(3), 621–636.</li>
+                                    <li>Chalmers, D. J. (1997). The conscious mind. Oxford University Press.</li>
+                                    <li>Chalmers, D. J. (2017). The hard problem of consciousness. The Blackwell Companion to Consciousness, 32–42.</li>
+                                    <li>Chalmers, D. J. (2023). Could a large language model be conscious? arXiv preprint arXiv:2303.07103.</li>
+                                    <li>Chollet, F. (2019). On the measure of intelligence. arXiv preprint arXiv:1911.01547.</li>
+                                    <li>Chrisley, R. (2008). Philosophical foundations of artificial consciousness. Artificial Intelligence in Medicine, 44(2), 119–137.</li>
+                                    <li>Cole, D. (2004). The Chinese room argument. The Stanford Encyclopedia of Philosophy.</li>
+                                    <li>De Santis, D. (2022). The development of Husserl’s Concept of Metaphysics. In H. Jacobs (Ed.), The Husserlian Mind (pp. 481–893). Routledge.</li>
+                                    <li>Deery, J. (2021). Extending the extended consciousness debate: Perception, imagination, and the common kind assumption. Phenomenology and the Cognitive Sciences, 1–19.</li>
+                                    <li>Dehaene, S., Lau, H., & Kouider, S. (2021). What is consciousness, and could machines have it? Robotics, AI, and Humanity: Science, Ethics, and Policy, 43–56.</li>
+                                    <li>Edelman, D. B., & Seth, A. K. (2009). Animal consciousness: A synthetic approach. Trends in Neurosciences, 32(9), 476–484.</li>
+                                    <li>Ellia, F., & Chis-Ciure, R. (2022). Consciousness and complexity: Neurobiological naturalism and integrated information theory. Consciousness and Cognition, 100, 103281.</li>
+                                    <li>Ezhilarasu, C. M., Angus, J., & Jennions, I. K. (2023). Toward the aircraft of the future: A perspective from consciousness. Journal of Artificial Intelligence and Consciousness, 10(02), 249–290.</li>
+                                    <li>Fields, C., Friston, K., Glazebrook, J. F., & Levin, M. (2022). A free energy principle for generic quantum systems. Progress in Biophysics and Molecular Biology, 173, 36–59.</li>
+                                    <li>Froese, T., & Gallagher, S. (2010). Phenomenology and artificial life: Toward a technological supplementation of phenomenological methodology. Husserl Studies, 26, 83–106.</li>
+                                    <li>Gallagher, S. (2022). What is phenomenology? Phenomenology (pp. 1–10). Springer International Publishing.</li>
+                                    <li>Gao, S. (Ed.). (2022). Consciousness and quantum mechanics. Oxford University Press.</li>
+                                    <li>Gardner, H. (1993). Frames of mind: Theory of multiple intelligences. Fontana.</li>
+                                    <li>Gelan, V. E. (2015). The signification of the Concept of consciousness in Husserl’s Fifth Logical Investigation and its relevance for knowledge. Meaning and Truth, 91.</li>
+                                    <li>Gennaro, R. (2016). Consciousness. Routledge.</li>
+                                    <li>Graziano, M. S., & Webb, T. W. (2015). The attention schema theory: A mechanistic account of subjective awareness. Frontiers in Psychology, 6, 500.</li>
+                                    <li>Halvorson, H. (2016). Why methodological naturalism? The Blackwell Companion to Naturalism, 136–149.</li>
+                                    <li>Hameroff, S., & Penrose, R. (2014). Consciousness in the universe: A review of the ‘Orch OR’ theory. Physics of life Reviews, 11(1), 39–78.</li>
+                                    <li>Hoerl, C. (2013). Husserl, the absolute flow, and temporal experience. Philosophy and Phenomenological Research, 86(2), 376–411.</li>
+                                    <li>Humphrey, N. (2020a). The invention of consciousness. Topoi, 39(1), 13–21.</li>
+                                    <li>Humphrey, N. (2020b). Consciousness: Knowing the unknowable. Social Research: An International Quarterly, 87(1), 157–170.</li>
+                                    <li>Husserl, E. (1960). Cartesian meditations: An introduction to Phenomenology. Martinus Nijhoff.</li>
+                                    <li>Husserl, E. (1970). The crisis of European sciences and transcendental phenomenology. Northwestern University.</li>
+                                    <li>Husserl, E. (1989). Ideas pertaining to a pure phenomenology and to a phenomenological philosophy: Second book. Springer.</li>
+                                    <li>Husserl, E. (2001). Logical investigations: Volume II. Routledge.</li>
+                                    <li>Husserl, E. (1991). On the phenomenology of consciousness of internal time (1893–1917). Kluwer Academic Publishers.</li>
+                                    <li>Juliani, A., Arulkumaran, K., Sasai, S., & Kanai, R. (2022). On the link between conscious function and general intelligence in humans and machines. arXiv.</li>
+                                    <li>Kanai, R., Chang, A., Yu, Y., Magrans de Abril, M., Biehl, M., & Guttenberg, M. (2019). Information generation as a functional basis of consciousness. Neuroscience of Consciousness, 1, niz016.</li>
+                                    <li>Legg, S., & Hutter, M. (2007). Universal intelligence: A definition of machine intelligence. Minds and Machines, 17, 391–444.</li>
+                                    <li>Leib, R. S. (2024). Beginning AI Phenomenology. The Journal of Speculative Philosophy, 38(1), 62–82.</li>
+                                    <li>Lengbeyer, L. (2022). Dismantling the Chinese room with linguistic tools: A framework for elucidating concept-application disputes. AI & Society.</li>
+                                    <li>Li, D., He, W., & Guo, Y. (2021). Why AI still doesn’t have consciousness? CAAI Transactions on Intelligence Technology, 6(2), 175–179.</li>
+                                    <li>Medzhidova, N. (2022). Modern naturalism in human cognition. Future Human Image, 17, 20–28.</li>
+                                    <li>Moran, D. (2008). Husserl’s transcendental philosophy and the critique of naturalism. Continental Philosophy Review, 41, 401–425.</li>
+                                    <li>Ng, G. W., & Leung, W. C. (2020). Strong artificial intelligence and consciousness. Journal of Artificial Intelligence and Consciousness, 7(01), 63–72.</li>
+                                    <li>Pandey, S. C. (2018). Can artificially intelligent agents really be conscious? Sādhanā - Academy Proceedings in Engineering Sciences, 43(7), 110–111.</li>
+                                    <li>Penrose, R. (1987). Quantum physics and conscious thought. Quantum Implications: Essays in Honour of David Bohm, 105–120.</li>
+                                    <li>Penrose, R. (1992). Artificial Intelligence. Setting the scene: The claim and the issues. Wolfson College.</li>
+                                    <li>Percival, J. N. (2023). Time has no dimensionality or physical existence. Physics Essays, 36(1), 22–29.</li>
+                                    <li>Safron, A. (2020). An Integrated World modeling theory (IWMT) of consciousness. Frontiers in Artificial Intelligence 3.</li>
+                                    <li>Schneider, S. (2019). Artificial you: AI and the future of your mind. Princeton University Press.</li>
+                                    <li>Schuhmann, K. (1977). Husserl-Chronik. Denk- und Lebensweg Edmund Husserls.</li>
+                                    <li>Searle, J. R. (1980). Minds, brains, and programs. Behavioral and Brain Sciences, 3(3), 417–424.</li>
+                                    <li>Şenocak, D., Kocdar, S., & Bozkurt, A. (2023). Historical, philosophical and ethical roots of artificial intelligence. Pakistan Journal of Education, 40(1), 67–90.</li>
+                                    <li>Seth, A. K., Baars, B. J., & Edelman, D. B. (2005). Criteria for consciousness in humans and other mammals. Consciousness and Cognition, 14(1), 119–139.</li>
+                                    <li>Smith, Q. (1977). On Husserl’s theory of consciousness in the fifth logical investigation. Philosophy and Phenomenological Research, 37(4), 482–497.</li>
+                                    <li>Sternberg, R. J. (1985). Beyond IQ: A triarchic theory of human intelligence. Cambridge University Press.</li>
+                                    <li>Thompson, E. (2022). Could all life be Sentient? Journal of Consciousness Studies, 29(3–4), 229–265.</li>
+                                    <li>Thurstone, L. L. (1938). Primary mental abilities. University of Chicago.</li>
+                                    <li>Turkle, S. (2007). Authenticity in the age of digital companions. Interaction Studies, 8(3), 501–517.</li>
+                                    <li>Turner, C. (2020). The Cognitive Phenomenology Argument for Disembodied AI Consciousness. Vernon Press, 111–132.</li>
+                                    <li>Van Manen, M. (2017). But is it phenomenology? Qualitative Health Research, 27(6), 775–779.</li>
+                                    <li>Van Rullen, R., & Kanai, R. (2021). Deep learning and the global workspace theory. Trends in Neurosciences, 44, 692–704.</li>
+                                    <li>Williams, H. (2021). The meaning of Phenomenology: Qualitative and philosophical phenomenological research methods. The Qualitative Report, 26(2), 366–385.</li>
+                                    <li>Zahavi, D. (2002). The three concepts of consciousness in Logische Untersuchungen. Husserl Studies, 18(1), 51–64.</li>
+                                    <li>Zahavi, D. (2003). Husserl’s phenomenology. Stanford University Press.</li>
+                                </ul>
+                            </footer>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
