@@ -37,14 +37,20 @@ const esc = (s) =>
 // Colorea un fragmento de texto replicando el TextProcessor del componente:
 // personas -> cian, conceptos -> ámbar. Si withFootnotes, las marcas [N] se
 // convierten en referencia al pie (tooltip con el texto de la nota).
+// Palabras demasiado ambiguas (verbo/función) que ensucian el coloreado.
+CONCEPTS.delete("ser");
+
 const TOKEN_RE = /(\s+|\[\d+\]|[.,;«»():¿?¡!—])/;
-function colorize(text, withFootnotes) {
+// `seen` = conceptos ya resaltados en esta sección: cada concepto se colorea
+// solo en su PRIMERA aparición (como el marcado selectivo de epv-01), en vez
+// de en todas. Las personas se resaltan siempre (igual que los nombres en Ch1).
+function colorize(text, withFootnotes, seen) {
   const tokens = text.split(TOKEN_RE).filter(Boolean);
   let out = "";
   for (const tok of tokens) {
     if (withFootnotes && /^\[\d+\]$/.test(tok)) {
       const n = tok.slice(1, -1);
-      const note = FOOTNOTES[n] != null ? colorize(String(FOOTNOTES[n]), false) : "";
+      const note = FOOTNOTES[n] != null ? colorize(String(FOOTNOTES[n]), false, new Set()) : "";
       out +=
         `<span class="relative inline-block footnote-ref group">` +
         `<a href="#fn-${n}" class="text-cyan-400 font-bold cursor-pointer no-underline text-sm align-super">${n}</a>` +
@@ -56,7 +62,13 @@ function colorize(text, withFootnotes) {
     if (clean && PEOPLE.has(clean)) {
       out += `<span class="text-cyan-400 font-bold">${esc(tok)}</span>`;
     } else if (clean && CONCEPTS.has(clean.toLowerCase())) {
-      out += `<span class="text-amber-500 font-bold">${esc(tok)}</span>`;
+      const key = clean.toLowerCase();
+      if (seen && seen.has(key)) {
+        out += esc(tok); // ya resaltado antes en esta sección → texto normal
+      } else {
+        if (seen) seen.add(key);
+        out += `<span class="text-amber-500 font-bold">${esc(tok)}</span>`;
+      }
     } else {
       out += esc(tok);
     }
@@ -65,13 +77,15 @@ function colorize(text, withFootnotes) {
 }
 
 // Convierte el `content` de una sección (párrafos separados por \n\n) en <p>.
-const paragraphs = (content) =>
-  content
+const paragraphs = (content) => {
+  const seen = new Set(); // conceptos ya resaltados en esta sección
+  return content
     .split("\n\n")
     .map((p) => p.trim())
     .filter(Boolean)
-    .map((p) => `                        <p>${colorize(p, true)}</p>`)
+    .map((p) => `                        <p>${colorize(p, true, seen)}</p>`)
     .join("\n");
+};
 
 // --- 3. Construir las secciones (encabezado h2 al estilo epv-01) ---
 const sectionsHtml = SECTIONS.map((sec) => {
