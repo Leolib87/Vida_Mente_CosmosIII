@@ -15,6 +15,35 @@ import BookNav from "../components/BookNav.astro";
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&display=swap');
         html { scroll-behavior: smooth; }
 
+        /* --- Barra de Progreso de Lectura (idéntica a epv-01) --- */
+        #progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 4px; z-index: 200; background: transparent; }
+        #progress-bar { height: 100%; background-color: #22d3ee; width: 0%; box-shadow: 0 0 10px #22d3ee; transition: width 0.1s ease-out; }
+
+        /* --- Barra "ÍNDICE DEL CAPÍTULO" (idéntica a epv-01) --- */
+        .nav-link { position: relative; transition: color 0.3s ease; cursor: pointer; display: block; }
+        .nav-link::after { content: ''; position: absolute; width: 0; height: 1px; bottom: -2px; left: 0; background-color: #f59e0b; transition: width 0.3s ease; }
+        @media (min-width: 768px) {
+            .nav-item:hover .nav-link::after { width: 100%; }
+            .nav-item:hover .dropdown-menu { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+            .dropdown-menu { position: absolute; top: 100%; left: 50%; transform: translateX(-50%) translateY(10px); min-width: 320px; max-height: 80vh; overflow-y: auto; opacity: 0; visibility: hidden; }
+            .dropdown-menu::-webkit-scrollbar { width: 6px; }
+            .dropdown-menu::-webkit-scrollbar-thumb { background-color: #475569; border-radius: 3px; }
+            .dropdown-menu::before { content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%); border-width: 0 6px 6px 6px; border-style: solid; border-color: transparent transparent rgba(255,255,255,0.1) transparent; }
+            .dropdown-menu::after { content: ''; position: absolute; top: -20px; left: 0; width: 100%; height: 20px; background: transparent; }
+        }
+        .dropdown-menu { background-color: rgba(2,6,23,0.95); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(12px); padding: 1rem; border-radius: 0.5rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); transition: all 0.2s ease-in-out; z-index: 90; }
+        .dropdown-link { display: block; padding: 0.5rem 0.75rem; color: #94a3b8; font-size: 0.75rem; transition: all 0.2s; border-radius: 0.25rem; line-height: 1.4; text-align: left; text-decoration: none; }
+        .dropdown-link:hover { color: #f59e0b; background-color: rgba(255,255,255,0.05); }
+        .dropdown-header { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: #f59e0b; margin-bottom: 0.5rem; padding-bottom: 0.25rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: block; }
+        @media (max-width: 767px) {
+            #mobile-menu-container { border-bottom: 1px solid rgba(255,255,255,0.1); }
+            .nav-item { width: 100%; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0; }
+            .nav-item-content { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; }
+            .dropdown-menu { position: static; transform: none; opacity: 1; visibility: visible; width: 100%; box-shadow: none; background-color: rgba(0,0,0,0.3); border: none; border-top: 1px solid rgba(255,255,255,0.05); display: none; margin-top: 0; max-height: none; overflow-y: visible; }
+            .arrow-icon { transition: transform 0.3s; }
+            .nav-item.active .arrow-icon { transform: rotate(180deg); }
+        }
+
         /* Notas al pie: tooltip fijo al hacer hover (idéntico a epv-01) */
         .footnote-ref { cursor: pointer; position: relative; display: inline-block; }
         .footnote-ref .footnote-tooltip {
@@ -35,6 +64,82 @@ import BookNav from "../components/BookNav.astro";
   </Fragment>
 
   <SiteNav />
+
+    <!-- Barra de Progreso Superior -->
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+
+    <!-- Barra "ÍNDICE DEL CAPÍTULO" (misma estructura que epv-01) -->
+    <nav class="fixed w-full z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/5 transition-all duration-300 top-20">
+        <div class="w-full px-4 md:px-12">
+            <div class="flex justify-between items-center h-16">
+                <a href="#" class="flex items-center space-x-2 group">
+                    <div class="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-150 transition-transform"></div>
+                    <span class="text-[10px] md:text-xs font-bold tracking-widest uppercase text-slate-200 group-hover:text-white transition-colors">
+                        <span class="text-cyan-400">Hans Jonas</span> <span class="text-slate-600 mx-1">|</span> Cap. 12
+                    </span>
+                </a>
+                <button id="menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <div id="mobile-menu-container" class="hidden md:flex absolute md:static top-16 left-0 w-full md:w-auto bg-slate-950 md:bg-transparent flex-col md:flex-row md:items-center overflow-y-auto md:overflow-visible max-h-[80vh] md:max-h-full transition-all">
+                    <ul class="flex flex-col md:flex-row md:items-center text-[11px] font-medium uppercase tracking-widest text-slate-400 w-full md:w-auto">
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <span class="nav-link hover:text-white cursor-pointer text-amber-500">ÍNDICE DEL CAPÍTULO</span>
+                                <button class="md:hidden p-2 arrow-icon" onclick="toggleDropdown(this)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu">
+                                <span class="dropdown-header">Secciones</span>
+                                <a href="#intro" class="dropdown-link" onclick="closeMobileMenu()">Introducción</a>
+                                <a href="#I" class="dropdown-link" onclick="closeMobileMenu()">I. El Principio Vida</a>
+                                <a href="#II" class="dropdown-link" onclick="closeMobileMenu()">II. Justicia y Realidad</a>
+                                <a href="#III" class="dropdown-link" onclick="closeMobileMenu()">III. El Instante y lo Eterno</a>
+                                <a href="#IV" class="dropdown-link" onclick="closeMobileMenu()">IV. La Paradoja de la Acción</a>
+                                <a href="#V" class="dropdown-link" onclick="closeMobileMenu()">V. El Libro y la Imagen</a>
+                                <a href="#VI" class="dropdown-link" onclick="closeMobileMenu()">VI. El Mito Hipotético</a>
+                                <a href="#VII" class="dropdown-link" onclick="closeMobileMenu()">VII. Conclusión Ética</a>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <script is:inline>
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu-container');
+        const progressBar = document.getElementById('progress-bar');
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            mobileMenu.classList.toggle('flex');
+        });
+        function toggleDropdown(button) {
+            const navItem = button.closest('.nav-item');
+            const dropdown = navItem.querySelector('.dropdown-menu');
+            navItem.classList.toggle('active');
+            dropdown.style.display = (dropdown.style.display === 'block') ? 'none' : 'block';
+        }
+        function closeMobileMenu() {
+            if (window.innerWidth < 768) {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('flex');
+                document.querySelectorAll('.dropdown-menu').forEach(d => d.style.display = 'none');
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            }
+        }
+        window.addEventListener('scroll', () => {
+            const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            progressBar.style.width = (scrollTop / scrollHeight) * 100 + '%';
+        });
+    </script>
 
     <div class="flex-grow pt-32 md:pt-48 pb-16 md:pb-24 px-6 md:px-12 w-full">
         <main class="w-full mx-auto text-center">
@@ -64,6 +169,9 @@ import BookNav from "../components/BookNav.astro";
 
                 <!-- Introducción -->
                 <section id="intro" class="mb-24 scroll-mt-32">
+                    <h2 class="text-2xl md:text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">
+                        INTRODUCCIÓN
+                    </h2>
                     <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify px-4 md:px-0">
                         <p>Las reflexiones que siguen parten del hecho, que a mí me parece innegable, de que el hombre actual está poco inclinado a aceptar la idea de <span class="text-amber-500 font-bold">inmortalidad</span>. Me refiero sobre todo a un tono o ambiente general, más allá de las objeciones que el entendimiento moderno plantea a esa idea por razones teóricas. Esas razones —que en aras de la brevedad daré sin más por buenas— no son de suyo decisivas. Dado que es trascendente, el objeto de esa idea —la <span class="text-amber-500 font-bold">inmortalidad</span> misma— está más allá de cualquier prueba o refutación. Pero por más que su objeto no lo sea del conocimiento, sí que puede <span class="text-amber-500 font-bold">ser</span> objeto de conocimiento la idea misma. Por ello, la relevancia interna de su sentido será el único criterio de su credibilidad, y las resonancias que ese sentido suscite en nosotros serán la única base que nos quede para una fe posible en esa idea, de la misma manera que la falta de esas resonancias es sin duda una razón suficiente para negarle de hecho esa fe.</p>
                         <p>Ahora bien, qué tenga sentido, más allá de la condición de la mera ausencia de contradicción lógica, depende sobre todo de la disposición global y de las convicciones generales del <span class="text-amber-500 font-bold">espíritu</span> que haya de juzgar al respecto. Tendremos por ello que interrogar a este último tanto acerca de su predominante falta de inclinación a la idea de <span class="text-amber-500 font-bold">inmortalidad</span> como acerca del posible punto de apoyo que, a pesar de su actual oscurecimiento, conserve o pueda recuperar esa idea en nuestro secularizado contexto. De esta manera, el examen del problema es hoy un examen tanto del concepto de <span class="text-amber-500 font-bold">inmortalidad</span> como de nosotros mismos, y si no arrojase nueva luz sobre dicho concepto, acerca del cual es probable que a lo largo de más de dos mil años ya se haya dicho todo lo que se pueda decir, es posible que sin embargo arroje algo de luz sobre el estado actual de nuestra constitución mortal.</p>
@@ -72,10 +180,9 @@ import BookNav from "../components/BookNav.astro";
 
                 <!-- I. El Principio Vida -->
                 <section id="I" class="mb-24 scroll-mt-32">
-                    <div class="mb-10 pt-10 border-t border-slate-800">
-                        <span class="text-cyan-500 font-bold text-xs tracking-widest uppercase block mb-2">Sección 1</span>
-                        <h2 class="text-3xl md:text-4xl font-black text-slate-100">I. El Principio Vida</h2>
-                    </div>
+                    <h2 class="text-2xl md:text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">
+                        I. EL PRINCIPIO VIDA
+                    </h2>
                     <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify px-4 md:px-0">
                         <p>Podré <span class="text-amber-500 font-bold">ser</span> sumamente breve acerca de la falta de hospitalidad del <span class="text-amber-500 font-bold">espíritu</span> contemporáneo para la idea de <span class="text-amber-500 font-bold">inmortalidad</span>, dado que nuestro siglo ya ha sido suficientemente elocuente sobre este particular y el consenso al respecto es tan amplio como poco discutido. Pero habré de extenderme más acerca del acceso, menos observado y menos observable, que el <span class="text-amber-500 font-bold">espíritu</span> moderno, y precisamente en virtud de su giro moderno, concede sin embargo a esa idea en uno de sus posibles significados. Este acceso, con todo, solo se hace visible sobre el trasfondo negativo sin el cual el <span class="text-amber-500 font-bold">espíritu</span> moderno no sería lo que es.</p>
                         <p>Dirijamos primero nuestras miradas a ese lado negativo. Comenzaré por el concepto de <span class="text-amber-500 font-bold">inmortalidad</span> más terreno y empírico: la supervivencia en la <span class="text-amber-500 font-bold">fama</span> inmortal<span class="relative inline-block footnote-ref group"><a href="#fn-1" class="text-cyan-400 font-bold cursor-pointer no-underline text-sm align-super">1</a><span class="footnote-tooltip">En la literatura griega, desde <span class="text-cyan-400 font-bold">Homero</span> hasta <span class="text-cyan-400 font-bold">Platón</span>, en quien ese ideal encuentra su superación filosófica, pero todavía expresión elocuente en las palabras de <span class="text-cyan-400 font-bold">Diotima</span>: «Si quieres echar una mirada a la ambición de los hombres te quedarás maravillado de su insensatez al pensar en qué terrible estado les pone el amor de hacerse famosos y de 'dejar para el futuro una <span class="text-amber-500 font-bold">fama</span> inmortal'. Por ello están dispuestos a correr todos los peligros, más aún que por sus hijos, a gastar dinero, a soportar cualquier fatiga y a sacrificar su <span class="text-amber-500 font-bold">vida</span>. Pues ¿crees tú, agregó, que <span class="text-cyan-400 font-bold">Alcestis</span> hubiera muerto por <span class="text-cyan-400 font-bold">Admeto</span> o <span class="text-cyan-400 font-bold">Aquiles</span> para vengar a <span class="text-cyan-400 font-bold">Patroclo</span>, o vuestro <span class="text-cyan-400 font-bold">Codro</span> por salvaguardar la dignidad real de sus hijos, si no hubieran creído que iba a quedar de ellos ese recuerdo inmortal de su virtud que tenemos ahora? Ni por lo más remoto. Es en inmortalizar su virtud, según creo, y en conseguir un tal renombre en lo que todos ponen todo su esfuerzo, con tanto mayor ahínco cuanto mejores son, porque lo que aman es lo imperecedero» (Banquete, trad. de L. Gil, Orbis, Madrid, 1983, 208 c-d). Léase también la conmovedora oración fúnebre de <span class="text-cyan-400 font-bold">Pericles</span> en <span class="text-cyan-400 font-bold">Tucídides</span> II, 43.</span></span>. Esta última era sumamente estimada en la antigüedad, y se la consideraba no solo como la justa recompensa a las obras nobles, sino también como el más fuerte impulso para ejecutarlas. Las obras deben <span class="text-amber-500 font-bold">ser</span> visibles, esto es, públicas, para poder <span class="text-amber-500 font-bold">ser</span> conocidas y recordadas como grandes. La dimensión de esta pervivencia es la misma dimensión en la que se adquiere: la comunidad política. La <span class="text-amber-500 font-bold">fama</span> inmortal es por tanto la permanencia de los honores públicos, al igual que la comunidad es la permanencia de la <span class="text-amber-500 font-bold">vida</span> humana.</p>
@@ -89,10 +196,9 @@ import BookNav from "../components/BookNav.astro";
 
                 <!-- II. Justicia y Realidad -->
                 <section id="II" class="mb-24 scroll-mt-32">
-                    <div class="mb-10 pt-10 border-t border-slate-800">
-                        <span class="text-cyan-500 font-bold text-xs tracking-widest uppercase block mb-2">Sección 2</span>
-                        <h2 class="text-3xl md:text-4xl font-black text-slate-100">II. Justicia y Realidad</h2>
-                    </div>
+                    <h2 class="text-2xl md:text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">
+                        II. JUSTICIA Y REALIDAD
+                    </h2>
                     <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify px-4 md:px-0">
                         <p>Prestemos ahora atención, por tanto, al concepto de <span class="text-amber-500 font-bold">inmortalidad</span> no empírico y realmente sustancial: la pervivencia de la persona en un más allá futuro. Esta idea concuerda todavía menos con el ambiente espiritual actual. No me ocuparé aquí de la inferencia, difícil de desarmar, de la indudable base orgánica de la persona a su esencial indisociabilidad de ella. Pero ¿podemos seguir prestando oído al menos a las consideraciones no empíricas que estaban originalmente tras el postulado? A grandes rasgos, y si dejamos a un lado el horror meramente creatural a la <span class="text-amber-500 font-bold">muerte</span>, podemos agrupar las más serias de esas consideraciones en dos capítulos: el de la <span class="text-amber-500 font-bold">justicia</span> y el de la diferencia entre realidad y apariencia, del cual la doctrina de la índole meramente fenoménica del <span class="text-amber-500 font-bold">tiempo</span> es un caso especial.</p>
                         <p>Los dos tipos de reflexiones tienen en común que atribuyen al hombre el estatus metafísico de un sujeto moral, y por tanto la pertenencia a un orden moral o inteligible al margen del sensible. Esta no es una tesis que se pueda dar de lado a la ligera. Pero el principio de la <span class="text-amber-500 font-bold">justicia</span>, sea remunerativa o compensadora, no presta apoyo, ni siquiera de conformidad con sus propios criterios, a la reivindicación de <span class="text-amber-500 font-bold">inmortalidad</span>. En efecto, con arreglo a los criterios de la <span class="text-amber-500 font-bold">justicia</span>, el mérito o la culpa temporal exigen remuneración temporal y no eterna, por lo que, en el mejor de los casos, la <span class="text-amber-500 font-bold">justicia</span> exige para que cuadren la cuentas una pervivencia finita, y no la infinitud de la <span class="text-amber-500 font-bold">existencia</span>. Y en lo que respecta a la compensación por el sufrimiento inmerecido, las oportunidades de que nos hayamos visto privados o las ocasiones de <span class="text-amber-500 font-bold">ser</span> felices que hayamos dejado pasar, se aplican las consideraciones adicionales de que ya es cuestionable de suyo que tengamos derecho a la felicidad (¿a cuánta?) y de que la plenitud no alcanzada solo se podría recuperar bajo sus propias condiciones originales, a saber, bajo las condiciones del esfuerzo, la resistencia, la incertidumbre, la falibilidad, la irrepetibilidad de las ocasiones y la limitación de <span class="text-amber-500 font-bold">tiempo</span>, esto es, bajo las condiciones de la falta de garantías de éxito y del posible fracaso.</p>
@@ -105,10 +211,9 @@ import BookNav from "../components/BookNav.astro";
 
                 <!-- III. El Instante y lo Eterno -->
                 <section id="III" class="mb-24 scroll-mt-32">
-                    <div class="mb-10 pt-10 border-t border-slate-800">
-                        <span class="text-cyan-500 font-bold text-xs tracking-widest uppercase block mb-2">Sección 3</span>
-                        <h2 class="text-3xl md:text-4xl font-black text-slate-100">III. El Instante y lo Eterno</h2>
-                    </div>
+                    <h2 class="text-2xl md:text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">
+                        III. EL INSTANTE Y LO ETERNO
+                    </h2>
                     <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify px-4 md:px-0">
                         <p>Y, sin embargo, sentimos que la temporalidad no puede <span class="text-amber-500 font-bold">ser</span> toda la <span class="text-amber-500 font-bold">verdad</span>, por cuanto ella misma muestra en el hombre una íntima cualidad de autosuperación, de la que el hecho y el tantear de nuestra noción de <span class="text-amber-500 font-bold">eternidad</span> es una señal críptica. Si durar siempre es un concepto falso, puede que el de <span class="text-amber-500 font-bold">eternidad</span> tenga con todo otros significados y que posea una referencia a lo temporal de la que nuestra experiencia mortal, trascendiendo su discurrir en la corriente del acontecer, dé muestras en ocasiones. La impenetrabilidad del aquí y ahora se aclara a veces como si repentinamente alcanzase un punto crítico en el que se precipitase. Y si hay alguna transparencia de ese tipo de lo temporal para lo eterno, por infrecuente y breve que sea, la ocasión y la modalidad de su darse pueden servirnos de indicación para aquello de nuestro <span class="text-amber-500 font-bold">ser</span> —aunque ya no se trate de la sustancia de nuestro yo— que se asoma a lo imperecedero y por tanto constituye nuestra participación en la <span class="text-amber-500 font-bold">inmortalidad</span>. ¿En qué situaciones y de qué forma se produce nuestro encuentro con lo eterno? ¿Cuándo sentimos que las vibraciones de lo atemporal rozan nuestro corazón y hacen que el ahora se sustraiga al <span class="text-amber-500 font-bold">tiempo</span>? ¿Cómo entra lo absoluto en las relatividades de nuestro <span class="text-amber-500 font-bold">ser</span> cotidiano?</p>
                         <p>No invocaré el testimonio de experiencias místicas, que no son las mías y que, aun si lo fuesen, se verían expuestas a la insuperable desconfianza del psicologizante <span class="text-amber-500 font-bold">espíritu</span> moderno. Tampoco vamos a citar en calidad de testigos de este procedimiento probatorio a los inefables encuentros del amor y de la belleza, en los que probablemente nos esté permitido ver un destello momentáneo de la <span class="text-amber-500 font-bold">eternidad</span>, como si estuviesen a nuestra disposición para autosatisfacción de quienes pueden apelar a ellos y vergüenza de aquellos a quienes no les han sido dados. Más bien dirigiré mi atención, en el <span class="text-amber-500 font-bold">espíritu</span> de la <span class="text-amber-500 font-bold">existencia</span> moderna, a un tipo de evidencia que depende de nosotros mismos, dado que en ella somos activos y no receptivos, por entero sujetos y de ninguna manera objetos.</p>
@@ -119,10 +224,9 @@ import BookNav from "../components/BookNav.astro";
 
                 <!-- IV. La Paradoja de la Acción -->
                 <section id="IV" class="mb-24 scroll-mt-32">
-                    <div class="mb-10 pt-10 border-t border-slate-800">
-                        <span class="text-cyan-500 font-bold text-xs tracking-widest uppercase block mb-2">Sección 4</span>
-                        <h2 class="text-3xl md:text-4xl font-black text-slate-100">IV. La Paradoja de la Acción</h2>
-                    </div>
+                    <h2 class="text-2xl md:text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">
+                        IV. LA PARADOJA DE LA ACCIÓN
+                    </h2>
                     <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify px-4 md:px-0">
                         <p>¿Qué conclusión debemos extraer de esos sentimientos y metáforas? Cuando les prestamos oído, ¿qué aportan al tema de la <span class="text-amber-500 font-bold">inmortalidad</span> y qué indicaciones nos proporcionan a este respecto? Se habrá notado que los símbolos que hemos utilizado no se refieren a la <span class="text-amber-500 font-bold">inmortalidad</span>, sino a la <span class="text-amber-500 font-bold">eternidad</span>, la cual, ciertamente, implica liberación respecto de la <span class="text-amber-500 font-bold">muerte</span>, pero no necesariamente mi liberación de esta última, si bien debe guardar con mi mortalidad una relación tal que yo pueda, o incluso deba, participar de la <span class="text-amber-500 font-bold">eternidad</span> con algo situado en o perteneciente a mi <span class="text-amber-500 font-bold">existencia</span>.</p>
                         <p>¿Qué puede <span class="text-amber-500 font-bold">ser</span> ese algo? Prestemos atención, además, a que en todos esos símbolos lo que llegó a estar en relación con la <span class="text-amber-500 font-bold">eternidad</span> no era la esfera del sentir, sino la del obrar; no la materia que experimenta el placer y el dolor, sino el <span class="text-amber-500 font-bold">espíritu</span> del que proceden las decisiones y las obras; en suma, no nuestra naturaleza pasiva, sino nuestra naturaleza activa.</p>
@@ -137,10 +241,9 @@ import BookNav from "../components/BookNav.astro";
 
                 <!-- V. El Libro y la Imagen -->
                 <section id="V" class="mb-24 scroll-mt-32">
-                    <div class="mb-10 pt-10 border-t border-slate-800">
-                        <span class="text-cyan-500 font-bold text-xs tracking-widest uppercase block mb-2">Sección 5</span>
-                        <h2 class="text-3xl md:text-4xl font-black text-slate-100">V. El Libro y la Imagen</h2>
-                    </div>
+                    <h2 class="text-2xl md:text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">
+                        V. EL LIBRO Y LA IMAGEN
+                    </h2>
                     <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify px-4 md:px-0">
                         <p>¿Qué puede decirnos el símbolo del «libro de la <span class="text-amber-500 font-bold">vida</span>»? En la tradición judía es una especie de libro mayor celestial en el que se anotan nuestros nombres según hayan sido nuestros méritos: a <span class="text-amber-500 font-bold">ser</span> posible, «para la <span class="text-amber-500 font-bold">vida</span>», es decir, para nuestra <span class="text-amber-500 font-bold">vida</span>, para la <span class="text-amber-500 font-bold">vida</span> de la persona de que se trate. Pero en vez de ver las obras como méritos que se abonan en la cuenta del agente, también las podemos ver como dotadas de relevancia por sí mismas —en cierto modo como «cosas en sí»—, y entonces es posible dar otro sentido al libro en cuestión, a saber, diciendo que no se va rellenando con nombres y cuentas, sino con las obras mismas. En otras palabras: me refiero a la posibilidad de que las obras se inscriban a sí mismas en un registro eterno de la temporalidad, que todo lo que aquí se haga —más allá de sus repercusiones y de su final desaparición en el tejido causal del <span class="text-amber-500 font-bold">tiempo</span>— se inserte para siempre en un reino trascendente y le dé un carácter según leyes de la producción de efectos distintas de las vigentes en el mundo, de modo que las actas no cerradas del <span class="text-amber-500 font-bold">ser</span> se vayan engrosando incesantemente y se posponga cada vez el temible balance final. ¿No podría suceder incluso, si nos atrevemos a dar un paso más, que lo que de esa manera añadamos a la documentación sea de singular importancia, quizá no para nuestro propio <span class="text-amber-500 font-bold">destino</span> futuro, pero sí para la suma espiritual que va extrayendo continuamente el recuerdo unificador de las cosas? ¿Y que, si bien en nuestra calidad de agentes mortales ya no tenemos parte alguna en aquella <span class="text-amber-500 font-bold">inmortalidad</span> de que participan las obras por nosotros efectuadas, sin embargo precisamente esas obras nuestras, así como lo que a través de ellas hacemos de nuestra <span class="text-amber-500 font-bold">vida</span>, sean la apuesta que haga sobre nosotros una <span class="text-amber-500 font-bold">eternidad</span> vulnerable y aún no decidida? ¡Y qué atrevida apuesta, en vista de nuestra <span class="text-amber-500 font-bold">libertad</span>! ¿Somos quizá, en ese caso, un experimento de la <span class="text-amber-500 font-bold">eternidad</span>? ¿Es acaso precisamente nuestra mortalidad una osadía en la que se embarca el fondo eterno a sí mismo? ¿Es nuestra <span class="text-amber-500 font-bold">libertad</span> la osadía llevada a su extremo, tanto en lo que hace a sus perspectivas de éxito como en lo que respecta al peligro que corre de fracasar?</p>
                         <p>Busquemos ayuda en la otra comparación, la de la «<span class="text-amber-500 font-bold">imagen</span>» trascendente que se va conformando rasgo a rasgo según sean nuestras obras temporales. La encontramos en la literatura gnóstica, especialmente en la del círculo iraní, en diferentes versiones.</p>
@@ -156,10 +259,9 @@ import BookNav from "../components/BookNav.astro";
 
                 <!-- VI. El Mito Hipotético -->
                 <section id="VI" class="mb-24 scroll-mt-32">
-                    <div class="mb-10 pt-10 border-t border-slate-800">
-                        <span class="text-cyan-500 font-bold text-xs tracking-widest uppercase block mb-2">Sección 6</span>
-                        <h2 class="text-3xl md:text-4xl font-black text-slate-100">VI. El Mito Hipotético</h2>
-                    </div>
+                    <h2 class="text-2xl md:text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">
+                        VI. EL MITO HIPOTÉTICO
+                    </h2>
                     <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify px-4 md:px-0">
                         <p>Pero ¿en qué <span class="text-amber-500 font-bold">metafísica</span> completa tendría sitio un fragmento hipotético como ese?</p>
                         <p>A veces, y no soy el único que en ciertas ocasiones procede así, no logro resistirme a hacer uso de la <span class="text-amber-500 font-bold">libertad</span> que da el no saber —que en estas cosas es la suerte que nos ha tocado— y de los medios del <span class="text-amber-500 font-bold">mito</span> o del <span class="text-amber-500 font-bold">mito</span> creíble que <span class="text-cyan-400 font-bold">Platón</span> declaró lícitos, y entonces me siento tentado a desarrollar ideas como las que siguen.</p>
@@ -178,10 +280,9 @@ import BookNav from "../components/BookNav.astro";
 
                 <!-- VII. Conclusión Ética -->
                 <section id="VII" class="mb-24 scroll-mt-32">
-                    <div class="mb-10 pt-10 border-t border-slate-800">
-                        <span class="text-cyan-500 font-bold text-xs tracking-widest uppercase block mb-2">Sección 7</span>
-                        <h2 class="text-3xl md:text-4xl font-black text-slate-100">VII. Conclusión Ética</h2>
-                    </div>
+                    <h2 class="text-2xl md:text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">
+                        VII. CONCLUSIÓN ÉTICA
+                    </h2>
                     <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify px-4 md:px-0">
                         <p>Así podría rezar el <span class="text-amber-500 font-bold">mito</span> hipotético del que me gustaría creer que es «verdadero»: verdadero en el sentido de que, si la suerte acompaña, un <span class="text-amber-500 font-bold">mito</span> puede que nos permita atisbar como entre sombras una <span class="text-amber-500 font-bold">verdad</span> necesariamente incognoscible, e incluso inefable mediante conceptos directos, valiéndose, a través de automanifestaciones situadas en los niveles más profundos de nuestra experiencia, de nuestra capacidad para dar razón indirectamente de esa <span class="text-amber-500 font-bold">verdad</span> mediante imágenes revocables y antropomórficas. En la gran pausa de la <span class="text-amber-500 font-bold">metafísica</span> en la que nos encontramos, y antes de que esta última haya reencontrado su propio logos, hemos de confiarnos a este medio de expresión, por admitidamente traicionero que sea. El <span class="text-amber-500 font-bold">mito</span>, con la condición de que sea consciente de su naturaleza experimental y de su provisionalidad y no intente hacerse pasar por una doctrina, puede, mientras dure la precariedad a que nos somete esa pausa, tender un puente sobre el vacío. En cualquier caso, por esta vez yo me siento movido a utilizarlo bajo la coacción de una tarea a la que la filosofía, por inerme que se vea para realizarla, no puede sustraerse.</p>
                         <p>Continuando, así pues, en el mismo estilo especulativo, observamos que de la <span class="text-amber-500 font-bold">metafísica</span> esbozada por mi <span class="text-amber-500 font-bold">mito</span> se derivan ciertas conclusiones éticas. La primera de ellas es la importancia trascendente de nuestro obrar, de la manera que tengamos de vivir nuestra <span class="text-amber-500 font-bold">vida</span>. Si, conforme a nuestro relato, el hombre no ha sido creado tanto «a» <span class="text-amber-500 font-bold">imagen</span> de Dios cuanto «para» la <span class="text-amber-500 font-bold">imagen</span> de Dios, si nuestras trayectorias vitales acabarán convirtiéndose en rasgos del rostro divino, en ese caso nuestra <span class="text-amber-500 font-bold">responsabilidad</span> no viene determinada únicamente por las consecuencias que produzcamos en el mundo, en relación con las cuales es frecuente que el peso de nuestra <span class="text-amber-500 font-bold">responsabilidad</span> sea ciertamente pequeño, sino que entra en una dimensión en la que nuestra capacidad de producir efectos se mide con arreglo a normas trans-causales de naturaleza interna. Además, dado que la trascendencia crece con la horriblemente ambigua cosecha de nuestras obras, la huella que dejemos en la <span class="text-amber-500 font-bold">eternidad</span> puede <span class="text-amber-500 font-bold">ser</span> tanto para bien como para mal: podemos construir y destruir, curar y herir, alimentar a la divinidad y hacerle pasar necesidad, perfeccionar su <span class="text-amber-500 font-bold">imagen</span> y desfigurarla, y el esplendor de lo uno será tan duradero como las cicatrices de lo otro. Por ello, la <span class="text-amber-500 font-bold">inmortalidad</span> de nuestras obras no solo no justifica un vanidoso orgullo, sino que más bien tendríamos motivos para desear que la mayor parte de ellas no dejasen huella alguna.</p>
