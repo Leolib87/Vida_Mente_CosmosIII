@@ -103,6 +103,9 @@ import BookNav from "../components/BookNav.astro";
   bodyClass="bg-slate-950 text-slate-300 antialiased"
 >
   <Fragment slot="head">
+    <!-- Tailwind Play CDN (+ typography para las clases prose), igual que epv-01 -->
+    <script is:inline src="https://cdn.tailwindcss.com"></script>
+    <script is:inline src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <!-- Lucide: requerido por el nav compartido (SiteNav) -->
     <script is:inline src="https://unpkg.com/lucide@latest"></script>
     <style is:global>
