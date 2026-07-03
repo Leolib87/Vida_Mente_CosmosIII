@@ -1,29 +1,21 @@
 ---
 // Navegación entre capítulos del libro "El Principio Vida" (Hans Jonas).
-// Se coloca al pie (y también arriba) de cada capítulo: saltar al anterior/
-// siguiente y volver al índice del libro. Usa <div role="navigation"> (NO
-// <nav>) a propósito, para no heredar la regla global `nav { position:fixed;
-// top:0 }` del SiteNav. Solo se listan los capítulos ya migrados; ampliar al
-// migrar EPV10–12, etc.
+// Se coloca al pie (y también arriba) de cada capítulo. A la izquierda: un
+// desplegable "Índice del libro" que lista TODOS los capítulos migrados (con
+// el actual resaltado) para saltar a cualquiera — imita el look del menú
+// "ÍNDICE DEL CAPÍTULO" pero es AUTOCONTENIDO (clases bn-*, con su propio CSS)
+// para que funcione igual en las 10 páginas, incluidas prólogo/08/09 que no
+// definen las clases .dropdown-* de las demás. A la derecha: anterior/siguiente.
+//
+// Usa <div role="navigation"> (NO <nav>) a propósito, para no heredar la regla
+// global `nav { position:fixed; top:0 }` del SiteNav.
 //
 // Props:
-//   current: slug del capítulo actual (p.ej. "epv-05"). Si no está en la
-//            lista (p.ej. "principio-vida" o sin valor), se renderiza el
-//            modo ÍNDICE: un CTA "Comenzar la lectura → Prólogo".
-//   place:   "top" | "bottom" (default). Solo ajusta el margen vertical para
-//            que la copia superior no empuje demasiado el contenido.
-const chapters = [
-  { slug: "epv-prologo", label: "Prólogo" },
-  { slug: "epv-01", label: "Cap. 1" },
-  { slug: "epv-02", label: "Cap. 2" },
-  { slug: "epv-03", label: "Cap. 3" },
-  { slug: "epv-04", label: "Cap. 4" },
-  { slug: "epv-05", label: "Cap. 5" },
-  { slug: "epv-06", label: "Cap. 6" },
-  { slug: "epv-07", label: "Cap. 7" },
-  { slug: "epv-08", label: "Cap. 8" },
-  { slug: "epv-09", label: "Cap. 9" },
-];
+//   current: slug del capítulo actual (p.ej. "epv-05"). Si no está en la lista
+//            (p.ej. "principio-vida"), se renderiza el modo ÍNDICE: un CTA
+//            "Comenzar la lectura → Prólogo".
+//   place:   "top" | "bottom" (default). Solo ajusta el margen vertical.
+import { chapters } from "../data/bookChapters.js";
 
 const { current, place = "bottom" } = Astro.props;
 const i = chapters.findIndex((c) => c.slug === current);
@@ -52,39 +44,212 @@ const margin = place === "top" ? "mt-0 mb-16" : "my-20";
   ) : (
     <div
       role="navigation"
-      aria-label="Navegación entre capítulos del libro"
-      class={`w-full max-w-3xl mx-auto ${margin} px-6 flex items-center justify-between gap-4 text-[11px] font-medium uppercase tracking-widest`}
+      aria-label="Navegación del libro"
+      class={`w-full max-w-3xl mx-auto ${margin} px-6 flex items-center justify-between gap-4`}
     >
-      {prev ? (
-        <a
-          href={prev.slug}
-          class="flex-1 text-left text-slate-400 hover:text-amber-400 transition-colors no-underline"
-        >
-          <span class="block text-[9px] text-slate-600">← Anterior</span>
-          {prev.label}
-        </a>
-      ) : (
-        <span class="flex-1" />
-      )}
+      {/* Izquierda: desplegable con TODOS los capítulos */}
+      <div class="bn-menu">
+        <button type="button" class="bn-menu-trigger" aria-haspopup="true" aria-expanded="false">
+          Índice del libro
+          <svg class="bn-caret" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div class="bn-dropdown" role="menu">
+          <span class="bn-dropdown-header">Capítulos</span>
+          {chapters.map((c) => (
+            <a
+              href={c.slug}
+              role="menuitem"
+              class:list={["bn-dropdown-link", { "is-current": c.slug === current }]}
+              aria-current={c.slug === current ? "page" : undefined}
+            >
+              {c.title}
+            </a>
+          ))}
+          <a href="principio-vida" class="bn-dropdown-more">
+            Ver índice completo →
+          </a>
+        </div>
+      </div>
 
-      <a
-        href="principio-vida"
-        class="shrink-0 px-4 py-2 rounded-full border border-amber-500/30 text-amber-500 hover:bg-amber-500/10 transition-colors no-underline"
-      >
-        Índice del libro
-      </a>
-
-      {next ? (
-        <a
-          href={next.slug}
-          class="flex-1 text-right text-slate-400 hover:text-amber-400 transition-colors no-underline"
-        >
-          <span class="block text-[9px] text-slate-600">Siguiente →</span>
-          {next.label}
-        </a>
-      ) : (
-        <span class="flex-1" />
-      )}
+      {/* Derecha: anterior / siguiente */}
+      <div class="flex items-center gap-6 text-[11px] font-medium uppercase tracking-widest shrink-0">
+        {prev && (
+          <a
+            href={prev.slug}
+            class="text-right text-slate-400 hover:text-amber-400 transition-colors no-underline"
+          >
+            <span class="block text-[9px] text-slate-600">← Anterior</span>
+            {prev.label}
+          </a>
+        )}
+        {next && (
+          <a
+            href={next.slug}
+            class="text-right text-slate-400 hover:text-amber-400 transition-colors no-underline"
+          >
+            <span class="block text-[9px] text-slate-600">Siguiente →</span>
+            {next.label}
+          </a>
+        )}
+      </div>
     </div>
   )
 }
+
+<style>
+  .bn-menu {
+    position: relative;
+    flex-shrink: 0;
+  }
+  .bn-menu-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.4rem 0;
+    color: #f59e0b;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    transition: color 0.2s;
+  }
+  .bn-menu-trigger:hover {
+    color: #fbbf24;
+  }
+  .bn-caret {
+    width: 0.8rem;
+    height: 0.8rem;
+    transition: transform 0.2s;
+  }
+
+  .bn-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 0.75rem;
+    min-width: 320px;
+    max-height: 70vh;
+    overflow-y: auto;
+    background-color: rgba(2, 6, 23, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: all 0.2s ease-in-out;
+    z-index: 120;
+    text-align: left;
+  }
+  .bn-dropdown::-webkit-scrollbar {
+    width: 6px;
+  }
+  .bn-dropdown::-webkit-scrollbar-thumb {
+    background-color: #475569;
+    border-radius: 3px;
+  }
+
+  /* Escritorio: abrir con hover */
+  @media (min-width: 768px) {
+    .bn-menu:hover .bn-dropdown {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    .bn-menu:hover .bn-caret {
+      transform: rotate(180deg);
+    }
+  }
+  /* Click (móvil y escritorio): abrir con .is-open */
+  .bn-menu.is-open .bn-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+  .bn-menu.is-open .bn-caret {
+    transform: rotate(180deg);
+  }
+
+  .bn-dropdown-header {
+    display: block;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #f59e0b;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .bn-dropdown-link {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    border-radius: 0.25rem;
+    text-align: left;
+    text-decoration: none;
+    text-transform: none;
+    letter-spacing: normal;
+    transition: all 0.2s;
+  }
+  .bn-dropdown-link:hover {
+    color: #f59e0b;
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  .bn-dropdown-link.is-current {
+    color: #f59e0b;
+    background-color: rgba(245, 158, 11, 0.1);
+    font-weight: 600;
+  }
+  .bn-dropdown-more {
+    display: block;
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    color: #64748b;
+    font-size: 0.7rem;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .bn-dropdown-more:hover {
+    color: #f59e0b;
+  }
+</style>
+
+<script is:inline>
+  // Toggle por click (imprescindible en móvil/táctil). Guard global para no
+  // duplicar el listener aunque el componente se inline varias veces por página.
+  if (!window.__bookNavMenuInit) {
+    window.__bookNavMenuInit = true;
+    document.addEventListener("click", (e) => {
+      const trigger = e.target.closest(".bn-menu-trigger");
+      const openMenus = document.querySelectorAll(".bn-menu.is-open");
+      if (trigger) {
+        e.preventDefault();
+        const menu = trigger.closest(".bn-menu");
+        const wasOpen = menu.classList.contains("is-open");
+        openMenus.forEach((m) => m.classList.remove("is-open"));
+        if (!wasOpen) {
+          menu.classList.add("is-open");
+          trigger.setAttribute("aria-expanded", "true");
+        } else {
+          trigger.setAttribute("aria-expanded", "false");
+        }
+      } else if (!e.target.closest(".bn-dropdown")) {
+        openMenus.forEach((m) => {
+          m.classList.remove("is-open");
+          const t = m.querySelector(".bn-menu-trigger");
+          if (t) t.setAttribute("aria-expanded", "false");
+        });
+      }
+    });
+  }
+</script>
