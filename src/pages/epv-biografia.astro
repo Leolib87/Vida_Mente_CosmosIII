@@ -10,91 +10,11 @@ import BookNav from "../components/BookNav.astro";
   bodyClass="antialiased min-h-screen flex flex-col"
 >
   <Fragment slot="head">
-    <script is:inline src="https://cdn.tailwindcss.com"></script>
-    <script is:inline src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <!-- Lucide: requerido por el nav compartido (SiteNav) -->
-    <script is:inline src="https://unpkg.com/lucide@latest"></script>
-    <style is:global>
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap');
-        :root {
-            --color-bg: #020617; /* slate-950 */
-            --color-text-base: #cbd5e1; /* slate-300 */
-            --color-accent-amber: #f59e0b;
-            --color-accent-cyan: #22d3ee;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--color-bg);
-            color: var(--color-text-base);
-            overflow-x: hidden;
-            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 70%);
-            background-attachment: fixed;
-        }
-
-        h1, h2, h3, h4, .font-serif {
-            font-family: 'Playfair Display', serif;
-        }
-
-        /* Progress Bar */
-        #progress-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 4px;
-            background: var(--color-accent-cyan);
-            width: 0%;
-            z-index: 100;
-            transition: width 0.1s;
-            box-shadow: 0 0 10px var(--color-accent-cyan);
-        }
-
-        /* Tooltip Note Styling */
-        .tooltip-panel {
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            transform: translate(-50%, 20px);
-        }
-        
-        .tooltip-panel.active {
-            opacity: 1;
-            visibility: visible;
-            transform: translate(-50%, 0);
-        }
-
-        /* Text Highlighting Classes */
-        .highlight-person {
-            color: var(--color-accent-cyan);
-            font-weight: 700;
-            transition: text-shadow 0.3s ease;
-        }
-        
-        .highlight-person:hover {
-            text-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
-            cursor: context-help;
-        }
-
-        .highlight-concept {
-            color: var(--color-accent-amber);
-            font-weight: 700;
-        }
-
-        /* Custom Selection */
-        ::selection {
-            background: rgba(245, 158, 11, 0.2);
-            color: #fff;
-        }
-    </style>
   </Fragment>
 
   <SiteNav />
 
-
-    <!-- 1. Progress Bar -->
-    <div id="progress-bar"></div>
-
-    <!-- 2. Sticky Navigation -->
         <ChapterNav
         chapter="Biografía"
         sections={[
@@ -192,81 +112,5 @@ import BookNav from "../components/BookNav.astro";
             </p>
         </div>
     </footer>
-
-    <!-- SMART TOOLTIP CONTAINER (Bottom Fixed) -->
-    <!-- Este contenedor aparecerá si hubiera notas al pie detectadas -->
-    <div id="tooltip-container" class="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl bg-black/90 backdrop-blur-md border border-slate-800 rounded-lg p-6 shadow-2xl tooltip-panel z-50 text-center">
-        <span id="tooltip-content" class="text-sm font-serif text-slate-200 leading-relaxed"></span>
-        <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-black/90 border-t border-l border-slate-800 transform rotate-45"></div>
-    </div>
-
-    <!-- JAVASCRIPT LOGIC -->
-    <script is:inline>
-        document.addEventListener('DOMContentLoaded', () => {
-            
-            // 1. Progress Bar Logic
-            const progressBar = document.getElementById('progress-bar');
-            
-            window.addEventListener('scroll', () => {
-                const scrollTop = window.scrollY;
-                const docHeight = document.body.scrollHeight - window.innerHeight;
-                const scrollPercent = (scrollTop / docHeight) * 100;
-                progressBar.style.width = scrollPercent + '%';
-            });
-
-            // 2. Navbar Blur on Scroll
-            const navbar = document.getElementById('navbar');
-            window.addEventListener('scroll', () => {
-                if (window.scrollY > 50) {
-                    navbar.classList.add('shadow-lg', 'bg-slate-950/95');
-                    navbar.classList.remove('bg-slate-950/80');
-                } else {
-                    navbar.classList.remove('shadow-lg', 'bg-slate-950/95');
-                    navbar.classList.add('bg-slate-950/80');
-                }
-            });
-
-            // 3. Footnote/Tooltip Logic (Prepared for detection)
-            // Although the source text didn't have specific [1] footnotes, 
-            // this logic is ready to handle them if they appear in future renders.
-            const tooltipContainer = document.getElementById('tooltip-container');
-            const tooltipContent = document.getElementById('tooltip-content');
-            
-            // Detect textual footnotes like [1], [2]
-            const contentArea = document.querySelector('article');
-            // This regex looks for bracketed numbers. 
-            // Since the text provided doesn't have them, this won't change the DOM visually now,
-            // but fulfills the request to "Detect" them.
-            contentArea.innerHTML = contentArea.innerHTML.replace(
-                /\[(\d+)\]/g, 
-                '<span class="text-cyan-400 cursor-pointer font-bold hover:underline footnote-trigger" data-note="$1">[$1]</span>'
-            );
-
-            const triggers = document.querySelectorAll('.footnote-trigger');
-            
-            triggers.forEach(trigger => {
-                trigger.addEventListener('mouseenter', (e) => {
-                    const noteId = e.target.getAttribute('data-note');
-                    // Mock content fetch - in a real DB scenario this would fetch the actual note
-                    tooltipContent.innerText = `Nota ${noteId}: Contexto adicional detectado para esta referencia académica.`; 
-                    tooltipContainer.classList.add('active');
-                });
-
-                trigger.addEventListener('mouseleave', () => {
-                    tooltipContainer.classList.remove('active');
-                });
-            });
-            
-            // Optional: Add interactivity to Authors for the "Smart Tooltip" feel requested
-            // Adding a subtle interaction to "Highlight Person" class
-            const authors = document.querySelectorAll('.highlight-person');
-            authors.forEach(author => {
-                author.addEventListener('mouseenter', () => {
-                   // Only subtle cosmetic change, as explicit content wasn't provided for tooltips
-                   // but adhering to the requested "Smart Tooltips" design pattern structure.
-                });
-            });
-        });
-    </script>
 
 </BaseLayout>
