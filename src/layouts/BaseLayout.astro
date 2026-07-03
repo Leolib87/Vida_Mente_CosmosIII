@@ -1,13 +1,26 @@
 ---
+// Layout único del sitio: centraliza todo el "chrome" que antes se
+// duplicaba en cada página (scripts CDN fijados con SRI, Google Fonts,
+// estilos base de body/scrollbar/selección y el mecanismo único de notas
+// al pie estilo epv-01). Las páginas solo aportan overrides genuinamente
+// propios en su <Fragment slot="head">.
 interface Props {
   title: string;
   description?: string;
   lang?: string;
   htmlClass?: string;
   bodyClass?: string;
+  includeMermaid?: boolean;
 }
 
-const { title, description, lang = "es", htmlClass, bodyClass } = Astro.props;
+const {
+  title,
+  description,
+  lang = "es",
+  htmlClass,
+  bodyClass,
+  includeMermaid = false,
+} = Astro.props;
 ---
 
 <!DOCTYPE html>
@@ -17,6 +30,93 @@ const { title, description, lang = "es", htmlClass, bodyClass } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title}</title>
     {description && <meta name="description" content={description}>}
+
+    <script is:inline src="https://cdn.tailwindcss.com/3.4.17" integrity="sha384-igm5BeiBt36UU4gqwWS7imYmelpTsZlQ45FZf+XBn9MuJbn4nQr7yx1yFydocC/K" crossorigin="anonymous"></script>
+    <script is:inline src="https://cdn.tailwindcss.com/3.4.17?plugins=typography" integrity="sha384-98Wwx1937T3GidSAwih9DtTYWtmUM+etXWic+XaYleGUnH7QDMDAMYH0XA6byBLe" crossorigin="anonymous"></script>
+    {includeMermaid && (
+      <script is:inline src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    )}
+    <!-- Lucide: requerido por el nav compartido (SiteNav) -->
+    <script is:inline src="https://unpkg.com/lucide@1.23.0/dist/umd/lucide.min.js" integrity="sha384-ouAVEJVCMsf8Svzn+BwqbaBhxBEA0xgeVBhHnxmWd+Wqyv18yhWCQwGegFD/OHLq" crossorigin="anonymous"></script>
+    <script is:inline>
+      if (!window.__lucideInit) {
+        window.__lucideInit = true;
+        document.addEventListener("DOMContentLoaded", () => {
+          if (window.lucide) window.lucide.createIcons();
+        });
+      }
+    </script>
+
+    <style is:global>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #94a3b8; /* slate-400 */
+            scroll-behavior: smooth;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 70%);
+            background-attachment: fixed;
+        }
+
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        ::selection {
+            background-color: #f59e0b;
+            color: #0f172a;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* --- Notas al pie / glosario: mecanismo único (tooltip CSS puro,
+           sin JS) del sitio, patrón de epv-01. Toda página que necesite una
+           nota o término emergente usa exactamente esta marca:
+             <span class="relative inline-block footnote-ref group">
+               <a href="#fn-N" class="text-cyan-400 font-bold cursor-pointer no-underline text-sm align-super">N</a>
+               <span class="footnote-tooltip">TEXTO</span>
+             </span>
+        --- */
+        .footnote-ref {
+            cursor: pointer;
+            position: relative;
+            display: inline-block;
+        }
+
+        .footnote-ref .footnote-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90vw;
+            max-width: 1000px;
+            background-color: rgba(15, 23, 42, 0.98);
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            color: #e2e8f0;
+            padding: 1.5rem 2rem;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: normal;
+            line-height: 1.6;
+            z-index: 1000;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            text-align: justify;
+            pointer-events: none;
+        }
+
+        .footnote-ref:hover .footnote-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+
     <slot name="head" />
 </head>
 <body class={bodyClass}>
