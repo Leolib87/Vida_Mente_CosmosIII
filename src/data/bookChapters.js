@@ -18,4 +18,11 @@ export const chapters = [
   { slug: "epv-07", label: "Cap. 7", title: "7. Cibernética y fin. Una crítica" },
   { slug: "epv-08", label: "Cap. 8", title: "8. La nobleza de la vista" },
   { slug: "epv-09", label: "Cap. 9", title: "9. Homo Pictor: Libertad de la imagen" },
+  { slug: "epv-10", label: "Cap. 10", title: "10. Acerca del uso práctico de la teoría" },
+  { slug: "epv-11", label: "Cap. 11", title: "11. Gnosticismo, existencialismo y nihilismo" },
+  // PENDIENTE: EPV12 (Cap. 12 "La inmortalidad y la existencia") es un componente
+  // React, no HTML estático → migración aparte. Insertar aquí, entre 11 y Biografía.
+  { slug: "epv-biografia", label: "Biografía", title: "Biografía" },
+  { slug: "epv-epilogo", label: "Epílogo", title: "Epílogo: Naturaleza y ética" },
+  { slug: "epv-notas", label: "Notas", title: "Nota bibliográfica" },
 ];

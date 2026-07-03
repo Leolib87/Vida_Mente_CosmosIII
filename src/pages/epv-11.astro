@@ -1,0 +1,535 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteNav from "../components/SiteNav.astro";
+import BookNav from "../components/BookNav.astro";
+---
+<BaseLayout
+  title="Gnosticismo, Existencialismo y Nihilismo | OCVM"
+  lang="es"
+  bodyClass="selection:bg-cyan-900 selection:text-cyan-100 min-h-screen flex flex-col"
+>
+  <Fragment slot="head">
+    <script is:inline src="https://cdn.tailwindcss.com"></script>
+    <script is:inline src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <!-- Lucide: requerido por el nav compartido (SiteNav) -->
+    <script is:inline src="https://unpkg.com/lucide@latest"></script>
+    <style is:global>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #cbd5e1; /* slate-300 */
+            scroll-behavior: smooth;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 70%);
+            background-attachment: fixed;
+            overflow-x: hidden;
+        }
+
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Scroll Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: transparent;
+            position: fixed;
+            top: 0;
+            z-index: 100;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #22d3ee; /* cyan-400 */
+            width: 0%;
+            transition: width 0.1s;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Footnote Reference Styles */
+        .footnote-ref {
+            color: #22d3ee;
+            font-weight: bold;
+            font-size: 0.75em;
+            vertical-align: super;
+            cursor: pointer;
+            transition: color 0.3s;
+            padding: 0 2px;
+        }
+        .footnote-ref:hover {
+            color: #f59e0b; /* amber-500 */
+            text-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+        }
+
+        /* Smart Tooltip Panel */
+        #footnote-panel {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            transform: translateX(-50%) translateY(20px);
+            opacity: 0;
+            pointer-events: none;
+        }
+        #footnote-panel.active {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+        }
+
+        /* Typography overrides */
+        .prose strong { color: #f59e0b; font-weight: 600; } /* Amber for emphasis */
+        .prose h2, .prose h3 { color: #f1f5f9; font-family: 'Playfair Display', serif; }
+        
+        /* Interactive Nav */
+        .nav-link { position: relative; display: inline-block; }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -2px;
+            left: 0;
+            background-color: #22d3ee;
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover::after { width: 100%; }
+
+        /* Dropdown transition */
+        .dropdown-menu {
+            transition: all 0.2s ease-in-out;
+            transform: translateY(10px);
+            opacity: 0;
+            visibility: hidden;
+        }
+        .group:hover .dropdown-menu {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Blockquote styling */
+        blockquote {
+            border-left-color: #f59e0b !important;
+            color: #94a3b8 !important;
+            font-style: italic;
+        }
+    </style>
+  </Fragment>
+
+  <SiteNav />
+
+
+    <!-- 1. Barra de Progreso -->
+    <div class="progress-container">
+        <div class="progress-bar" id="myBar"></div>
+    </div>
+
+    <!-- 2. Navegación Sticky -->
+    <nav class="fixed top-20 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex justify-between items-center">
+            
+            <!-- Logo / Título Corto -->
+            <a href="#" class="flex items-center space-x-3 group">
+                <div class="w-2 h-2 bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.8)] group-hover:scale-125 transition-transform"></div>
+                <div class="flex flex-col">
+                    <span class="text-[10px] text-amber-500 font-bold tracking-[0.2em] uppercase">OCVM Book Gem</span>
+                    <span class="text-sm text-slate-200 font-serif italic">Gnosticismo & Nihilismo</span>
+                </div>
+            </a>
+
+            <!-- Menú / Índice -->
+            <div class="relative group">
+                <button class="flex items-center space-x-2 text-xs font-bold tracking-widest uppercase text-slate-400 hover:text-cyan-400 transition-colors py-4">
+                    <span>Índice</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                
+                <!-- Dropdown -->
+                <div class="dropdown-menu absolute right-0 top-full w-64 bg-slate-900/95 border border-slate-700 rounded-lg shadow-2xl p-2 backdrop-blur-xl">
+                    <ul class="space-y-1">
+                        <li><a href="#observacion" class="block px-4 py-2 text-xs text-slate-400 hover:text-white hover:bg-white/5 rounded transition-colors">Observación Preliminar</a></li>
+                        <li><a href="#seccion-1" class="block px-4 py-2 text-xs text-slate-400 hover:text-white hover:bg-white/5 rounded transition-colors">I. La Soledad del Hombre</a></li>
+                        <li><a href="#seccion-2" class="block px-4 py-2 text-xs text-slate-400 hover:text-white hover:bg-white/5 rounded transition-colors">II. La Escisión Gnóstica</a></li>
+                        <li><a href="#seccion-3" class="block px-4 py-2 text-xs text-slate-400 hover:text-white hover:bg-white/5 rounded transition-colors">III. El Hundimiento</a></li>
+                        <li><a href="#seccion-4" class="block px-4 py-2 text-xs text-slate-400 hover:text-white hover:bg-white/5 rounded transition-colors">IV. Antinomismo</a></li>
+                        <li><a href="#seccion-5" class="block px-4 py-2 text-xs text-slate-400 hover:text-white hover:bg-white/5 rounded transition-colors">V. Temporalidad</a></li>
+                        <li><a href="#seccion-6" class="block px-4 py-2 text-xs text-slate-400 hover:text-white hover:bg-white/5 rounded transition-colors">VI. Indiferencia de la Naturaleza</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <main class="flex-grow pt-32 pb-32 px-6 md:px-12 w-full max-w-4xl mx-auto">
+
+        <BookNav current="epv-11" place="top" />
+        
+        <!-- Hero Section -->
+        <header class="mb-24 text-center relative animate-fade-in">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-[100px] -z-10"></div>
+            
+            <h1 class="text-4xl md:text-6xl lg:text-7xl font-serif font-medium text-slate-100 mb-6 leading-tight drop-shadow-xl">
+                GNOSTICISMO,<br>
+                <span class="text-amber-500 italic">EXISTENCIALISMO</span><br>
+                Y NIHILISMO
+            </h1>
+            
+            <div class="h-px w-24 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mx-auto my-8"></div>
+            
+            <p class="text-xs md:text-sm font-bold tracking-[0.3em] uppercase text-cyan-400">
+                Un Análisis Comparativo
+            </p>
+        </header>
+
+        <!-- Bloque de Texto -->
+        <article class="prose prose-invert prose-lg md:prose-xl max-w-none text-slate-300 leading-relaxed font-light text-justify">
+            
+            <!-- Observación Preliminar -->
+            <section id="observacion" class="mb-20">
+                <h3 class="text-center text-amber-500 text-sm font-bold tracking-widest uppercase mb-8">Observación Preliminar</h3>
+                
+                <p>
+                    En el siguiente estudio voy a intentar comparar, a modo de experimento, dos movimientos espirituales, puntos de vista o sistemas muy distantes entre sí en el espacio y en el tiempo y cuyas naturalezas respectivas parecen a primera vista inconmensurables. En efecto, el primero está de clara actualidad, opera mediante conceptos, es sutil y eminentemente <span class="text-amber-500">«moderno»</span> no solo en sentido cronológico. El otro está envuelto en las nieblas del pasado, es mitológico y basto, era extraño incluso en su propia época y nunca ha sido admitido en la respetable sociedad de nuestra tradición filosófica. Lo que voy a afirmar es que ambos movimientos tienen algo en común, y que la profundización en sus parecidos y en sus diferencias puede llevar a un esclarecimiento recíproco de ambos.
+                </p>
+
+                <p>
+                    Al decir <span class="text-amber-500">«recíproco»</span> confieso que mi modo de proceder presenta una cierta circularidad. Mi propia experiencia puede ilustrar a qué me refiero. Cuando hace muchos años comencé a estudiar el <span class="text-amber-500">gnosticismo</span>, observé que los puntos de vista, en cierto modo la <span class="text-amber-500">«óptica»</span> que había adquirido en la escuela de <span class="text-cyan-400 font-medium">Heidegger</span>, me había puesto en condiciones de percibir ciertos aspectos del pensamiento gnóstico que hasta entonces habían pasado inadvertidos. Y cada vez estaba más impresionado de lo familiar que me resultaba algo aparentemente tan ajeno. Mirando ahora hacia atrás, me inclino a creer que era precisamente la atracción de esta cercanía oscuramente sentida lo que me había llevado a adentrarme en el laberinto gnóstico. Cuando tras una larga estancia en aquellos remotos países volví al mío propio, al escenario de la filosofía contemporánea, me di cuenta de que lo que había aprendido allí lejos me permitía ahora comprender mejor las costas de las que había partido. El largo camino recorrido en compañía del <span class="text-amber-500">nihilismo antiguo</span> se revelaba —al menos para mí— como una ayuda para determinar y clasificar el sentido del <span class="text-amber-500">nihilismo moderno</span>: exactamente de la misma manera que este último me había equipado al principio para descubrir su oscuro pariente en el pasado.
+                </p>
+
+                <p>
+                    Lo que me sucedió, por tanto, es que el <span class="text-amber-500">existencialismo</span>, que me había proporcionado los instrumentos para el análisis histórico, quedaba complicado en los resultados del mismo. La aptitud de sus categorías para estudiar esta materia específica invitaba a reflexionar. Coincidían como si hubiesen sido hechos a medida: ¿estaban quizá hechos a medida? Al principio, yo había considerado esa aptitud del <span class="text-amber-500">existencialismo</span> sencillamente como un caso de su pretendida validez universal, que garantizaba su utilidad para interpretar toda <span class="text-amber-500">«existencia»</span> humana. Pero después empecé a vislumbrar la posibilidad de que la aplicabilidad de las categorías existencialistas en ese caso podía deberse al tipo específico de <span class="text-amber-500">«existencia»</span> con que se operaba a uno y otro lado: del lado que había proporcionado las categorías en cuestión y del lado que respondía tan bien a ellas.
+                </p>
+
+                <p>
+                    Era la historia de un adepto que se creía en posesión de una llave que podía abrir todas las puertas. Llegué a esta puerta concreta, probé la llave y hete aquí que entraba en la cerradura y que la puerta se abría. La llave acababa de demostrar su capacidad. Solo más tarde, cuando ya había perdido la fe en una llave universal, empecé a preguntarme por qué precisamente esa llave había funcionado tan bien en ese caso concreto. ¿Había dado con el tipo correcto de llave para el tipo correcto de cerradura? Si así era, ¿qué había en las relaciones entre <span class="text-amber-500">existencialismo</span> y <span class="text-amber-500">gnosticismo</span> que hacía a este último abrirse al contacto del primero? Con esta inversión de la vía de acceso, las soluciones de un campo se convertían en preguntas dirigidas al otro, mientras que al principio parecían ser una mera confirmación de su verdad universal.
+                </p>
+
+                <p>
+                    Lo que por tanto había empezado como el encuentro de un método con una materia, terminaba haciéndome consciente de que el <span class="text-amber-500">existencialismo</span>, que reivindica para sí la capacidad de explicitar las estructuras básicas de la existencia humana en general, y que así podía servir como principio del método, es en realidad la filosofía de una determinada situación de la existencia humana surgida históricamente: una situación análoga en el pasado (por más que en otros aspectos fuese muy distinta) había provocado una respuesta análoga. No por ello pierde en seriedad la pregunta planteada por el existencialismo, pero al reconocer la situación que él refleja y a la que se limita la validez de algunas de sus certezas hemos ganado una perspectiva más adecuada.
+                </p>
+
+                <p>
+                    Con otras palabras, las funciones interpretativas se invierten y devienen recíprocas: la cerradura se convierte en llave y la llave en cerradura. La lectura <span class="text-amber-500">«existencialista»</span> del gnosticismo, tan justificada como está (o en la medida en que está justificada) por su éxito hermenéutico, nos invita, como a su contrapartida natural, a emprender el intento de una lectura <span class="text-amber-500">«gnóstica»</span> del existencialismo.
+                </p>
+            </section>
+
+            <!-- SECCIÓN I -->
+            <section id="seccion-1" class="mb-24 border-l-4 border-cyan-500/50 pl-6 md:pl-10">
+                <h2 class="text-2xl md:text-3xl font-serif text-white mb-8">I. La Soledad del Hombre: De <span class="text-cyan-400">Pascal</span> a <span class="text-cyan-400">Nietzsche</span></h2>
+                
+                <p>
+                    Hace ahora unos sesenta años, decía <span class="text-cyan-400 font-medium">Nietzsche</span> que el <span class="text-amber-500">nihilismo</span>, <span class="text-amber-500 italic">«el más inquietante de todos los huéspedes»</span><sup class="footnote-ref" data-note-id="1">[1]</sup> estaba a la puerta. Desde entonces el huésped ha entrado y ya no es un huésped, y en lo que respecta a la filosofía el existencialismo intenta convivir con él. Vivir en semejante compañía quiere decir vivir en una crisis constante. Los comienzos de la crisis llegan hacia atrás hasta el siglo XVII, que es el momento en que toma forma la situación espiritual del hombre moderno.
+                </p>
+
+                <p>
+                    Entre los aspectos de esa situación hay uno que <span class="text-cyan-400 font-medium">Pascal</span> fue el primero en describir con toda la fuerza de su elocuencia: la soledad del hombre en el universo físico de la cosmología moderna. <span class="text-amber-500 italic">«Abismado en la infinita inmensidad de los espacios que ignoro y que me ignoran, me espanto»</span><sup class="footnote-ref" data-note-id="2">[2]</sup>. Que me ignoran: más todavía que la aplastante infinitud de los espacios y tiempos cósmicos, más que la desproporción cuantitativa, más que lo diminuto del hombre como una magnitud dentro de esas dimensiones, es el <span class="text-amber-500">«silencio»</span>, es decir, la indiferencia del universo frente al hombre, el hecho de que aquello en cuyo seno se desarrollan todas las cosas humanas nada sabe acerca de ellas, lo que provoca la soledad del hombre en la suma de la realidad. Como parte de esa suma, como un trozo de la naturaleza, el hombre no es más que una caña que en cualquier momento pueden quebrar las fuerzas de ese inmenso universo, en el que ya la existencia de la caña no es sino una ciega casualidad particular: no menos ciega que la casualidad de su posible aniquilamiento.
+                </p>
+
+                <p>
+                    Pero como caña pensante el hombre no es parte de esa suma, no pertenece a ella, sino que es radicalmente distinto, inconmensurable. En efecto, como había enseñado <span class="text-cyan-400 font-medium">Descartes</span>, lo extenso no piensa, y la naturaleza no es más que sustancia extensa, <span class="text-amber-500 italic">res extensa</span>, esto es, cuerpo, materia, magnitud externa. Cuando la naturaleza destruye la caña lo hace sin darse cuenta, mientras que la caña, el hombre, incluso mientras está siendo destruido se percata, pensando, de que lo está siendo<sup class="footnote-ref" data-note-id="3">[3]</sup>. Es el único ser del mundo que piensa, no porque, sino aunque forma parte del mundo. Al igual que él ya no participa de un sentido de la naturaleza, sino solo —a través de su cuerpo— de sus condiciones mecánicas, tampoco la naturaleza se preocupa de los asuntos internos del hombre. Así pues, precisamente aquello en virtud de lo que el hombre es superior a toda la naturaleza, lo que le distingue y singulariza, el <span class="text-amber-500">espíritu</span>, ya no nos lleva a considerar su ser perteneciente a un nivel superior dentro de la totalidad del ser, sino que por el contrario designa el abismo insuperable que le separa del resto de la realidad. Apartado de la comunidad del ser en un todo, es precisamente su conciencia quien hace de él un extraño en el mundo, y en todo acto de verdadera reflexión da nuevas pruebas de que esa es su condición.
+                </p>
+
+                <p>
+                    Tal es el estado del hombre. Se acabó el <span class="text-amber-500">cosmos</span>, con cuyo <span class="text-amber-500">logos</span> inmanente se puede sentir emparentado el mío propio; se acabó el orden del todo, en el que el hombre tiene su lugar propio. Este lugar comparece ahora como una casualidad desnuda e incomprensible. <span class="text-amber-500 italic">«Me asombro»</span>, continúa <span class="text-cyan-400 font-medium">Pascal</span> en el fragmento 205, <span class="text-amber-500 italic">«de verme aquí y no allí, porque no existe ninguna razón de estar aquí y no allí, ahora y no en otro tiempo»</span>. La razón del «aquí» existía desde siempre, desde que el cosmos era el hogar natural del hombre, es decir, desde que el mundo se comprendía como cosmos. Pero <span class="text-cyan-400 font-medium">Pascal</span> habla de <span class="text-amber-500">«ese rincón apartado del mundo»</span> en el que el hombre <span class="text-amber-500">«se ve a sí mismo como perdido»</span>, de esta <span class="text-amber-500">«pequeña celda en la que se encuentra alojado, quiero decir el universo»</span><sup class="footnote-ref" data-note-id="4">[4]</sup>. La extrema contingencia de nuestra existencia en el todo priva a ese todo de cualquier sentido humano que pudiese servir como sistema de referencia posible para la comprensión.
+                </p>
+
+                <p>
+                    Ahora bien, en esta situación hay algo más que el mero tono de la falta de hogar, la sensación de estar perdido y el miedo. La indiferencia de la naturaleza también significa que carece de toda relación con fines. Con la desaparición de la teleología del sistema de las causas naturales, la naturaleza, en sí misma carente de objetivos y de fines, dejó de dar cualquier tipo de sanción a posibles fines del hombre. Un universo sin una jerarquía del ser internamente fundada, como el copernicano, deja a los valores sin apoyo ontológico, y el sí mismo cuenta exclusivamente con sus propias fuerzas a la hora de buscar sentido y valor. El sentido ya no se encuentra, sino que se «da»; el valor ya no se percibe contemplando el ser objetivo, sino que se pone en el hecho de la valoración. En su calidad de función de la voluntad, los fines son de mi exclusiva creación. La voluntad sustituye a la contemplación; la temporalidad del acto desplaza a la eternidad del «bien en sí». Esta es la fase nietzscheana de la situación, en la que el <span class="text-amber-500">nihilismo</span> europeo sale a la superficie. El hombre está ahora a solas consigo mismo.
+                </p>
+
+                <blockquote class="pl-4 italic border-l-2 border-amber-500 my-8">
+                    El mundo: una puerta<br>
+                    a mil desiertos fríos y mudos.<br>
+                    Quien perdió lo que tú<br>
+                    perdiste, no para en sitio alguno.
+                </blockquote>
+
+                <p>
+                    Así hablaba <span class="text-cyan-400 font-medium">Nietzsche</span> (en «El librepensador»), y cerraba el poema con las palabras <span class="text-amber-500 italic">«¡infeliz el que patria no tenga!»</span><sup class="footnote-ref" data-note-id="5">[5]</sup>.
+                </p>
+
+                <p>
+                    El universo de <span class="text-cyan-400 font-medium">Pascal</span> seguía siendo con todo un universo creado por Dios, y el hombre solitario, privado de todo apoyo secular, seguía pudiendo elevar su corazón al Dios que estaba en el más allá. Pero este Dios es esencialmente un Dios escondido, un <span class="text-amber-500 italic">agnostos theos</span> que no es reconocible en la estructura de su creación. El mundo creado no revela el propósito del creador en el modo en que está dispuesto, ni su bondad en la sobreabundancia de las cosas creadas, ni su sabiduría en su adecuación a fines, ni su perfección en la belleza del todo, sino únicamente su poder en la magnitud propia del mundo, en la inmensidad espacial y temporal del mismo.
+                </p>
+
+                <p>
+                    En efecto, la extensión, o lo cuantitativo, es el único rasgo esencial que conserva el mundo, y si el mundo muestra algo de divino lo hace precisamente a través de esa característica: y de lo que la magnitud puede dar muestra es del poder<sup class="footnote-ref" data-note-id="6">[6]</sup>. Pero el mundo que ha sido vaciado para la manifestación de poder no deja abierta otra posibilidad de relación con él mismo —una vez que desaparece la referencia a la trascendencia, y el hombre queda solo con él, y consigo— que el poder, esto es, el control y dominio del mundo. La contingencia del hombre, de su existencia aquí y ahora, sigue siendo en <span class="text-cyan-400 font-medium">Pascal</span> una contingencia conforme a la voluntad de Dios, pero esta voluntad que me ha arrojado precisamente a este rincón de la naturaleza es inescrutable, y el «porqué» de mi existencia encuentra aquí tan poca respuesta como en el <span class="text-amber-500">existencialismo ateo</span>. El <span class="text-amber-500 italic">deus absconditus</span>, del que no se pueden predicar más que voluntad y poder, deja como herencia al retirarse el <span class="text-amber-500 italic">homo absconditus</span>, un concepto de hombre que a partir de ese momento se caracteriza únicamente por la voluntad y el poder, por la voluntad de poder, por la voluntad de querer. Para esta voluntad, incluso la naturaleza indiferente es más una ocasión para su propia activación que un objeto real.
+                </p>
+
+                <p>
+                    El punto decisivo en este contexto es que en la base de la situación metafísica que ha llevado al existencialismo moderno y a sus aspectos nihilistas está un cambio de la imagen de la naturaleza, esto es, del entorno cósmico del hombre. Pero si es así, si la esencia del existencialismo es un cierto dualismo, una alienación entre hombre y cosmos acompañada de la pérdida de la noción de un cosmos emparentado con el hombre, o más brevemente, un <span class="text-amber-500">acosmismo antropológico</span>, la ciencia natural moderna no es necesariamente el único factor que ha podido crear esa condición. También un nihilismo cósmico como tal, sean cuales sean las circunstancias históricas que le hayan dado origen, podría proporcionar la condición para el desarrollo de ciertos rasgos característicos del existencialismo. Y la medida en que este sea realmente el caso, sería una prueba de la afirmada relevancia de este elemento para la posición existencialista.
+                </p>
+
+                <p>
+                    Pues bien, en la historia occidental hubo un momento —el único, en lo que a mí se me alcanza— en el que con independencia de cuanto se parezca a la ciencia moderna esa condición se hizo realidad y se vivenció con toda la vehemencia de un cataclismo. Se trataba del movimiento gnóstico en sus formas más radicales, que aparecieron durante los tres primeros siglos de la era cristiana —atravesados como estaban por profundas convulsiones— en las zonas helenizadas del imperio romano y en las regiones orientales adyacentes. Podríamos, por tanto, albergar la esperanza de aprender de esas formas de gnosticismo algo que nos sirviese para comprender el inquietante fenómeno que se conoce bajo el nombre de <span class="text-amber-500">nihilismo</span>. Quisiera presentar aquí las pruebas correspondientes, en la medida en que lo permita la obligada brevedad y con todas las reservas propias de un experimento comparativo de este tipo.
+                </p>
+            </section>
+
+            <!-- SECCIÓN II -->
+            <section id="seccion-2" class="mb-24 border-l-4 border-amber-500/50 pl-6 md:pl-10">
+                <h2 class="text-2xl md:text-3xl font-serif text-white mb-8">II. La Escisión Gnóstica entre el Hombre y el Mundo</h2>
+                
+                <p>
+                    La suposición de una analogía entre dos fenómenos separados por tan larga distancia histórica resultará menos sorprendente de lo que podría parecer si tenemos en cuenta que el mundo grecorromano de los primeros siglos del cristianismo presenta más de un paralelismo con la modernidad. <span class="text-cyan-400 font-medium">Spengler</span> fue tan lejos que declaró ambas épocas como «simultáneas» en el sentido de su teoría de los ciclos culturales, de manera que según él hoy estamos en los comienzos de la época imperial. Sea como fuere: el hecho de que nos reconozcamos a nosotros mismos en tantas facetas de la antigüedad tardía mucho más que en las de la antigüedad clásica es sin duda algo más que una mera casualidad.
+                </p>
+
+                <p>
+                    El <span class="text-amber-500">gnosticismo</span> es una de esas facetas. En su caso el reconocimiento es más difícil debido a lo extraño de su simbolismo. Este último puede producir incluso el shock de lo inesperado precisamente en quien ya sabe algo del gnosticismo, dado que su desaforada fantasía parece bien poco compatible con la desilusionada sobriedad del existencialismo, y su carácter religioso menos compatible aún con el fenómeno esencialmente irreligioso —a saber, postcristiano— que para <span class="text-cyan-400 font-medium">Nietzsche</span> era, en virtud de su definición misma, el nihilismo moderno. Y, sin embargo, puede que una comparación no sea del todo inútil.
+                </p>
+
+                <p>
+                    Tengo que renunciar a ocuparme aquí de las amplias cuestiones que se plantean en la investigación actual acerca del fenómeno histórico del gnosticismo. El modo de ver el gnosticismo que está en la base de las siguientes reflexiones en parte es independiente de qué respuesta se dé a esas preguntas y en parte presupone ciertas respuestas concretas a las mismas, y no tengo inconveniente alguno en decir que ese modo de ver global —el mío— no deja de ser controvertido. Ruego sin embargo que se me conceda utilizarlo para los fines de este estudio en calidad de hipótesis. Por otra parte, también tendremos que pasar por alto las diferencias existentes entre los múltiples sistemas gnósticos, en favor de una abstracción de los puntos comunes a todos ellos.
+                </p>
+
+                <p>
+                    El punto común que es preciso acentuar es el tono radicalmente dualista que subyace a la actitud gnóstica en su conjunto y que atraviesa todas sus manifestaciones más o menos sistemáticas, por distintas que estas sean entre sí. Sobre esta base primariamente humana de una vivencia de sí mismo y del mundo apasionadamente sentida descansan las articuladas doctrinas dualistas. El dualismo se plantea entre el hombre y el mundo, y paralelamente entre el mundo y Dios. Se trata de un dualismo de magnitudes no complementarias, sino contrarias, y en realidad, de un dualismo, puesto que el que existe entre el hombre y el mundo repite en el nivel de la experiencia el existente entre el mundo y Dios y se deriva de él como de su fundamento teórico. O quizá se prefiera decir, a la inversa, que la doctrina trascendente del dualismo mundo-Dios procede de la vivencia inmanente de la escisión hombre-mundo como de su fundamento empírico. En esta polaridad de tres elementos, el hombre y Dios se oponen juntos al mundo, pero a pesar de esa esencial copertenencia están separados precisamente por el mundo.
+                </p>
+
+                <p>
+                    Para el gnóstico, todo ello es objeto del conocimiento revelado y determina una peculiar escatología. Queremos ver aquí la proyección de la experiencia gnóstica fundamental, que de esa manera creó para sí su propia verdad revelada. Lo que entonces precede a todo lo demás es el sentimiento de un abismo absoluto entre el hombre y el lugar en el que se encuentra: el mundo. Es este sentimiento lo que se explicita en la forma de una doctrina objetiva. En su aspecto teológico, esta doctrina afirma que lo divino es ajeno al mundo y carece de toda participación en el universo físico; que el verdadero Dios, absolutamente trasmundano, no es revelado y ni siquiera anunciado por el mundo, y que por ello es el Desconocido, el totalmente Otro, incognoscible con cualquier analogía que tomemos del mundo. En conformidad con ello, el aspecto cosmológico de la doctrina dice que el mundo es ajeno a Dios, o lo ajeno a Dios por excelencia, y que no es una creación de la divinidad, sino de un principio inferior cuya ley cumple. Finalmente, el aspecto antropológico muestra que el sí mismo interior del hombre, el <span class="text-amber-500 italic">pneuma</span> («espíritu» en contraposición con «alma» = <span class="text-amber-500 italic">psyche</span>) no forma parte del mundo, no pertenece a la creación y al dominio de la naturaleza, sino que dentro de este mundo es tan trascendente y tan incognoscible mediante categorías tomadas de él como su paralelo extramundano, el Dios desconocido.
+                </p>
+
+                <p>
+                    Que el mundo ha sido creado por alguien —por uno o por varios seres— es algo que, al estilo mitológico, se da por sentado, por más que en su génesis se aprecie desde diversos puntos de vista la presencia dominadora de una necesidad casi impersonal que sigue oscuros impulsos. Pero sea quien sea su creador, el hombre no le debe sumisión alguna, ni a su obra respeto de ningún tipo. Su obra, si bien comprende enigmáticamente al hombre en su seno, no ofrece criterios por los que haya de regirse la conducta del hombre, y tampoco su voluntad nos los proporciona. En su calidad de poder profundamente inferior a la divinidad —al que incluso el hombre puede mirar desde su espíritu, más cercano a Dios, sintiéndose superior a él— el creador del mundo no conserva de lo verdaderamente divino más que precisamente el poder de una eficiencia carente de inteligencia y de bondad. Así es como el demiurgo creó el mundo en ignorancia y pasión.
+                </p>
+
+                <p>
+                    Por ello el mundo es el producto, incluso la encarnación de la negación del saber. Lo que nos revela es poder indocto, y por ello malvado, surgido de la voluntad de dominio y de coacción. El espíritu maligno de esta voluntad es el espíritu del mundo, al que toda comprensión y amor le son ajenos. Las leyes del universo son las leyes de este dominio, y no las de la sabiduría divina. El poder se convierte así en el principal aspecto del cosmos, y su naturaleza interna es carencia de saber (<span class="text-amber-500 italic">agnosia</span>). El complemento positivo reside en el hecho de que la verdadera naturaleza del hombre es el saber, el saber acerca de sí mismo y de Dios. Este saber hace de su situación la del potencialmente docto en medio de la ausencia de saber, la de la luz rodeada de las tinieblas, y esta condición está en la raíz de su modo de ser, ajeno y solitario en la oscura amplitud del universo.
+                </p>
+
+                <p>
+                    Este universo ya no tiene nada de la venerabilidad del cosmos griego. Se le dedican epítetos despectivos: <span class="text-amber-500">«estos míseros elementos»</span> (<span class="text-amber-500 italic">paupertina haec elementa</span>), <span class="text-amber-500">«esta pequeña celda del creador»</span> (<span class="text-amber-500 italic">haec cellula creatoris</span>)<sup class="footnote-ref" data-note-id="7">[7]</sup>. Sigue siendo cosmos, orden, pero se trata de un orden tiránico y no emparentado con el hombre. Se le tributa un reconocimiento mezclado de temor y falta de respeto, de temblor y de resistencia. La mácula de la naturaleza no reside en una falta de orden, sino más bien en que su orden es excesivamente completo y lo penetra todo. La obra del demiurgo, indocto como es, constituye sin embargo un sistema regido por la ley. Pero la ley cósmica, antes venerada como expresión de la razón, y con la que la razón humana podía comunicar en el acto de conocimiento, no se ve ahora más que como una coacción que hace de la libertad del hombre algo vano. El <span class="text-amber-500">logos</span> cósmico de los estoicos, idéntico a la providencia, queda sustituido por la <span class="text-amber-500 italic">heimarmene</span>, el esclavizador <span class="text-amber-500 italic">fatum</span> cósmico.
+                </p>
+
+                <p>
+                    Este <span class="text-amber-500 italic">fatum</span> es ejercido por los planetas, o en general por el mundo de los astros, que son los exponentes personificados de la inexorable ley del universo. El cambio en el contenido para los sentimientos del concepto de cosmos se simboliza de la forma más llamativa en esta desvalorización de la que antes era la parte más divina del mundo visible, las esferas celestiales. El cielo estrellado, que desde <span class="text-cyan-400 font-medium">Pitágoras</span> era para los griegos la más pura encarnación de la razón en el universo y el garante de su armonía, mira al hombre fijamente a los ojos con la mirada de un poder que le es ajeno y de la necesidad. Ya no emparentadas con el hombre por su propia naturaleza, pero todavía poderosas, las estrellas se han convertido en tiranos: temidas, pero también despreciadas por ser inferiores al hombre. Oigamos a <span class="text-cyan-400 font-medium">Plotino</span>: «¡Ellos [dice indignado contra los gnósticos], que consideran digno del nombre de hermano incluso al más vil de los hombres, con la boca espumeante de rabia niegan ese nombre al sol, a las estrellas del firmamento, incluso al alma del mundo, con nosotros hermanada» (Enéadas II, 9, 18). ¿Quién es más «moderno», <span class="text-cyan-400 font-medium">Plotino</span> o los gnósticos? «Que nos dejen en paz con ese drama de los horrores que según ellos tienen lugar en las esferas celestiales [...] Si ya el hombre posee gran valor comparado con los demás seres vivos, cuánto más valiosos serán los astros, que no están puestos en el universo como tiranos, sino para conferirle orden (kosmos) y reglas» (13). Ya sabemos qué pensaban los gnósticos de esa regla. Nada tiene que ver con la providencia, y es hostil a la libertad del hombre. Bajo este cielo desdivinizado y demonizado, el hombre cobra conciencia de que está perdido. Rodeado por él, en manos de su poder, al tiempo que superior a él por la nobleza de su alma, se sabe no parte, sino prisionero del sistema que le rodea.
+                </p>
+
+                <p>
+                    Y, al igual que <span class="text-cyan-400 font-medium">Pascal</span>, está aterrorizado. Su solitaria aliedad, que descubre al sentirse perdido, estalla en el sentimiento de miedo. El miedo como respuesta del alma a su estar en el mundo es un tema constante de la literatura gnóstica. Se trata de la reacción al descubrimiento de esa situación, y de hecho constituye un elemento de ese descubrimiento: en el miedo el sí mismo interior despierta del sueño o de la embriaguez del mundo. En efecto, el poder de los espíritus estelares o del cosmos en general no es solamente el poder externo de la coacción física, sino más bien el poder interno que hace de mí un extraño incluso para mí mismo. Al tomar conciencia de sí, el sí mismo descubre simultáneamente que en realidad no se autoposee, sino que es involuntario ejecutor de inspiraciones procedentes del cosmos.
+                </p>
+
+                <p>
+                    El conocimiento, la <span class="text-amber-500">gnosis</span>, puede liberar al hombre de esta servidumbre. Pero dado que el cosmos se opone a la vida y al espíritu, el conocimiento salvador no puede tener por objetivo la inserción en el todo cósmico y el asentimiento a su ley, como hacía la sabiduría estoica, que buscaba la libertad en la aquiescencia del sabio a la necesidad del todo, llena de sentido como esta es para él. Para los gnósticos, por el contrario, la alienación entre el hombre y el cosmos debe agudizarse hasta el extremo en aras de la redención del sí mismo, que solo de esa manera puede volver en sí. Es necesario vencer al mundo, y un mundo degradado a un sistema de poder solo puede ser vencido con poder. Ciertamente, se trata de algo completamente distinto del dominio tecnológico. El poder del mundo se vence por un lado mediante el poder del redentor, que irrumpe desde fuera en su cerrada estructura; por otro lado, precisamente mediante el poder del saber que el redentor nos trae, que en calidad de instrumento mágico doblega la coacción de las estrellas y abre para el alma un camino que discurre a través de las disposiciones de estas últimas. Por diferente que esto sea de la relación moderna del hombre en términos de poder con la causalidad del mundo, no deja de existir un parecido ontológico en el hecho formal de que el enfrentamiento del poder con el poder es la única forma de relación con el conjunto de la naturaleza que nos queda.
+                </p>
+            </section>
+
+            <!-- SECCIÓN III -->
+            <section id="seccion-3" class="mb-24 border-l-4 border-cyan-500/50 pl-6 md:pl-10">
+                <h2 class="text-2xl md:text-3xl font-serif text-white mb-8">III. El Hundimiento de la Doctrina de la Parte y el Todo</h2>
+                
+                <p>
+                    Antes de seguir adelante, preguntémonos qué ha sucedido aquí con la vieja idea del cosmos como un todo ordenado por Dios. Nada parecido a la ciencia moderna estaba implicado en esta catastrófica desvalorización y vaciamiento espiritual del universo. No necesitamos más que observar que en la época gnóstica este universo fue demonizado bien a fondo. Y sin embargo precisamente esto, junto con la idea del sí mismo trascendente, acósmico, nos lleva a muy singulares analogías con fenómenos del existencialismo de nuestro tiempo. ¿Cuál, dado que no se trataba de la ciencia ni de la tecnología, era para los grupos en cuestión de aquel entonces la causa del hundimiento de la devoción clásica por el cosmos, en la que descansaban tantos elementos de la ética antigua?
+                </p>
+                <p>
+                    La respuesta completa nos es desconocida, y sin duda sería compleja. Pero señalemos al menos uno de sus aspectos. Lo que tenemos ante nosotros es la bancarrota de la doctrina antigua del todo y la parte, y es probable que haya que buscar causas sociales y políticas para este fenómeno. La doctrina de la ontología clásica según la cual el todo no solo es anterior a sus partes y mejor que estas, sino también aquello con vistas a lo cual las partes existen y en lo que por tanto tienen no solo el fundamento, sino también el sentido de su existencia, esta doctrina axiomática, había perdido en la antigüedad tardía la base social de su validez.
+                </p>
+                <p>
+                    El ejemplo vivo de un todo de ese tipo había sido la <span class="text-amber-500">polis</span>, en cuya vida omniabarcante tenía su posibilidad, su medida y su duración superior el efímero hacer de los individuos. En el obrar virtuoso, que recibe su norma del todo, el ciudadano se realizaba a sí mismo, al mismo tiempo que mediante ese obrar mantenía al todo en vida, y en una vida excelente. Con la abdicación política de las ciudades-república en las monarquías de los Diadocos y finalmente en el imperio romano, la ciudadanía de la polis perdió su función constructiva y su lugar espiritual. Los nuevos grandes Estados se privaban a sí mismos de una situación comparable. Pero el principio axiomático sobrevivió a las condiciones de su validez concreta. El panteísmo estoico, la físico-teología postaristotélica en general, sustituyó la relación entre el ciudadano y la polis por la existente entre el individuo y el cosmos, viendo en este último el todo vivo de mayor magnitud que aquel. Gracias a esta sustitución, el principio clásico del todo y la parte mantenía su vigencia teórica, si bien ya no reflejaba la situación práctica del hombre. Ahora el cosmos es <span class="text-amber-500">«la gran polis de los dioses y de los hombres»</span>, y ser ciudadano del cosmos, <span class="text-amber-500 italic">cosmopolites</span>, es el objetivo que debe perseguir el individuo aislado. Debe considerar la causa del universo como su propia causa (dado que ya no puede tener por suya ninguna otra), ha de identificarse directamente con ella, salvando todo miembro intermedio, y debe poner en armonía su sí mismo interior, su <span class="text-amber-500">logos</span>, con el <span class="text-amber-500">logos</span> del todo.
+                </p>
+                <p>
+                    Un aspecto práctico de esta identificación consistía en la aceptación y leal ejecución del papel que a cada uno le asignaba el todo, y precisamente en el lugar y en la condición que había dispuesto el destino cósmico. «Representar su papel»: esta imagen, al igual que el símil general con el teatro que la ética estoica gusta de emplear, delata lo ficticio de su posición. El papel que hay que representar sustituye a la tarea que realmente habría que cumplir. Los actores actúan en el escenario como si hubiesen decidido ellos mismos el argumento y como si el resultado de su obrar tuviese alguna importancia. Lo realmente importante es actuar bien y no mal, sin que el resultado sea realmente relevante. Los actores, actuando impertérritos, son sus propios espectadores.
+                </p>
+                <p>
+                    El símil del papel que hay que representar oculta tras su petulancia una profunda resignación, y basta un cambio de actitud para ver el gran espectáculo de manera completamente distinta. ¿Se preocupa realmente el todo de la parte que soy yo? Los estoicos decían que sí, por cuanto equiparaban el destino cósmico con la providencia. ¿Y tiene realmente mi parte, la represente como la represente, alguna relevancia para el todo? Los estoicos decían que sí, por cuanto comparaban el cosmos con la polis. Pero precisamente esta comparación muestra la artificialidad de la construcción. En efecto, al contrario de lo que sucedía en la polis, mi importancia para el cosmos, sustraído a mi influjo como está, no resulta creíble, y mi parte en él es de unilateral pasividad.
+                </p>
+                <p>
+                    El esforzado pathos con el que se seguía afirmando la integración del hombre en el todo del ser a través de su supuesto parentesco esencial era, así pues, un heroico intento de la inteligencia, que tuvo éxito durante siglos, de conservar junto con la dignidad del hombre una moral positiva incluso tras la pérdida de la polis, así como de salvar para la nueva situación la fuerza vivificadora del ideal de la <span class="text-amber-500 italic">areté</span>, político por su origen. Pero las nuevas y atomizadas masas del imperio mundial, que nunca habían participado de aquella noble tradición, también podían reaccionar de otra manera a una situación a la que se veían expuestos pasivamente: a una situación en la que la parte carece de toda relevancia para el todo y el todo es ajeno a sus partes. La aspiración del individuo gnóstico no era representar la parte a él asignada por el todo, sino ser propiamente él mismo, existir de modo «auténtico». La ley del imperio bajo la que se encontraba era el decreto de un poder externo, y el mismo carácter tenía para él la ley del universo, el destino cósmico, cuyo ejecutor terreno era el Estado mundial. El concepto del todo resultó afectado en el conjunto de sus aspectos: como ley de la naturaleza, ley política y ley moral. Con ello volvemos a la comparación de la que habíamos hecho nuestro tema.
+                </p>
+            </section>
+
+            <!-- SECCIÓN IV -->
+            <section id="seccion-4" class="mb-24 border-l-4 border-amber-500/50 pl-6 md:pl-10">
+                <h2 class="text-2xl md:text-3xl font-serif text-white mb-8">IV. Antinomismo Antiguo y Antinomismo Moderno</h2>
+                <p>
+                    El minado de la noción de ley, del <span class="text-amber-500 italic">nomos</span>, tiene consecuencias éticas en las que el componente nihilista del acosmismo gnóstico, y al mismo tiempo la analogía con ciertos modelos de argumentación modernos, se hace aún más patente que en el terreno cosmológico. Me refiero al <span class="text-amber-500">antinomismo gnóstico</span>, la negación de toda obligatoriedad procedente de una ley. Dicho esto, hay que reconocer inmediatamente que la negación de la norma objetiva se desarrolla en el gnosticismo en un nivel teórico muy distinto que en el existencialismo, y que el antinomismo gnóstico parece primitivo en comparación con la sutilidad conceptual y con la clara autoconciencia histórica de su paralelo moderno. Lo que en el primer caso se liquidó fue la herencia moral de mil años de civilización antigua; en el segundo caso se añaden como trasfondo de la noción de ley moral dos mil años de metafísica cristiana.
+                </p>
+                <p>
+                    <span class="text-cyan-400 font-medium">Nietzsche</span> caracterizó las raíces de la situación nihilista con las palabras <span class="text-amber-500">«Dios ha muerto»</span>, refiriéndose primariamente con ello al Dios cristiano. Los gnósticos, si hubiesen querido formular de modo parecido la base metafísica de su nihilismo, solo hubiesen podido decir «el Dios del cosmos ha muerto», es decir, ha muerto como Dios: ha dejado para nosotros de ser divino y de dar dirección a nuestra vida. Resulta patente que en este caso la catástrofe es menos total, pero el vacío que dejó, si bien no tan abismal, era ya de suyo suficientemente perturbador.
+                </p>
+                <p>
+                    Para <span class="text-cyan-400 font-medium">Nietzsche</span>, el sentido del nihilismo es «que los valores supremos ya no valen», y la razón de esta desvalorización es «que sabemos que no tenemos el más mínimo derecho a suponer un más allá o un en sí de las cosas que sea "divinamente" la moral en persona»<sup class="footnote-ref" data-note-id="8">[8]</sup>. En conjunción con la de la muerte de Dios, esta afirmación confirma la observación de <span class="text-cyan-400 font-medium">Heidegger</span> de que «el nombre de Dios y del dios cristiano se emplean en el pensamiento de <span class="text-cyan-400 font-medium">Nietzsche</span> para designar el mundo suprasensible. Dios es el nombre para la esfera de las ideas y de los ideales»<sup class="footnote-ref" data-note-id="10">[10]</sup>. Dado que solo de esa esfera se puede derivar una sanción para los «valores», la desaparición de la misma, esto es, la «muerte de Dios», implica no solo la efectiva desvalorización de los valores supremos, sino también la pérdida de la posibilidad de cualquier valor que nos obligue. Para citar una vez más la interpretación heideggeriana de <span class="text-cyan-400 font-medium">Nietzsche</span>: «La frase "Dios ha muerto" significa: el mundo suprasensible carece de fuerza operante»<sup class="footnote-ref" data-note-id="11">[11]</sup>.
+                </p>
+                <p>
+                    En un sentido paradójico, este comentario conviene también a la posición gnóstica. Sin duda, el extremo dualismo de esta última es de suyo exactamente lo contrario que una renuncia a la trascendencia. El Dios extramundano representa incluso la forma más radical de trascendencia. En él, el más allá absoluto hace resonar su voz atravesando la envoltura de las esferas cósmicas. Pero esta trascendencia, a diferencia del mundo de las ideas de <span class="text-cyan-400 font-medium">Platón</span> o del señor del mundo del judaísmo, no guarda ninguna relación positiva con el mundo sensible. No es su esencia ni su causa, sino su negación y su abolición. El Dios gnóstico distinto del demiurgo es el totalmente otro, ajeno a nosotros, desconocido. Al igual que su paralelo en el interior del hombre, el <span class="text-amber-500 italic">pneuma</span>, cuya escondida naturaleza solamente se revela en la experiencia negativa de la aliedad y de la libertad indefinible, este Dios tiene en sí mismo más de <span class="text-amber-500 italic">nihil</span> que de <span class="text-amber-500 italic">ens</span>. Una trascendencia sin relación normativa con el mundo se parece a una trascendencia que ha perdido su fuerza eficiente. Con otras palabras, por lo que hace a la relación del hombre con la realidad que le rodea este Dios escondido es una concepción nihilista: ninguna ley proviene de él, ninguna para la naturaleza y por tanto tampoco ninguna para el obrar humano como parte del orden natural.
+                </p>
+                <p>
+                    Con esta base, el argumento antinomístico de los gnósticos es tan sencillo como por ejemplo el de <span class="text-cyan-400 font-medium">Sartre</span>. Dado que lo trascendente calla, nos dice <span class="text-cyan-400 font-medium">Sartre</span>, dado que «en el mundo no hay señales», el hombre abandonado y dejado en manos de sí mismo reclama su libertad o, más bien, no le queda otro recurso que tomarla sobre sus hombros: él «es» esa libertad, dado que el hombre «no es más que su propio proyecto» y que «todo le está permitido»<sup class="footnote-ref" data-note-id="12">[12]</sup>. Que esta libertad es desesperada, y que en su calidad de tarea para la que carecemos de cualquier tipo de brújula nos infunde más miedo que júbilo, es ya harina de otro costal.
+                </p>
+                <p>
+                    En las reflexiones gnósticas se encuentra a veces la forma del argumento antinomístico contraria a cualquier convención y puramente subjetivista: nada es bueno o malo por naturaleza, las cosas son en sí mismas indiferentes, las acciones no son buenas o malas más que en la opinión que los hombres se forman de ellas. El hombre espiritual, en la libertad que le confiere su saber, puede usar todas las cosas según desee. Pero no es en el relativismo donde reside la verdadera raíz del antinomismo gnóstico: el origen último de esas «opiniones de los hombres» en virtud de las cuales las acciones se hacen buenas o malas no es para los gnósticos el hombre mismo, sino el mundo y su demiurgo. <span class="text-cyan-400 font-medium">Plotino</span> reconoció con claridad la relación que existe entre la falta de una doctrina de la virtud y el desprecio del mundo por parte de los gnósticos: «Todavía más atrevidos [que Epicuro] en sus reproches contra el señor de la providencia y contra la providencia misma, desprecian toda la legalidad de este mundo y la virtud que se ha ido formando entre los hombres desde el comienzo del mundo» (Enéadas, II, 9, 15).
+                </p>
+                <p>
+                    Y es que, para los gnósticos, todo lo que se ha dado en llamar ley moral tiene la misma razón última que la ley de la naturaleza: las dos se complementan recíprocamente como el aspecto interno y el aspecto externo del determinismo cósmico único y de su impacto sobre la libertad del hombre. Ambas emanan del señor del mundo en calidad de instrumentos de su poder, tal y como se manifiesta en el doble aspecto del Dios judío como creador y legislador. De la misma manera que la ley física, el <span class="text-amber-500 italic">fatum</span>, inserta los cuerpos físicos en el sistema universal, así también la ley moral inserta en él las almas al obligarlas a que se plieguen al régimen demiúrgico. En la medida en que el principio de esta ley moral es la «justicia», a saber, la justicia remunerativa y penal (sobre todo esta última), la ley tiene en el campo psíquico el mismo carácter coactivo que el destino cósmico en el campo físico. «Los ángeles creadores del mundo establecieron las "buenas obras" para someter a los hombres a servidumbre mediante esa doctrina» (Simón el Mago). Quien obedece a normas dadas renuncia a la autoridad que emana de sí mismo.
+                </p>
+                <p>
+                    Aquí no podemos estudiar más de cerca las consecuencias anárquicas y a menudo libertinas de esta doctrina. Por lo demás, la consecuencia práctica puede ser tanto libertina como ascética: la primera se niega a dar seguimiento a la naturaleza entregándose al exceso; la segunda lo hace a través de la abstención. La primera, en ocasiones, convierte el permiso para todo precisamente en la tarea positiva de hacer todo sin timidez alguna, a fin de que la libertad demuestre de cuánto es capaz: estamos aquí ante el germen de la idea fáustica, cuyos orígenes, de hecho, se pueden rastrear en el gnosticismo. En todo caso, se trata de vivir fuera de la norma objetiva. Así, la libertad mediante el abuso del reino de la naturaleza o la libertad mediante el no uso de este último no son más que formas alternativas en que se expresa el mismo acosmismo.
+                </p>
+                <p>
+                    Atendiendo a esta raíz, es fácilmente comprensible que para el gnóstico, muy por encima del argumento meramente escéptico del subjetivismo, en el rechazo de toda norma estuviese en juego un interés metafísico positivo: la afirmación de la auténtica libertad del sí mismo. Pero hay que tener en cuenta que esta libertad no es asunto del <span class="text-amber-500">«alma»</span> (<span class="text-amber-500 italic">psyche</span>), sino del <span class="text-amber-500">«espíritu»</span> (<span class="text-amber-500 italic">pneuma</span>). El alma está tan adecuadamente determinada por la ley moral como el cuerpo por la ley de la naturaleza. También ella forma parte del orden natural y ha sido creada por el demiurgo o los planetas para rodear al pneuma, ese indefinible núcleo interno de la existencia ajeno a dicho orden natural. En la ley normativa el creador ejerce control sobre lo que es suyo. El hombre psíquico, definible en su naturaleza, por ejemplo como ser dotado de sentidos y de entendimiento, sigue siendo un hombre natural, y su esencia puede determinar al sí mismo pneumático igual de poco que desde el punto de vista del existencialismo alguna esencia determinativa puede prejuzgar el autoproyecto de la existencia.
+                </p>
+                <p>
+                    Séanos permitido comparar estas últimas reflexiones con un argumento de <span class="text-cyan-400 font-medium">Heidegger</span>. En su escrito <span class="text-amber-500">Sobre el humanismo</span>, <span class="text-cyan-400 font-medium">Heidegger</span> reprocha a la definición clásica del hombre como <span class="text-amber-500 italic">animal rationale</span> que sitúa al hombre en la <span class="text-amber-500 italic">animalitas</span> especificada meramente por una diferencia que cae dentro del género animal como una cualidad determinada. Esto, afirma <span class="text-cyan-400 font-medium">Heidegger</span>, es tener un concepto demasiado pobre del hombre<sup class="footnote-ref" data-note-id="13">[13]</sup>.
+                </p>
+                <p>
+                    Dejemos ahora a un lado el abuso verbal que sufre aquí el término animal<sup class="footnote-ref" data-note-id="14">[14]</sup>. Lo importante para nosotros es el rechazo de toda «naturaleza» definible del hombre que sometiese su existencia a una esencia predeterminada, y con ello hiciese de él una parte de un orden objetivo de esencias en el todo de la naturaleza. En esta concepción de una existencia trans-esencial y que se proyecta a sí misma veo algo comparable al concepto gnóstico de la negatividad trans-psíquica del <span class="text-amber-500 italic">pneuma</span> extramundano. Lo que no tiene naturaleza alguna, carece de norma; solo lo que pertenece a un orden de las naturalezas —por ejemplo al orden de una creación— tiene una naturaleza. Solo allí donde hay un todo hay una ley. En la despectiva concepción de los gnósticos esto se aplica a la <span class="text-amber-500 italic">psyche</span>, que pertenece al todo cósmico. Pero el <span class="text-amber-500 italic">pneumatikós</span>, que no pertenece a orden alguno, está por encima de la ley, más allá del bien y del mal, y es para sí mismo una ley en la fuerza de su «saber».
+                </p>
+            </section>
+
+            <!-- SECCIÓN V -->
+            <section id="seccion-5" class="mb-24 border-l-4 border-cyan-500/50 pl-6 md:pl-10">
+                <h2 class="text-2xl md:text-3xl font-serif text-white mb-8">V. Temporalidad Sin Presente</h2>
+                <p>
+                    Pero ¿acerca de qué versa este saber, este conocimiento, que no es propio del «alma», sino del «espíritu», y en el que el sí mismo espiritual se libera de la servidumbre cósmica? Una famosa fórmula valentiniana resume el objeto del gnosticismo de esta manera: <span class="text-amber-500 italic">«Lo que nos hace libres es el conocimiento de quiénes éramos y en qué nos hemos convertido; de dónde estábamos y a dónde hemos sido arrojados; de a dónde nos apresuramos a llegar y de qué es de lo que se nos redime; de qué es nacer y qué volver a nacer»</span><sup class="footnote-ref" data-note-id="15">[15]</sup>. Una auténtica exégesis de este pasaje tendría que desarrollar el mito gnóstico en su integridad. Me conformaré con algunas observaciones formales.
+                </p>
+                <p>
+                    En primer lugar, advertimos el agrupamiento dualista de los términos en parejas antitéticas y la tensión escatológica que existe entre ellos debido a su irreversible dirección desde el pasado hacia el futuro. Observamos también que las expresiones empleadas no son en ningún caso conceptos del ser, sino que se refieren siempre al acontecer y al movimiento. El saber lo es de una historia en la que él mismo constituye un acontecimiento crítico.
+                </p>
+                <p>
+                    Entre estos conceptos de movimiento, el de estar arrojado en algo nos es singularmente familiar. Como es sabido, para <span class="text-cyan-400 font-medium">Heidegger</span>, en <span class="text-amber-500">Ser y tiempo</span>, «estar arrojado» es un carácter fundamental de la existencia y de su autoexperiencia. En lo que se me alcanza, el término es de origen gnóstico. Se encuentra en la literatura mandea: la vida está arrojada al mundo, la luz a las tinieblas, el alma al cuerpo. Este concepto expresa la violencia de que he sido objeto, en virtud de la cual, y sin que se me haya preguntado antes, se me ha hecho estar donde estoy y ser lo que soy; expresa la pasividad de mi encontrarme en un mundo que yo no he hecho y cuyas leyes no son las mías. Por otra parte, la imagen de estar arrojado reviste de una calidad dinámica el todo de la existencia que así ha comenzado. En nuestra fórmula, este dinamismo queda recogido en la imagen de ese «apresurarse» hacia un objetivo o final. Arrojada al mundo y estando de continuo arrojada, la vida se arroja a sí misma hacia el futuro.
+                </p>
+                <p>
+                    Esto me lleva a una última observación acerca de la fórmula valentiniana: la de que en sus determinaciones temporales no tiene cabida un presente en cuyo contenido permaneciese el saber de modo que la contemplación propia de este último pudiese detener el impulso hacia delante. Hay pasado y futuro, del que venimos y hacia el que nos apresuramos, y el presente es únicamente el instante del conocimiento mismo, el punto de inflexión del uno al otro en la suprema crisis del ahora escatológico. Existe, con todo, una decisiva diferencia respecto de los paralelos modernos: por más que estemos arrojados a la temporalidad, con arreglo a la fórmula gnóstica nuestro origen se halla en la eternidad, y por lo tanto también en ella se encuentra nuestro objetivo. Esta circunstancia sitúa al nihilismo intramundano en un horizonte metafísico que le falta a su paralelo moderno.
+                </p>
+                <p>
+                    Volviendo de nuevo a este paralelo, me voy a permitir exponer una observación que necesariamente hará todo lector atento de <span class="text-amber-500">Ser y tiempo</span>. <span class="text-cyan-400 font-medium">Heidegger</span> desarrolla en esa obra una «ontología fundamental» de conformidad con los modos en que el ser ahí mantiene existiendo su propio ser y constituye por tanto los diferentes sentidos de ser en general. Estos modos se explicitan en una serie de categorías, a las que <span class="text-cyan-400 font-medium">Heidegger</span> prefiere denominar <span class="text-amber-500">«existenciales»</span>. A diferencia de las categorías kantianas, los existenciales no articulan primariamente estructuras de la objetividad, sino estructuras de la movilidad del tiempo interno, en las que el sí mismo se «da lugar en el tiempo» como un acontecimiento continuo en el comportamiento respecto de algo. Por ello, los tres horizontes del tiempo —pasado, presente, futuro— deberán estar representados en los existenciales y, por así decir, tendrán que repartirse estos últimos.
+                </p>
+                <p>
+                    Ahora bien, tan pronto intentemos clasificar las categorías heideggerianas del ser ahí bajo estos tres rótulos, haremos un llamativo descubrimiento. Al menos a mí me llamó poderosamente la atención cuando por aquel entonces, no mucho después de la aparición del libro, me esforcé en trazar un diagrama al modo de la clásica tabla de las categorías. Se trata del descubrimiento de que la columna situada bajo el rótulo «presente» queda prácticamente vacía, al menos en la medida en que se trate de modos de existencia auténtica. Esta es una observación extremadamente abreviada. De hecho, se dicen muchas cosas sobre el «presente» existencial, pero no como una dimensión independiente por derecho propio. En efecto, el presente existencialmente «auténtico» es el presente de la «situación» que está constituida enteramente por la relación con el futuro y el pasado. Reverbera a la luz de la decisión, cuando el proyecto del futuro regresa al pasado dado (al estar arrojado) y en este encuentro da origen al «instante»: el instante, no la duración, es el modo temporal de este «presente», que a su vez es un producto de los otros dos éxtasis temporales que está en función de su inquieto dinamismo recíproco, y no una dimensión propia de la permanencia. Separado de este contexto de movilidad interna, por sí solo, el mero «presente» designa precisamente la omisión de la auténtica relación futuro-pasado en el «haber caído», las habladurías, la curiosidad y el «se»: un fracaso de la tensión de la existencia auténtica, una especie de debilitamiento del ser. De hecho, «haber caído», un concepto negativo, es el existencial que corresponde al «presente» en la tabla en cuestión, mostrándolo así como un modo derivado y defectuoso de la existencia.
+                </p>
+                <p>
+                    Se mantiene en pie, por tanto, la observación original: todas las categorías esenciales de la existencia y que fundamentan su poder ser auténtica se pueden poner en parejas correlacionadas bajo los rótulos de pasado y futuro. La facticidad, el haber sido, el estar arrojado, la necesidad, la culpa son otros tantos modos existenciales del pasado. La existencia, el anticiparse a sí mismo, la preocupación, el proyecto, la resolución, el ir discurriendo ya ahora hacia la muerte son modos existenciales del futuro. No queda presente alguno en el que pudiese detenerse el ser ahí auténtico para permanecer en él. Procedente de su pasado, el ser ahí se arroja a proyectar su futuro; se ve confrontado con su límite más extremo, la muerte; vuelve de esta mirada a la nada a su mera facticidad, a lo absolutamente dado de su haber llegado a ser esto, y precisamente aquí y ahora, y asumiendo y «repitiendo» eso que ha llegado a ser lo lleva hacia delante con una decisión engendrada por la muerte. Este no es un presente en el que se pudiese permanecer, sino únicamente la crisis entre lo ya sido y lo venidero, el instante agudizado como tal y situado en el filo de la navaja de la decisión que se lanza hacia el futuro.
+                </p>
+                <p>
+                    Este incesante dinamismo tiene un enorme atractivo para el espíritu contemporáneo. Con todo, no deja de haber un enigma en este desvanecimiento del presente como lugar de contenidos auténticos, en su reducción al poco hospitalario punto cero de una resolución meramente formal. ¿Qué situación metafísica tiene a su espalda? En este punto hemos de hacer otra observación. Además del «presente» existencial del instante, también hay un presente de cosas. La presencia de estas últimas, el presente que comparto con ellas, ¿no me concederá un presente de otro tipo? Pero hemos aprendido de <span class="text-cyan-400 font-medium">Heidegger</span> que las cosas están primariamente «a mano», esto es, de modo que podemos utilizarlas o hacernos con ellas, por lo que hacen referencia al proyecto de la existencia preocupada y por tanto están incluidas en el dinamismo futuro-pasado. Con todo, también pueden ser neutralizadas y convertidas en objetos tales que meramente «los hay», indiferentes, y el correspondiente modo de ser es un paralelo objetivo a lo que en el lado existencial es el «haber caído»: falso presente. Lo que meramente lo hay, el «ahí» de las meras cosas naturales, está ahí solamente para que apartemos la vista de la relevancia de la situación existencial y del trato preocupado con las cosas. Es ser desnudo y alienado hasta convertirse en un mero objeto. Este es el sentido de ser que aquí conserva la naturaleza como polo de referencia de la teoría —un deficiente sentido de ser— y esa referencia en la que está tan objetualizada es un defectuoso modo de la existencia, su caída de la futureidad de la preocupación en el ocioso presente de la curiosidad. (Me refiero siempre a <span class="text-amber-500">Ser y tiempo</span>, no al <span class="text-cyan-400 font-medium">Heidegger</span> posterior, que ciertamente no es un «existencialista».)
+                </p>
+                <p>
+                    Esta desvalorización existencialista de la naturaleza refleja de modo patente el vaciamiento espiritual al que la somete la ciencia natural moderna, y esta última tiene puntos en común con el desprecio gnóstico de la naturaleza. Ninguna filosofía se ha preocupado tan poco de ella como el existencialismo, para el cual no ha conservado dignidad alguna.
+                </p>
+                <p>
+                    La mirada a lo que está ahí, a la naturaleza tal y como ella es en sí misma, al ente, recibió de los antiguos el nombre de <span class="text-amber-500 italic">theoria</span>, contemplación. Pero si a la contemplación no le queda otro objeto que lo que meramente hay, desprovisto de toda relevancia, pierde la dignidad que en otro tiempo poseía, e igualmente pierde el presente en el que retiene al contemplador mediante la presencia de sus objetos. La <span class="text-amber-500 italic">theoria</span> gozaba de esta dignidad a causa de sus presupuestos platónicos, esto es, debido a que en las formas de las cosas aprehendía objetos eternos, una trascendencia del ser inmutable entrevista a través de la transparencia del devenir. El ser inmutable es presente perpetuo, y de él puede participar la contemplación en los breves lapsos del presente temporal.
+                </p>
+                <p>
+                    Es por tanto la eternidad, y no el tiempo, lo que nos concede presente y le otorga un estatus propio en el fluir del tiempo, y en la pérdida de la eternidad es en donde reside la responsabilidad de la pérdida de un presente auténtico. Esa pérdida de la eternidad es la desaparición de la «esfera de las ideas y de los ideales» en la que <span class="text-cyan-400 font-medium">Heidegger</span> ve el verdadero sentido del dictum de <span class="text-cyan-400 font-medium">Nietzsche</span> «Dios ha muerto». Con otras palabras, dicha pérdida supone la victoria sin condiciones del nominalismo sobre el realismo. Por ello, el mismo fenómeno que está en la base del nihilismo está también en la base de la radical temporalidad de la imagen heideggeriana de la existencia, en la que el presente no es otra cosa que el momento de la crisis entre el pasado y el futuro. Cuando los valores no se descubren en la contemplación del ser (como lo bueno y bello de <span class="text-cyan-400 font-medium">Platón</span>), sino que se ponen como proyectos de la voluntad, la existencia queda de hecho condenada a una continua futureidad, con la muerte como objetivo, y una resolución meramente formal, sin un nomos para esa resolución, se convierte en la fase previa de la nada para la nada. En palabras de <span class="text-cyan-400 font-medium">Nietzsche</span> ya citadas: «Quien perdió lo que tú perdiste, no para en sitio alguno».
+                </p>
+            </section>
+
+            <!-- SECCIÓN VI -->
+            <section id="seccion-6" class="mb-24 border-l-4 border-amber-500/50 pl-6 md:pl-10">
+                <h2 class="text-2xl md:text-3xl font-serif text-white mb-8">VI. La Indiferencia de la Naturaleza</h2>
+                <p>
+                    Una vez más, el curso de nuestra investigación nos remite al dualismo entre el hombre y la <span class="text-amber-500 italic">physis</span> como trasfondo metafísico de la situación nihilista. Es patente la siguiente diferencia cardinal entre el dualismo gnóstico y el existencialista: el hombre gnóstico está arrojado a una naturaleza antidivina y por ello antihumana; el hombre moderno lo está a una naturaleza indiferente. Solo esta última tesis lleva implícito el vacío absoluto, el abismo realmente sin fondo. Lo hostil y demoníaco sigue siendo antropomórfico, familiar incluso en su índole de ajeno, y la contraposición que comporta no deja de proporcionar a la existencia una dirección. Ciertamente, se trata de una dirección negativa, pero que en cualquier caso está respaldada por la sanción de la trascendencia negativa, para la cual la positividad del mundo constituye su contrario cualitativo.
+                </p>
+                <p>
+                    La naturaleza neutral de la ciencia moderna no cuenta ni siquiera con esta cualidad antagónica, y de esa naturaleza no se puede obtener dirección alguna. Esta circunstancia hace al nihilismo moderno mucho más radical y desesperado de lo que podía serlo el nihilismo gnóstico con todo su horror ante el mundo y su rebelión contra sus leyes. Que la naturaleza no se preocupe, es el verdadero abismo. Que solo el hombre se preocupe, que en su finitud no tenga ante sí otra cosa que la muerte, que esté solo con su contingencia y con la objetiva falta de sentido de sus proyectos de sentido, es verdaderamente una situación sin precedentes.
+                </p>
+                <p>
+                    Pero precisamente esta diferencia, que nos desvela la mayor profundidad del nihilismo moderno, pone en cuestión su coherencia interna. A pesar de todos sus elementos fantásticos, el dualismo gnóstico al menos no era contradictorio. La idea de una naturaleza demoníaca, contra la que el sí mismo tiene que luchar a fin de ganarse para sí, tiene sentido. Pero ¿qué sucede con una naturaleza indiferente, que sin embargo contiene en su seno aquello para lo cual su propio ser significa algo? La expresión de estar arrojado al mundo es un resto de una metafísica dualista para cuyo uso el punto de vista no metafísico carece de todo derecho. ¿Cómo se puede estar arrojado sin alguien que arroje y un lugar desde el que se arroje? El existencialista debería decir más bien que el ser humano —ese sí mismo consciente, preocupado, sentiente— ha sido arrojado por la naturaleza. Si eso sucedió de manera ciega, tenemos que el ser dotado de vista es un producto de lo ciego, el que se preocupa un producto de lo despreocupado, y que una naturaleza teleológica ha sido suscitada ateleológicamente.
+                </p>
+                <p>
+                    Esta paradoja ¿no pone en cuestión la entera concepción de una naturaleza indiferente, de esa abstracción de la ciencia natural? El antropomorfismo ha sido expulsado del concepto de naturaleza tan por entero que ni siquiera al hombre se le puede seguir concibiendo de modo antropomórfico, y tampoco él es más que una casualidad de esa naturaleza. Producto de lo indiferente, también su ser tiene que ser indiferente. El encuentro con su mortalidad no tiene entonces otra repercusión que la de justificar la reacción expresada en el «comamos y bebamos, que mañana moriremos». No tiene sentido preocuparse por algo que no tiene tras de sí sanción alguna en un propósito creador. Pero si es correcta la intuición de <span class="text-cyan-400 font-medium">Heidegger</span>, más profunda, de que en vista de nuestra finitud nos damos cuenta de que no solo nos importa existir, sino también cómo existimos, en ese caso el mero hecho de que en algún lugar del mundo hay un interés de ese tipo tiene que cualificar también la totalidad que contiene este estado de cosas, y tanto más cuanto que es ella quien le ha dado origen.
+                </p>
+                <p>
+                    El rompimiento entre el hombre y el ser total está en la base del nihilismo. La cuestionabilidad lógica de ese rompimiento, esto es, de un dualismo sin metafísica, por lo tanto de un dualismo con presupuestos monistas, no le hace ser menos real, ni a su alternativa más aceptable. La mirada fija en el sí mismo aislado a la que dicho rompimiento condena al hombre puede que quiera cambiarse por un naturalismo monista, el cual, a la vez que el rompimiento, eliminaría la idea del hombre en cuanto tal. El espíritu humano se halla entre esta Escila y aquella Caribdis, su hermana gemela. Si se le abre o no un tercer camino que evite la alienación dualista y sin embargo guarde lo suficiente de la intuición dualista para conservar la humanidad del hombre, es algo que toca averiguar a la filosofía.
+                </p>
+            </section>
+
+        </article>
+
+        <!-- Panel de Notas al Pie (Smart Tooltip) -->
+        <div id="footnote-panel" class="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl bg-slate-900/95 border border-slate-700 p-6 rounded-lg shadow-2xl backdrop-blur-md z-50">
+            <p id="footnote-content" class="text-sm text-slate-300 font-light leading-relaxed"></p>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <BookNav current="epv-11" />
+
+    <footer class="bg-slate-950 border-t border-slate-900 py-8">
+        <div class="max-w-4xl mx-auto px-6 text-center">
+            <p class="text-xs text-slate-500 font-medium tracking-widest uppercase mb-2">OCVM Book Gem</p>
+            <p class="text-[10px] text-slate-600 font-serif italic">Digitalización basada en la obra de Hans Jonas</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script is:inline>
+        // 1. Progress Bar Logic
+        window.onscroll = function() {
+            let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            let scrolled = (winScroll / height) * 100;
+            document.getElementById("myBar").style.width = scrolled + "%";
+        };
+
+        // 2. Data de Notas al Pie
+        const footnotesData = {
+            "1": "F. Nietzsche, Der Wille zur Macht (1887), § 1 (trad. J. M.).",
+            "2": "B. Pascal, Pensées, ed. Brunschvicg, fr. 205 (trad. española: Pensamientos, trad., introducción y notas de J. Llansó, Alianza, Madrid, 1996, p. 39); ibid.: «El silencio eternal de estos espacios infinitos me aterra».",
+            "3": "Ibid., fr. 347: «El hombre no es más que una caña, la más frágil de la naturaleza, pero es una caña pensante. No hace falta que el universo entero se arme para destruirla; un vapor, una gota de agua es suficiente para matarlo. Pero, aun cuando el universo le aplastase, el hombre sería todavía más noble que lo que le mata, puesto que él sabe que muere y la ventaja que el universo tiene sobre él. El universo no sabe nada» (p. 91 de la trad. española cit.).",
+            "4": "Ibid., fr. 72: «Que el hombre se vea a sí mismo como perdido*, y que, desde esa pequeña celda en la que se encuentra alojado, quiero decir el universo, aprenda...» (p. 76 de la trad. española cit.). *Una variante del texto reza desde aquí: «en la infinita extensión de las cosas y se asombre en esta estrecha mazmorra en que se encuentra, que solo le permite mirar al universo que presenta ante sus ojos con una grandeza tanto más sorprendente cuanto que él mismo no es más que un puntito» (trad. J. M.).",
+            "5": "F. Nietzsche, Poesía completa, edición y traducción de Laureano Pérez Latorre, Trotta, Madrid, 1998, p. 140.",
+            "6": "Cf. B. Pascal, op. cit., fr. 72: «En fin, el mayor rasgo sensible de la omnipotencia de Dios es que nuestra imaginación se pierde en este pensamiento [en el de la inmensidad de los espacios cósmicos]» (p. 76 de la trad. española cit.).",
+            "7": "Marción, según Tertuliano, Contra Marcionem, 1, 14.",
+            "8": "Der Wille zur Macht, § 2 (trad. J. M.).",
+            "10": "M. Heidegger, Holzwege, p. 199 (trad. española: Sendas perdidas, trad. de J. Rovira Armengol, Losada, Buenos Aires, 1960, p. 175).",
+            "11": "Ibid., p. 200 (p. 176 de la trad. española cit.).",
+            "12": "J. P. Sartre, L'existentialisme est un humanisme, Paris, 1946, pp. 33 s. (trad. española: El existencialismo es un humanismo, trad. de V. Prati de Fernández, Edhasa, Barcelona, 1991).",
+            "13": "M. Heidegger, Über den Humanismus, Frankfurt, 1949, p. 13 (trad. española: Carta sobre el humanismo, versión de R. Gutiérrez Girardot, Taurus, Madrid, 1966).",
+            "14": "«Animal» en sentido griego (=zoon) no significa animal = bestia, sino todo «ser animado (= vivo)», excluyendo a las plantas pero incluyendo a los demonios, a los dioses, a los astros animados y en definitiva al universo animado como el mayor y más perfecto ser vivo (ver Platón, Timeo 30 c; Cicerón, De natura deorum II, 11-14), y estar insertado en esta escala no implica rebajamiento alguno del hombre...",
+            "15": "Clemente de Alejandría, Excerpta ex Theodoto, 78, 2."
+        };
+
+        // 3. Smart Footnotes Logic
+        const footnoteRefs = document.querySelectorAll('.footnote-ref');
+        const footnotePanel = document.getElementById('footnote-panel');
+        const footnoteContent = document.getElementById('footnote-content');
+        
+        // Función para mostrar
+        function showFootnote(id) {
+            if (footnotesData[id]) {
+                footnoteContent.innerHTML = `<strong class="text-cyan-400">[${id}]</strong> ${footnotesData[id]}`;
+                footnotePanel.classList.add('active');
+            }
+        }
+
+        // Función para ocultar
+        function hideFootnote() {
+            footnotePanel.classList.remove('active');
+        }
+
+        // Event Listeners
+        footnoteRefs.forEach(ref => {
+            ref.addEventListener('mouseenter', () => showFootnote(ref.dataset.noteId));
+            ref.addEventListener('mouseleave', hideFootnote);
+            // Soporte táctil: Click toggle
+            ref.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevenir burbujeo
+                if (footnotePanel.classList.contains('active') && footnoteContent.innerText.includes(`[${ref.dataset.noteId}]`)) {
+                    hideFootnote();
+                } else {
+                    showFootnote(ref.dataset.noteId);
+                }
+            });
+        });
+
+        // Cerrar panel al hacer click fuera en móvil
+        document.addEventListener('click', (e) => {
+            if (!footnotePanel.contains(e.target) && !e.target.classList.contains('footnote-ref')) {
+                hideFootnote();
+            }
+        });
+
+    </script>
+
+</BaseLayout>
