@@ -1,0 +1,559 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteNav from "../components/SiteNav.astro";
+---
+<BaseLayout
+  title="Capítulo 6 | El Principio Vida - Hans Jonas"
+  lang="es"
+  bodyClass="selection:bg-amber-500 selection:text-slate-900 min-h-screen flex flex-col overflow-x-hidden"
+>
+  <Fragment slot="head">
+    <script is:inline src="https://cdn.tailwindcss.com"></script>
+    <script is:inline src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script is:inline src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <!-- Lucide: requerido por el nav compartido (SiteNav) -->
+    <script is:inline src="https://unpkg.com/lucide@latest"></script>
+    <style is:global>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* slate-950 */
+            color: #94a3b8; /* slate-400 */
+            scroll-behavior: smooth;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 70%);
+            background-attachment: fixed;
+        }
+
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* --- Barra de Progreso de Lectura --- */
+        #progress-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            z-index: 200; /* Por encima del menú */
+            background: transparent;
+        }
+        
+        #progress-bar {
+            height: 100%;
+            background-color: #22d3ee; /* cyan-400 */
+            width: 0%;
+            box-shadow: 0 0 10px #22d3ee;
+            transition: width 0.1s ease-out;
+        }
+
+        /* --- Estilos de Navegación Desktop --- */
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+            cursor: pointer;
+            display: block;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -2px;
+            left: 0;
+            background-color: #f59e0b;
+            transition: width 0.3s ease;
+        }
+        
+        /* Solo aplicar hover underline en desktop */
+        @media (min-width: 768px) {
+            .nav-item:hover .nav-link::after {
+                width: 100%;
+            }
+            
+            /* Dropdown Desktop: Absolute & Hover */
+            .nav-item:hover .dropdown-menu {
+                opacity: 1;
+                visibility: visible;
+                transform: translateX(-50%) translateY(0);
+            }
+            
+            .dropdown-menu {
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%) translateY(10px);
+                min-width: 320px;
+                max-height: 80vh;
+                overflow-y: auto;
+                opacity: 0;
+                visibility: hidden;
+            }
+            
+            .dropdown-menu::-webkit-scrollbar {
+                width: 6px;
+            }
+            .dropdown-menu::-webkit-scrollbar-thumb {
+                background-color: #475569;
+                border-radius: 3px;
+            }
+
+            .dropdown-menu::before {
+                content: '';
+                position: absolute;
+                top: -6px;
+                left: 50%;
+                transform: translateX(-50%);
+                border-width: 0 6px 6px 6px;
+                border-style: solid;
+                border-color: transparent transparent rgba(255, 255, 255, 0.1) transparent;
+            }
+            .dropdown-menu::after {
+                content: '';
+                position: absolute;
+                top: -20px;
+                left: 0;
+                width: 100%;
+                height: 20px;
+                background: transparent;
+            }
+        }
+
+        /* --- Estilos Comunes Dropdown --- */
+        .dropdown-menu {
+            background-color: rgba(2, 6, 23, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease-in-out;
+            z-index: 90;
+        }
+
+        .dropdown-link {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            border-radius: 0.25rem;
+            line-height: 1.4;
+            text-align: left;
+            text-decoration: none;
+        }
+
+        .dropdown-link:hover {
+            color: #f59e0b;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .dropdown-header {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #f59e0b;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: block;
+        }
+
+        /* --- Ajustes Móviles --- */
+        @media (max-width: 767px) {
+            #mobile-menu-container {
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+            
+            .nav-item {
+                width: 100%;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                padding: 0;
+            }
+
+            .nav-item-content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.5rem;
+            }
+
+            .dropdown-menu {
+                position: static;
+                transform: none;
+                opacity: 1;
+                visibility: visible;
+                width: 100%;
+                box-shadow: none;
+                background-color: rgba(0, 0, 0, 0.3);
+                border: none;
+                border-top: 1px solid rgba(255,255,255,0.05);
+                display: none;
+                margin-top: 0;
+                max-height: none;
+                overflow-y: visible;
+            }
+            
+            .arrow-icon {
+                transition: transform 0.3s;
+            }
+            .nav-item.active .arrow-icon {
+                transform: rotate(180deg);
+            }
+        }
+
+        /* --- NOTAS AL PIE (Centradas en ventana) --- */
+        .footnote-ref {
+            cursor: pointer;
+            position: relative;
+            display: inline-block;
+        }
+
+        .footnote-ref .footnote-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s;
+            
+            /* Posicionamiento FIJO centrado en la ventana inferior */
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            
+            /* Dimensiones: Ancho completo pero con márgenes */
+            width: 90vw; 
+            max-width: 1000px; /* Límite para pantallas muy grandes */
+            
+            /* Estilo visual */
+            background-color: rgba(15, 23, 42, 0.98); 
+            border: 1px solid rgba(34, 211, 238, 0.3); /* Borde sutil celeste */
+            color: #e2e8f0;
+            padding: 1.5rem 2rem;
+            border-radius: 0.5rem;
+            font-size: 0.95rem; /* Texto legible */
+            font-family: 'Inter', sans-serif;
+            font-weight: normal;
+            line-height: 1.6;
+            z-index: 1000; /* Máxima prioridad */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            text-align: justify;
+            pointer-events: none; /* Permite scroll mientras se lee */
+        }
+
+        /* Mostrar al hacer hover */
+        .footnote-ref:hover .footnote-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Ajustes scrollbar general */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+  </Fragment>
+
+  <SiteNav />
+
+
+    <!-- Barra de Progreso Superior -->
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+
+    <!-- Navegación Responsiva -->
+    <nav class="fixed w-full z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/5 transition-all duration-300 top-20">
+        <div class="w-full px-4 md:px-12">
+            <div class="flex justify-between items-center h-16">
+                
+                <!-- Logo -->
+                <a href="#" class="flex items-center space-x-2 group">
+                    <div class="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-150 transition-transform"></div>
+                    <span class="text-[10px] md:text-xs font-bold tracking-widest uppercase text-slate-200 group-hover:text-white transition-colors">
+                        <span class="text-cyan-400">Hans Jonas</span> <span class="text-slate-600 mx-1">|</span> Cap. 6
+                    </span>
+                </a>
+
+                <!-- Botón Hamburguesa -->
+                <button id="menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+
+                <!-- Menú Desktop & Contenedor Móvil -->
+                <div id="mobile-menu-container" class="hidden md:flex absolute md:static top-16 left-0 w-full md:w-auto bg-slate-950 md:bg-transparent flex-col md:flex-row md:items-center overflow-y-auto md:overflow-visible max-h-[80vh] md:max-h-full transition-all">
+                    
+                    <ul class="flex flex-col md:flex-row md:items-center text-[11px] font-medium uppercase tracking-widest text-slate-400 w-full md:w-auto">
+                        
+                        <!-- Dropdown de Secciones del Capítulo -->
+                        <li class="nav-item group md:mx-3">
+                            <div class="nav-item-content">
+                                <span class="nav-link hover:text-white cursor-pointer text-amber-500">ÍNDICE DEL CAPÍTULO</span>
+                                <button class="md:hidden p-2 arrow-icon" onclick="toggleDropdown(this)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu">
+                                <span class="dropdown-header">Secciones</span>
+                                <a href="#intro" class="dropdown-link" onclick="closeMobileMenu()">Introducción</a>
+                                <a href="#sec-i" class="dropdown-link" onclick="closeMobileMenu()">I. Diferencias: animal vs vegetal</a>
+                                <a href="#sec-ii" class="dropdown-link" onclick="closeMobileMenu()">II. Movimiento, percepción y deseo</a>
+                                <a href="#sec-iii" class="dropdown-link" onclick="closeMobileMenu()">III. Relación mediada con el entorno</a>
+                                <a href="#sec-iv" class="dropdown-link" onclick="closeMobileMenu()">IV. El hiato espacial y temporal</a>
+                                <a href="#sec-v" class="dropdown-link" onclick="closeMobileMenu()">V. Riesgo, emoción e individuación</a>
+                            </div>
+                        </li>
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Script de Navegación y Barra de Progreso -->
+    <script is:inline>
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu-container');
+        const progressBar = document.getElementById('progress-bar');
+
+        // Navegación Móvil
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            mobileMenu.classList.toggle('flex');
+        });
+
+        function toggleDropdown(button) {
+            const navItem = button.closest('.nav-item');
+            const dropdown = navItem.querySelector('.dropdown-menu');
+            navItem.classList.toggle('active');
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            } else {
+                dropdown.style.display = 'block';
+            }
+        }
+
+        function closeMobileMenu() {
+            if (window.innerWidth < 768) {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('flex');
+                document.querySelectorAll('.dropdown-menu').forEach(d => d.style.display = 'none');
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            }
+        }
+
+        // Lógica de Barra de Progreso
+        window.addEventListener('scroll', () => {
+            const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrollPercentage = (scrollTop / scrollHeight) * 100;
+            progressBar.style.width = scrollPercentage + '%';
+        });
+    </script>
+
+    <!-- Contenido Principal -->
+    <div class="flex-grow pt-32 md:pt-48 pb-16 md:pb-24 px-6 md:px-12 w-full">
+        <main class="w-full mx-auto text-center">
+            
+            <!-- Bloque Hero: Título del Capítulo -->
+            <header class="mb-24 relative animate-fade-in-up">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-amber-500/5 rounded-full blur-3xl -z-10"></div>
+                
+                <h1 class="text-4xl sm:text-5xl md:text-7xl font-black text-slate-100 mb-6 leading-none tracking-tighter drop-shadow-2xl break-words">
+                    MOVIMIENTO Y SENTIMIENTO<br>
+                    <!-- Subtítulo con espaciado amplio -->
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-500 text-2xl md:text-4xl block mt-6 font-serif italic tracking-[0.3em]" style="word-spacing: 0.4em;">Acerca del alma de los animales</span>
+                </h1>
+                
+                <p class="mt-8 text-sm md:text-base text-amber-500 font-bold tracking-widest uppercase mx-auto">
+                    CAPÍTULO 6
+                </p>
+                
+                <div class="mt-16 flex justify-center">
+                    <div class="h-24 w-px bg-gradient-to-b from-amber-500/0 via-amber-500/50 to-amber-500/0"></div>
+                </div>
+            </header>
+
+            <!-- Contenido del Capítulo -->
+            <div class="w-full mx-auto text-left">
+                
+                <!-- Introducción -->
+                <section id="intro" class="mb-24 scroll-mt-32">
+                    <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify px-4 md:px-0">
+                        <p>
+                            En el capítulo anterior se han hecho visibles las antinomias incluidas en la dialéctica de la <span class="text-amber-500 font-bold">libertad</span> de la vida cuando esa dialéctica se entiende como una relación materia-forma: convierten la vida en un modo de ser profundamente paradójico. Recordémoslas una vez más, ahora que nos disponemos a estudiar la existencia animal y entramos así en un nuevo nivel de consideración, dado que esas antinomias se mantienen también en este nuevo plano como temas básicos de los que no cabe prescindir.
+                        </p>
+                        <p>
+                            Con la emancipación de la forma viene dada inseparablemente la constitutiva <span class="text-amber-500 font-bold">indigencia</span> de la vida. La <span class="text-amber-500 font-bold">libertad</span> respecto de la materia, que actúa en el ser metabolizante de la forma, implica ipso facto <span class="text-amber-500 font-bold">dependencia</span> respecto de la materia, y concretamente en el mismo grado que alcance el dinamismo transformador de la forma, que por otra parte es precisamente el índice de su <span class="text-amber-500 font-bold">libertad</span> ontológica. La no-identidad con la propia materia -que desde el punto de vista positivo es la índole de diferente que posee la forma en tanto que existe como ella misma, y desde el negativo la insuficiencia de toda materialidad simultánea de la misma- hace que la vida coincida en el tiempo con tanta más materia: por lo tanto, no hace disminuir en el cómputo global la materialidad de la forma desligada de la ecuación material fija, y en ese sentido <span class="text-amber-500 font-bold">«liberada»</span>, sino que por el contrario hace aumentar esa materialidad.
+                        </p>
+                        <p>
+                            Al abandonar la seguridad (incuestionabilidad) de la identidad física para internarse osadamente en el mundo de la diferencia y de la <span class="text-amber-500 font-bold">libertad</span>, la forma vital se revela como superior a la materia, a la par que queda sometida a toda la materia de su entorno. Dado que esa salida sacrificó la completitud simultánea a la realización sucesiva, la relación con la materia se ha convertido en transitoria, por lo tanto en accidental en cada caso, pero no por ello esa relación deja de ser tan urgente como prolongada: multiplicándose en el tiempo por la sucesión de las materializaciones; ampliada en cada «ahora» por el <span class="text-amber-500 font-bold">horizonte</span> de materia potencial, que es precisamente la que se necesita; perteneciente a la materia actual, con el agravamiento que supone el paso del poseer indiferente al tener que adquirir.
+                        </p>
+                        <p>
+                            Todas las auténticas características de la vida, sean cuales sean los conceptos en los que explicitemos cada estado de cosas y sea cual sea el aspecto que subrayemos en el mismo, presentan esta doble cara. Así, la independencia frente a la naturaleza, establecida y afirmada en la causalidad propia del organismo (que disfruta de autonomía extramecanicista), tiene que pagar el precio completo de la dependencia existencial respecto de la naturaleza, una dependencia enteramente ajena al estable ser de la materia carente de vida.
+                        </p>
+                        <p>
+                            Una vez más: la clausura de la totalidad funcional hacia dentro es, en la ejecución de la funcionalidad misma, apertura correlativa al mundo. El <span class="text-amber-500 font-bold">sí mismo</span> de la vida particular se opone a todo lo demás como a un mundo exterior o a lo ajeno, pero precisamente esa oposición se actualiza, en virtud de la <span class="text-amber-500 font-bold">«trascendencia»</span> (que descansa en ella y desempeña el cometido del «frente a» del lado del sí mismo), como recepción de lo exterior -qua exterior- en lo interior o como el estar fuera de sí mismo de lo interior en lo exterior. La particularización de la unidad de vida como individuo y su radical apartamiento del universo de lo coordinado e intercambiable entre sí implican precisamente la capacidad de entrar en contacto con la multiplicidad de lo otro, y, por cierto, la implican en proporción directa: cuanto más decidida sea la individualidad, y por tanto la particularización, a lo largo del progreso de las formas de la vida, más y en la misma proporción- irá creciendo en longitud y en pluralidad el radio de sus contactos posibles.
+                        </p>
+                        <p>
+                            Es decir, cuanto más centralizado y puntual sea el yo de la vida, más amplia será su periferia, y viceversa, cuanto más inserto esté todavía en el conjunto de la naturaleza, más indeterminado en su diferencia y más difuminado en su centralidad, más estrecha será su periferia de contactos con el mundo. La vida guarda por principio las <span class="text-amber-500 font-bold">distancias</span> respecto del mundo, de cuya homogeneidad se separa la forma retirándose a su propio modo de ser, pero precisamente esta distancia proporciona la dimensión para la referencia al mundo que tiene sus raíces en las necesarias relaciones reales que hemos mencionado, pero va más allá de ellas, llegando hasta la universalidad.
+                        </p>
+                        <p>
+                            Hemos de mencionar finalmente la precariedad de esta existencia, que viene a ser exactamente la otra cara de la soberanía de su autofundación: la identidad que se constituye a sí misma, precisamente porque es un producto funcional entre dos instantes y no un estado permanente, es de duración precaria y revocable, y la índole de creadora con la que paga los gastos de su continuación es una incesante evitación de la extinción. Esta identidad, cuya conservación solo es posible como constante renovación -la forma es libre en relación con la materia, pero no libre de ella- está desde el comienzo bajo el signo de lo perecedero, de la aniquilabilidad y de la muerte (cf. más arriba pp. 17-18).
+                        </p>
+                        <p>
+                            Pero es en la existencia del animal donde salen a plena luz los rasgos de la naturaleza básica de lo orgánico que aquí hemos tratado de esbozar.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Sección I -->
+                <section id="sec-i" class="mb-24 scroll-mt-32">
+                    <h2 class="text-2xl md:text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">
+                        I. DIFERENCIAS: ANIMAL VS VEGETAL
+                    </h2>
+                    <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify px-4 md:px-0">
+                        <p>
+                            Tres características distinguen la vida animal de la vegetal: la capacidad de moverse, la <span class="text-amber-500 font-bold">percepción</span> y el <span class="text-amber-500 font-bold">sentimiento</span>. La conexión necesaria entre movimiento y percepción es palmaria, y ya fue estudiada por <span class="text-cyan-400 font-bold">Aristóteles</span>, mientras que la conexión necesaria entre movimiento y sentimiento (movimiento del ánimo) precisa ser investigada con más detalle. Esa investigación mostrará que las tres facultades son expresión de un principio común.
+                        </p>
+                        <p>
+                            La simultánea aparición de la percepción y el movimiento abre un importante capítulo de la historia de la libertad, que arrancó con la existencia orgánica como tal y se manifestó por primera vez en la inicialísima intranquilidad de la sustancia metabolizante. La progresiva formación de esas dos facultades a lo largo de la evolución implica una creciente exploración del mundo y una creciente individuación del sí mismo. La apertura al mundo es una condición básica de la vida como tal. Su manifestación más elemental es la mera estimulabilidad, la sensibilidad para estímulos que la sencilla célula muestra como un irrenunciable aspecto de su estar viva. La estimulabilidad es el germen y, en cierto modo, el átomo del tener mundo, al igual que la célula misma es el germen y el átomo del organismo mayor que ella. Ese germen de la receptividad sensorial se despliega en una clara y múltiple referencia al mundo, de la misma manera que las células crecen hasta formar el organismo con su diferenciada composición. En los dos casos, lo más complejo es también lo más fuertemente individuado, y también en los dos casos la forma inicial elemental (la célula en sí, la estimulabilidad en sí) sigue siendo lo que es a la vez que hace de parte atómica en la síntesis del orden superior.
+                        </p>
+                        <p>
+                            La referencia real al mundo no aparece hasta que se desarrollan sentidos específicos, estructuras motoras definidas y un sistema nervioso central. La diferenciación de la sensibilidad, ligada a la integración central de sus múltiples datos, proporciona los comienzos de un mundo real de objetos. El trato activo con estos en el ejercicio de la facultad de movimiento (que por su parte presupone centralización, concretamente centralización del control) somete al mundo que se nos ofrece sensiblemente a la libertad que se hace valer a sí misma, y que de esa manera responde, en un nivel más alto, a la necesidad fundamental del organismo.
+                        </p>
+                        <p>
+                            Debemos entender las capacidades que aquí van saliendo a la luz como desarrollos del elemento de <span class="text-amber-500 font-bold">«trascendencia»</span>, que (como mostró el anterior capítulo) está ínsito en la existencia metabolizante como tal. La relación transitoria de la forma orgánica con su materia abre desde el principio dos «horizontes», «entrando» en los cuales la vida se supera a sí misma incesantemente. Internamente, entra en el horizonte del tiempo como la siguiente fase de su existencia hacia la que se va moviendo; externamente, entra en el horizonte del espacio como el lugar del «otro» co-presente del que depende para darse continuación a sí misma. Por su propia naturaleza, la vida está vuelta simultáneamente hacia adelante y hacia fuera. Ahora bien, la principal característica de la evolución animal es que, a diferencia de lo que sucede en la vida vegetal, el espacio, que de suyo era la dimensión de la dependencia, se va transformando progresivamente en una dimensión de libertad, y concretamente lo va haciendo en virtud del desarrollo paralelo de estas dos facultades: la de moverse de un lado para otro y la de percibir a distancia. Sí, únicamente gracias a estas facultades se le abre realmente el espacio a la vida, mientras que la situación inicial de estimulabilidad y estimulación limita la experiencia de la diferencia mundo interno/mundo externo a la mera vivencia del contacto, la cual no permite que el «fuera» adquiera una dimensión real, sino que le hace coincidir difusamente con la superficie sensible del propio organismo.
+                        </p>
+                        <p>
+                            Menos patente -y por ello habremos de exponerla en las páginas que siguen- es la circunstancia de que la otra dimensión de «trascendencia», el tiempo, se va abriendo en virtud del desarrollo simultáneo de otra facultad, la de la emoción, pero con arreglo al mismo principio: el de la <span class="text-amber-500 font-bold">«distancia»</span> entre el sí mismo y su objeto, solo que aquí la distancia es la del tiempo. Esto es menos patente debido, entre otras cosas, a que a diferencia de la sensibilidad y la motilidad la emocionalidad (o el ánimo) carece de órganos externos que la hiciesen identificable y forzasen a tenerla en cuenta en un inventario físico. Y esta invisibilidad o completa interioridad (su expresión visible es siempre un acto de la facultad de movimiento) parece hacer de la emoción algo de lo que se puede prescindir en una descripción científica del comportamiento orgánico, como han mostrado hace mucho <span class="text-cyan-400 font-bold">Descartes</span> y recientemente de nuevo la cibernética.
+                        </p>
+                        <p>
+                            Así, pues, intentaremos mostrar la indisociable conexión recíproca que existe entre las tres facultades animales, especialmente la ligazón entre movimiento y emoción, para interpretar posteriormente su sentido en el marco más amplio de una teoría general de la vida.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Sección II -->
+                <section id="sec-ii" class="mb-24 scroll-mt-32">
+                    <h2 class="text-2xl md:text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">
+                        II. EL MOVIMIENTO LOCAL, LA PERCEPCIÓN Y EL DESEO
+                    </h2>
+                    <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify px-4 md:px-0">
+                        <p>
+                            El movimiento local del animal se dirige hacia un objeto o se aparta de él; es decir, es persecución o huida. Una persecución más prolongada, en la que el animal mide sus fuerzas para moverse con las de la presa a la que tiende, delata la posesión no solo de capacidades motoras y sensoriales muy desarrolladas, sino también la de evidentes fuerzas del sentimiento.
+                        </p>
+                        <p>
+                            No creo que nos equivoquemos mucho si suponemos que el número de fases intermedias a las que puede extenderse el propósito es un criterio para evaluar la altura alcanzada por el desarrollo emocional. Para recorrer la distancia entre el comienzo y el resultado de una serie de este tipo es necesaria una intención emocional constante. La aparición de movilidad dirigida durante trayectos de cierta longitud (como la que muestran los vertebrados) marca por tanto el surgimiento de la vida emocional. La avidez está en la raíz de la caza, el miedo en la de la huida. El deseo bajo el acicate de la necesidad es la presuposición básica de la facultad de movimiento, y la persecución (es decir, el dirigirse hacia el objeto) es el primer movimiento. La tendencia, y por lo tanto el deseo, están también muy cerca del impulso pre-animal de todo lo vivo en general, es decir, del interés básico de la vida por prolongarse a sí misma mediante la incesante impulsión de su proceso metabólico. Con todo, por mucho que el apetito expreso sea la traducción de este impulso vital fundamental al lenguaje de las condiciones animales, estas condiciones son sin embargo realmente distintas de las vegetales. Es la movilidad la que hace visible esa diferencia, pues no en vano consiste en la inclusión de distancia entre el instinto y su satisfacción, esto es, en la posibilidad de plantearse un objetivo remoto.
+                        </p>
+                        <p>
+                            Para detectar un objetivo de ese tipo se requiere percepción a distancia, por lo que aquí desempeña un importante papel el desarrollo de los sentidos. Para alcanzar ese objetivo, se requieren movimientos controlados, por lo que aquí desempeña un importante papel el desarrollo de la capacidad de movimiento. Ahora bien, para vivenciar lo percibido en la lejanía como objetivo sin que se difumine su condición de tal, de modo que el movimiento pueda mantenerse en marcha a lo largo del necesario lapso de esfuerzo y tiempo, se requiere el deseo, por lo que aquí tiene un importante papel que desempeñar el desarrollo del sentimiento. Una satisfacción todavía no asible es la condición esencial del deseo, y a su vez es el deseo quien hace posible la satisfacción aplazada.
+                        </p>
+                        <p>
+                            De esta manera, el deseo constituye el aspecto temporal de la misma situación cuyo aspecto espacial viene dado por la percepción. Desde ambos puntos de vista se abre distancia y se tiende un puente por encima de ella: la percepción presenta al objeto como «no aquí, pero sí allí»; el deseo presenta al objetivo como «todavía no, pero esperable»: la facultad de moverse, guiada por la percepción e impulsada por el deseo, transforma el allí en aquí y el todavía no en ahora. Sin la tensión de la distancia y el aplazamiento forzado por esta no habría ocasión alguna para el deseo o para la emoción. El gran secreto de la vida animal reside precisamente en el hiato que es capaz de mantener abierto entre interés inmediato y satisfacción mediada, es decir, en la pérdida de inmediatez que corresponde a la ganancia en campo de posibilidades.
+                        </p>
+                        <p>
+                            La sensibilidad, el sentimiento y la capacidad de moverse son otras tantas manifestaciones de este principio de mediatez, por lo tanto también del esencial <span class="text-amber-500 font-bold">«distanciamiento»</span> del ser animal. Si el sentimiento comporta la distancia entre las necesidades y su satisfacción, tiene su fundamento en la separación originaria entre sujeto y objeto, y en este punto coincide por tanto con la percepción y la capacidad de moverse, que igualmente incluyen en ellas mismas el elemento de la distancia. Desde todos estos puntos de vista, la «distancia» implica la escisión sujeto-objeto. Esta última se encuentra a su vez en la raíz del entero fenómeno de la animalidad y de su separación de la forma de vida vegetal. En lo que sigue, trataremos de comprender la naturaleza de esa separación.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Sección III -->
+                <section id="sec-iii" class="mb-24 scroll-mt-32">
+                    <h2 class="text-2xl md:text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">
+                        III. LA RELACIÓN MEDIADA CON EL ENTORNO
+                    </h2>
+                    <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify px-4 md:px-0">
+                        <p>
+                            Entre las propiedades fundamentales del organismo se cuenta la relación dentro-fuera, que usualmente se expresa mediante el par de conceptos «organismo-entorno». De este punto de partida, a saber, que la vida como tal tiene trato con un entorno, se debe mantener alejada toda inclusión prematura de la dualidad de sujeto y objeto. La condición de que se parte es un entorno que limita con el organismo: en este nivel, el entorno no es otra cosa que el medio que rodea inmediatamente al organismo y con el que este realiza las operaciones químicas de intercambio en que consiste el metabolismo. Esta situación de frontera material implica también que el proceso de intercambio es constante, y por tanto la inmediatez de la satisfacción concomitante con las constantes necesidades orgánicas. En este estado de continua alimentación no tiene cabida el deseo. A través del constante funcionamiento del dinamismo metabólico, las necesidades desembocan por sí mismas en su satisfacción. Es cierto que este dinamismo -que es la condición de que haya necesidades- manifiesta el interés fundamental de la vida en su propio discurrir, el cual solo puede avanzar mediante una constante autorrenovación. Pero la continua disponibilidad de materia que se necesita para la renovación de la forma no da ocasión alguna a que el interés por esa renovación tome la forma del apetito. El entorno y el sí mismo constituyen todavía un conjunto que funciona en virtud de su propia actividad, y en tanto no se produzca algún tipo de separación entre ambos no podrán darse el apetito ni el temor. La vida misma es quien practica esa separación: una rama especial de ella desarrolla la capacidad y la necesidad de ponerse en relación con un entorno ya no limítrofe y ya no inmediatamente disponible para las necesidades metabólicas de la vida.
+                        </p>
+                        <p>
+                            La separación entre la relación inmediata con el entorno y la relación mediada con el mismo coincide con la existente entre la planta y el animal, por lo que tiene que guardar también una estrecha relación con la diferencia entre sus respectivos tipos de metabolismo. Gracias a su capacidad de transformar directamente la materia anorgánica, mediante la síntesis, en combinaciones orgánicas, la planta está en condiciones de extraer sus alimentos de las reservas minerales del suelo, siempre disponibles, mientras que el animal depende de la presencia, no garantizada, de cuerpos orgánicos sumamente específicos e inestables. Por otra parte, la ingestión de alimentos más o menos sólidos, que la alimentación animal hace necesaria y que es bien distinta de la mera absorción osmótica de sustancias alimenticias solubles por parte de la planta, implica la inclusión de un estadio auxiliar «mecánico» (del aporte, del troceamiento, etc.) anterior al estadio directamente químico de la apropiación metabólica.
+                        </p>
+                        <p>
+                            Así contemplada, cuando se compara con el animal la planta muestra más bien superioridad que carencias. Pero la posesión de esta facultad de síntesis directa y la autosuficiencia que concede son la causa de la falta de aquellas otras características que los animales están obligados a desarrollar debido a los precarios métodos seguidos por su metabolismo. Observamos aquí que la independencia en sí no puede ser el valor vital último, dado que la vida es precisamente aquel modo de existencia material en el cual el ser se ha expuesto a la dependencia (cuya forma primaria es el metabolismo mismo) para adquirir a cambio de ella una libertad que le está vedada a la independencia propia de la materia inmutable. Por tanto, el logro de una independencia sumamente satisfactoria dentro de la esfera del metabolismo puede bloquear caminos evolutivos que de lo contrario tomaría la libertad, pagando para ello el precio de un incremento de su dependencia.
+                        </p>
+                        <p>
+                            En las raíces la planta «inventó» el medio más eficaz para aprovechar las ventajas inherentes a un organismo dotado de fotosíntesis. Gracias a ellas, la planta está eximida de la necesidad de moverse (a la par que privada de la posibilidad de hacerlo). Mediante su continuo contacto con la fuente de alimentación, la relación organismo-entorno funciona automáticamente, sin que se necesite aparato adicional alguno para adaptarse a cambios de corta duración. La inmediatez está aquí garantizada por la constante contigüidad entre el órgano de recepción y las reservas externas. En el ininterrumpido intercambio, las necesidades de cada momento, si bien siempre renovadas, no pueden adquirir las agudas aristas propias de la carencia. Dado que la satisfacción es simultánea a la actividad vital, no hay hiato alguno debido al cual las necesidades se hiciesen perceptibles como tales y hubiese que emprender una acción bajo el acicate del apetito.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Sección IV -->
+                <section id="sec-iv" class="mb-24 scroll-mt-32">
+                    <h2 class="text-2xl md:text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">
+                        IV. EL HIATO ESPACIAL Y TEMPORAL
+                    </h2>
+                    <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify px-4 md:px-0">
+                        <p>
+                            Si consideramos atentamente la situación en que nos encontramos, descubrimos tres aspectos de lo que aquí pueden querer decir «hiato» o su ausencia.
+                        </p>
+                        <p>
+                            De entrada descubrimos que, frente a la contigüidad material existente entre la planta y el entorno que la alimenta, en el caso del animal los objetos de su entorno relevantes para él siempre se encuentran a cierta distancia. Por ello, para las plantas «entorno» significa algo fundamentalmente distinto que para los animales. La planta forma un contexto constante con el medio que la rodea, en el que está más plenamente integrada de lo que un animal pueda nunca llegar a estar con su entorno.
+                        </p>
+                        <p>
+                            El segundo aspecto es la continuidad o discontinuidad temporal entre las necesidades y su satisfacción. También aquí el animal tiene que cerrar un hiato que representa en el tiempo lo mismo que representa en el espacio la distancia entre el animal y los objetos relevantes para él. Al igual que la percepción tiende un puente provisional sobre este último hiato, el sentimiento hace lo propio sobre el que ahora nos ocupa. Estos dos modos de intencionalidad expresan la mediatez de la existencia animal o la escisión entre el sí mismo y el mundo: la inmediatez de la vida de las plantas no conoce esa escisión, por lo que esos tipos de intencionalidad no tienen cabida en ellas. Sí la tienen en la vida animal, debido al espacio vacío que en lugar de la continuidad de la planta con el entorno- ella ha extendido alrededor de sí.
+                        </p>
+                        <p>
+                            El tercer aspecto, que viene a ser una consecuencia de esos hiatos en el espacio y en el tiempo, es la separación de la acción respecto de su fin, esto es, el fenómeno de la actividad mediada que observamos en los animales. La actividad típica de las plantas forma parte del proceso metabólico mismo. En cambio, en los movimientos de los animales estamos ante una actividad que se costea con el sobrante de operaciones metabólicas anteriores y que redundará en beneficio de su discurrir posterior, pero que en sí misma representa una actividad escindida de la actividad vegetativa -que continúa efectuándose por su parte- y libremente gastada, y que por lo tanto es «actividad» en un sentido enteramente nuevo. Es acción externa, que se superpone a la acción interna del sistema vegetativo y es parasitaria respecto de este último, con la única limitación de que sus resultados están destinados a seguir asegurando el ejercicio de aquellas funciones primarias. Que la acción vital esté mediada por el movimiento exterior es la característica distintiva de lo animal. Ese rodeo es la sede de la libertad y del riesgo propios de la vida animal. El movimiento dirigido hacia fuera es un gasto que no se recuperará hasta que se alcance finalmente el éxito.
+                        </p>
+                        <p>
+                            Pero este éxito no está asegurado. Para poder tener éxito en la medida de lo posible, la acción que se dirige hacia fuera debe estar constituida de manera que también pueda fracasar. Con otras palabras: tiene que ser una actividad que disponga libremente de las reservas del sistema de alimentación; «libremente», esto es, al albur de la buena suerte. Bajo las condiciones de la acción mediada, la posibilidad del error o del fracaso es correlativa a la del éxito. Las fuentes de ayuda para esa acción se tornan disponibles en virtud de la peculiaridad del metabolismo animal, que, al descomponer los resultados de la síntesis de las plantas, parasita como un todo la vida de estas últimas. Únicamente gracias a esta explotación a que se somete a las plantas se obtiene el sobrante de energía que después se puede gastar en la actividad no-vegetativa. Así es como el metabolismo animal hace posible la acción mediada. Pero también la hace necesaria. El animal que se alimenta de la vida que ya existe destruye continuamente sus suministros, mortales como estos son, y tiene que buscar más en algún otro sitio. En el caso de los carnívoros, cuyas presas son móviles, esta necesidad se incrementa proporcionalmente y obliga al recíproco desarrollo de esa presteza de la que han de participar tantas otras facultades del animal.
+                        </p>
+                        <p>
+                            La mediatez propia de la existencia animal está en la raíz de la motilidad, de la percepción y del sentimiento. Crea al individuo particular que se enfrenta al mundo. Este mundo es acogedor a la par que amenazante. Contiene las cosas que el animal solitario necesita, pero este ha de ponerse manos a la obra y buscarlas. Contiene también los objetos temibles, y dado que el animal puede huir, tiene que huir de ellos. En este mundo el animal no es una parte establemente inserta. La supervivencia se torna asunto del comportamiento desarrollado en acciones particulares, en lugar de estar asegurada en sí misma por un funcionamiento orgánico bien adaptado.
+                        </p>
+                        <p>
+                            Este modo de ser precario y expuesto obliga a permanecer en vigilia y a esforzarse, mientras que la vida vegetal puede dormitar. Respondiendo al atractivo de la presa, del que la percepción ha dado noticia, la vigilia se transforma en la tensión de la caza y en el disfrute de la satisfacción, pero también conoce el tormento del hambre, el látigo del temor, el medroso esfuerzo de la huida. También la persecución puede terminar en el desengaño del fracaso. Dicho brevemente: lo indirecto de la existencia animal se reserva en el estado de vigilia que le es propio las posibilidades gemelas del placer y el sufrimiento, maridadas las dos con el esfuerzo. La capacidad de experimentar uno y otro crece como una y la misma a lo largo de la evolución, y estar expuesto al sufrimiento no es una carencia que prive de algo a la capacidad de gozar, sino su necesario complemento.
+                        </p>
+                        <p>
+                            Por ello, el sufrimiento innato a la existencia del animal no es primariamente el del dolor (que es ocasional y concomitante), sino el de la carencia y el temor, por lo que constituye un aspecto de la naturaleza deseosa como tal. El apetito es la forma que toma el propio interés elemental de toda vida bajo las condiciones de la mediatez animal; en él, la vida se emancipa de su estar inmersa en las ciegas funciones orgánicas y asume un cometido propio: su función son las emociones. El ser animal es por su propia naturaleza ser pasional.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Sección V -->
+                <section id="sec-v" class="mb-24 scroll-mt-32">
+                    <h2 class="text-2xl md:text-3xl font-serif font-bold text-white mb-8 border-l-4 border-amber-500 pl-6">
+                        V. EL RIESGO, LA EMOCIÓN Y LA INDIVIDUACIÓN
+                    </h2>
+                    <div class="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-light text-justify px-4 md:px-0">
+                        <p>
+                            Medida con arreglo al criterio de la mera seguridad biológica, la superioridad de la vida animal frente a la vegetal es sumamente cuestionable, y en cualquier caso se debe pagar un alto precio por ella. La capacidad de buscar alimentos no es sino la respuesta a la necesidad que su tipo de metabolismo impone al animal, de la que la planta está libre. La existencia móvil está llena de intranquilidad y de miedo: nada de ello contiene la vida de las plantas. Pero por dudosas que sean las ventajas de la movilidad en el cómputo de su valor para la supervivencia, el criterio de la supervivencia misma es insuficiente para valorar la vida. Si solo importase garantizar la duración, la vida no hubiese debido ni empezar. Por su naturaleza propia, la vida es ser precario y pasajero, una aventura de la mortalidad, y en ninguna de sus posibles formas tiene su duración tan asegurada como la puede tener un cuerpo anorgánico.
+                        </p>
+                        <p>
+                            No la duración como tal, sino «¿duración de qué?» es la cuestión que aquí se plantea. Esto quiere decir que «medios» de supervivencia como la percepción y el sentimiento no se deben juzgar solamente como medios, sino también como cualidades de la vida misma que se trata de conservar, y por lo tanto como aspectos del fin de la conservación. Que utilice medios que modifican el fin y que se convierten en partes del mismo es una más de las paradojas de la vida. El animal dotado de la capacidad de sentir tiende a conservarse como ser sentiente, no como ser meramente metabolizante; es decir, tiende a prolongar esa actividad de sentir como tal. Por su parte, el animal dotado de la capacidad de percibir tiende igualmente a conservarse como ser perceptor, y así sucesivamente. Sin estas facultades habría mucho menos que conservar, pero al haber menos que conservar habría también, en esa misma proporción, menos medios con los que conservarlo.
+                        </p>
+                        <p>
+                            Al cabo, es el hecho de la individuación el que decide el litigio entre el animal y la planta. La constitución original del organismo, ya incluso en el nivel del organismo monocelular, manifiesta individualidad como una osadía de la libertad con la que una forma mantiene su identidad a través de las modificaciones de su materia. La libertad es compensada dialécticamente por la necesidad, la independencia por la dependencia. La mismidad aquí preformada como entre sombras tiene desde el principio su opuesto en la aliedad del mundo. La ulterior acentuación de este dualismo, con toda la carga a él inherente, no es otra cosa que la acentuación de la vida misma. La dialéctica de la vida tiene que comunicar necesariamente un doble filo a todo estado de la misma que haya alcanzado un cierto desarrollo. Desde este punto de vista, vemos dónde reside el progreso real de la animalidad desarrollada. La mediatez de su referencia al mundo es un incremento de la singular mediatez que muestra la existencia orgánica ya en su nivel más bajo (el metabolizante), y que es especialmente singular si la comparamos con la inmediata autoidentidad de la materia anorgánica.
+                        </p>
+                        <p>
+                            Este incremento de mediatez abre un campo de posibilidades mayor, tanto interno como externo, si bien al precio de un mayor riesgo, igualmente tanto interno como externo. Un sí mismo más acentuado se enfrenta a un mundo más acentuado. La progresiva centralización nerviosa del organismo animal acentúa el sí mismo, mientras que en correspondencia con ello el entorno se convierte en un espacio abierto en el que el sujeto de sensación libremente móvil debe subvenir a sus propias necesidades. En su mayor exposición, y con la conciencia más aguda que va unida a ella, su posible aniquilación pasa a ser un objeto del temor, al igual que sus posibles satisfacciones se convierten en objetos del placer. Sus goces tienen como lado negativo el sufrimiento, su soledad encuentra compensación en la posibilidad de comunicarse: la ganancia no está en uno de los lados del balance, sino en la coexistencia de los dos, es decir, en el crecimiento de la mismidad con la que el «organismo» desafió originariamente a la indiferente naturaleza.
+                        </p>
+                        <p>
+                            El precio que desde el principio tuvo que pagar por ello fue la mortalidad, y cada nivel ulterior de separación paga en su propia moneda, que es la misma moneda en la cual recibe también su satisfacción. El tipo de moneda determina el valor de la osadía. La separación entre sujeto y objeto abierta por la percepción a distancia y el amplio radio de movimientos, y que se refleja en la intensificación del apetito y el miedo, la satisfacción y el desengaño, el goce y el dolor, no se cierra ya nunca. Pero en su creciente amplitud la libertad de la vida encontró espacio para todos aquellos modos de relación -perceptiva, activa y sentiente- que justifican la separación por el procedimiento de agrandarla al máximo y, si bien dando rodeos, acaban recuperando la unidad perdida.
+                        </p>
+                    </div>
+                </section>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Footer Simple -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-6 md:py-8 mt-24">
+        <div class="w-full px-4 md:px-12 flex flex-col items-center justify-center gap-2">
+            <p class="text-[10px] md:text-[11px] font-medium text-slate-400 text-center">
+                Digitalización basada en la edición impresa.
+            </p>
+            <p class="text-[9px] md:text-[10px] text-slate-600 font-mono text-center">
+                Capítulo 6 | Hans Jonas
+            </p>
+        </div>
+    </footer>
+
+
+</BaseLayout>
