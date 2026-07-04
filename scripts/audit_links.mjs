@@ -121,3 +121,9 @@ for (const [kind, items] of Object.entries(byKind)) {
     console.log(`  - ${JSON.stringify(it.raw)} -> ${it.detail}`);
   }
 }
+
+if (problems.length > 0) {
+  console.log(`\n✗ ${problems.length} enlace(s) roto(s) en SiteNav.astro`);
+  process.exit(1);
+}
+console.log("\n✓ Todos los enlaces de SiteNav.astro están OK");
